@@ -16,7 +16,7 @@ public class LikedTimesCheckTask {
 
     private final ILikedRecordService recordService;
 
-    @Scheduled(fixedDelay = 20000)
+    @Scheduled(fixedDelay = 10 * 1000)
     public void checkLikedTimes() {
         for (String bizType : BIZ_TYPES) {
             recordService.readLikedTimesAndSendMessage(bizType, MAX_BIZ_SIZE);
