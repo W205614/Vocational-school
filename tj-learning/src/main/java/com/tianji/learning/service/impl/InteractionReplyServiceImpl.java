@@ -109,6 +109,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
         // 3.补全其他数据
         Set<Long> uids = new HashSet<>();  //所有用户id集合
         Set<Long> targetReplyIds = new HashSet<>();  //回复的目标回复id集合
+        Set<Long> bizIds = new HashSet<>();
         for (InteractionReply record : records) {
             if (!record.getAnonymity() || isAdmin) {
                 uids.add(record.getUserId());  //当前回复者id
@@ -117,6 +118,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
             if (record.getTargetReplyId() != null && record.getTargetReplyId() > 0) {
                 targetReplyIds.add(record.getTargetReplyId());
             }
+            bizIds.add(record.getId());
         }
 
         // 4.查询目标回复，如果目标回复不是匿名
@@ -137,6 +139,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
         if (userDTOList != null) {
             userDTOMap = userDTOList.stream().collect(Collectors.toMap(UserDTO::getId, c -> c));
         }
+        Set<Long> bizLiked = remarkClient.isBizLiked(bizIds);
 
         // 6.封装vo返回
         List<ReplyVO> voList = new ArrayList<>();
@@ -154,6 +157,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
             if (targetUserDTO != null) {
                 vo.setTargetUserName(targetUserDTO.getName());  //目标用户名字
             }
+            vo.setLiked(bizLiked.contains(record.getId()));
             voList.add(vo);
         }
         return PageDTO.of(page, voList);
