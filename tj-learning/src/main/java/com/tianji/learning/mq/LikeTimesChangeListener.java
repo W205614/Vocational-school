@@ -1,6 +1,7 @@
 package com.tianji.learning.mq;
 
 import com.tianji.api.dto.remark.LikeTimesDTO;
+import com.tianji.common.constants.MqConstants;
 import com.tianji.learning.domain.po.InteractionReply;
 import com.tianji.learning.service.IInteractionReplyService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class LikeTimesChangeListener {
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "qa.liked.times.queue", durable = "true"),
-            exchange = @Exchange(name = LIKE_RECORD_EXCHANGE, type = ExchangeTypes.TOPIC),
+            exchange = @Exchange(name = MqConstants.Exchange.LIKE_RECORD_EXCHANGE, type = ExchangeTypes.TOPIC),
             key = QA_LIKED_TIMES_KEY
     ))
     public void listenReplyLikedTimesChange(List<LikeTimesDTO> likeTimesDTOs) {
