@@ -6,7 +6,6 @@ import com.tianji.learning.domain.po.InteractionReply;
 import com.tianji.learning.service.IInteractionReplyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
@@ -32,7 +31,7 @@ public class LikeTimesChangeListener {
             exchange = @Exchange(name = MqConstants.Exchange.LIKE_RECORD_EXCHANGE, type = ExchangeTypes.TOPIC),
             key = QA_LIKED_TIMES_KEY
     ))
-    public void listenReplyLikedTimesChange(@NotNull List<LikeTimesDTO> likeTimesDTOs) {
+    public void listenReplyLikedTimesChange(List<LikeTimesDTO> likeTimesDTOs) {
         log.debug("监听到回答或评论的点赞数变更");
 
         List<InteractionReply> list = new ArrayList<>(likeTimesDTOs.size());
