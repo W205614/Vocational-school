@@ -2,7 +2,6 @@ package com.tianji.promotion.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tianji.common.domain.dto.PageDTO;
-import com.tianji.promotion.controller.ExchangeCodeController;
 import com.tianji.promotion.domain.po.Coupon;
 import com.tianji.promotion.domain.po.ExchangeCode;
 import com.tianji.promotion.domain.query.CodeQuery;
@@ -19,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.tianji.promotion.constants.PromotionConstants.COUPON_CODE_MAP_KEY;
 import static com.tianji.promotion.constants.PromotionConstants.COUPON_CODE_SERIAL_KEY;
 
 /**
@@ -32,9 +32,11 @@ import static com.tianji.promotion.constants.PromotionConstants.COUPON_CODE_SERI
 @Service
 public class ExchangeCodeServiceImpl extends ServiceImpl<ExchangeCodeMapper, ExchangeCode> implements IExchangeCodeService {
 
+    private final StringRedisTemplate redisTemplate;
     private BoundValueOperations<String, String> serialOps;
 
     public ExchangeCodeServiceImpl(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
         this.serialOps = redisTemplate.boundValueOps(COUPON_CODE_SERIAL_KEY);
     }
 
@@ -75,5 +77,11 @@ public class ExchangeCodeServiceImpl extends ServiceImpl<ExchangeCodeMapper, Exc
 
         // 2. 封装vo返回
         return PageDTO.of(page, c -> new ExchangeCodeVO(c.getId(), c.getCode()));
+    }
+
+    @Override
+    public boolean updateExchangeMark(long serialNum, boolean mark) {
+        Boolean boo = redisTemplate.opsForValue().setBit(COUPON_CODE_MAP_KEY, serialNum, mark);
+        return boo != null && boo;
     }
 }
