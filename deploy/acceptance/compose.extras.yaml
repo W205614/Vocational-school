@@ -1,0 +1,41 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.29
+    profiles: [search]
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports: ["127.0.0.1:23920:9200"]
+    volumes: [acceptance_search:/usr/share/elasticsearch/data]
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL","curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=2s'"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+  prometheus:
+    image: prom/prometheus:v3.10.0
+    profiles: [observability]
+    ports: ["127.0.0.1:23909:9090"]
+    volumes:
+      - ./.local/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./.local/observability/internal-token:/etc/prometheus/internal-token:ro
+      - acceptance_prometheus:/prometheus
+  grafana:
+    image: grafana/grafana:11.5.2
+    profiles: [observability]
+    environment:
+      GF_SECURITY_ADMIN_USER: acceptance
+      GF_SECURITY_ADMIN_PASSWORD: ${ACCEPTANCE_GRAFANA_PASSWORD:?Generate observability secrets first}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports: ["127.0.0.1:23930:3000"]
+    volumes:
+      - ./observability/grafana:/etc/grafana/provisioning:ro
+      - ./observability/dashboards:/var/lib/grafana/dashboards:ro
+      - acceptance_grafana:/var/lib/grafana
+volumes:
+  acceptance_search:
+  acceptance_prometheus:
+  acceptance_grafana:

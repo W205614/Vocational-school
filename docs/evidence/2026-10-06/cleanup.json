@@ -1,0 +1,216 @@
+{
+  "status": "PASSED",
+  "generatedAt": "2026-10-06T15:15:23.711720+00:00",
+  "stoppedNativeAcceptanceJava": 14,
+  "stoppedLegacySimulator": true,
+  "temporaryContainers": [
+    {
+      "name": "vocational-acceptance-prometheus-1",
+      "running": false,
+      "health": null,
+      "oomKilled": false
+    },
+    {
+      "name": "vocational-acceptance-grafana-1",
+      "running": false,
+      "health": null,
+      "oomKilled": false
+    },
+    {
+      "name": "vocational-acceptance-elasticsearch-1",
+      "running": false,
+      "health": "unhealthy",
+      "oomKilled": false
+    },
+    {
+      "name": "vocational-acceptance-rabbitmq-1",
+      "running": false,
+      "health": "unhealthy",
+      "oomKilled": false
+    },
+    {
+      "name": "vocational-acceptance-redis-1",
+      "running": false,
+      "health": "unhealthy",
+      "oomKilled": false
+    },
+    {
+      "name": "vocational-acceptance-mysql-1",
+      "running": false,
+      "health": "unhealthy",
+      "oomKilled": false
+    }
+  ],
+  "protectedOriginalContainers": [
+    {
+      "name": "tianji-desktop-auth-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-user-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-media-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-remark-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-trade-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-exam-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-gateway-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-search-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-message-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-data-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-learning-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-promotion-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-course-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-nacos-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-mysql-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-mq-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-web-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-xxljob-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-pay-1",
+      "running": false,
+      "health": "unhealthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-redis-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    },
+    {
+      "name": "tianji-desktop-es-1",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false
+    }
+  ],
+  "otherProjectObservedState": [
+    {
+      "name": "campuseats-server-1",
+      "running": false,
+      "health": "unhealthy",
+      "oomKilled": false
+    },
+    {
+      "name": "campuseats-web-1",
+      "running": false,
+      "health": "unhealthy",
+      "oomKilled": false
+    },
+    {
+      "name": "campuseats-redis-1",
+      "running": false,
+      "health": "unhealthy",
+      "oomKilled": false
+    },
+    {
+      "name": "campuseats-mysql-1",
+      "running": false,
+      "health": "unhealthy",
+      "oomKilled": false
+    }
+  ],
+  "otherProjectsNotOperated": true,
+  "dataVolumesDeleted": false,
+  "wslNotStopped": true,
+  "processes": [
+    {
+      "Name": "vmmemWSL",
+      "ProcessId": 22792,
+      "WorkingSetSize": 8113426432
+    }
+  ],
+  "memoryReclaim": {
+    "action": "one-time Linux sync and drop_caches; no WSL/Docker shutdown or memory-limit change",
+    "fileCacheBeforeKiB": 3456932,
+    "buffersBeforeKiB": 350908,
+    "fileCacheImmediatelyAfterKiB": 249864,
+    "buffersImmediatelyAfterKiB": 2376
+  },
+  "scope": "original 20 containers healthy; temporary acceptance resources stopped; other project state observed only"
+}

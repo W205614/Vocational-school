@@ -1,0 +1,53 @@
+name: Reliability and frontend gates
+on:
+  pull_request:
+  push:
+    branches: [dev, master, main, 'codex/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r deploy/acceptance/requirements.txt
+      - run: python deploy/acceptance/prepare.py
+      - name: Start isolated Elasticsearch
+        run: docker compose -p vocational-acceptance -f deploy/acceptance/compose.yaml -f deploy/acceptance/compose.extras.yaml --env-file deploy/acceptance/.env --profile search up -d --wait elasticsearch
+      - run: python deploy/acceptance/initialize_test_schemas.py
+      - run: python deploy/acceptance/prepare_search.py --schema-only
+      - name: Real database and broker regressions
+        run: python deploy/acceptance/run_tests.py --modules tj-remark,tj-user,tj-promotion,tj-learning,tj-exam,tj-pay/tj-pay-service,tj-auth/tj-auth-service,tj-search,tj-gateway --tests PageQueryTest,ReliabilityDatabaseTest,ResponseConverterTest,CookieBuilderTest,AcceptanceFaultsTest,LearningReliabilityTest,DelayTaskTest,ExamReliabilityTest,ObjectiveScoringTest,DiscountServiceTest,ProviderSettlementTest,CourseRepositoryBulkTest,FeignBulkheadTest,ReliabilityMetricsTest,AsyncSmsClientReliabilityTest,VerificationCodeReliabilityTest,LikeConcurrencyReliabilityTest
+      - name: Build every module
+        run: mvn -B -DskipTests verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-regression-reports
+          path: '**/target/surefire-reports/*.xml'
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build

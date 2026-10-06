@@ -1,0 +1,12 @@
+{
+  "scenario": "stock 100, 200 users, concurrency 50, 100 identical request retries",
+  "status": "PASSED",
+  "operations": {
+    "SUCCEEDED": 100,
+    "FAILED": 100
+  },
+  "stock_issued": 100,
+  "coupon_records": 100,
+  "elapsed_seconds": 8.191,
+  "scope": "isolated upgraded promotion HTTP service; no gateway or real third parties"
+}

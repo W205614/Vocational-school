@@ -1,0 +1,160 @@
+{
+  "status": "PASSED",
+  "scope": "sequential Linux JVM containers with native acceptance peers, same isolated databases/broker; not a simultaneous all-container stack or HA test",
+  "services": {
+    "data": {
+      "imageId": "sha256:218da6a9a3cffd291edb1c29bbceed6a742b8df6f260fd3efa78a232288342d0",
+      "jarSha256": "3ff202ead08a45a5cbec6154238f128e6d7a27eaa85a40ca2804440cbdb31da4",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "pay": {
+      "imageId": "sha256:1a358ec176093ff44d69caa329d07772e7898bc67d85ed7faf46aa5da64b1d6b",
+      "jarSha256": "ec85c8b9849d8607e8b18e5b302a2cfd1f83b761f03f9fe9b4a02aad63ba46b8",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "promotion": {
+      "imageId": "sha256:cdfa657a44c45d477266f548474876993ab08943a3406129420b57e9cc4dee9f",
+      "jarSha256": "7985f5a23219607228c1db99acd15ac1322d035e2a668bf2a6122f6ab7ab0fb7",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "learning": {
+      "imageId": "sha256:27e1c16f3db000265167a58ac1a4f4214d7941e535ea7d15ec0ef0172a094fc3",
+      "jarSha256": "ca0ec2d9b5d9c477975b8e3e3e7d03d665ebad48b8842a8c4ad48cfd0b5b2c3e",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "trade": {
+      "imageId": "sha256:73b3910ce9c1fb8c439bf118c7223975f467cacbf2ba4ef84ceccce87bf1daad",
+      "jarSha256": "561a89404fcead550473fe05ab07517582a3f647ca317bce8ed6cf7fff859152",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "exam": {
+      "imageId": "sha256:1750478fb52dcc9957b08c1a3650e040d6aeb07ebbf3fd6604610d053642e06e",
+      "jarSha256": "9e941a5c9d5166f77290d4007bd015cb32d3ed661fbcb603bab34556c66feb08",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "course": {
+      "imageId": "sha256:46984687073f23053f054a10e70f042b3186ed80e321fdc01ec40da01ec15678",
+      "jarSha256": "f43aa1080377f0bbc21f4302fecc3936f6424f401a63edb3752815e5b6d86896",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "user": {
+      "imageId": "sha256:7f9c49a532bae5f77a42ec76a43c03278eb96c325babe1db2a47ce02693274c5",
+      "jarSha256": "13a7c996977b6051db9c56a73cde20714175197b300f8b38f4852abf9ca1bbb4",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "auth": {
+      "imageId": "sha256:8e7ed801e5901ef3dd5b9f9fe1b999c74bb0f95959829ca134fbc660db6ce732",
+      "jarSha256": "8557beff13c901224224309fc2f45add5e0878ed3393fa778ccb23e0026a6d01",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "media": {
+      "imageId": "sha256:4759d1d71b5a3608387deb696e03d3333fa95d8e427de216452e4c92b5fd0d51",
+      "jarSha256": "d22d6dd11cc88dafdff1567550f155dff3fd35a565316b28f5ed0f97bd55ce09",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "remark": {
+      "imageId": "sha256:c86e059b0e11bfb1c5195993104ed8a72e4ba9037477421646d0f35c40835f48",
+      "jarSha256": "70285052138813f9232a139bfab6dd6ba9e050ec1ac9fb6e8a6defc84e4d98d0",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "search": {
+      "imageId": "sha256:b01e0f42af642361b89ba61c6e2109df9000c8682d841bae45ad3b9756684ed5",
+      "jarSha256": "7263eeecffc2036bd0038bb157411634ed33b73dfa953bcb36a69210c911e456",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "message": {
+      "imageId": "sha256:824a817c03c8c1cb6020eeb3d27dd975bfe3cc215d99117a91ea8bcb8d0b8fed",
+      "jarSha256": "4b79b3049a6d4a5bc3694ab86b4a1589bb4155ca41649bad814a9c0fd58497fb",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    },
+    "gateway": {
+      "imageId": "sha256:24923e81251da3277d6b93056a55c5b0edda4abd72fcbad4a521c5aa9d926c99",
+      "jarSha256": "71f7b199579367b01e817d70828a44d9afef16a695bc3c9c32b3489b561797c9",
+      "linuxReadiness": true,
+      "openApiOrGateway": true,
+      "user": "app",
+      "exitCode": 143,
+      "gracefulShutdownLogged": true,
+      "oomKilled": false,
+      "sentinelLogDirectoryHealthy": true
+    }
+  }
+}

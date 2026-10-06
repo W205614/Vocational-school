@@ -1,0 +1,8 @@
+FROM eclipse-temurin:21-jre
+ENV TZ=Asia/Shanghai
+WORKDIR /app
+RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --home /app app && mkdir -p /app/logs/csp && chown app:app /app/logs /app/logs/csp
+COPY --chown=app:app app.jar /app/app.jar
+COPY --chown=app:app HealthProbe.class /app/health/HealthProbe.class
+USER app
+ENTRYPOINT ["java","-Xms96m","-Xmx384m","-XX:MaxDirectMemorySize=64m","-XX:ActiveProcessorCount=2","-jar","/app/app.jar","--spring.config.location=file:/run/acceptance/application.yml"]

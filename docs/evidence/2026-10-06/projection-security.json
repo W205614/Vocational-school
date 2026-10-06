@@ -1,0 +1,14 @@
+{
+  "status": "PASSED",
+  "checks": [
+    "pagination and sorting rejection",
+    "30 concurrent role bindings are unique",
+    "permission update/revoke/delete publish immutable cache",
+    "direct forged backend identity rejected",
+    "down shelf hidden",
+    "stale down event uses current metadata",
+    "course delete durable tombstone",
+    "versioned failed projection replay",
+    "late duplicate paid events cannot resurrect refunded sales"
+  ]
+}

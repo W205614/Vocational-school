@@ -1,0 +1,16 @@
+{
+  "status": "PASSED",
+  "brokerOutage": {
+    "order": "2107464393605120002",
+    "pendingBeforeRecovery": 1,
+    "grants": 1
+  },
+  "videoRestart": {
+    "lesson": "820000001791293663",
+    "completionReports": 100,
+    "learnedSections": 1,
+    "finalMoment": 100,
+    "oldMomentCannotRewind": true,
+    "studentExamReportRejected": true
+  }
+}

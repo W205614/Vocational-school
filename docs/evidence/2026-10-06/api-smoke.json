@@ -1,0 +1,17 @@
+{
+  "status": "PASSED",
+  "checks": [
+    "three roles login",
+    "identity spoofing",
+    "admin boundary",
+    "durable note create and replay",
+    "same key conflict",
+    "note optimistic conflict",
+    "note delete replay",
+    "concurrent sign uniqueness",
+    "owned weekly points equal persisted ledger",
+    "weekly boundaries include Monday midnight and exclude next week",
+    "favorite repeat writes",
+    "refresh cookie"
+  ]
+}

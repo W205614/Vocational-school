@@ -1,0 +1,18 @@
+{
+  "status": "PASSED",
+  "paidOrder": "2107484213696462850",
+  "refundedDetail": "2107484214375940098",
+  "latePaidOrder": "2107484394068312066",
+  "concurrentRefundOrder": "2107484414402297857",
+  "checks": [
+    "idempotent order",
+    "20 repeated payment confirmations",
+    "one payment fact and paid event",
+    "grant by order detail",
+    "idempotent refund command",
+    "refund terminal and entitlement revoke",
+    "learning history preserved",
+    "concurrent two-detail refunds and 20 repeated approvals aggregate one terminal order",
+    "cancelled late payment manual case without automatic grant or refund"
+  ]
+}

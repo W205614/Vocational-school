@@ -1,0 +1,72 @@
+{
+  "status": "PASSED",
+  "services": {
+    "data": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "pay": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "promotion": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "learning": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "trade": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "exam": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "course": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "user": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "auth": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "media": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "remark": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "search": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    },
+    "message": {
+      "processHealth": 200,
+      "readiness": 200,
+      "protectedMetrics": true
+    }
+  },
+  "scrapeTargets": 13,
+  "grafana": true
+}

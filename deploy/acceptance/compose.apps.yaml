@@ -1,0 +1,549 @@
+services:
+  app-data:
+    image: vocational-acceptance/data:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23895'
+    ports:
+    - 127.0.0.1:23895:23895
+    volumes:
+    - ./.local/containers/full/data.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-pay:
+    image: vocational-acceptance/pay:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23883'
+    ports:
+    - 127.0.0.1:23883:23883
+    volumes:
+    - ./.local/containers/full/pay.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-promotion:
+    image: vocational-acceptance/promotion:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23892'
+    ports:
+    - 127.0.0.1:23892:23892
+    volumes:
+    - ./.local/containers/full/promotion.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-learning:
+    image: vocational-acceptance/learning:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23890'
+    ports:
+    - 127.0.0.1:23890:23890
+    volumes:
+    - ./.local/containers/full/learning.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-trade:
+    image: vocational-acceptance/trade:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23888'
+    ports:
+    - 127.0.0.1:23888:23888
+    volumes:
+    - ./.local/containers/full/trade.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-exam:
+    image: vocational-acceptance/exam:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23885'
+    ports:
+    - 127.0.0.1:23885:23885
+    volumes:
+    - ./.local/containers/full/exam.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-course:
+    image: vocational-acceptance/course:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23881'
+    ports:
+    - 127.0.0.1:23881:23881
+    volumes:
+    - ./.local/containers/full/course.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-user:
+    image: vocational-acceptance/user:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23882'
+    ports:
+    - 127.0.0.1:23882:23882
+    volumes:
+    - ./.local/containers/full/user.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-auth:
+    image: vocational-acceptance/auth:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23884'
+    ports:
+    - 127.0.0.1:23884:23884
+    volumes:
+    - ./.local/containers/full/auth.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-media:
+    image: vocational-acceptance/media:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23886'
+    ports:
+    - 127.0.0.1:23886:23886
+    volumes:
+    - ./.local/containers/full/media.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-remark:
+    image: vocational-acceptance/remark:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23891'
+    ports:
+    - 127.0.0.1:23891:23891
+    volumes:
+    - ./.local/containers/full/remark.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-search:
+    image: vocational-acceptance/search:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23889'
+    ports:
+    - 127.0.0.1:23889:23889
+    volumes:
+    - ./.local/containers/full/search.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+  app-message:
+    image: vocational-acceptance/message:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23887'
+    ports:
+    - 127.0.0.1:23887:23887
+    volumes:
+    - ./.local/containers/full/message.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  app-gateway:
+    image: vocational-acceptance/gateway:java21
+    profiles:
+    - apps
+    restart: unless-stopped
+    env_file:
+    - ./.local/containers/env
+    environment:
+      APP_PORT: '23310'
+    ports:
+    - 127.0.0.1:23310:23310
+    volumes:
+    - ./.local/containers/full/gateway.yml:/run/acceptance/application.yml:ro
+    - ./.local/containers/signing.jks:/run/acceptance/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    cpus: 2
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 40s
+      retries: 30
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      app-auth:
+        condition: service_healthy
+  web-student:
+    image: vocational-acceptance/student:v2
+    profiles:
+    - apps
+    restart: unless-stopped
+    environment:
+      GW_UPSTREAM: app-gateway:23310
+    ports:
+    - 127.0.0.1:23500:8080
+    mem_limit: 128m
+    depends_on:
+      app-gateway:
+        condition: service_healthy
+  web-admin:
+    image: vocational-acceptance/admin:v2
+    profiles:
+    - apps
+    restart: unless-stopped
+    environment:
+      GW_UPSTREAM: app-gateway:23310
+    ports:
+    - 127.0.0.1:23501:8080
+    mem_limit: 128m
+    depends_on:
+      app-gateway:
+        condition: service_healthy

@@ -1,0 +1,18 @@
+groups:
+  - name: acceptance-reliability
+    rules:
+      - alert: EventDeliveryBacklog
+        expr: tj_events_oldest_seconds > 60
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Durable event delivery is delayed"}
+      - alert: FailedDurableWork
+        expr: tj_events_dead > 0 or tj_consumer_failures > 0
+        for: 30s
+        labels: {severity: warning}
+        annotations: {summary: "Durable work needs replay or investigation"}
+      - alert: ExecutorQueueFull
+        expr: managed_executor_queue_remaining == 0
+        for: 30s
+        labels: {severity: warning}
+        annotations: {summary: "Managed executor admission capacity exhausted"}

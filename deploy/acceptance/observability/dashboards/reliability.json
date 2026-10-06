@@ -1,0 +1,189 @@
+{
+  "title": "Acceptance reliability",
+  "uid": "acceptance-reliability",
+  "schemaVersion": 40,
+  "version": 1,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Durable event backlog",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "acceptance"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "tj_events_pending",
+          "legendFormat": "{{job}} {{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Failed events",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "acceptance"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "tj_events_dead",
+          "legendFormat": "{{job}} {{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Consumer failures",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "acceptance"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "tj_consumer_failures",
+          "legendFormat": "{{job}} {{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Oldest event age (seconds)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "acceptance"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "tj_events_oldest_seconds",
+          "legendFormat": "{{job}} {{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Pending business operations",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "acceptance"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "tj_operations_pending",
+          "legendFormat": "{{job}} {{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Executor queued tasks",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "acceptance"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "managed_executor_queued",
+          "legendFormat": "{{job}} {{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "JVM memory (bytes)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "acceptance"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "jvm_memory_used_bytes",
+          "legendFormat": "{{job}} {{pool}}"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "HTTP P95 (seconds)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "acceptance"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le,job) (rate(http_server_requests_seconds_bucket[1m])))",
+          "legendFormat": "{{job}} {{pool}}"
+        }
+      ]
+    }
+  ]
+}

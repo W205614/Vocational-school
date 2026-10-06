@@ -1,0 +1,19 @@
+{
+  "status": "PASSED",
+  "passed": 7,
+  "expectedOtherProjectSkips": 7,
+  "failed": 0,
+  "frontends": {
+    "student": {
+      "imageId": "sha256:55f2c03cf2e87398c477ee5778482d54d89bb58145effc7ce27daf2d3e4ec47e",
+      "spaRefresh": true,
+      "environmentProxy": true
+    },
+    "admin": {
+      "imageId": "sha256:ce98a6b25391405fb296831c051dab602a437d80078392091f3b119eaa9a8cc4",
+      "spaRefresh": true,
+      "environmentProxy": true
+    }
+  },
+  "scope": "two built Nginx images; gateway/business peers use immutable native JARs and isolated Docker infrastructure"
+}

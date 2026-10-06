@@ -1,0 +1,21 @@
+{
+  "status": "PASSED",
+  "checks": [
+    {
+      "point": "after-publish",
+      "order": "2107463834403770370",
+      "eventId": "c0b1164b-3407-40e8-8e7d-b4899ad62435",
+      "stateBeforeRestart": "SENDING",
+      "receiptCount": 1,
+      "entitlementCount": 1
+    },
+    {
+      "point": "after-consume",
+      "order": "2107464110921613313",
+      "eventId": "acf2efab-7985-4f5f-b9d4-2b355353bd63",
+      "stateBeforeRestart": "SENT",
+      "receiptCount": 1,
+      "entitlementCount": 1
+    }
+  ]
+}

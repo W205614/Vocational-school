@@ -1,0 +1,41 @@
+name: vocational-acceptance
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ACCEPTANCE_DB_PASSWORD:?Generate .env with prepare.py}
+      TZ: Asia/Shanghai
+    command: ["--default-time-zone=+08:00"]
+    ports: ["127.0.0.1:23316:3306"]
+    volumes: [acceptance_mysql:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysqladmin ping -uroot --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+  redis:
+    image: redis:7.4-alpine
+    ports: ["127.0.0.1:23379:6379"]
+    volumes: [acceptance_redis:/data]
+    command: ["redis-server","--appendonly","yes"]
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    environment:
+      RABBITMQ_DEFAULT_USER: acceptance
+      RABBITMQ_DEFAULT_PASS: ${ACCEPTANCE_MQ_PASSWORD:?Generate .env with prepare.py}
+    ports: ["127.0.0.1:23372:15672","127.0.0.1:23373:5672"]
+    volumes: [acceptance_rabbit:/var/lib/rabbitmq]
+    healthcheck:
+      test: ["CMD","rabbitmq-diagnostics","-q","ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+volumes:
+  acceptance_mysql:
+  acceptance_redis:
+  acceptance_rabbit:

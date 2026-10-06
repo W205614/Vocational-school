@@ -1,0 +1,311 @@
+{
+  "status": "PASSED",
+  "backupSha256": "27cda3e0b96737dbf18d7fe5cb8b5d6664c40798c7efdc3373c857b54b525241",
+  "exactTableCounts": {
+    "tj_auth.account_role": {
+      "before": 1,
+      "after": 1,
+      "delta": 0
+    },
+    "tj_auth.login_record": {
+      "before": 462,
+      "after": 635,
+      "delta": 173
+    },
+    "tj_auth.menu": {
+      "before": 10,
+      "after": 10,
+      "delta": 0
+    },
+    "tj_auth.privilege": {
+      "before": 13,
+      "after": 13,
+      "delta": 0
+    },
+    "tj_auth.role": {
+      "before": 7,
+      "after": 7,
+      "delta": 0
+    },
+    "tj_auth.role_menu": {
+      "before": 10,
+      "after": 10,
+      "delta": 0
+    },
+    "tj_auth.role_privilege": {
+      "before": 17,
+      "after": 17,
+      "delta": 0
+    },
+    "tj_user.user": {
+      "before": 35,
+      "after": 38,
+      "delta": 3
+    },
+    "tj_user.user_detail": {
+      "before": 35,
+      "after": 38,
+      "delta": 3
+    },
+    "tj_course.category": {
+      "before": 345,
+      "after": 345,
+      "delta": 0
+    },
+    "tj_course.course": {
+      "before": 14,
+      "after": 27,
+      "delta": 13
+    },
+    "tj_course.course_cata_subject_draft": {
+      "before": 4,
+      "after": 4,
+      "delta": 0
+    },
+    "tj_course.course_catalogue": {
+      "before": 168,
+      "after": 207,
+      "delta": 39
+    },
+    "tj_course.course_catalogue_draft": {
+      "before": 52,
+      "after": 52,
+      "delta": 0
+    },
+    "tj_course.course_content": {
+      "before": 14,
+      "after": 14,
+      "delta": 0
+    },
+    "tj_course.course_content_draft": {
+      "before": 9,
+      "after": 9,
+      "delta": 0
+    },
+    "tj_course.course_draft": {
+      "before": 10,
+      "after": 10,
+      "delta": 0
+    },
+    "tj_course.course_subject": {
+      "before": 2,
+      "after": 2,
+      "delta": 0
+    },
+    "tj_course.course_teacher": {
+      "before": 25,
+      "after": 38,
+      "delta": 13
+    },
+    "tj_course.course_teacher_draft": {
+      "before": 5,
+      "after": 5,
+      "delta": 0
+    },
+    "tj_course.subject": {
+      "before": 63,
+      "after": 63,
+      "delta": 0
+    },
+    "tj_course.subject_category": {
+      "before": 315,
+      "after": 315,
+      "delta": 0
+    },
+    "tj_course.undo_log": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "tj_learning.interaction_question": {
+      "before": 4,
+      "after": 11,
+      "delta": 7
+    },
+    "tj_learning.interaction_reply": {
+      "before": 15,
+      "after": 21,
+      "delta": 6
+    },
+    "tj_learning.learning_lesson": {
+      "before": 5,
+      "after": 16,
+      "delta": 11
+    },
+    "tj_learning.learning_record": {
+      "before": 18,
+      "after": 32,
+      "delta": 14
+    },
+    "tj_learning.points_board": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "tj_learning.points_board_season": {
+      "before": 12,
+      "after": 12,
+      "delta": 0
+    },
+    "tj_learning.points_record": {
+      "before": 8,
+      "after": 9,
+      "delta": 1
+    },
+    "tj_trade.cart": {
+      "before": 1,
+      "after": 1,
+      "delta": 0
+    },
+    "tj_trade.order": {
+      "before": 15,
+      "after": 60,
+      "delta": 45
+    },
+    "tj_trade.order_detail": {
+      "before": 22,
+      "after": 70,
+      "delta": 48
+    },
+    "tj_trade.refund_apply": {
+      "before": 20,
+      "after": 36,
+      "delta": 16
+    },
+    "tj_trade.undo_log": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "tj_promotion.coupon": {
+      "before": 8,
+      "after": 67,
+      "delta": 59
+    },
+    "tj_promotion.coupon_scope": {
+      "before": 25,
+      "after": 25,
+      "delta": 0
+    },
+    "tj_promotion.exchange_code": {
+      "before": 2000,
+      "after": 2000,
+      "delta": 0
+    },
+    "tj_promotion.promotion": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "tj_promotion.user_coupon": {
+      "before": 2,
+      "after": 30235,
+      "delta": 30233
+    },
+    "tj_exam.question": {
+      "before": 6,
+      "after": 32,
+      "delta": 26
+    },
+    "tj_exam.question_biz": {
+      "before": 45,
+      "after": 71,
+      "delta": 26
+    },
+    "tj_exam.question_detail": {
+      "before": 6,
+      "after": 32,
+      "delta": 26
+    },
+    "tj_exam.undo_log": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "tj_remark.liked_record": {
+      "before": 1,
+      "after": 7,
+      "delta": 6
+    },
+    "tj_pay.pay_channel": {
+      "before": 2,
+      "after": 3,
+      "delta": 1
+    },
+    "tj_pay.pay_order": {
+      "before": 17,
+      "after": 57,
+      "delta": 40
+    },
+    "tj_pay.refund_order": {
+      "before": 21,
+      "after": 35,
+      "delta": 14
+    },
+    "tj_search.interests": {
+      "before": 2,
+      "after": 2,
+      "delta": 0
+    },
+    "tj_message.message_template": {
+      "before": 2,
+      "after": 2,
+      "delta": 0
+    },
+    "tj_message.notice_task": {
+      "before": 0,
+      "after": 8,
+      "delta": 8
+    },
+    "tj_message.notice_task_target": {
+      "before": 0,
+      "after": 8,
+      "delta": 8
+    },
+    "tj_message.notice_template": {
+      "before": 1,
+      "after": 9,
+      "delta": 8
+    },
+    "tj_message.public_notice": {
+      "before": 0,
+      "after": 0,
+      "delta": 0
+    },
+    "tj_message.sms_third_platform": {
+      "before": 3,
+      "after": 3,
+      "delta": 0
+    },
+    "tj_message.user_inbox": {
+      "before": 0,
+      "after": 8,
+      "delta": 8
+    },
+    "tj_media.file": {
+      "before": 20,
+      "after": 20,
+      "delta": 0
+    },
+    "tj_media.media": {
+      "before": 152,
+      "after": 169,
+      "delta": 17
+    }
+  },
+  "businessChecks": {
+    "duplicate_learning_records": 0,
+    "duplicate_favorites": 0,
+    "duplicate_likes": 0,
+    "active_exam_conflicts": 0,
+    "coupon_oversell": 0,
+    "dangling_entitlements": 0,
+    "cancelled_orders_with_entitlements": 0
+  },
+  "explain": {
+    "order_page": "1\tSIMPLE\torder\tNULL\tref\tidx_order_user_status_time,ix_order_user_created\tidx_order_user_status_time\t8\tconst\t45\t100.00\tUsing index; Using filesort",
+    "user_coupon": "1\tSIMPLE\tuser_coupon\tNULL\tref\tidx_coupon,idx_user_coupon,idx_coupon_user_status_time,idx_user_coupon_claim_limit\tidx_coupon\t8\tconst\t1\t5.00\tUsing where",
+    "daily_points": "1\tSIMPLE\tpoints_record\tNULL\tref\tidx_user_id,idx_create_time,idx_points_user_time_type\tidx_user_id\t8\tconst\t1\t11.11\tUsing where"
+  },
+  "scope": "private audit schemas restored from initial snapshot; fixture writes account for changes, original deployment untouched"
+}

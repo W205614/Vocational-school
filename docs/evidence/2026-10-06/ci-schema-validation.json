@@ -1,0 +1,10 @@
+{
+  "status": "PASSED",
+  "tables": {
+    "ci_validation_1791290843_acceptance_pay": 11,
+    "ci_validation_1791290843_acceptance_exam": 11,
+    "ci_validation_1791290843_acceptance_common": 6,
+    "ci_validation_1791290843_acceptance_learning": 10
+  },
+  "scope": "Fresh schema-only restore; remote CI not executed"
+}

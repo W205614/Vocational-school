@@ -1,0 +1,5 @@
+.local/
+.env
+reports/runtime-*/
+__pycache__/
+.pytest_cache/

@@ -1,0 +1,61 @@
+{
+  "status": "PASSED",
+  "paymentCancelRaces": [
+    {
+      "order": "2107483871592251393",
+      "state": 3,
+      "cancelHttpStatus": 200,
+      "grantCount": 0,
+      "manualCaseCount": 1,
+      "delaySeconds": 0
+    },
+    {
+      "order": "2107483896082792450",
+      "state": 3,
+      "cancelHttpStatus": 200,
+      "grantCount": 0,
+      "manualCaseCount": 1,
+      "delaySeconds": 0
+    },
+    {
+      "order": "2107483919596060674",
+      "state": 2,
+      "cancelHttpStatus": 409,
+      "grantCount": 1,
+      "manualCaseCount": 0,
+      "delaySeconds": 0.5
+    },
+    {
+      "order": "2107483941398052865",
+      "state": 2,
+      "cancelHttpStatus": 409,
+      "grantCount": 1,
+      "manualCaseCount": 0,
+      "delaySeconds": 0.5
+    },
+    {
+      "order": "2107483966647762946",
+      "state": 2,
+      "cancelHttpStatus": 409,
+      "grantCount": 1,
+      "manualCaseCount": 0,
+      "delaySeconds": 3
+    },
+    {
+      "order": "2107484003951902721",
+      "state": 2,
+      "cancelHttpStatus": 409,
+      "grantCount": 1,
+      "manualCaseCount": 0,
+      "delaySeconds": 3
+    }
+  ],
+  "likeProjection": {
+    "reply": "2107465122134806530",
+    "duplicateLikes": 100,
+    "duplicateUnlikes": 100,
+    "oldVersion": 5,
+    "currentVersion": 6,
+    "staleFreshIdEventCannotRewind": true
+  }
+}

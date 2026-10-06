@@ -1,0 +1,14 @@
+{
+  "status": "PASSED",
+  "checks": [
+    "dashboard role boundary",
+    "durable targeted notification and duplicate command",
+    "empty targets fail without broadcast",
+    "inbox refresh uniqueness and owned read",
+    "durable explicit SMS simulation once",
+    "persistent media bytes",
+    "signed URL and HTTP range",
+    "invalid signature denial",
+    "persistent cleanup"
+  ]
+}
