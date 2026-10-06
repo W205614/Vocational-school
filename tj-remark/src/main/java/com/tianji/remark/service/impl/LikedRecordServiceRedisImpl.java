@@ -20,9 +20,10 @@ public class LikedRecordServiceRedisImpl extends ServiceImpl<LikedRecordMapper,L
     private final OutboxStore outbox;
     @Override @Transactional public void addLikeRecord(LikeRecordFormDTO form) {
         long user=UserContext.requireUser();
-        if(form.getBizId()==null || form.getLiked()==null || !Set.of("QA","NOTE").contains(form.getBizType())) throw new BadRequestException("点赞对象无效");
-        jdbc.update("INSERT IGNORE INTO liked_counter(biz_type,biz_id,liked_times,version) VALUES(?,?,0,0)",form.getBizType(),form.getBizId());
-        jdbc.queryForMap("SELECT version FROM liked_counter WHERE biz_type=? AND biz_id=? FOR UPDATE",form.getBizType(),form.getBizId());
+        if(form.getBizId()==null || form.getBizId()<=0 || form.getLiked()==null || form.getBizType()==null || !Set.of("QA","NOTE").contains(form.getBizType())) throw new BadRequestException("点赞对象无效");
+        // A duplicate INSERT IGNORE takes a shared lock; upgrading it can deadlock.
+        // Upsert acquires the exclusive counter lock before touching the relation.
+        jdbc.update("INSERT INTO liked_counter(biz_type,biz_id,liked_times,version) VALUES(?,?,0,0) ON DUPLICATE KEY UPDATE biz_id=?",form.getBizType(),form.getBizId(),form.getBizId());
         int changed=form.getLiked()
                 ?jdbc.update("INSERT IGNORE INTO liked_record(user_id,biz_type,biz_id) VALUES(?,?,?)",user,form.getBizType(),form.getBizId())
                 :jdbc.update("DELETE FROM liked_record WHERE user_id=? AND biz_type=? AND biz_id=?",user,form.getBizType(),form.getBizId());

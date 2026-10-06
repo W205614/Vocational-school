@@ -263,9 +263,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Override
     @Transactional
     public void cancelOrder(Long orderId) {
-        Long userId = UserContext.getUser();
+        Long userId = UserContext.requireUser();
         // 1.查询订单
-        Order order = getById(orderId);
+        Order order = lambdaQuery().eq(Order::getId, orderId).eq(Order::getUserId, userId).last("FOR UPDATE").one();
         if (order == null || !userId.equals(order.getUserId())) {
             throw new BadRequestException(ORDER_NOT_EXISTS);
         }
@@ -276,7 +276,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
         // 3.判断订单是否未支付，只有未支付订单才可以取消
         if(!OrderStatus.NO_PAY.equalsValue(order.getStatus())){
-            throw new BizIllegalException(ORDER_ALREADY_FINISH);
+            throw new com.tianji.common.exceptions.ConflictException(ORDER_ALREADY_FINISH);
         }
         // 4.可以更新订单状态为取消了
         boolean success = lambdaUpdate()
@@ -287,7 +287,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 .eq(Order::getId, orderId)
                 .update();
         if (!success) {
-            return;
+            throw new com.tianji.common.exceptions.ConflictException("订单状态已发生变化");
         }
         // 5.更新订单条目的状态
         detailService.updateStatusByOrderId(orderId, OrderStatus.CLOSED.getValue());
