@@ -1,7 +1,8 @@
 package com.tianji.message.api.config;
 
 
-import com.tianji.common.autoconfigure.mq.RabbitMqHelper;
+import com.tianji.common.autoconfigure.reliability.OutboxStore;
+import org.springframework.transaction.PlatformTransactionManager;
 import com.tianji.message.api.client.AsyncSmsClient;
 import feign.RequestInterceptor;
 import org.slf4j.MDC;
@@ -25,7 +26,7 @@ public class MessageClientConfiguration {
     }
 
     @Bean
-    public AsyncSmsClient smsClient(RabbitMqHelper mqHelper){
-        return new AsyncSmsClient(mqHelper);
+    public AsyncSmsClient smsClient(OutboxStore outbox, PlatformTransactionManager transactions){
+        return new AsyncSmsClient(outbox, transactions);
     }
 }

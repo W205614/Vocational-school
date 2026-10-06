@@ -33,18 +33,11 @@ public class CodeServiceImpl implements ICodeService {
     @Override
     public void sendVerifyCode(String phone) {
         String key = USER_VERIFY_CODE_KEY + phone;
-        // 1.查看code是否存在
-        String code = stringRedisTemplate.opsForValue().get(key);
-        if(StringUtils.isBlank(code)){
-            // 2.生成随机验证码
-            code = RandomUtils.randomNumbers(4);
-            // 3.保存到redis
-            stringRedisTemplate.opsForValue()
-                    .set(USER_VERIFY_CODE_KEY + phone, code, USER_VERIFY_CODE_TTL);
-
-        }
-        // 4.发送短信
-        log.debug("发送短信验证码：{}", code);
+        // Redis selects one code atomically; every concurrently accepted SMS carries that value.
+        String candidate = RandomUtils.randomNumbers(4);
+        String code = stringRedisTemplate.execute(new org.springframework.data.redis.core.script.DefaultRedisScript<String>(
+                "local v=redis.call('GET',KEYS[1]); if v then return v end; redis.call('SET',KEYS[1],ARGV[1],'EX',ARGV[2]); return ARGV[1]",String.class),
+                java.util.List.of(key),candidate,String.valueOf(USER_VERIFY_CODE_TTL.toSeconds()));
         SmsInfoDTO info = new SmsInfoDTO();
         info.setPhones(CollUtils.singletonList(phone));
         info.setTemplateCode(SmsTemplate.VERIFY_CODE.toString());
