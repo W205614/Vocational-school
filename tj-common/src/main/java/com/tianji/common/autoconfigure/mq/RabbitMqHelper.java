@@ -1,109 +1,85 @@
 package com.tianji.common.autoconfigure.mq;
 
-import cn.hutool.core.lang.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
-import org.springframework.amqp.core.MessagePostProcessor;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
+import org.springframework.beans.factory.DisposableBean;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadPoolExecutor;
-
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.*;
 import static com.tianji.common.constants.Constant.REQUEST_ID_HEADER;
 
+/** Confirms are broker acceptance, never a substitute for a transactional outbox. */
 @Slf4j
-public class RabbitMqHelper {
-
-    private final RabbitTemplate rabbitTemplate;
-    private final MessagePostProcessor processor = new BasicIdMessageProcessor();
-    private final ThreadPoolTaskExecutor executor;
-
-    public RabbitMqHelper(RabbitTemplate rabbitTemplate) {
-        this.rabbitTemplate = rabbitTemplate;
-        executor = new ThreadPoolTaskExecutor();
-        //配置核心线程数
-        executor.setCorePoolSize(10);
-        //配置最大线程数
-        executor.setMaxPoolSize(15);
-        //配置队列大小
-        executor.setQueueCapacity(99999);
-        //配置线程池中的线程的名称前缀
-        executor.setThreadNamePrefix("mq-async-send-handler");
-
-        // 设置拒绝策略：当pool已经达到max size的时候，如何处理新任务
-        // CALLER_RUNS：不在新线程中执行任务，而是有调用者所在的线程来执行
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        //执行初始化
+public class RabbitMqHelper implements DisposableBean {
+    private final RabbitTemplate template;
+    private final ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    public RabbitMqHelper(RabbitTemplate template) {
+        this.template = template;
+        executor.setCorePoolSize(2); executor.setMaxPoolSize(4); executor.setQueueCapacity(200);
+        executor.setThreadNamePrefix("mq-send-");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true); executor.setAwaitTerminationSeconds(30);
         executor.initialize();
     }
-
-    /**
-     * 根据exchange和routingKey发送消息
-     */
-    public <T> void send(String exchange, String routingKey, T t) {
-        log.debug("准备发送消息，exchange：{}， RoutingKey：{}， message：{}", exchange, routingKey, t);
-        // 1.设置消息标示，用于消息确认，消息发送失败直接抛出异常，交给调用者处理
-        String id = UUID.randomUUID().toString(true);
-        CorrelationData correlationData = new CorrelationData(id);
-        // 2.设置发送超时时间为500毫秒
-        rabbitTemplate.setReplyTimeout(500);
-        // 3.发送消息，同时设置消息id
-        rabbitTemplate.convertAndSend(exchange, routingKey, t, processor, correlationData);
+    public <T> void send(String exchange, String routingKey, T body) {
+        publish(exchange, routingKey, body, Duration.ZERO);
     }
-
-    /**
-     * 根据exchange和routingKey发送消息，并且可以设置延迟时间
-     */
-    public <T> void sendDelayMessage(String exchange, String routingKey, T t, Duration delay) {
-        // 1.设置消息标示，用于消息确认，消息发送失败直接抛出异常，交给调用者处理
-        String id = UUID.randomUUID().toString(true);
-        CorrelationData correlationData = new CorrelationData(id);
-        // 2.设置发送超时时间为500毫秒
-        rabbitTemplate.setReplyTimeout(500);
-        // 3.发送消息，同时设置消息id
-        rabbitTemplate.convertAndSend(exchange, routingKey, t, new DelayedMessageProcessor(delay), correlationData);
+    public <T> void sendDelayMessage(String exchange, String routingKey, T body, Duration delay) {
+        publish(exchange, routingKey, body, delay);
     }
-
-
-    /**
-     * 根据exchange和routingKey 异步发送消息，并指定一个延迟时间
-     *
-     * @param exchange   交换机
-     * @param routingKey 路由KEY
-     * @param t          数据
-     * @param <T>        数据类型
-     */
-    public <T> void sendAsync(String exchange, String routingKey, T t, Long time) {
-        String requestId = MDC.get(REQUEST_ID_HEADER);
-        CompletableFuture.runAsync(() -> {
+    private <T> void publish(String exchange, String routingKey, T body, Duration delay) {
+        String id = UUID.randomUUID().toString();
+        CorrelationData data = new CorrelationData(id);
+        template.convertAndSend(exchange, routingKey, body, message -> {
+            new BasicIdMessageProcessor().postProcessMessage(message);
+            message.getMessageProperties().setMessageId(id);
+            message.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+            if (!delay.isZero()) message.getMessageProperties().setHeader("x-delay", delay.toMillis());
+            return message;
+        }, data);
+        awaitConfirm(data);
+    }
+    public void sendStored(String exchange, String routingKey, String payload, String eventId,
+                           String businessKey, String eventType, int schemaVersion, long delayMs) {
+        MessageProperties props = new MessageProperties();
+        props.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+        props.setMessageId(eventId); props.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+        props.setHeader("businessKey", businessKey); props.setHeader("eventType", eventType);
+        props.setHeader("schemaVersion", schemaVersion);
+        props.setHeader(REQUEST_ID_HEADER, eventId);
+        if (delayMs > 0) props.setHeader("x-delay", delayMs);
+        CorrelationData data = new CorrelationData(eventId);
+        template.send(exchange, routingKey, new Message(payload.getBytes(StandardCharsets.UTF_8), props), data);
+        awaitConfirm(data);
+    }
+    private void awaitConfirm(CorrelationData data) {
+        try {
+            var confirm = data.getFuture().get(5, TimeUnit.SECONDS);
+            if (!confirm.isAck() || data.getReturned() != null)
+                throw new IllegalStateException("Message not accepted/routed: " + data.getId());
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt(); throw new IllegalStateException("Publish interrupted", ex);
+        } catch (ExecutionException | TimeoutException ex) {
+            throw new IllegalStateException("Publish outcome uncertain; retry with same event ID", ex);
+        }
+    }
+    public <T> CompletableFuture<Void> sendAsync(String exchange, String routingKey, T body, Long delayMs) {
+        Map<String,String> context = MDC.getCopyOfContextMap();
+        return CompletableFuture.runAsync(() -> {
             try {
-                MDC.put(REQUEST_ID_HEADER, requestId);
-                // 发送延迟消息
-                if (time != null && time > 0) {
-                    sendDelayMessage(exchange, routingKey, t, Duration.ofMillis(time));
-                } else {
-                    send(exchange, routingKey, t);
-                }
-            } catch (Exception e) {
-                log.error("推送消息异常，t:{},", t, e);
-            }
+                if (context != null) MDC.setContextMap(context);
+                publish(exchange, routingKey, body, Duration.ofMillis(delayMs == null ? 0 : delayMs));
+            } finally { MDC.clear(); }
         }, executor);
     }
-
-
-    /**
-     * 根据exchange和routingKey 异步发送消息
-     *
-     * @param exchange   交换机
-     * @param routingKey 路由KEY
-     * @param t          数据
-     * @param <T>        数据类型
-     */
-    public <T> void sendAsync(String exchange, String routingKey, T t) {
-        sendAsync(exchange, routingKey, t, null);
+    public <T> CompletableFuture<Void> sendAsync(String exchange, String routingKey, T body) {
+        return sendAsync(exchange, routingKey, body, null);
     }
-
+    @Override public void destroy() { executor.shutdown(); }
 }

@@ -1,38 +1,24 @@
 package com.tianji.authsdk.resource.interceptors;
-
 import com.tianji.auth.common.constants.JwtConstants;
 import com.tianji.common.utils.UserContext;
-import lombok.extern.slf4j.Slf4j;
+import com.tianji.common.exceptions.UnauthorizedException;
 import org.springframework.web.servlet.HandlerInterceptor;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-@Slf4j
+import jakarta.servlet.http.*;
 public class UserInfoInterceptor implements HandlerInterceptor {
-
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // 1.尝试获取头信息中的用户信息
-        String authorization = request.getHeader(JwtConstants.USER_HEADER);
-        // 2.判断是否为空
-        if (authorization == null) {
-            return true;
-        }
-        // 3.转为用户id并保存
-        try {
-            Long userId = Long.valueOf(authorization);
-            UserContext.setUser(userId);
-            return true;
-        } catch (NumberFormatException e) {
-            log.error("用户身份信息格式不正确，{}, 原因：{}", authorization, e.getMessage());
-            return true;
-        }
-    }
-
-    @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        // 清理用户信息
+    @Override public boolean preHandle(HttpServletRequest request,HttpServletResponse response,Object handler) {
         UserContext.removeUser();
+        if(request.getRequestURI().startsWith("/internal/") || request.getRequestURI().equals("/actuator/prometheus"))com.tianji.common.utils.InternalAuth.requireService();
+        String id=request.getHeader(JwtConstants.USER_HEADER);
+        if(id==null) return true;
+        com.tianji.common.utils.InternalAuth.requireService();
+        try {
+            long user=Long.parseLong(id);
+            if(user<=0) throw new NumberFormatException();
+            UserContext.setUser(user);
+            String role=request.getHeader("user-role");
+            if(role!=null) UserContext.setRole(Long.valueOf(role));
+            return true;
+        } catch(NumberFormatException e) { UserContext.removeUser();throw new UnauthorizedException("身份信息格式错误"); }
     }
+    @Override public void afterCompletion(HttpServletRequest r,HttpServletResponse s,Object h,Exception e) {UserContext.removeUser();}
 }

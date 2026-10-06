@@ -2,6 +2,18 @@ package com.tianji.common.utils;
 
 public class UserContext {
     private static final ThreadLocal<Long> TL = new ThreadLocal<>();
+    private static final ThreadLocal<Long> ROLE = new ThreadLocal<>();
+    public static void setRole(Long role) { ROLE.set(role); }
+    public static Long getRole() { return ROLE.get(); }
+    public static long requireUser() {
+        Long user=TL.get();
+        if(user==null) throw new com.tianji.common.exceptions.UnauthorizedException("请先登录");
+        return user;
+    }
+    public static void requireAdmin() {
+        requireUser();
+        if(!Long.valueOf(1).equals(ROLE.get())) throw new com.tianji.common.exceptions.ForbiddenException("需要管理员权限");
+    }
 
     /**
      * 保存用户信息
@@ -24,5 +36,6 @@ public class UserContext {
      */
     public static void removeUser(){
         TL.remove();
+        ROLE.remove();
     }
 }

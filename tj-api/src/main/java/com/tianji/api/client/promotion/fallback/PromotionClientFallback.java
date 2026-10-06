@@ -17,14 +17,17 @@ public class PromotionClientFallback implements FallbackFactory<PromotionClient>
     public PromotionClient create(Throwable cause) {
         log.error("查询促销服务出现异常, ", cause);
         return new PromotionClient() {
+            @Override public java.util.Map<String,Object> reserveCoupons(Long order,com.tianji.api.dto.promotion.CouponReservationDTO request) {
+                throw new com.tianji.common.exceptions.CommonException("优惠券预占暂不可用",cause);
+            }
             @Override
             public List<CouponDiscountDTO> findDiscountSolution(List<OrderCourseDTO> orderCourses) {
-                return Collections.emptyList();
+                throw new com.tianji.common.exceptions.CommonException("促销服务暂不可用",cause);
             }
 
             @Override
             public CouponDiscountDTO queryDiscountDetailByOrder(OrderCouponDTO orderCouponDTO) {
-                return null;
+                throw new com.tianji.common.exceptions.CommonException("促销服务暂不可用",cause);
             }
 
             @Override
@@ -39,7 +42,7 @@ public class PromotionClientFallback implements FallbackFactory<PromotionClient>
 
             @Override
             public List<String> queryDiscountRules(List<Long> userCouponIds) {
-                return Collections.emptyList();
+                throw new com.tianji.common.exceptions.CommonException("促销服务暂不可用",cause);
             }
         };
     }

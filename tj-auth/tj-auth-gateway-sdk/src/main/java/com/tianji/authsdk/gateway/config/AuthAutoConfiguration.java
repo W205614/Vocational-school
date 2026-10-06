@@ -9,7 +9,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 @Configuration
+@org.springframework.scheduling.annotation.EnableScheduling
 public class AuthAutoConfiguration {
+    @Bean public org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler jwtTaskScheduler(){
+        var scheduler=new org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler();scheduler.setPoolSize(1);scheduler.setThreadNamePrefix("jwt-key-");
+        scheduler.setWaitForTasksToCompleteOnShutdown(true);scheduler.setAwaitTerminationSeconds(5);return scheduler;
+    }
 
     @Bean
     @ConditionalOnClass(DiscoveryClient.class)

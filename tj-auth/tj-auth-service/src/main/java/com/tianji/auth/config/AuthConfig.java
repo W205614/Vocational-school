@@ -1,41 +1,18 @@
 package com.tianji.auth.config;
-
-import org.apache.tomcat.util.http.LegacyCookieProcessor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.embedded.tomcat.TomcatContextCustomizer;
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.rsa.crypto.KeyStoreKeyFactory;
-
-import java.security.KeyPair;
-
-@Configuration
-@EnableConfigurationProperties(KeyProperties.class)
+import org.springframework.context.annotation.*;
+import java.security.*;
+@Configuration(proxyBeanMethods=false)
 public class AuthConfig {
-
-    @Bean
-    @ConfigurationProperties(prefix = "encrypt")
-    public KeyProperties keyProperties(){
-        return new KeyProperties();
-    }
-
-    @Bean
-    public KeyPair keyPair(KeyProperties keyProperties){
-        // 获取秘钥工厂
-        KeyStoreKeyFactory keyStoreKeyFactory =
-                new KeyStoreKeyFactory(
-                        keyProperties.getKeyStore().getLocation(),
-                        keyProperties.getKeyStore().getPassword().toCharArray());
-        //读取钥匙对
-        return keyStoreKeyFactory.getKeyPair(
-                keyProperties.getKeyStore().getAlias(),
-                keyProperties.getKeyStore().getSecret().toCharArray());
-    }
-
-    @Bean
-    public TomcatContextCustomizer cookieTomcatContextCustomizer(){
-        return context -> context.setCookieProcessor(new LegacyCookieProcessor());
+    @Bean @ConfigurationProperties(prefix="encrypt")
+    public KeyProperties keyProperties() {return new KeyProperties();}
+    @Bean public KeyPair keyPair(KeyProperties properties) throws Exception {
+        var config=properties.getKeyStore();
+        KeyStore store=KeyStore.getInstance("JKS");
+        try(var input=config.getLocation().getInputStream()) {store.load(input,config.getPassword().toCharArray());}
+        PrivateKey key=(PrivateKey)store.getKey(config.getAlias(),config.getSecret().toCharArray());
+        if(key==null || store.getCertificate(config.getAlias())==null) throw new IllegalStateException("JWT signing key is missing");
+        return new KeyPair(store.getCertificate(config.getAlias()).getPublicKey(),key);
     }
 }

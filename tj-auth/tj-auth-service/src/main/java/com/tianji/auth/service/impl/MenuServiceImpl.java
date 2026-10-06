@@ -2,7 +2,7 @@ package com.tianji.auth.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.auth.constants.AuthConstants;
 import com.tianji.auth.domain.po.AccountRole;
 import com.tianji.auth.domain.po.Menu;
@@ -117,7 +117,7 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements IM
             throw new CommonException(ROLE_NOT_FOUND);
         }
         // 2.判断菜单是否存在
-        Integer menuCount = lambdaQuery().in(Menu::getId, menuIds).count();
+        Integer menuCount = Math.toIntExact(lambdaQuery().in(Menu::getId, menuIds).count());
         if (menuCount != menuIds.size()) {
             throw new CommonException(MENU_NOT_FOUND);
         }

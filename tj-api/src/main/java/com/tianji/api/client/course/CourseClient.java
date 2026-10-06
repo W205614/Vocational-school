@@ -16,7 +16,7 @@ public interface CourseClient {
      * @param teacherIds 老师id列表
      * @return 老师id和老师对应的出题数和教课数
      */
-    @GetMapping("/course/infoByTeacherIds")
+    @GetMapping("/internal/v1/course/infoByTeacherIds")
     List<SubNumAndCourseNumDTO> infoByTeacherIds(@RequestParam("teacherIds") Iterable<Long> teacherIds);
 
     /**
@@ -25,7 +25,7 @@ public interface CourseClient {
      * @param sectionId 小节id
      * @return 小节对应的mediaId和课程id
      */
-    @GetMapping("/course/section/{id}")
+    @GetMapping("/internal/v1/course/section/{id}")
     SectionInfoDTO sectionInfo(@PathVariable("id") Long sectionId);
 
     /**
@@ -34,7 +34,7 @@ public interface CourseClient {
      * @param mediaIds 媒资id列表
      * @return 媒资id和媒资被引用的次数的列表
      */
-    @GetMapping("/course/media/useInfo")
+    @GetMapping("/internal/v1/course/media/useInfo")
     List<MediaQuoteDTO> mediaUserInfo(@RequestParam("mediaIds") Iterable<Long> mediaIds);
 
     /**
@@ -43,7 +43,7 @@ public interface CourseClient {
      * @param id 课程id
      * @return 索引库需要的数据
      */
-    @GetMapping("/course/{id}/searchInfo")
+    @GetMapping("/internal/v1/course/{id}/searchInfo")
     CourseSearchDTO getSearchInfo(@PathVariable("id") Long id);
 
     /**
@@ -51,7 +51,7 @@ public interface CourseClient {
      * @param ids id集合
      * @return 课程简单信息的列表
      */
-    @GetMapping("/courses/simpleInfo/list")
+    @GetMapping("/internal/v1/courses/simpleInfo/list")
     List<CourseSimpleInfoDTO> getSimpleInfoList(@RequestParam("ids") Iterable<Long> ids);
 
     /**
@@ -59,7 +59,7 @@ public interface CourseClient {
      * @param id 课程id
      * @return 课程信息、目录信息、教师信息
      */
-    @GetMapping("/course/{id}")
+    @GetMapping("/internal/v1/course/{id}")
     CourseFullInfoDTO getCourseInfoById(
             @PathVariable("id") Long id,
             @RequestParam(value = "withCatalogue", required = false) boolean withCatalogue,

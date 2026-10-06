@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 @ConditionalOnClass(XxlJobSpringExecutor.class)
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.xxljob.enabled",havingValue="true",matchIfMissing=true)
 @EnableConfigurationProperties(XxlJobProperties.class)
 public class XxlJobConfig {
 

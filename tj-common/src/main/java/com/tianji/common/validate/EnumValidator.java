@@ -5,8 +5,8 @@ import com.tianji.common.utils.ArrayUtils;
 import com.tianji.common.validate.annotations.EnumValid;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * 枚举校验器校验逻辑

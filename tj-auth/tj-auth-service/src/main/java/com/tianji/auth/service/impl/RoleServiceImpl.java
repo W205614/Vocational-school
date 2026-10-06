@@ -1,6 +1,6 @@
 package com.tianji.auth.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.auth.domain.po.Role;
 import com.tianji.auth.mapper.RoleMapper;
 import com.tianji.auth.service.IRoleMenuService;
@@ -31,19 +31,20 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
 
     @Override
     public boolean exists(Long roleId) {
-        Integer count = lambdaQuery().eq(Role::getId, roleId).count();
+        Integer count = Math.toIntExact(lambdaQuery().eq(Role::getId, roleId).count());
         return count > 0;
     }
 
     @Override
     public boolean exists(List<Long> roleIds) {
-        Integer count = lambdaQuery().in(Role::getId, roleIds).count();
+        Integer count = Math.toIntExact(lambdaQuery().in(Role::getId, roleIds).count());
         return count != roleIds.size();
     }
 
     @Override
     @Transactional
     public void deleteRole(Long id) {
+        privilegeCache.lockMutation();
         // 1.删除角色
         removeById(id);
         // 2.删除角色与权限的关联信息

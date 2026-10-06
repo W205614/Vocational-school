@@ -4,8 +4,8 @@ import com.tianji.api.client.promotion.fallback.PromotionClientFallback;
 import com.tianji.api.dto.promotion.CouponDiscountDTO;
 import com.tianji.api.dto.promotion.OrderCouponDTO;
 import com.tianji.api.dto.promotion.OrderCourseDTO;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,20 +17,22 @@ public interface PromotionClient {
     @PostMapping("/user-coupons/available")
     List<CouponDiscountDTO> findDiscountSolution(@RequestBody List<OrderCourseDTO> orderCourses);
 
-    @ApiOperation("根据券方案计算订单优惠明细")
+    @Operation(summary = "根据券方案计算订单优惠明细")
     @PostMapping("/user-coupons/discount")
     CouponDiscountDTO queryDiscountDetailByOrder(@RequestBody OrderCouponDTO orderCouponDTO);
 
-    @ApiOperation("核销指定优惠券")
+    @Operation(summary = "核销指定优惠券")
     @PutMapping("/user-coupons/use")
-    void writeOffCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
+    void writeOffCoupon(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
 
-    @ApiOperation("退还指定优惠券")
+    @Operation(summary = "退还指定优惠券")
     @PutMapping("/user-coupons/refund")
-    void refundCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
+    void refundCoupon(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
 
-    @ApiOperation("分页查询我的优惠券接口")
+    @Operation(summary = "分页查询我的优惠券接口")
     @GetMapping("/user-coupons/rules")
-    List<String> queryDiscountRules(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
+    List<String> queryDiscountRules(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
 
+    @PutMapping("/internal/v2/coupon-reservations/{order}")
+    java.util.Map<String,Object> reserveCoupons(@PathVariable("order") Long order,@RequestBody com.tianji.api.dto.promotion.CouponReservationDTO request);
 }

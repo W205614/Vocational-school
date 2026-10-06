@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <springProperty scope="context" name="application" source="spring.application.name" defaultValue="tianji"/>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <immediateFlush>true</immediateFlush>
+    <encoder><pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [${application}] [%thread] [requestId=%X{requestId}] %logger{40} - %msg%n</pattern></encoder>
+  </appender>
+  <logger name="com.alibaba.nacos" level="WARN"/>
+  <root level="INFO"><appender-ref ref="CONSOLE"/></root>
+</configuration>

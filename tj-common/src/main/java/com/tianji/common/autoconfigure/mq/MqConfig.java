@@ -1,6 +1,6 @@
 package com.tianji.common.autoconfigure.mq;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.tianji.common.utils.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.amqp.core.*;
@@ -11,10 +11,10 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.retry.MessageRecoverer;
 import org.springframework.amqp.rabbit.retry.RepublishMessageRecoverer;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.amqp.SimpleRabbitListenerContainerFactoryConfigurer;
+import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -41,24 +41,41 @@ public class MqConfig implements EnvironmentAware{
             matchIfMissing = true)
     SimpleRabbitListenerContainerFactory simpleRabbitListenerContainerFactory(
             SimpleRabbitListenerContainerFactoryConfigurer configurer, ConnectionFactory connectionFactory,
-            ObjectProvider<ContainerCustomizer<SimpleMessageListenerContainer>> simpleContainerCustomizer) {
+            ObjectProvider<ContainerCustomizer<SimpleMessageListenerContainer>> simpleContainerCustomizer,
+            com.tianji.common.autoconfigure.reliability.AcceptanceFaults faults) {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         configurer.configure(factory, connectionFactory);
         simpleContainerCustomizer.ifUnique(factory::setContainerCustomizer);
-        factory.setAfterReceivePostProcessors(message -> {
-            Object header = message.getMessageProperties().getHeader(REQUEST_ID_HEADER);
-            if(header != null) {
-                MDC.put(REQUEST_ID_HEADER, header.toString());
-            }
-            return message;
-        });
+        org.aopalliance.intercept.MethodInterceptor mdcAdvice=invocation -> {
+            MDC.remove(REQUEST_ID_HEADER);
+            try {
+                for(Object argument:invocation.getArguments()) if(argument instanceof Message message) {
+                    Object header=message.getMessageProperties().getHeader(REQUEST_ID_HEADER);
+                    if(header!=null) MDC.put(REQUEST_ID_HEADER,header.toString());
+                }
+                Object result=invocation.proceed();
+                for(Object argument:invocation.getArguments()) if(argument instanceof Message message) {
+                    Object key=message.getMessageProperties().getHeader("businessKey");
+                    if(key!=null) faults.afterConsume(key.toString());
+                }
+                return result;
+            } finally { MDC.remove(REQUEST_ID_HEADER); }
+        };
+        org.aopalliance.aop.Advice[] configured=factory.getAdviceChain();
+        var chain=new java.util.ArrayList<org.aopalliance.aop.Advice>();chain.add(mdcAdvice);
+        if(configured!=null) java.util.Collections.addAll(chain,configured);
+        factory.setAdviceChain(chain.toArray(org.aopalliance.aop.Advice[]::new));
         return factory;
     }
 
+    @Bean public com.tianji.common.autoconfigure.reliability.AcceptanceFaults acceptanceFaults(Environment environment) {
+        return new com.tianji.common.autoconfigure.reliability.AcceptanceFaults(environment);
+    }
+
     @Bean
-    public MessageConverter messageConverter(ObjectMapper mapper){
+    public MessageConverter messageConverter(JsonMapper mapper){
         // 1.定义消息转换器
-        Jackson2JsonMessageConverter jackson2JsonMessageConverter = new Jackson2JsonMessageConverter(mapper);
+        JacksonJsonMessageConverter jackson2JsonMessageConverter = new EnvelopeJsonMessageConverter(mapper);
         // 2.配置自动创建消息id，用于识别不同消息
         jackson2JsonMessageConverter.setCreateMessageIds(true);
         return jackson2JsonMessageConverter;
@@ -71,10 +88,17 @@ public class MqConfig implements EnvironmentAware{
     @Bean
     @ConditionalOnClass(MessageRecoverer.class)
     @ConditionalOnMissingBean
-    public MessageRecoverer republishMessageRecoverer(RabbitTemplate rabbitTemplate){
-        // 消息处理失败后，发送到错误交换机：error.direct，RoutingKey默认是error.微服务名称
-        return new RepublishMessageRecoverer(
-                rabbitTemplate, ERROR_EXCHANGE, defaultErrorRoutingKey);
+    public MessageRecoverer republishMessageRecoverer(RabbitTemplate rabbitTemplate,
+            ObjectProvider<com.tianji.common.autoconfigure.reliability.ConsumerFailureStore> stores){
+        return (message,error) -> {
+            try {
+                var store=stores.getIfAvailable();
+                if(store==null) throw new IllegalStateException("Durable consumer failure store is unavailable");
+                store.save(message,error);
+            } catch(Exception persistenceFailure) {
+                throw new org.springframework.amqp.ImmediateRequeueAmqpException("Failure persistence failed; do not acknowledge original message",persistenceFailure);
+            } finally {MDC.remove(REQUEST_ID_HEADER);}
+        };
     }
 
     /**
@@ -85,6 +109,11 @@ public class MqConfig implements EnvironmentAware{
     @ConditionalOnMissingBean
     @ConditionalOnClass(RabbitTemplate.class)
     public RabbitMqHelper rabbitMqHelper(RabbitTemplate rabbitTemplate){
+        if (rabbitTemplate.getConnectionFactory() instanceof org.springframework.amqp.rabbit.connection.CachingConnectionFactory factory) {
+            factory.setPublisherConfirmType(org.springframework.amqp.rabbit.connection.CachingConnectionFactory.ConfirmType.CORRELATED);
+            factory.setPublisherReturns(true);
+        }
+        rabbitTemplate.setMandatory(true);
         return new RabbitMqHelper(rabbitTemplate);
     }
 

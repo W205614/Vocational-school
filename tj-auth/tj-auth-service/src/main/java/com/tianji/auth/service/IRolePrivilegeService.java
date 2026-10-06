@@ -1,6 +1,6 @@
 package com.tianji.auth.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.auth.domain.po.RolePrivilege;
 
 import java.util.List;

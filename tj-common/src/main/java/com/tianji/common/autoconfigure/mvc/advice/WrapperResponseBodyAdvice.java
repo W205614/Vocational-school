@@ -17,7 +17,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 public class WrapperResponseBodyAdvice implements ResponseBodyAdvice<Object> {
     @Override
     public boolean supports(MethodParameter returnType, @NonNull Class<? extends HttpMessageConverter<?>> converterType) {
-        return returnType.getParameterType() != R.class && WebUtils.isGatewayRequest();
+        if(org.springframework.http.converter.ResourceHttpMessageConverter.class.isAssignableFrom(converterType) || org.springframework.http.converter.ResourceRegionHttpMessageConverter.class.isAssignableFrom(converterType))return false;
+        return returnType.getParameterType() != R.class && (WebUtils.isGatewayRequest() || WebUtils.getRequest().getRequestURI().startsWith("/api/v2/"));
     }
 
     @Override
@@ -25,7 +26,8 @@ public class WrapperResponseBodyAdvice implements ResponseBodyAdvice<Object> {
             Object body, @NonNull MethodParameter returnType, @NonNull MediaType selectedContentType,
             @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType,
             @NonNull ServerHttpRequest request, @NonNull ServerHttpResponse response) {
-        if (request.getURI().getPath().equals("/v2/api-docs")){
+        String path = request.getURI().getPath();
+        if (path.startsWith("/v3/api-docs") || path.startsWith("/actuator")){
             return body;
         }
         if (body == null) {

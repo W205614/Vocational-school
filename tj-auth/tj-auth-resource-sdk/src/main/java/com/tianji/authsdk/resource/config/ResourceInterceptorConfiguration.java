@@ -21,6 +21,8 @@ public class ResourceInterceptorConfiguration implements WebMvcConfigurer {
         this.authProperties = resourceAuthProperties;
     }
 
+    @org.springframework.context.annotation.Bean public com.tianji.authsdk.resource.interceptors.MetricsTokenFilter metricsTokenFilter(){return new com.tianji.authsdk.resource.interceptors.MetricsTokenFilter();}
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // 1.添加用户信息拦截器
@@ -44,6 +46,7 @@ public class ResourceInterceptorConfiguration implements WebMvcConfigurer {
         registration.excludePathPatterns(
                 "/v2/**",
                 "/v3/**",
+                "/actuator/health/**",
                 "/swagger-resources/**",
                 "/webjars/**",
                 "/doc.html"

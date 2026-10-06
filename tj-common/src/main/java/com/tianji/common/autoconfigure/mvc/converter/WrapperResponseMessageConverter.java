@@ -7,7 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.lang.NonNull;
 
 import java.io.IOException;
@@ -15,10 +15,10 @@ import java.util.List;
 
 public class WrapperResponseMessageConverter implements HttpMessageConverter<Object> {
 
-    private final MappingJackson2HttpMessageConverter delegate;
+    private final JacksonJsonHttpMessageConverter delegate;
 
     public WrapperResponseMessageConverter(
-            MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter) {
+            JacksonJsonHttpMessageConverter mappingJackson2HttpMessageConverter) {
         this.delegate = mappingJackson2HttpMessageConverter;
     }
 
@@ -29,7 +29,9 @@ public class WrapperResponseMessageConverter implements HttpMessageConverter<Obj
 
     @Override
     public boolean canWrite(@NonNull Class<?> clazz, MediaType mediaType) {
-        return WebUtils.isGatewayRequest() && delegate.canWrite(clazz, mediaType);
+        if(org.springframework.core.io.Resource.class.isAssignableFrom(clazz))return false;
+        var request=WebUtils.getRequest();
+        return request!=null && (WebUtils.isGatewayRequest() || request.getRequestURI().startsWith("/api/v2/")) && delegate.canWrite(clazz, mediaType);
     }
 
     @Override

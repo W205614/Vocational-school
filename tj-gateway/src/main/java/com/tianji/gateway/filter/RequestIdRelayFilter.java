@@ -20,15 +20,15 @@ public class RequestIdRelayFilter implements GlobalFilter, Ordered {
         // 1.生成 RequestId
         String requestId = UUID.randomUUID().toString(true);
         // 2.保存到日志变量池
-        MDC.put(REQUEST_ID_HEADER, requestId);
+        exchange.getResponse().getHeaders().set(REQUEST_ID_HEADER,requestId);
         // 3.更新请求头，添加标示
         String path = exchange.getRequest().getPath().toString();
         exchange = exchange.mutate().request(b -> {
                     // 3.1.添加请求id标示
-                    b.header(REQUEST_ID_HEADER, requestId);
+                    b.headers(headers->headers.set(REQUEST_ID_HEADER, requestId));
                     // 3.2.添加网关标示
                     if (!path.startsWith("/ps/notify")) {
-                        b.header(REQUEST_FROM_HEADER, GATEWAY_ORIGIN_NAME);
+                        b.headers(headers->headers.set(REQUEST_FROM_HEADER, GATEWAY_ORIGIN_NAME));
                     }
                 }
         ).build();

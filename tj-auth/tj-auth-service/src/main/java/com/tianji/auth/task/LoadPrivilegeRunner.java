@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 
 
@@ -17,20 +17,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LoadPrivilegeRunner{
 
-    private final IPrivilegeService privilegeService;
-    private final PrivilegeCache privilegeCache;
+    private final PermissionPublication publication;
 
     @PostConstruct
     public void loadPrivilegeCache(){
         try {
             log.trace("开始更新权限缓存数据");
-            // 1.查询数据
-            List<PrivilegeRoleDTO> privilegeRoleDTOS = privilegeService.listPrivilegeRoles();
-            if (CollectionUtil.isEmpty(privilegeRoleDTOS)) {
-                return;
-            }
-            // 2.缓存
-            privilegeCache.initPrivilegesCache(privilegeRoleDTOS);
+            publication.rebuild();
             log.trace("更新权限缓存数据成功！");
         }catch (Exception e){
             log.error("更新权限缓存数据失败！原因：{}", e.getMessage());

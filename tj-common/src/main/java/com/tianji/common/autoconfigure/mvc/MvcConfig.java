@@ -9,10 +9,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import javax.servlet.Filter;
+import jakarta.servlet.Filter;
 
 @ConditionalOnClass({CommonExceptionAdvice.class, Filter.class})
 @Configuration
@@ -34,9 +34,9 @@ public class MvcConfig implements WebMvcConfigurer {
     @Bean
     @ConditionalOnMissingClass("org.springframework.cloud.gateway.filter.GlobalFilter")
     public WrapperResponseMessageConverter wrapperResponseMessageConverter(
-            MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter
+            tools.jackson.databind.json.JsonMapper mapper
     ){
-        return new WrapperResponseMessageConverter(mappingJackson2HttpMessageConverter);
+        return new WrapperResponseMessageConverter(new JacksonJsonHttpMessageConverter(mapper));
     }
 
     @Bean

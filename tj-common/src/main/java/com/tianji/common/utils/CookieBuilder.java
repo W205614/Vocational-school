@@ -4,9 +4,9 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -42,16 +42,13 @@ public class CookieBuilder {
         Cookie cookie = new Cookie(name, URLEncoder.encode(value, charset));
         if(StringUtils.isNotBlank(domain)) {
             cookie.setDomain(domain);
-        }else if (request != null) {
-            String serverName = request.getServerName();
-            serverName = StringUtils.subAfter(serverName, ".", false);
-            cookie.setDomain("." + serverName);
         }
+        cookie.setSecure(request!=null && request.isSecure());
+        cookie.setAttribute("SameSite","Lax");
         cookie.setHttpOnly(httpOnly);
         cookie.setMaxAge(maxAge);
         cookie.setPath(path);
-        log.debug("生成cookie，编码方式:{}，【{}={}，domain:{};maxAge={};path={};httpOnly={}】",
-                charset.name(), name, value, domain, maxAge, path, httpOnly);
+        log.debug("生成cookie name={}, maxAge={}, path={}, httpOnly={}",name,maxAge,path,httpOnly);
         response.addCookie(cookie);
     }
 

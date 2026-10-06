@@ -78,6 +78,8 @@ public class AccountServiceImpl implements IAccountService{
                 .maxAge(0)
                 .httpOnly(true)
                 .build();
+        WebUtils.cookieBuilder().name(JwtConstants.ADMIN_REFRESH_HEADER)
+                .value("").maxAge(0).httpOnly(true).build();
     }
 
     @Override

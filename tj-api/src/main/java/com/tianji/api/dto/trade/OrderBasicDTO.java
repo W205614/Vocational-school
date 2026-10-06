@@ -8,6 +8,8 @@ import java.util.List;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class OrderBasicDTO {
     /**
      * 订单id
@@ -25,4 +27,5 @@ public class OrderBasicDTO {
      * 订单完成时间
      */
     private LocalDateTime finishTime;
+    private java.util.Map<Long,Long> detailIds;
 }

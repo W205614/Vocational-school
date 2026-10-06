@@ -40,7 +40,7 @@ public class CategoryCache {
         // 2.根据id查询分类名称并组装
         StringBuilder sb = new StringBuilder();
         for (Long id : ids) {
-            sb.append(map.get(id).getName()).append("/");
+            sb.append(map.containsKey(id)?map.get(id).getName():"未知分类 "+id).append("/");
         }
         // 3.返回结果
         return sb.deleteCharAt(sb.length() - 1).toString();
@@ -55,7 +55,7 @@ public class CategoryCache {
         // 2.根据id查询分类名称并组装
         List<String> list = new ArrayList<>(ids.size());
         for (Long id : ids) {
-            list.add(map.get(id).getName());
+            list.add(map.containsKey(id)?map.get(id).getName():"未知分类 "+id);
         }
         // 3.返回结果
         return list;
@@ -76,9 +76,9 @@ public class CategoryCache {
         List<String> list = new ArrayList<>(lv3Ids.size());
         for (Long lv3Id : lv3Ids) {
             CategoryBasicDTO lv3 = map.get(lv3Id);
-            CategoryBasicDTO lv2 = map.get(lv3.getParentId());
-            CategoryBasicDTO lv1 = map.get(lv2.getParentId());
-            list.add(lv1.getName() + "/" + lv2.getName() + "/" + lv3.getName());
+            CategoryBasicDTO lv2 = lv3==null?null:map.get(lv3.getParentId());
+            CategoryBasicDTO lv1 = lv2==null?null:map.get(lv2.getParentId());
+            list.add(lv1==null || lv2==null || lv3==null?"未知分类 "+lv3Id:lv1.getName() + "/" + lv2.getName() + "/" + lv3.getName());
         }
         return list;
     }
@@ -86,8 +86,8 @@ public class CategoryCache {
     public String getNameByLv3Id(Long lv3Id) {
         Map<Long, CategoryBasicDTO> map = getCategoryMap();
         CategoryBasicDTO lv3 = map.get(lv3Id);
-        CategoryBasicDTO lv2 = map.get(lv3.getParentId());
-        CategoryBasicDTO lv1 = map.get(lv2.getParentId());
-        return lv1.getName() + "/" + lv2.getName() + "/" + lv3.getName();
+        CategoryBasicDTO lv2 = lv3==null?null:map.get(lv3.getParentId());
+        CategoryBasicDTO lv1 = lv2==null?null:map.get(lv2.getParentId());
+        return lv1==null || lv2==null || lv3==null?"未知分类 "+lv3Id:lv1.getName() + "/" + lv2.getName() + "/" + lv3.getName();
     }
 }

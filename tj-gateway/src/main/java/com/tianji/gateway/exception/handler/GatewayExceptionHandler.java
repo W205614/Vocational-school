@@ -6,7 +6,7 @@ import com.tianji.common.exceptions.CommonException;
 import com.tianji.common.exceptions.UnauthorizedException;
 import com.tianji.common.utils.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
+import org.springframework.boot.webflux.error.ErrorWebExceptionHandler;
 import org.springframework.cloud.gateway.support.NotFoundException;
 import org.springframework.core.Ordered;
 import org.springframework.http.MediaType;
@@ -44,17 +44,24 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler, Ordere
         if (ex instanceof UnauthorizedException) {
             // 登录异常，直接返回状态码
             UnauthorizedException e = (UnauthorizedException) ex;
-            return Mono.error(new ResponseStatusException(e.getStatus(), e.getMessage(), e));
+            response.setStatusCode(org.springframework.http.HttpStatusCode.valueOf(e.getStatus()));code=e.getCode();message=e.getMessage();
         } else if (ex instanceof CommonException) {
             CommonException e = (CommonException) ex;
             code = e.getCode();
             message = e.getMessage();
+            if(exchange.getRequest().getPath().value().startsWith("/api/v2/")) response.setStatusCode(org.springframework.http.HttpStatusCode.valueOf(e.getStatus()));
+        } else if (ex instanceof java.util.concurrent.RejectedExecutionException) {
+            message="认证服务繁忙，请稍后重试";
+            response.setStatusCode(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE);
         } else if (ex instanceof NotFoundException) {
             message = "服务不存在";
+            response.setStatusCode(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE);
         } else if (ex instanceof ResponseStatusException) {
             message = ex.getMessage();
+            response.setStatusCode(((ResponseStatusException)ex).getStatusCode());
         } else {
             message = SERVER_INTER_ERROR;
+            response.setStatusCode(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR);
             // 4.记录日志
             writeLog(exchange, ex);
         }

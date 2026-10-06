@@ -1,7 +1,7 @@
 package com.tianji.auth.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.auth.common.domain.PrivilegeRoleDTO;
 import com.tianji.auth.domain.po.Privilege;
 import com.tianji.common.domain.query.PageQuery;
@@ -22,6 +22,7 @@ public interface IPrivilegeService extends IService<Privilege> {
     Page<Privilege> listPrivilegesByPage(PageQuery pageQuery);
 
     void savePrivilege(Privilege privilege);
+    void updatePrivilege(Privilege privilege);
 
     void removePrivilegeById(Long id);
 

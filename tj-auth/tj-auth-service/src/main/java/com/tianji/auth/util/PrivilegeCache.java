@@ -1,96 +1,47 @@
 package com.tianji.auth.util;
-
-import cn.hutool.json.JSONUtil;
-import com.tianji.auth.common.domain.PrivilegeRoleDTO;
-import com.tianji.auth.domain.po.Privilege;
-import com.tianji.common.utils.CollUtils;
-import com.tianji.common.utils.JsonUtils;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.BoundHashOperations;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static com.tianji.auth.common.constants.JwtConstants.AUTH_PRIVILEGE_KEY;
-import static com.tianji.auth.common.constants.JwtConstants.AUTH_PRIVILEGE_VERSION_KEY;
-
-@Slf4j
+import com.tianji.auth.common.domain.PrivilegeRoleDTO;import com.tianji.auth.domain.po.Privilege;import com.tianji.common.utils.JsonUtils;
+import org.springframework.stereotype.Component;import org.springframework.data.redis.core.StringRedisTemplate;import org.springframework.data.redis.core.script.DefaultRedisScript;import java.util.*;
+import static com.tianji.auth.common.constants.JwtConstants.*;
+/** Hash mutation and publication version change atomically in one Redis slot. */
 @Component
 public class PrivilegeCache {
-    private final BoundHashOperations<String, String, String> hashOps;
-    private final StringRedisTemplate stringRedisTemplate;
-
-    public PrivilegeCache(StringRedisTemplate stringRedisTemplate) {
-        this.stringRedisTemplate = stringRedisTemplate;
-        this.hashOps = stringRedisTemplate.boundHashOps(AUTH_PRIVILEGE_KEY);
-    }
-
-    public void initPrivilegesCache(List<PrivilegeRoleDTO> list) {
-        // 1.组装权限对应角色
-        Map<String, String> map = new HashMap<>();
-        for (PrivilegeRoleDTO prDTO : list) {
-            map.put(prDTO.getId().toString(), JSONUtil.toJsonStr(prDTO));
-        }
-        // 2.写入 redis
-        hashOps.putAll(map);
-        // 3.版本递增
-        incrementVersion();
-    }
-
-    public void cacheSinglePrivilege(Privilege p, Set<Long> roleIds) {
-        try {
-            PrivilegeRoleDTO privilegeRoleDTO = new PrivilegeRoleDTO();
-            privilegeRoleDTO.setId(p.getId());
-            privilegeRoleDTO.setAntPath(p.getMethod() + ":" + p.getUri());
-            privilegeRoleDTO.setRoles(roleIds);
-            privilegeRoleDTO.setInternal(p.getInternal());
-            hashOps.put(p.getId().toString(), JSONUtil.toJsonStr(privilegeRoleDTO));
-            incrementVersion();
-        } catch (Exception e) {
-            log.error("缓存权限信息失败。 ->", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void removePrivilegeCacheById(Long id) {
-        hashOps.delete(id);
-        incrementVersion();
-    }
-
-    public void removePrivilegeCacheByIds(List<Long> ids) {
-        hashOps.delete(ids.toArray());
-        incrementVersion();
-    }
-
-
-    private void incrementVersion() {
-        stringRedisTemplate.opsForValue().increment(AUTH_PRIVILEGE_VERSION_KEY, 1);
-    }
-
-    public void removeCacheByRoleId(Long id) {
-        // 查询出所有权限信息
-        Map<String, String> cacheMap = hashOps.entries();
-        if(CollUtils.isEmpty(cacheMap)){
-            return;
-        }
-        // 记录修改的数据
-        Map<String, String> modified = new HashMap<>();
-        for (Map.Entry<String, String> en : cacheMap.entrySet()) {
-            // 获取权限数据
-            String value = en.getValue();
-            PrivilegeRoleDTO prDTO = JsonUtils.toBean(value, PrivilegeRoleDTO.class);
-            // 尝试移除角色id
-            boolean remove = prDTO.getRoles().remove(id);
-            if(remove){
-                modified.put(en.getKey(), JsonUtils.toJsonStr(prDTO));
-            }
-        }
-        // 写回缓存
-        hashOps.putAll(modified);
-        incrementVersion();
-    }
+ private final StringRedisTemplate redis;
+ private final com.tianji.common.autoconfigure.reliability.OutboxStore outbox;
+ private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+ private static final DefaultRedisScript<Long> WRITE=new DefaultRedisScript<>("""
+  local mode=ARGV[1]
+  if mode=='FULL' then redis.call('DEL',KEYS[1]) end
+  if mode=='FULL' or mode=='PUT' then
+    local changes=cjson.decode(ARGV[2])
+    for field,value in pairs(changes) do redis.call('HSET',KEYS[1],field,value) end
+  elseif mode=='DELETE' then
+    local ids=cjson.decode(ARGV[2])
+    for _,id in ipairs(ids) do redis.call('HDEL',KEYS[1],id) end
+  elseif mode=='ROLE' then
+    local entries=redis.call('HGETALL',KEYS[1])
+    for i=1,#entries,2 do
+      local row=cjson.decode(entries[i+1])
+      for n=#row.roles,1,-1 do if tostring(row.roles[n])==ARGV[2] then table.remove(row.roles,n) end end
+      local encoded=cjson.encode(row);encoded=string.gsub(encoded,'"roles":{}','"roles":[]')
+      redis.call('HSET',KEYS[1],entries[i],encoded)
+    end
+  end
+  return redis.call('INCR',KEYS[2])
+  """,Long.class);
+ public PrivilegeCache(StringRedisTemplate redis,com.tianji.common.autoconfigure.reliability.OutboxStore outbox,org.springframework.jdbc.core.JdbcTemplate jdbc){this.redis=redis;this.outbox=outbox;this.jdbc=jdbc;}
+ public void lockMutation(){jdbc.queryForObject("SELECT id FROM auth_cache_guard WHERE id=1 FOR UPDATE",Integer.class);}
+ private void write(String mode,String data){
+  if(!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive())throw new IllegalStateException("Permission mutation must be transactional");
+  outbox.enqueue("permissions:"+UUID.randomUUID(),"auth.permissions.exchange","auth.permissions.changed",Map.of());
+ }
+ /** Caller holds auth_cache_guard and reads committed database state. */
+ public void publishCommittedSnapshot(List<PrivilegeRoleDTO> list){Map<String,String> map=new HashMap<>();for(var item:list)map.put(item.getId().toString(),JsonUtils.toJsonStr(item));redis.execute(WRITE,List.of(AUTH_PRIVILEGE_KEY,AUTH_PRIVILEGE_VERSION_KEY),"FULL",JsonUtils.toJsonStr(map));}
+ public void initPrivilegesCache(List<PrivilegeRoleDTO> list){Map<String,String> map=new HashMap<>();for(var item:list)map.put(item.getId().toString(),JsonUtils.toJsonStr(item));write("FULL",JsonUtils.toJsonStr(map));}
+ public void cacheSinglePrivilege(Privilege privilege,Set<Long> roles){
+  var value=new PrivilegeRoleDTO();value.setId(privilege.getId());value.setAntPath(privilege.getMethod()+":"+privilege.getUri());value.setRoles(roles);value.setInternal(privilege.getInternal());
+  write("PUT",JsonUtils.toJsonStr(Map.of(privilege.getId().toString(),JsonUtils.toJsonStr(value))));
+ }
+ public void removePrivilegeCacheById(Long id){removePrivilegeCacheByIds(List.of(id));}
+ public void removePrivilegeCacheByIds(List<Long> ids){write("DELETE",JsonUtils.toJsonStr(ids.stream().map(Object::toString).toList()));}
+ public void removeCacheByRoleId(Long id){write("ROLE",id.toString());}
 }
