@@ -30,6 +30,7 @@ import static com.tianji.pay.sdk.constants.PayConstants.ALI_CHANNEL_CODE;
 @Slf4j
 @Service(ALI_CHANNEL_CODE)
 @RequiredArgsConstructor
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.pay.ali.enabled",havingValue="true")
 public class AliPayService implements IPayService {
 
     private final CommonPayProperties commonPayProperties;

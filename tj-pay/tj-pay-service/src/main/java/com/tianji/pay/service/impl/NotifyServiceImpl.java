@@ -45,10 +45,11 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class NotifyServiceImpl implements INotifyService {
-    private final CertificatesManager certificatesManager;
+    private final org.springframework.beans.factory.ObjectProvider<CertificatesManager> certificates;
+    private final org.springframework.core.env.Environment environment;
     private final WxPayProperties properties;
     private final IPayOrderService payOrderService;
-    private final RabbitMqHelper rabbitMqHelper;
+    private final ProviderSettlementService settlement;
     private final IRefundOrderService refundOrderService;
 
     @Override
@@ -74,19 +75,7 @@ public class NotifyServiceImpl implements INotifyService {
         LocalDateTime successTime = data.getLocalDateTime("success_time", LocalDateTime.now());
 
         // 4.校验通知数据，主要是业务校验、幂等校验
-        PayOrder payOrder = checkNotifyData(tradingOrderNo, amount, successTime);
-        if (payOrder == null) return;
-
-        // 5.通知业务服务
-        rabbitMqHelper.send(
-                MqConstants.Exchange.PAY_EXCHANGE,
-                MqConstants.Key.PAY_SUCCESS,
-                PayResultDTO.builder()
-                        .payChannel(payOrder.getPayChannelCode())
-                        .payOrderNo(payOrder.getPayOrderNo())
-                        .bizOrderId(payOrder.getBizOrderNo())
-                        .successTime(successTime)
-                        .build());
+        settlement.paid(tradingOrderNo,amount,successTime);
     }
 
 
@@ -116,26 +105,12 @@ public class NotifyServiceImpl implements INotifyService {
         RefundStatus status = handleWxRefundStatus(statusStr);
 
         // 3.幂等性校验
-        RefundOrder refundOrder = checkRefundData(refundOrderNo, status, null);
-        if (refundOrder == null) return;
-
-        // 4.发送MQ通知业务端
-        rabbitMqHelper.send(
-                MqConstants.Exchange.PAY_EXCHANGE,
-                MqConstants.Key.REFUND_CHANGE,
-                RefundResultDTO.builder()
-                        .status(status == RefundStatus.SUCCESS ? RefundResultDTO.SUCCESS : RefundResultDTO.FAILED)
-                        .bizPayOrderId(refundOrder.getBizOrderNo())
-                        .bizRefundOrderId(refundOrder.getBizRefundOrderNo())
-                        .refundChannel(refundOrder.getRefundChannel())
-                        .refundOrderNo(refundOrder.getRefundOrderNo())
-                        .msg(data.getStr("msg"))
-                        .build()
-        );
+        settlement.refund(refundOrderNo,status.getValue(),null,data.getStr("msg"),null);
     }
 
     @Override
     public void handleAliPayNotify(Map<String, String> request) {
+        if(!environment.getProperty("tj.pay.ali.enabled",Boolean.class,false))throw new BadRequestException("支付宝渠道未配置");
         log.error("收到阿里支付通知信息，request = {}", request);
         // 1.判断是否是成功通知
         String tradeStatus = request.get("trade_status");
@@ -159,47 +134,9 @@ public class NotifyServiceImpl implements INotifyService {
                 LocalDateTime.now() : DateUtils.parse(success_time, DateUtils.DEFAULT_DATE_TIME_FORMAT);
 
         // 4.校验通知数据，主要是业务校验、幂等校验
-        PayOrder payOrder = checkNotifyData(tradingOrderNo, amount, successTime);
-        if (payOrder == null) return;
-
-        // 5.通知业务服务
-        rabbitMqHelper.send(
-                MqConstants.Exchange.PAY_EXCHANGE,
-                MqConstants.Key.PAY_SUCCESS,
-                PayResultDTO.builder()
-                        .payOrderNo(payOrder.getPayOrderNo())
-                        .payChannel(payOrder.getPayChannelCode())
-                        .bizOrderId(payOrder.getBizOrderNo())
-                        .successTime(successTime)
-                        .build()
-        );
+        settlement.paid(tradingOrderNo,amount,successTime);
     }
 
-
-    private RefundOrder checkRefundData(Long refundOrderNo, RefundStatus status, String channel) {
-        // 1.查询退款单
-        RefundOrder refundOrder = refundOrderService.queryByRefundOrderNo(refundOrderNo);
-        // 2.判断是否为空
-        if (refundOrder == null) {
-            throw new BadRequestException("通知数据有误，退款单不存在");
-        }
-        // 3.判断状态是否变更
-        if (status.equalsValue(refundOrder.getStatus())) {
-            // 订单状态没有变化，属于重复通知
-            return null;
-        }
-        // 4.更新退款单状态
-        boolean success = refundOrderService.lambdaUpdate()
-                .set(RefundOrder::getStatus, status.getValue())
-                .set(StringUtils.isNotBlank(channel), RefundOrder::getRefundChannel, channel)
-                .eq(RefundOrder::getId, refundOrder.getId())
-                .eq(RefundOrder::getStatus, refundOrder.getStatus())
-                .update();
-        if(!success){
-            return null;
-        }
-        return refundOrder;
-    }
 
     private RefundStatus handleWxRefundStatus(String statusStr) {
         if (StringUtils.equalsAny(statusStr, "REFUND.CLOSED", "REFUND.ABNORMAL")) {
@@ -229,6 +166,8 @@ public class NotifyServiceImpl implements INotifyService {
 
     @Nullable
     private Notification checkWxNotifyRequest(NotificationRequest request) {
+        var certificatesManager=certificates.getIfAvailable();
+        if(certificatesManager==null)throw new BadRequestException("微信支付渠道未配置");
         try {
             Verifier verifier = certificatesManager.getVerifier(properties.getMchId());
             String apiV3Key = properties.getApiV3Key();
@@ -249,46 +188,6 @@ public class NotifyServiceImpl implements INotifyService {
             log.error("微信回调结果处理失败", e);
             throw new BadRequestException(400, "微信回调结果处理失败", e);
         }
-    }
-
-    @Nullable
-    @Lock(name = PayConstants.RedisKeyFormatter.PAY_NOTIFY)
-    private PayOrder checkNotifyData(Long tradingOrderNo, Integer amount, LocalDateTime successTime) {
-        // 1.数据非空校验
-        if (tradingOrderNo == null || amount == null) {
-            throw new BadRequestException(400, PayErrorInfo.INVALID_NOTIFY_PARAM);
-        }
-        log.info("支付回调通知：payOrderNo = {},  amount = {}", tradingOrderNo, amount);
-
-        // 2.查询交易单，幂等校验
-        PayOrder payOrder = payOrderService.queryByPayOrderNo(tradingOrderNo);
-        // 2.1.非空校验
-        if (payOrder == null) {
-            log.error("支付回调通知的支付单{}不存在", tradingOrderNo);
-            return null;
-        }
-        // 2.2.支付单如果是已支付或已关闭，则不能重复处理
-        if (payOrder.success() || payOrder.closed()) {
-            log.error("支付回调通知的支付单{}已经支付或已经关闭，属于重复通知", tradingOrderNo);
-            return null;
-        }
-
-        // 3.校验支付金额
-        if (!payOrder.getAmount().equals(amount)) {
-            // 金额有误
-            log.error("支付回调通知的金额有误，支付单号：{}，通知金额：{}， 实际金额：{}",
-                    tradingOrderNo, amount, payOrder.getAmount());
-            throw new BizIllegalException("微信通知的金额有误");
-        }
-
-        // 4.更新订单状态，同时基于乐观锁做幂等处理
-        boolean success = payOrderService.markPayOrderSuccess(payOrder.getId(), successTime);
-        if (!success) {
-            // 如果更新失败，说明是重复通知
-            return null;
-        }
-
-        return payOrder;
     }
 
 }

@@ -1,7 +1,6 @@
 package com.tianji.trade.domain.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -13,17 +12,17 @@ import lombok.Data;
  * @since 2022-08-26
  */
 @Data
-@ApiModel(description = "支付渠道信息")
+@Schema(description = "支付渠道信息")
 public class PayChannelVO {
 
-    @ApiModelProperty("支付渠道id")
+    @Schema(description = "支付渠道id")
     private Long id;
-    @ApiModelProperty("支付渠道名称")
+    @Schema(description = "支付渠道名称")
     private String name;
-    @ApiModelProperty("支付渠道编码，唯一标示")
+    @Schema(description = "支付渠道编码，唯一标示")
     private String channelCode;
-    @ApiModelProperty("渠道优先级，数字越小优先级越高")
+    @Schema(description = "渠道优先级，数字越小优先级越高")
     private Integer channelPriority;
-    @ApiModelProperty("渠道图标")
+    @Schema(description = "渠道图标")
     private String channelIcon;
 }

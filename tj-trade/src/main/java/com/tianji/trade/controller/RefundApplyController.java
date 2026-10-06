@@ -9,13 +9,13 @@ import com.tianji.trade.domain.query.RefundApplyPageQuery;
 import com.tianji.trade.domain.vo.RefundApplyPageVO;
 import com.tianji.trade.domain.vo.RefundApplyVO;
 import com.tianji.trade.service.IRefundApplyService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 /**
  * <p>
@@ -25,51 +25,58 @@ import javax.validation.Valid;
  * @author 虎哥
  * @since 2022-08-29
  */
-@Api(tags = "退款相关接口")
+@Tag(name = "退款相关接口")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/refund-apply")
 public class RefundApplyController {
 
     private final IRefundApplyService refundApplyService;
+    private final com.tianji.common.autoconfigure.reliability.OperationStore operations;
 
-    @ApiOperation("退款申请")
+    @Operation(summary = "退款申请")
     @PostMapping
-    public void applyRefund(@Valid @RequestBody RefundFormDTO refundFormDTO) {
-        refundApplyService.applyRefund(refundFormDTO);
+    public org.springframework.http.ResponseEntity<com.tianji.common.autoconfigure.reliability.OperationStore.View> applyRefund(@Valid @RequestBody RefundFormDTO request,@RequestHeader("Idempotency-Key") String key) {
+
+        var form=new com.tianji.trade.service.impl.RefundOperationHandler.Request("APPLY",com.tianji.common.utils.UserContext.getRole(),request,null,null);
+        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"REFUND_COMMAND",key,form));
     }
 
-    @ApiOperation("审批退款申请")
+    @Operation(summary = "审批退款申请")
     @PutMapping("/approval")
-    public void approveRefundApply(@Valid @RequestBody ApproveFormDTO approveDTO){
-        refundApplyService.approveRefundApply(approveDTO);
+    public org.springframework.http.ResponseEntity<com.tianji.common.autoconfigure.reliability.OperationStore.View> approveRefundApply(@Valid @RequestBody ApproveFormDTO request,@RequestHeader("Idempotency-Key") String key) {
+        com.tianji.common.utils.UserContext.requireAdmin();
+        var form=new com.tianji.trade.service.impl.RefundOperationHandler.Request("APPROVE",com.tianji.common.utils.UserContext.getRole(),null,request,null);
+        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"REFUND_COMMAND",key,form));
     }
 
-    @ApiOperation("取消退款申请")
+    @Operation(summary = "取消退款申请")
     @PutMapping("/cancel")
-    public void cancelRefundApply(@Valid @RequestBody RefundCancelDTO cancelDTO){
-        refundApplyService.cancelRefundApply(cancelDTO);
+    public org.springframework.http.ResponseEntity<com.tianji.common.autoconfigure.reliability.OperationStore.View> cancelRefundApply(@Valid @RequestBody RefundCancelDTO request,@RequestHeader("Idempotency-Key") String key) {
+
+        var form=new com.tianji.trade.service.impl.RefundOperationHandler.Request("CANCEL",com.tianji.common.utils.UserContext.getRole(),null,null,request);
+        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"REFUND_COMMAND",key,form));
     }
 
-    @ApiOperation("分页查询退款申请")
+    @Operation(summary = "分页查询退款申请")
     @GetMapping("/page")
     public PageDTO<RefundApplyPageVO> queryRefundApplyByPage(RefundApplyPageQuery pageQuery){
         return refundApplyService.queryRefundApplyByPage(pageQuery);
     }
 
-    @ApiOperation("根据id查询退款详情")
+    @Operation(summary = "根据id查询退款详情")
     @GetMapping("/{id}")
-    public RefundApplyVO queryRefundDetailById(@ApiParam("退款id") @PathVariable("id") Long id){
+    public RefundApplyVO queryRefundDetailById(@Parameter(description = "退款id") @PathVariable("id") Long id){
         return refundApplyService.queryRefundDetailById(id);
     }
 
-    @ApiOperation("根据子订单id查询退款详情")
+    @Operation(summary = "根据子订单id查询退款详情")
     @GetMapping("/detail/{id}")
-    public RefundApplyVO queryRefundDetailByDetailId(@ApiParam("子订单id") @PathVariable("id") Long detailId){
+    public RefundApplyVO queryRefundDetailByDetailId(@Parameter(description = "子订单id") @PathVariable("id") Long detailId){
         return refundApplyService.queryRefundDetailByDetailId(detailId);
     }
 
-    @ApiOperation("查询下一个待审批的退款申请")
+    @Operation(summary = "查询下一个待审批的退款申请")
     @GetMapping("/next")
     public RefundApplyVO nextRefundApplyToApprove(){
         return refundApplyService.nextRefundApplyToApprove();

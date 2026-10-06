@@ -3,7 +3,7 @@ package com.tianji.trade.service.impl;
 import cn.hutool.db.DbRuntimeException;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.cache.RoleCache;
 import com.tianji.api.client.user.UserClient;
 import com.tianji.api.dto.IdAndNumDTO;
@@ -86,6 +86,7 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
 
     @Override
     public PageDTO<OrderDetailPageVO> queryDetailForPage(OrderDetailPageQuery query) {
+        UserContext.requireAdmin();
         // 1.分页和排序条件
         Page<OrderDetail> p = query.toMpPageDefaultSortByCreateTimeDesc();
         // 2.可能有用户条件
@@ -141,7 +142,7 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
     public OrderDetailAdminVO queryOrdersDetailProgress(Long id) {
         // 1.查询订单明细
         OrderDetail detail = getById(id);
-        if (detail == null) {
+        if (detail == null || (!Long.valueOf(1).equals(UserContext.getRole()) && !Objects.equals(detail.getUserId(),UserContext.requireUser()))) {
             throw new BadRequestException(ORDER_NOT_EXISTS);
         }
         // 2.查询对应订单
@@ -154,7 +155,7 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         RefundApply refundApply = null;
         if (detail.getRefundStatus() != null && detail.getRefundStatus() != 0) {
             refundApplyList = applyMapper.queryByDetailId(detail.getId());
-            refundApply = refundApplyList.get(0);
+            if(!refundApplyList.isEmpty()) refundApply = refundApplyList.get(0);
         }
 
         // 4.查询学生和申请人信息
@@ -251,11 +252,11 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
     public void markDetailSuccessByOrderId(Long id, String payChannel, LocalDateTime successTime) {
         List<OrderDetail> details = queryByOrderId(id);
         for (OrderDetail detail : details) {
-            detail.setStatus(PAYED.getValue());
-            detail.setPayChannel(payChannel);
-            detail.setCourseExpireTime(successTime.plusMinutes(detail.getValidDuration()));
+            LocalDateTime expiration=detail.getValidDuration()==null || detail.getValidDuration()<=0?null:successTime.plusMonths(detail.getValidDuration());
+            lambdaUpdate().eq(OrderDetail::getId,detail.getId()).eq(OrderDetail::getStatus,NO_PAY.getValue())
+                    .set(OrderDetail::getStatus,PAYED.getValue()).set(OrderDetail::getPayChannel,payChannel)
+                    .set(OrderDetail::getCourseExpireTime,expiration).update();
         }
-        updateBatchById(details);
     }
 
     @Override
@@ -290,7 +291,7 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
 
         // 4.找到未过期的
         LocalDateTime now = LocalDateTime.now();
-        return orders.stream().anyMatch(o -> o.getCourseExpireTime().isAfter(now));
+        return orders.stream().anyMatch(o -> o.getCourseExpireTime()==null || o.getCourseExpireTime().isAfter(now));
     }
 
     @Override
@@ -325,15 +326,15 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
     @Override
     public CoursePurchaseInfoDTO getPurchaseInfoOfCourse(Long courseId) {
         // 1.统计报名人数
-        Integer enrollNum = lambdaQuery()
+        Integer enrollNum = Math.toIntExact(lambdaQuery()
                 .eq(OrderDetail::getCourseId, courseId)
                 .in(OrderDetail::getStatus, PAYED.getValue(), FINISHED.getValue(), ENROLLED.getValue())
-                .count();
+                .count());
         // 2.统计退款人数
-        Integer refundNum = lambdaQuery()
+        Integer refundNum = Math.toIntExact(lambdaQuery()
                 .eq(OrderDetail::getCourseId, courseId)
                 .eq(OrderDetail::getStatus, REFUNDED.getValue())
-                .count();
+                .count());
         // 3.统计销售额
         int realPayAmount = baseMapper.countRealPayAmountByCourseId(courseId);
 

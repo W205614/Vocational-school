@@ -28,6 +28,7 @@ import java.util.Arrays;
 
 @Slf4j
 @Component
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.pay.wx.enabled",havingValue="true")
 public class WxPayClient {
     private final CloseableHttpClient wxPayClient;
     private final ObjectMapper objectMapper;
@@ -51,7 +52,7 @@ public class WxPayClient {
             // 2.准备请求
             HttpPost httpPost = new HttpPost(requestPath);
             httpPost.addHeader("Accept", MediaType.APPLICATION_JSON_VALUE);
-            httpPost.addHeader("Content-type", MediaType.APPLICATION_JSON_UTF8_VALUE);
+            httpPost.addHeader("Content-type", MediaType.APPLICATION_JSON_VALUE);
             httpPost.setEntity(new StringEntity(objectMapper.writeValueAsString(body), StandardCharsets.UTF_8));
             // 3.发送请求
             CloseableHttpResponse response = wxPayClient.execute(httpPost);

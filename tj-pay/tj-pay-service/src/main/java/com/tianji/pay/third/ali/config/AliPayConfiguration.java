@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties(AliPayProperties.class)
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.pay.ali.enabled",havingValue="true")
 public class AliPayConfiguration {
 
     @Bean

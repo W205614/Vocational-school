@@ -44,7 +44,7 @@ public class PayServiceImpl implements IPayService {
     private final IOrderService orderService;
     private final IOrderDetailService detailService;
     private final TradeProperties tradeProperties;
-    private final RabbitMqHelper mqHelper;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @Override
     public List<PayChannelVO> queryPayChannels() {
@@ -63,7 +63,7 @@ public class PayServiceImpl implements IPayService {
         Long orderId = payApply.getOrderId();
         // 1.查询订单信息
         Order order = orderService.getById(orderId);
-        if (order == null) {
+        if (order == null || !java.util.Objects.equals(order.getUserId(), com.tianji.common.utils.UserContext.requireUser())) {
             throw new BadRequestException(ORDER_NOT_EXISTS);
         }
         // 2.判断订单状态
@@ -89,17 +89,9 @@ public class PayServiceImpl implements IPayService {
                 .payType(PayType.NATIVE.getValue())
                 .payChannelCode(payApply.getPayChannelCode())
                 .build();
+        jdbc.update("INSERT IGNORE INTO payment_reconcile(order_id,expires_at) VALUES(?,NOW()+INTERVAL 1 DAY)",orderId);
         String url = payClient.applyPayOrder(payApplyDTO);
-        // 6.通过延迟队列，异步查询支付结果
-        sendDelayQueryMessage(OrderDelayQueryDTO.init(orderId));
         return url;
-    }
-
-    private void sendDelayQueryMessage(OrderDelayQueryDTO message) {
-        mqHelper.sendDelayMessage(
-                TRADE_DELAY_EXCHANGE,
-                ORDER_DELAY_KEY,
-                message, Duration.ofMillis(message.removeFirst()));
     }
 
     @Override
@@ -118,6 +110,7 @@ public class PayServiceImpl implements IPayService {
         }
         // 3.查询支付状态
         PayResultDTO payResult = payClient.queryPayResult(orderId);
+        if(payResult==null)return;
         int status = payResult.getStatus();
         if(PayResultDTO.SUCCESS != status){
             // 3.1.支付中或支付失败，需要重试查询
@@ -126,7 +119,8 @@ public class PayServiceImpl implements IPayService {
                 return;
             }
             // 发送延迟查询消息，再次查询支付状态
-            sendDelayQueryMessage(message);
+            jdbc.update("INSERT IGNORE INTO payment_reconcile(order_id,expires_at) VALUES(?,NOW()+INTERVAL 1 DAY)",orderId);
+            return;
         }
         // 3.2.支付成功
         orderService.handlePaySuccess(payResult);

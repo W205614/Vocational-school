@@ -2,7 +2,7 @@ package com.tianji.trade.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.client.course.CourseClient;
 import com.tianji.api.dto.course.CourseFullInfoDTO;
 import com.tianji.api.dto.course.CourseSimpleInfoDTO;
@@ -45,17 +45,18 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
 
     private final CourseClient courseClient;
     private final TradeProperties tradeProperties;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final org.springframework.transaction.PlatformTransactionManager transactions;
 
     @Override
     public void addCourse2Cart(Long courseId) {
-        Long userId = UserContext.getUser();
+        Long userId = UserContext.requireUser();
         log.debug("加入购物车请求：用户：{}，课程：{}", userId, courseId);
         // 1.查询该课程是否已经在购物车
         if (checkCourseExists(courseId, userId)) {
             return;
         }
         // 2.查询购物车中课程是否超出上限
-        checkCartsFull(userId);
 
         // 3.根据id查询课程信息
         CourseFullInfoDTO courseInfo = courseClient.getCourseInfoById(courseId, false, false);
@@ -64,9 +65,10 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
         if (courseInfo == null) {
             throw new BadRequestException(COURSE_NOT_EXISTS);
         }
+        if(!Integer.valueOf(2).equals(courseInfo.getStatus())) throw new BadRequestException("课程当前不可购买");
 
         // 5.判断是否过期
-        if (courseInfo.getPurchaseEndTime().isBefore(LocalDateTime.now())) {
+        if (courseInfo.getPurchaseEndTime()!=null && courseInfo.getPurchaseEndTime().isBefore(LocalDateTime.now())) {
             // 已经过期，无法购买
             throw new BadRequestException(COURSE_EXPIRED);
         }
@@ -78,12 +80,17 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
         cart.setUserId(UserContext.getUser());
         cart.setCoverUrl(courseInfo.getCoverUrl());
         cart.setPrice(courseInfo.getPrice());
-        save(cart);
+        new org.springframework.transaction.support.TransactionTemplate(transactions).executeWithoutResult(tx->{
+            jdbc.update("INSERT INTO cart_owner_guard(user_id) VALUES(?) ON DUPLICATE KEY UPDATE user_id=user_id",userId);
+            jdbc.queryForObject("SELECT user_id FROM cart_owner_guard WHERE user_id=? FOR UPDATE",Long.class,userId);
+            if(checkCourseExists(courseId,userId))return;
+            checkCartsFull(userId);save(cart);
+        });
         log.debug("加入购物车成功！用户：{}，课程：{}", userId, courseId);
     }
 
     private void checkCartsFull(Long userId) {
-        int count = lambdaQuery().eq(Cart::getUserId, userId).count();
+        int count = Math.toIntExact(lambdaQuery().eq(Cart::getUserId, userId).count());
         if (count >= tradeProperties.getMaxCourseAmount()) {
             throw new BizIllegalException(
                     StringUtils.format(CARTS_FULL, tradeProperties.getMaxCourseAmount()));
@@ -91,10 +98,10 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
     }
 
     private boolean checkCourseExists(Long courseId, Long userId) {
-        int count = lambdaQuery()
+        int count = Math.toIntExact(lambdaQuery()
                 .eq(Cart::getUserId, userId)
                 .eq(Cart::getCourseId, courseId)
-                .count();
+                .count());
         return count > 0;
     }
 
@@ -120,9 +127,9 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
             list.add(vo);
             // 4.2.获取新的课程信息
             CourseSimpleInfoDTO info = map.get(cart.getCourseId());
-            vo.setNowPrice(info.getPrice());
-            vo.setExpired(info.getPurchaseEndTime().isBefore(LocalDateTime.now()));
-            vo.setCourseValidDate(info.getPurchaseEndTime());
+            vo.setNowPrice(info==null?cart.getPrice():info.getPrice());
+            vo.setExpired(info==null || !Integer.valueOf(2).equals(info.getStatus()) || info.getPurchaseEndTime()!=null && info.getPurchaseEndTime().isBefore(LocalDateTime.now()));
+            vo.setCourseValidDate(info==null?null:info.getPurchaseEndTime());
         }
         // 5.排序
         return list.stream().sorted(

@@ -2,7 +2,7 @@ package com.tianji.pay.service;
 
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.pay.domain.po.RefundOrder;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.pay.sdk.dto.RefundApplyDTO;
 import com.tianji.pay.sdk.dto.RefundResultDTO;
 

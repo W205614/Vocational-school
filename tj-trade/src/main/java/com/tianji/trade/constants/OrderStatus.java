@@ -14,7 +14,8 @@ public enum OrderStatus implements BaseEnum {
     CLOSED(3, "已关闭", "交易关闭"),
     FINISHED(4, "已完成", "交易完成"),
     ENROLLED(5, "已报名", "免费报名"),
-    REFUNDED(6, "申请退款", "申请退款");
+    REFUNDED(6, "退款处理中", "申请退款"),
+    REFUND_FINISHED(7, "已退款", "退款完成");
 
     private final int value;
     private final String desc;

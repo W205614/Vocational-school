@@ -15,14 +15,15 @@ public class ThreadPoolConfig {
         //配置核心线程数
         refundExecutor.setCorePoolSize(4);
         //配置最大线程数
-        refundExecutor.setMaxPoolSize(20);
+        refundExecutor.setMaxPoolSize(8);
         //配置队列大小
-        refundExecutor.setQueueCapacity(10000);
+        refundExecutor.setQueueCapacity(100);
         //配置线程池中的线程的名称前缀
         refundExecutor.setThreadNamePrefix("pd-user-async-service-");
         // 由调用者线程执行
-        refundExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        refundExecutor.initialize();
+        refundExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        refundExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        refundExecutor.setAwaitTerminationSeconds(30);
         return refundExecutor;
     }
 }

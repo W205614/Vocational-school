@@ -25,7 +25,7 @@ import com.tianji.promotion.enums.UserCouponStatus;
 import com.tianji.promotion.mapper.CouponMapper;
 import com.tianji.promotion.service.ICouponScopeService;
 import com.tianji.promotion.service.ICouponService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.promotion.service.IExchangeCodeService;
 import com.tianji.promotion.service.IUserCouponService;
 import io.prometheus.client.Collector;
@@ -62,6 +62,7 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     @Override
     @Transactional
     public void saveCoupon(CouponFormDTO dto) {
+        validateForm(dto);
         // 1. 保存优惠卷
         // 1.1 转po
         Coupon coupon = BeanUtils.copyBean(dto, Coupon.class);
@@ -197,6 +198,7 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     @Override
     @Transactional
     public void updateCouponById(Long id, CouponFormDTO dto) {
+        validateForm(dto);
         // 1. 检验优惠卷id
         if(id == null || !id.equals(dto.getId())) {
             throw new BadRequestException("非法参数或优惠卷id不一致");
@@ -353,4 +355,20 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         }
         return list;
     }
+    private void validateForm(CouponFormDTO dto){
+        if(dto.getSpecific()==null)dto.setSpecific(false);
+        if(dto.getThresholdAmount()==null)dto.setThresholdAmount(0);
+        if(dto.getMaxDiscountAmount()==null)dto.setMaxDiscountAmount(0);
+        if(dto.getDiscountType()==null || dto.getDiscountValue()==null || dto.getDiscountValue()<=0 ||
+            dto.getThresholdAmount()<0 || dto.getMaxDiscountAmount()<0 || dto.getTotalNum()==null || dto.getTotalNum()<1 || dto.getTotalNum()>5000 ||
+            dto.getUserLimit()==null || dto.getUserLimit()<1 || dto.getUserLimit()>10)
+            throw new BadRequestException("优惠券金额、库存或限领数量无效");
+        if(dto.getDiscountType()==com.tianji.promotion.enums.DiscountType.RATE_DISCOUNT && dto.getDiscountValue()>100)
+            throw new BadRequestException("折扣比例必须为 1 到 100");
+        if(dto.getDiscountType()==com.tianji.promotion.enums.DiscountType.PER_PRICE_DISCOUNT && dto.getThresholdAmount()<=0)
+            throw new BadRequestException("每满减门槛必须大于 0");
+        if(Boolean.TRUE.equals(dto.getSpecific()) && (dto.getScopes()==null || dto.getScopes().isEmpty() || dto.getScopes().size()>100 || dto.getScopes().stream().anyMatch(java.util.Objects::isNull)))
+            throw new BadRequestException("请指定 1 到 100 个有效范围");
+    }
+
 }

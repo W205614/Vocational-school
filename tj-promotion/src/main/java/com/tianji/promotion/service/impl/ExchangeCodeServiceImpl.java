@@ -9,7 +9,7 @@ import com.tianji.promotion.domain.query.CodeQuery;
 import com.tianji.promotion.domain.vo.ExchangeCodeVO;
 import com.tianji.promotion.mapper.ExchangeCodeMapper;
 import com.tianji.promotion.service.IExchangeCodeService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.promotion.utils.CodeUtil;
 import org.springframework.data.redis.core.BoundValueOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;

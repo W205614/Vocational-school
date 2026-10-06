@@ -21,6 +21,7 @@ import java.security.PrivateKey;
 
 @Configuration
 @EnableConfigurationProperties(WxPayProperties.class)
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.pay.wx.enabled",havingValue="true")
 public class WxConfiguration {
 
     /**
@@ -55,6 +56,6 @@ public class WxConfiguration {
                 ;
 
         // 3.构建
-        return builder.build();
+        return builder.setDefaultRequestConfig(org.apache.http.client.config.RequestConfig.custom().setConnectTimeout(1500).setConnectionRequestTimeout(1500).setSocketTimeout(5000).build()).build();
     }
 }

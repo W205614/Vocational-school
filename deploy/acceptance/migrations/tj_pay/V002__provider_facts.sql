@@ -1,0 +1,3 @@
+CREATE TABLE provider_payment_fact(pay_order_no BIGINT PRIMARY KEY,biz_order_no BIGINT NOT NULL,amount INT NOT NULL,success_time DATETIME(3) NOT NULL,created_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)) ENGINE=InnoDB;
+CREATE TABLE provider_refund_fact(refund_order_no BIGINT NOT NULL,status INT NOT NULL,created_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),PRIMARY KEY(refund_order_no,status)) ENGINE=InnoDB;
+CREATE TABLE provider_refund_conflict(refund_order_no BIGINT NOT NULL,observed_status INT NOT NULL,recorded_status INT NOT NULL,created_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),PRIMARY KEY(refund_order_no,observed_status)) ENGINE=InnoDB;

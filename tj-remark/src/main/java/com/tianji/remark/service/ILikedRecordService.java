@@ -2,7 +2,7 @@ package com.tianji.remark.service;
 
 import com.tianji.remark.domain.dto.LikeRecordFormDTO;
 import com.tianji.remark.domain.po.LikedRecord;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 import java.util.List;
 import java.util.Set;

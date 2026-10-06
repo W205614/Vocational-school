@@ -8,6 +8,8 @@
         from user_coupon uc
             inner join coupon c on uc.coupon_id = c.id
         where uc.user_id = #{userId} and uc.status = 1
+        AND uc.term_begin_time &lt;= NOW() AND uc.term_end_time &gt; NOW()
+        AND uc.reserved_order_id IS NULL
     </select>
 
     <select id="queryCouponByUserCouponIds" resultType="com.tianji.promotion.domain.po.Coupon">
@@ -20,6 +22,11 @@
             #{id}
         </foreach>
         AND uc.status = #{status}
+        AND uc.user_id = #{userId}
+        <if test='status.value == 1'>
+            AND uc.term_begin_time &lt;= NOW() AND uc.term_end_time &gt; NOW()
+            AND (uc.reserved_order_id IS NULL OR uc.reserved_order_id = #{orderId})
+        </if>
     </select>
 
 </mapper>

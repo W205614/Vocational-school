@@ -1,6 +1,6 @@
 package com.tianji.search.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.cache.CategoryCache;
 import com.tianji.api.dto.course.CategoryBasicDTO;
 import com.tianji.common.utils.CollUtils;

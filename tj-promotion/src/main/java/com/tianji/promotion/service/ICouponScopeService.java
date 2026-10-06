@@ -1,7 +1,7 @@
 package com.tianji.promotion.service;
 
 import com.tianji.promotion.domain.po.CouponScope;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * <p>

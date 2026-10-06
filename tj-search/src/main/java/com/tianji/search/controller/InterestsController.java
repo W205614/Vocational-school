@@ -5,8 +5,8 @@ import com.tianji.search.domain.vo.CourseVO;
 import com.tianji.search.service.IInterestsService;
 import com.tianji.search.service.ISearchService;
 import com.tianji.api.dto.course.CategoryBasicDTO;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,27 +22,27 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/interests")
-@Api(tags = "课程推荐相关接口")
+@Tag(name = "课程推荐相关接口")
 @RequiredArgsConstructor
 public class InterestsController {
 
     private final IInterestsService interestsService;
     private final ISearchService searchService;
 
-    @ApiOperation("新增兴趣爱好")
+    @Operation(summary = "新增兴趣爱好")
     @PostMapping
     public void saveMyInterests(@RequestParam("interestedIds") List<Long>interestedIds){
         interestsService.saveInterests(interestedIds);
     }
 
-    @ApiOperation("查询我的兴趣爱好")
+    @Operation(summary = "查询我的兴趣爱好")
     @GetMapping
     public List<CategoryBasicDTO> queryMyInterests(){
         return interestsService.queryMyInterests();
     }
 
 
-    @ApiOperation("根据二级分类id查询课程TOP10")
+    @Operation(summary = "根据二级分类id查询课程TOP10")
     @GetMapping("/{id}/courses")
     public List<CourseVO> queryCourseByCateId(@PathVariable("id") Long cateLv2Id){
         return searchService.queryCourseByCateId(cateLv2Id);

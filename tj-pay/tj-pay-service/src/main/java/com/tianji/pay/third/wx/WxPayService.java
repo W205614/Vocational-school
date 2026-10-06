@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @Service(PayConstants.WX_CHANNEL_CODE)
 @RequiredArgsConstructor
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.pay.wx.enabled",havingValue="true")
 public class WxPayService implements IPayService {
 
     private final WxPayClient wxPayClient;

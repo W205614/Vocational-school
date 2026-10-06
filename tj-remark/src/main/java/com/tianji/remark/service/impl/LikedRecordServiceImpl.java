@@ -9,7 +9,7 @@ import com.tianji.remark.domain.dto.LikeRecordFormDTO;
 import com.tianji.remark.domain.po.LikedRecord;
 import com.tianji.remark.mapper.LikedRecordMapper;
 import com.tianji.remark.service.ILikedRecordService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -43,9 +43,9 @@ public class LikedRecordServiceImpl extends ServiceImpl<LikedRecordMapper, Liked
             return;
         }
         // 3. 如果执行成功, 统计点赞总数
-        Integer likeTimes = lambdaQuery()
+        Integer likeTimes = Math.toIntExact(lambdaQuery()
                 .eq(LikedRecord::getBizId, recordDTO.getBizId())
-                .count();
+                .count());
         // 4. 发送MQ通知
         mqHelper.send(
                 LIKE_RECORD_EXCHANGE,
@@ -80,10 +80,10 @@ public class LikedRecordServiceImpl extends ServiceImpl<LikedRecordMapper, Liked
     private boolean like(LikeRecordFormDTO recordDTO) {
         Long userId = UserContext.getUser();
         // 1. 查询点赞记录
-        Integer count = lambdaQuery()
+        Integer count = Math.toIntExact(lambdaQuery()
                 .eq(LikedRecord::getUserId, userId)
                 .eq(LikedRecord::getBizId, recordDTO.getBizId())
-                .count();
+                .count());
         // 2. 判断是否存在, 如果已经存在, 直接结束
         if(count > 0) {
             return false;

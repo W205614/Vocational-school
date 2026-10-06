@@ -3,7 +3,7 @@ package com.tianji.promotion.service.impl;
 import com.tianji.promotion.domain.po.CouponScope;
 import com.tianji.promotion.mapper.CouponScopeMapper;
 import com.tianji.promotion.service.ICouponScopeService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**

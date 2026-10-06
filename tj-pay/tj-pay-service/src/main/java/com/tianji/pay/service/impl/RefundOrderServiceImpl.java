@@ -3,7 +3,7 @@ package com.tianji.pay.service.impl;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.common.autoconfigure.mq.RabbitMqHelper;
 import com.tianji.common.autoconfigure.redisson.annotations.Lock;
 import com.tianji.common.constants.MqConstants;
@@ -27,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Map;
 
 import static com.tianji.pay.sdk.constants.PayErrorInfo.INVALID_PAY_CHANNEL;
@@ -47,7 +47,9 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
 
     private final IPayOrderService payOrderService;
 
-    private final RabbitMqHelper rabbitMqHelper;
+    private final ProviderSettlementService settlement;
+    private final ProviderRequestGuard requests;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @Resource
     private Map<String, IPayService> payServiceChannels;
@@ -56,7 +58,8 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
     public RefundResultDTO applyRefund(RefundApplyDTO refundApplyDTO) {
         log.debug("准备申请退款，业务端退款订单号：{}", refundApplyDTO.getBizRefundOrderNo());
         // 1.幂等性校验
-        RefundOrder refundOrder = checkIdempotent(refundApplyDTO);
+        RefundOrder refundOrder = requests.prepare("REFUND",refundApplyDTO.getBizOrderNo(),()->checkIdempotent(refundApplyDTO));
+        if (refundOrder!=null && (refundOrder.success() || refundOrder.failed() || !refundOrder.notCommit()))return queryRefundResult(refundApplyDTO.getBizRefundOrderNo());
         if (refundOrder == null) {
             // 为 null说明退款处理中，无需重新申请，返回false
             return RefundResultDTO.running().msg("退款执行中").build();
@@ -81,19 +84,13 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
         return refundResultDTO;
     }
 
-    private void updateRefundStatus(RefundResponse refundResponse, Long id) {
-        try {
-            lambdaUpdate()
-                    .set(refundResponse.getSuccess(), RefundOrder::getStatus, refundResponse.getStatus())
-                    .set(refundResponse.getAmount() != null, RefundOrder::getRefundAmount, refundResponse.getAmount())
-                    .set(refundResponse.getChannel() != null, RefundOrder::getRefundChannel, refundResponse.getChannel())
-                    .set(RefundOrder::getResultCode, refundResponse.getCode() == null ? "" : refundResponse.getCode())
-                    .set(RefundOrder::getResultMsg, refundResponse.getMsg() == null ? "" : refundResponse.getMsg())
-                    .eq(RefundOrder::getId, id)
-                    .update();
-        } catch (Exception e) {
-            log.error("更新退款单状态发生异常", e);
-        }
+    private void updateRefundStatus(RefundResponse response,Long id){
+        if(!Boolean.TRUE.equals(response.getSuccess()) || response.getStatus()==null)return;
+        RefundOrder order=getById(id);
+        settlement.refund(order.getRefundOrderNo(),response.getStatus(),response.getChannel(),response.getMsg(),response.getAmount());
+        if(response.getStatus()<2)lambdaUpdate().set(RefundOrder::getStatus,response.getStatus())
+          .set(RefundOrder::getResultCode,response.getCode()).set(RefundOrder::getResultMsg,response.getMsg())
+          .eq(RefundOrder::getId,id).in(RefundOrder::getStatus,0,1).update();
     }
 
     @Lock(name = PayConstants.RedisKeyFormatter.REFUND_APPLY, leaseTime = 10, autoUnlock = false)
@@ -110,14 +107,18 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
             throw new BizIllegalException(PayErrorInfo.PAY_ORDER_NOT_SUCCESS);
         }
 
+        if(refundApplyDTO.getRefundAmount()==null || refundApplyDTO.getRefundAmount()<=0 || refundApplyDTO.getRefundAmount()>payOrder.getAmount())throw new BadRequestException("退款金额无效");
         // 3.查询当前订单是否已经有退款单
         RefundOrder oldRefundOrder = queryByBizRefundOrder(refundApplyDTO.getBizRefundOrderNo());
         // 3.1.判断是否为空
+        if(oldRefundOrder!=null && (!java.util.Objects.equals(oldRefundOrder.getBizOrderNo(),refundApplyDTO.getBizOrderNo()) || !java.util.Objects.equals(oldRefundOrder.getRefundAmount(),refundApplyDTO.getRefundAmount())))throw new com.tianji.common.exceptions.ConflictException("同一退款业务单的请求内容不同");
         if (oldRefundOrder == null) {
+            long committed=jdbc.queryForObject("SELECT COALESCE(SUM(refund_amount),0) FROM refund_order WHERE biz_order_no=? AND status IN(0,1,2)",Long.class,refundApplyDTO.getBizOrderNo());
+            if(committed+refundApplyDTO.getRefundAmount()>payOrder.getAmount())throw new BadRequestException("退款总额超过支付金额");
             // 本订单第一次退款，需要生成新退款单
             RefundOrder refundOrder = BeanUtils.toBean(refundApplyDTO, RefundOrder.class);
             refundOrder.setRefundOrderNo(IdWorker.getId());
-            refundOrder.setIsSplit(payOrder.getAmount().equals(refundApplyDTO.getRefundAmount()));
+            refundOrder.setIsSplit(!payOrder.getAmount().equals(refundApplyDTO.getRefundAmount()));
             refundOrder.setPayOrderNo(payOrder.getPayOrderNo());
             refundOrder.setTotalAmount(payOrder.getAmount());
             refundOrder.setPayChannelCode(payOrder.getPayChannelCode());
@@ -125,26 +126,7 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
             return refundOrder;
         }
 
-        // 3.2.判断退款是否已经成功，如果成功不能退款
-        if (oldRefundOrder.success()) {
-            throw new BizIllegalException(PayErrorInfo.REPEAT_REFUND_ORDER);
-        }
-
-        // 3.3.判断退款是否已经失败，如果失败直接结束
-        if (oldRefundOrder.failed()) {
-            throw new BizIllegalException(PayErrorInfo.REFUND_FAILED);
-        }
-
-        // 3.4.退款请求未提交，重新提交
-        if (oldRefundOrder.notCommit()) {
-            // 需要先更新退款数据
-            oldRefundOrder.setRefundAmount(refundApplyDTO.getRefundAmount());
-            updateById(oldRefundOrder);
-            return oldRefundOrder;
-        }
-
-        // 3.5.退款正在进行中，什么都不做
-        return null;
+        return oldRefundOrder;
     }
 
     private RefundOrder queryByBizRefundOrder(Long bizRefundOrderId) {
@@ -193,6 +175,7 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
         RefundResultDTO refundResultDTO = transferRefundResult(refundResponse);
         refundResultDTO.setRefundOrderNo(refundOrder.getRefundOrderNo());
         refundResultDTO.setBizRefundOrderId(bizRefundOrderId);
+        refundResultDTO.setBizPayOrderId(refundOrder.getBizOrderNo());
         return refundResultDTO;
     }
 
@@ -207,7 +190,7 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
     public PageDTO<RefundOrder> queryRefundingOrderByPage(int pageNo, int size) {
         // 1.分页和排序条件
         Page<RefundOrder> page = new Page<>(pageNo, size);
-        page.addOrder(new OrderItem("id", true));
+        page.addOrder(OrderItem.asc("id"));
         // 2.查询
         Page<RefundOrder> result = lambdaQuery()
                 .eq(RefundOrder::getStatus, RefundStatus.UN_KNOWN.getValue())
@@ -238,17 +221,7 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
         // 3.更新数据库退款单状态
         updateRefundStatus(refundResponse, refundOrder.getId());
 
-        // 4.发送MQ通知业务端
-        rabbitMqHelper.send(
-                MqConstants.Exchange.PAY_EXCHANGE,
-                MqConstants.Key.REFUND_CHANGE,
-                RefundResultDTO.success()
-                        .refundOrderNo(refundOrder.getRefundOrderNo())
-                        .bizPayOrderId(refundOrder.getBizOrderNo())
-                        .bizRefundOrderId(refundOrder.getBizRefundOrderNo())
-                        .refundChannel(refundOrder.getRefundChannel())
-                        .build()
-        );
+
     }
 
     @Override

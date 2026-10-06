@@ -1,13 +1,13 @@
 package com.tianji.pay.sdk.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
-@ApiModel(description = "支付结果")
+@Schema(description = "支付结果")
+@lombok.NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class RefundResultDTO {
@@ -17,21 +17,21 @@ public class RefundResultDTO {
     public static final int SUCCESS = 3;
     public static final String OK = "ok";
 
-    @ApiModelProperty("退款状态，1：退款中，2：退款失败，3：退款成功")
+    @Schema(description = "退款状态，1：退款中，2：退款失败，3：退款成功")
     private int status;
-    @ApiModelProperty("支付失败原因")
+    @Schema(description = "支付失败原因")
     private String msg;
-    @ApiModelProperty("业务端支付订单号")
+    @Schema(description = "业务端支付订单号")
     private Long bizPayOrderId;
-    @ApiModelProperty("业务端退款订单号")
+    @Schema(description = "业务端退款订单号")
     private Long bizRefundOrderId;
-    @ApiModelProperty("支付流水交易单号")
+    @Schema(description = "支付流水交易单号")
     private Long payOrderNo;
-    @ApiModelProperty("退款交易单号")
+    @Schema(description = "退款交易单号")
     private Long refundOrderNo;
-    @ApiModelProperty("支付渠道")
+    @Schema(description = "支付渠道")
     private String payChannel;
-    @ApiModelProperty("退款渠道")
+    @Schema(description = "退款渠道")
     private String refundChannel;
 
     public static RefundResultDTOBuilder success() {

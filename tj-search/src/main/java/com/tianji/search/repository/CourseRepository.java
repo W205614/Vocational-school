@@ -33,6 +33,7 @@ public interface CourseRepository{
     String INCREMENT_SOLD_SCRIPT_PARAM = "count";
 
     void save(Course course);
+    void projectMetadata(long courseId,Course course,long version);
 
     void deleteById(Long courseId);
 

@@ -24,15 +24,16 @@ public class PayMessageHandler {
     private final IOrderService orderService;
     private final IRefundApplyService refundApplyService;
     private final IPayService payService;
+    private final com.tianji.common.autoconfigure.reliability.InboxStore inbox;
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "trade.pay.success.queue", durable = "true"),
             exchange = @Exchange(name = MqConstants.Exchange.PAY_EXCHANGE, type = ExchangeTypes.TOPIC),
             key = MqConstants.Key.PAY_SUCCESS
     ))
-    public void listenPaySuccess(PayResultDTO payResult){
+    public void listenPaySuccess(PayResultDTO payResult,org.springframework.amqp.core.Message raw){
         log.debug("收到支付成功通知：{}", payResult);
-        orderService.handlePaySuccess(payResult);
+        inbox.once("trade.payment",raw.getMessageProperties().getMessageId(),()->orderService.handlePaySuccess(payResult));
     }
 
     @RabbitListener(bindings = @QueueBinding(
@@ -40,18 +41,9 @@ public class PayMessageHandler {
             exchange = @Exchange(name = MqConstants.Exchange.PAY_EXCHANGE, type = ExchangeTypes.TOPIC),
             key = MqConstants.Key.REFUND_CHANGE
     ))
-    public void listenRefundResult(RefundResultDTO refundResult){
+    public void listenRefundResult(RefundResultDTO refundResult,org.springframework.amqp.core.Message raw){
         log.debug("收到退款变更成功通知：{}", refundResult);
-        refundApplyService.handleRefundResult(refundResult);
+        inbox.once("trade.refund",raw.getMessageProperties().getMessageId(),()->refundApplyService.handleRefundResult(refundResult));
     }
 
-    @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(name = "trade.delay.order.query", durable = "true"),
-            exchange = @Exchange(name = MqConstants.Exchange.TRADE_DELAY_EXCHANGE, delayed = "true", type = ExchangeTypes.TOPIC),
-            key = MqConstants.Key.ORDER_DELAY_KEY
-    ))
-    public void listenOrderDelayQueryMessage(OrderDelayQueryDTO message){
-        log.debug("收到订单延迟查询通知：{}", message);
-        payService.queryPayResult(message);
-    }
 }

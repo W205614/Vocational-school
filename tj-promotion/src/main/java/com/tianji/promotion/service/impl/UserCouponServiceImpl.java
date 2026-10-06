@@ -27,11 +27,11 @@ import com.tianji.promotion.mapper.CouponMapper;
 import com.tianji.promotion.mapper.UserCouponMapper;
 import com.tianji.promotion.service.IExchangeCodeService;
 import com.tianji.promotion.service.IUserCouponService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.promotion.strategy.discount.DiscountStrategy;
 import com.tianji.promotion.utils.CodeUtil;
 import lombok.RequiredArgsConstructor;
-import org.checkerframework.checker.units.qual.C;
+
 import org.springframework.aop.framework.AopContext;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -67,6 +67,10 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
     private final StringRedisTemplate redisTemplate;
 
     private final RabbitMqHelper mqHelper;
+    private final com.tianji.common.autoconfigure.reliability.OperationStore operations;
+    private final CouponClaimService claims;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final tools.jackson.databind.json.JsonMapper json;
 
     private static final RedisScript<Long> RECEIVE_COUPON_SCRIPT;
     private static final RedisScript<String> EXCHANGE_COUPON_SCRIPT;
@@ -79,73 +83,14 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
     // 使用LUA脚本后无需加锁也是线程安全的
     @Override
     public void receiveCoupon(Long couponId) {
-        // 1.执行LUA脚本，判断结果
-        // 1.1.准备参数
-        String key1 = PromotionConstants.COUPON_CACHE_KEY_PREFIX + couponId;
-        String key2 = PromotionConstants.USER_COUPON_CACHE_KEY_PREFIX + couponId;
-        Long userId = UserContext.getUser();
-        // 1.2.执行脚本
-        Long r = redisTemplate.execute(RECEIVE_COUPON_SCRIPT, List.of(key1, key2), userId.toString());
-        int result = NumberUtils.null2Zero(r).intValue();
-        if (result != 0) {
-            // 结果大于0，说明出现异常
-            throw new BizIllegalException(PromotionConstants.RECEIVE_COUPON_ERROR_MSG[result - 1]);
-        }
-        // 2.发送MQ消息
-        UserCouponDTO uc = new UserCouponDTO();
-        uc.setUserId(userId);
-        uc.setCouponId(couponId);
-        mqHelper.send(MqConstants.Exchange.PROMOTION_EXCHANGE, MqConstants.Key.COUPON_RECEIVE, uc);
+        operations.submit(UserContext.requireUser(),"COUPON_CLAIM",java.util.UUID.randomUUID().toString(),new CouponClaimService.Request(couponId,null));
     }
-
-    // 使用LUA脚本后无需加锁也是线程安全的
-    @Override
-    public void exchangeCoupon(String code) {
-        // 1.校验并解析兑换码
-        long serialNum = CodeUtil.parseCode(code);
-        // 2.执行LUA脚本
-        Long userId = UserContext.getUser();
-        String result = redisTemplate.execute(
-                EXCHANGE_COUPON_SCRIPT,
-                List.of(COUPON_CODE_MAP_KEY, COUPON_RANGE_KEY),
-                String.valueOf(serialNum), String.valueOf(serialNum + 5000), userId.toString());
-        long r = NumberUtils.parseLong(result);
-        if (r < 10) {
-            // 异常结果应该是在1~5之间
-            throw new BizIllegalException(PromotionConstants.EXCHANGE_COUPON_ERROR_MSG[(int) (r - 1)]);
-        }
-        // 3.发送MQ消息通知
-        UserCouponDTO uc = new UserCouponDTO();
-        uc.setUserId(userId);
-        uc.setCouponId(r);
-        uc.setSerialNum((int) serialNum);
-        mqHelper.send(MqConstants.Exchange.PROMOTION_EXCHANGE, MqConstants.Key.COUPON_RECEIVE, uc);
+    @Override public void exchangeCoupon(String code) {
+        operations.submit(UserContext.requireUser(),"COUPON_CLAIM",java.util.UUID.randomUUID().toString(),new CouponClaimService.Request(null,code));
     }
-
-    @Transactional
-    @Override
-    public void checkAndCreateUserCoupon(UserCouponDTO uc) {
-        // 1.查询优惠券
-        Coupon coupon = couponMapper.selectById(uc.getCouponId());
-        if (coupon == null) {
-            throw new BizIllegalException("优惠券不存在！");
-        }
-        // 2.更新优惠券的已经发放的数量 + 1
-        int r = couponMapper.incrIssueNum(coupon.getId());
-        if (r == 0) {
-            throw new BizIllegalException("优惠券库存不足！");
-        }
-        // 3.新增一个用户券
-        saveUserCoupon(uc.getUserId(), coupon);
-
-        // 4.更新兑换码状态
-        if (uc.getSerialNum() != null) {
-            codeService.lambdaUpdate()
-                    .set(ExchangeCode::getUserId, uc.getUserId())
-                    .set(ExchangeCode::getStatus, ExchangeCodeStatus.USED)
-                    .eq(ExchangeCode::getId, uc.getSerialNum())
-                    .update();
-        }
+    @Transactional @Override public void checkAndCreateUserCoupon(UserCouponDTO uc) {
+        String code=uc.getSerialNum()==null?null:jdbc.queryForObject("SELECT code FROM exchange_code WHERE id=?",String.class,uc.getSerialNum());
+        claims.execute(java.util.UUID.randomUUID().toString(),uc.getUserId(),json.writeValueAsString(new CouponClaimService.Request(uc.getCouponId(),code)));
     }
 
     private Coupon queryCouponByCache(Long couponId) {
@@ -169,7 +114,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         Page<UserCoupon> page = this.lambdaQuery()
                 .eq(UserCoupon::getUserId, userId)
                 .eq(UserCoupon::getStatus, query.getStatus())
-                .page(query.toMpPage(new OrderItem("term_end_time", true)));
+                .page(query.toMpPage(OrderItem.asc("term_end_time")));
         List<UserCoupon> records = page.getRecords();
         if(CollUtils.isEmpty(records)) {
             return PageDTO.empty(page);
@@ -183,90 +128,29 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         return PageDTO.of(page, BeanUtils.copyList(coupons, CouponVO.class));
     }
 
-    @Override
-    @Transactional
-    public void writeOffCoupon(List<Long> userCouponIds) {
-        // 1.查询优惠券
-        List<UserCoupon> userCoupons = listByIds(userCouponIds);
-        if (CollUtils.isEmpty(userCoupons)) {
-            return;
-        }
-        // 2.处理数据
-        List<UserCoupon> list = userCoupons.stream()
-                // 过滤无效券
-                .filter(coupon -> {
-                    if (coupon == null) {
-                        return false;
-                    }
-                    if (UserCouponStatus.UNUSED != coupon.getStatus()) {
-                        return false;
-                    }
-                    LocalDateTime now = LocalDateTime.now();
-                    return !now.isBefore(coupon.getTermBeginTime()) && !now.isAfter(coupon.getTermEndTime());
-                })
-                // 组织新增数据
-                .map(coupon -> {
-                    UserCoupon c = new UserCoupon();
-                    c.setId(coupon.getId());
-                    c.setStatus(UserCouponStatus.USED);
-                    return c;
-                })
-                .collect(Collectors.toList());
-
-        // 4.核销，修改优惠券状态
-        boolean success = updateBatchById(list);
-        if (!success) {
-            return;
-        }
-        // 5.更新已使用数量
-        List<Long> couponIds = userCoupons.stream().map(UserCoupon::getCouponId).collect(Collectors.toList());
-        int c = couponMapper.incrUsedNum(couponIds, 1);
-        if (c < 1) {
-            throw new DbException("更新优惠券使用数量失败！");
-        }
-    }
-
-    @Override
-    @Transactional
-    public void refundCoupon(List<Long> userCouponIds) {
-        // 1.查询优惠券
-        List<UserCoupon> userCoupons = listByIds(userCouponIds);
-        if (CollUtils.isEmpty(userCoupons)) {
-            return;
-        }
-        // 2.处理优惠券数据
-        List<UserCoupon> list = userCoupons.stream()
-                // 过滤无效券
-                .filter(coupon -> coupon != null && UserCouponStatus.USED == coupon.getStatus())
-                // 更新状态字段
-                .map(coupon -> {
-                    UserCoupon c = new UserCoupon();
-                    c.setId(coupon.getId());
-                    // 3.判断有效期，是否已经过期，如果过期，则状态为 已过期，否则状态为 未使用
-                    LocalDateTime now = LocalDateTime.now();
-                    UserCouponStatus status = now.isAfter(coupon.getTermEndTime()) ?
-                            UserCouponStatus.EXPIRED : UserCouponStatus.UNUSED;
-                    c.setStatus(status);
-                    return c;
-                }).collect(Collectors.toList());
-
-        // 4.修改优惠券状态
-        boolean success = updateBatchById(list);
-        if (!success) {
-            return;
-        }
-        // 5.更新已使用数量
-        List<Long> couponIds = userCoupons.stream().map(UserCoupon::getCouponId).collect(Collectors.toList());
-        int c = couponMapper.incrUsedNum(couponIds, -1);
-        if (c < 1) {
-            throw new DbException("更新优惠券使用数量失败！");
+    @Override @Transactional public void writeOffCoupon(List<Long> ids) { changeUsage(ids,true); }
+    @Override @Transactional public void refundCoupon(List<Long> ids) { changeUsage(ids,false); }
+    private void changeUsage(List<Long> ids,boolean use) {
+        if(ids==null || ids.isEmpty()) return;
+        long user=UserContext.requireUser();
+        for(Long id:ids.stream().distinct().sorted().toList()) {
+            var rows=jdbc.queryForList("SELECT * FROM user_coupon WHERE id=? AND user_id=? FOR UPDATE",id,user);
+            if(rows.isEmpty()) throw new BadRequestException("优惠券不存在");
+            var row=rows.getFirst();int source=use?1:2;
+            if(((Number)row.get("status")).intValue()!=source) continue;
+            if(row.get("reserved_order_id")!=null) throw new BadRequestException("订单绑定券必须通过预占协议处理");
+            int changed=use?jdbc.update("UPDATE user_coupon SET status=2,used_time=NOW() WHERE id=? AND status=1 AND term_begin_time<=NOW() AND term_end_time>NOW()",id)
+                    :jdbc.update("UPDATE user_coupon SET status=IF(term_end_time>NOW(),1,3),used_time=NULL WHERE id=? AND status=2",id);
+            if(changed==1 && couponMapper.incrUsedNum(List.of(((Number)row.get("coupon_id")).longValue()),use?1:-1)!=1) throw new DbException("优惠券统计不一致");
         }
     }
 
     @Override
     public List<String> queryDiscountRules(List<Long> userCouponIds) {
+        if(CollUtils.isEmpty(userCouponIds))return List.of();
+        if(userCouponIds.size()>6)throw new com.tianji.common.exceptions.BadRequestException("一次最多查询 6 张用户券");
         // 1.查询优惠券信息
-        List<Coupon> coupons = baseMapper.queryCouponByUserCouponIds(userCouponIds, UserCouponStatus.USED);
+        List<Coupon> coupons = baseMapper.queryCouponByUserCouponIds(userCouponIds, UserCouponStatus.USED, UserContext.getUser(),null);
         if (CollUtils.isEmpty(coupons)) {
             return CollUtils.emptyList();
         }

@@ -5,8 +5,8 @@ import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.promotion.domain.query.CodeQuery;
 import com.tianji.promotion.domain.vo.ExchangeCodeVO;
 import com.tianji.promotion.service.IExchangeCodeService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,14 +22,14 @@ import org.springframework.web.bind.annotation.RestController;
  * @author 虎哥
  * @since 2026-02-11
  */
-@Api(tags = "兑换码相关接口")
+@Tag(name = "兑换码相关接口")
 @RestController
 @RequestMapping("/codes")
 @RequiredArgsConstructor
 public class ExchangeCodeController {
     private final IExchangeCodeService exchangeCodeService;
 
-    @ApiOperation("分页查询兑换码")
+    @Operation(summary = "分页查询兑换码")
     @GetMapping("/page")
     public PageDTO<ExchangeCodeVO> queryExchangeCodeByPage(@Validated CodeQuery query) {
         return exchangeCodeService.queryExchangeCodeByPage(query);

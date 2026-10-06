@@ -18,13 +18,14 @@ import static com.tianji.common.constants.MqConstants.Key.COUPON_RECEIVE;
 public class PromotionMqHandler {
 
     private final IUserCouponService userCouponService;
+    private final com.tianji.common.autoconfigure.reliability.InboxStore inbox;
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "coupon.receive.queue", durable = "true"),
             exchange = @Exchange(name = PROMOTION_EXCHANGE, type = ExchangeTypes.TOPIC),
             key = COUPON_RECEIVE
     ))
-    public void listenCouponReceiveMessage(UserCouponDTO uc) {
-        userCouponService.checkAndCreateUserCoupon(uc);
+    public void listenCouponReceiveMessage(UserCouponDTO uc,org.springframework.amqp.core.Message raw) {
+        inbox.once("coupon.legacy",raw.getMessageProperties().getMessageId(),()->userCouponService.checkAndCreateUserCoupon(uc));
     }
 }

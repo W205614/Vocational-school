@@ -7,8 +7,9 @@ end
 if(tonumber(redis.call('time')[1]) > tonumber(redis.call('hget', KEYS[1], 'issueEndTime'))) then
     return 3
 end
-if(tonumber(redis.call('hget', KEYS[1], 'userLimit')) < redis.call('hincrby', KEYS[2], ARGV[1], 1)) then
+if(tonumber(redis.call('hget', KEYS[1], 'userLimit')) <= tonumber(redis.call('hget', KEYS[2], ARGV[1]) or '0')) then
     return 4
 end
+redis.call('hincrby', KEYS[2], ARGV[1], 1)
 redis.call('hincrby', KEYS[1], "totalNum", "-1")
 return 0

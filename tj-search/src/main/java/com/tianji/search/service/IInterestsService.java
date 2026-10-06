@@ -1,6 +1,6 @@
 package com.tianji.search.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.search.domain.po.Interests;
 import com.tianji.api.dto.course.CategoryBasicDTO;
 

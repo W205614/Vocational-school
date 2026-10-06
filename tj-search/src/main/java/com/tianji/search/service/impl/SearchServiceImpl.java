@@ -107,7 +107,7 @@ public class SearchServiceImpl implements ISearchService {
             List<Long> categoryIds, Boolean isFree, String sortBy, boolean isASC, int n) {
         // 1.准备Request
         SearchRequest request = new SearchRequest(CourseRepository.INDEX_NAME);
-        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("available",true));
         // 1.1.是否免费
         if(isFree != null) {
             queryBuilder.filter(QueryBuilders.termQuery(CourseRepository.FREE, isFree));
@@ -120,9 +120,7 @@ public class SearchServiceImpl implements ISearchService {
                 queryBuilder.filter(QueryBuilders.termsQuery(CourseRepository.CATEGORY_ID_LV2, categoryIds));
             }
         }
-        if(isFree != null || categoryIds != null) {
-            request.source().query(queryBuilder);
-        }
+        request.source().query(queryBuilder);
         // 1.3.TopN
         request.source().size(n).sort(sortBy, isASC ? SortOrder.ASC : SortOrder.DESC);
         // 2.发送请求
@@ -196,7 +194,7 @@ public class SearchServiceImpl implements ISearchService {
         SearchRequest request = new SearchRequest(CourseRepository.INDEX_NAME);
         // 2.构建DSL
         request.source()
-                .query(QueryBuilders.matchPhraseQuery(CourseRepository.DEFAULT_QUERY_NAME, keyword))
+                .query(QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("available",true)).must(QueryBuilders.matchPhraseQuery(CourseRepository.DEFAULT_QUERY_NAME, keyword)))
                 .fetchSource(new String[]{"id"}, null);
         // 3.查询
         SearchResponse response;
@@ -227,6 +225,8 @@ public class SearchServiceImpl implements ISearchService {
         // 2.1.构建query
         buildBasicQuery(request, query);
         // 2.2.排序
+        query.validate();
+        query.validateSort(java.util.Set.of("price","sold","publishTime"));
         String sortBy = query.getSortBy();
         if (StringUtils.isNotBlank(sortBy)) {
             request.source().sort(sortBy, query.getIsAsc() ? SortOrder.ASC : SortOrder.DESC);
@@ -249,7 +249,7 @@ public class SearchServiceImpl implements ISearchService {
 
     private void buildBasicQuery(SearchRequest request, CoursePageQuery query) {
         // 1.准备bool查询
-        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("available",true));
         // 2.关键字搜索
         String keyword = query.getKeyword();
         if (StringUtils.isBlank(keyword)) {

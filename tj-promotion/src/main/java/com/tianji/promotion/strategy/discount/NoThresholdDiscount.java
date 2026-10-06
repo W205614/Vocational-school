@@ -12,7 +12,7 @@ public class NoThresholdDiscount implements Discount{
 
     @Override
     public boolean canUse(int totalAmount, Coupon coupon) {
-        return totalAmount > coupon.getDiscountValue();
+        return coupon.getDiscountValue()!=null && coupon.getDiscountValue()>0 && totalAmount >= coupon.getDiscountValue();
     }
 
     @Override

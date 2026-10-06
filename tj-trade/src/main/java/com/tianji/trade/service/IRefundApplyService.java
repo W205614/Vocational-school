@@ -1,6 +1,6 @@
 package com.tianji.trade.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.pay.sdk.dto.RefundResultDTO;
 import com.tianji.trade.domain.dto.ApproveFormDTO;

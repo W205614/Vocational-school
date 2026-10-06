@@ -9,9 +9,9 @@ import com.tianji.promotion.domain.query.UserCouponQuery;
 import com.tianji.promotion.domain.vo.CouponVO;
 import com.tianji.promotion.service.IDiscountService;
 import com.tianji.promotion.service.IUserCouponService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,59 +28,62 @@ import java.util.List;
 @RestController
 @RequestMapping("/user-coupons")
 @RequiredArgsConstructor
-@Api(tags = "优惠卷相关接口")
+@Tag(name = "优惠卷相关接口")
 public class UserCouponController {
 
     private final IUserCouponService userCouponService;
 
     private final IDiscountService discountService;
+    private final com.tianji.common.autoconfigure.reliability.OperationStore operations;
 
-    @ApiOperation("领取优惠卷接口")
+    @Operation(summary = "领取优惠卷接口")
     @PostMapping("/{couponId}/receive")
-    public void receiveCoupon(@PathVariable("couponId") Long couponId) {
-        userCouponService.receiveCoupon(couponId);
+    public org.springframework.http.ResponseEntity<?> receiveCoupon(@PathVariable("couponId") Long couponId,@RequestHeader("Idempotency-Key") String key) {
+        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"COUPON_CLAIM",key,new com.tianji.promotion.service.impl.CouponClaimService.Request(couponId,null)));
     }
 
-    @ApiOperation("兑换码兑换优惠券接口")
+    @Operation(summary = "兑换码兑换优惠券接口")
     @PostMapping("/{code}/exchange")
-    public void exchangeCoupon(@PathVariable("code") String code) {
-        userCouponService.exchangeCoupon(code);
+    public org.springframework.http.ResponseEntity<?> exchangeCoupon(@PathVariable("code") String code,@RequestHeader("Idempotency-Key") String key) {
+        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"COUPON_CLAIM",key,new com.tianji.promotion.service.impl.CouponClaimService.Request(null,code)));
     }
 
-    @ApiOperation("分页查询我的优惠券")
+    @Operation(summary = "分页查询我的优惠券")
     @GetMapping("/page")
     public PageDTO<CouponVO> queryMyCouponPage(UserCouponQuery query) {
         return userCouponService.queryMyCouponPage(query);
     }
 
-    @ApiOperation("查询我的优惠券可用方案")
+    @Operation(summary = "查询我的优惠券可用方案")
     @PostMapping("/available")
     public List<CouponDiscountDTO> findDiscountSolution(@RequestBody List<OrderCourseDTO> orderCourses) {
         return discountService.findDiscountSolution(orderCourses);
     }
 
-    @ApiOperation("根据券方案计算订单优惠明细")
+    @Operation(summary = "根据券方案计算订单优惠明细")
     @PostMapping("/discount")
     public CouponDiscountDTO queryDiscountDetailByOrder(@RequestBody OrderCouponDTO orderCouponDTO){
         return discountService.queryDiscountDetailByOrder(orderCouponDTO);
     }
 
-    @ApiOperation("核销指定优惠券")
+    @Operation(summary = "核销指定优惠券")
     @PutMapping("/use")
-    public void writeOffCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+    public void writeOffCoupon(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+        com.tianji.common.utils.InternalAuth.requireService();
         userCouponService.writeOffCoupon(userCouponIds);
     }
 
-    @ApiOperation("退还指定优惠券")
+    @Operation(summary = "退还指定优惠券")
     @PutMapping("/refund")
-    public void refundCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+    public void refundCoupon(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+        com.tianji.common.utils.InternalAuth.requireService();
         userCouponService.refundCoupon(userCouponIds);
     }
 
-    @ApiOperation("分页查询我的优惠券接口")
+    @Operation(summary = "分页查询我的优惠券接口")
     @GetMapping("/rules")
     public List<String> queryDiscountRules(
-            @ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+            @Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
         return userCouponService.queryDiscountRules(userCouponIds);
     }
 }

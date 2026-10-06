@@ -12,19 +12,16 @@ public class PerPriceDiscount implements Discount {
 
     @Override
     public boolean canUse(int totalAmount, Coupon coupon) {
-        return totalAmount >= coupon.getThresholdAmount();
+        return coupon.getThresholdAmount()!=null && coupon.getThresholdAmount()>0 && totalAmount >= coupon.getThresholdAmount();
     }
 
     @Override
     public int calculateDiscount(int totalAmount, Coupon coupon) {
-        int discount = 0;
-        Integer thresholdAmount = coupon.getThresholdAmount();
-        Integer discountValue = coupon.getDiscountValue();
-        while (totalAmount >= thresholdAmount) {
-            discount += discountValue;
-            totalAmount -= thresholdAmount;
-        }
-        return Math.min(discount, coupon.getMaxDiscountAmount());
+        if(coupon.getThresholdAmount()==null || coupon.getThresholdAmount()<=0 || coupon.getDiscountValue()==null || coupon.getDiscountValue()<0)
+            throw new com.tianji.common.exceptions.BadRequestException("每满减券参数无效");
+        long discount=(long)(totalAmount/coupon.getThresholdAmount())*coupon.getDiscountValue();
+        int cap=coupon.getMaxDiscountAmount()==null || coupon.getMaxDiscountAmount()<=0?totalAmount:coupon.getMaxDiscountAmount();
+        return (int)Math.min(totalAmount,Math.min(discount,cap));
     }
 
     @Override
