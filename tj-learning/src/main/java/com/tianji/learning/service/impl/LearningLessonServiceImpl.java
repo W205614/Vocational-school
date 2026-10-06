@@ -57,6 +57,8 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
 
     private final LearningRecordMapper recordMapper;
 
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+
     @Override
     @Transactional
     public void addUserLessons(Long userId, List<Long> courseIds) {
@@ -299,14 +301,14 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         // 2. 获取本周起始时间
         LocalDate now = LocalDate.now();
         LocalDateTime begin = DateUtils.getWeekBeginTime(now);
-        LocalDateTime end = DateUtils.getWeekEndTime(now);
+        LocalDateTime end = begin.plusWeeks(1);
 
         // 3. 查询总的统计数据
         // 3.1 本周总的已学习小节数量
         Integer weekFinished = Math.toIntExact(recordMapper.selectCount(new LambdaQueryWrapper<LearningRecord>()
                 .eq(LearningRecord::getUserId, userId)
                 .eq(LearningRecord::getFinished, true)
-                .gt(LearningRecord::getFinishTime, begin)
+                .ge(LearningRecord::getFinishTime, begin)
                 .lt(LearningRecord::getFinishTime, end)
         ));
         result.setWeekFinished(weekFinished);
@@ -315,7 +317,10 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         Integer weekTotalPlan = getBaseMapper().queryTotalPlan(userId);
         result.setWeekTotalPlan(weekTotalPlan);
 
-        // TODO 3.3 本周学习积分
+        // 3.3 Existing points awarded this week, scoped to the current student.
+        result.setWeekPoints(jdbc.queryForObject(
+                "SELECT COALESCE(SUM(points),0) FROM points_record WHERE user_id=? AND create_time>=? AND create_time<?",
+                Integer.class,userId,begin,end));
 
         // 4. 查询分页数据
         // 4.1 分页查询课表以及学习计划信息

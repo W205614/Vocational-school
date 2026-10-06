@@ -7,7 +7,7 @@
         FROM learning_record
         WHERE user_id = #{userId}
         AND finished = 1
-        AND finish_time &gt; #{begin} AND finish_time &lt; #{end}
+        AND finish_time &gt;= #{begin} AND finish_time &lt; #{end}
         GROUP BY lesson_id;
     </select>
 
