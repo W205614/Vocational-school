@@ -1,0 +1,1744 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "天机学堂 - 用户中心接口文档",
+    "description": "该服务用户管理、用户信息管理",
+    "contact": {
+      "name": "传智教育·研究院",
+      "url": "http://www.itcast.cn/",
+      "email": "zhanghuyi@itcast.cn"
+    },
+    "version": "v1.0"
+  },
+  "paths": {
+    "/api/v2/services/user/users": {
+      "put": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "更新当前登录用户信息，可修改密码",
+        "operationId": "updateCurrentUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "新增用户，一般是员工或教师",
+        "operationId": "saveUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string",
+                      "pattern": "^-?[0-9]+$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/users/{id}": {
+      "get": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "根据id查询用户信息",
+        "operationId": "queryUserById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "用户id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UserDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "更新用户信息",
+        "operationId": "updateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/users/{id}/status/{status}": {
+      "put": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "修改用户状态, status=0为禁用，status=1为正常",
+        "operationId": "updateUserStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "要重置的用户的id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          },
+          {
+            "name": "status",
+            "in": "path",
+            "description": "状态",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/users/{id}/password/default": {
+      "put": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "重置密码",
+        "operationId": "resetPassword",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "要重置的用户的id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/students/password": {
+      "put": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "修改学员密码",
+        "operationId": "updateMyPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/students/register": {
+      "post": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "学员注册",
+        "operationId": "registerStudent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/user/{id}/replay": {
+      "post": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/user/{id}/replay": {
+      "post": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "replay_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/user/{id}/replay": {
+      "post": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "replay_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/users/me": {
+      "get": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "获取当前登录用户信息",
+        "operationId": "me",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UserDetailVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/users/checkCellphone": {
+      "get": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "检查用户手机号是否存在",
+        "operationId": "checkCellPhone",
+        "parameters": [
+          {
+            "name": "cellphone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/teachers/page": {
+      "get": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "分页查询教师信息",
+        "operationId": "queryTeacherPage",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UserPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOTeacherPageVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/students/page": {
+      "get": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "分页查询学生信息",
+        "operationId": "queryStudentPage",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UserPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOStudentPageVo"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/staffs/page": {
+      "get": {
+        "tags": [
+          "用户管理接口"
+        ],
+        "summary": "分页查询员工信息",
+        "operationId": "queryStaffPage",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UserPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOStaffVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/operations/user/{id}": {
+      "get": {
+        "tags": [
+          "operation-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/user": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/user/failures": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "failures",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/user": {
+      "get": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "修改用户信息的表单，带有密码",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "用户id",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "cellPhone": {
+            "type": "string",
+            "default": "",
+            "description": "手机",
+            "example": "13890011009",
+            "pattern": "^1([38][0-9]|4[579]|5[0-3,5-9]|6[6]|7[0135678]|9[89])\\d{8}$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "用户名称/昵称",
+            "example": "李四"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "用户类型，1-其他员工,2-普通学员，3-老师",
+            "example": 2
+          },
+          "roleId": {
+            "type": "string",
+            "default": "",
+            "description": "角色id，老师和学生不用填",
+            "example": 5,
+            "pattern": "^-?[0-9]+$"
+          },
+          "icon": {
+            "type": "string",
+            "default": "",
+            "description": "头像",
+            "example": "default-user-icon.jpg"
+          },
+          "job": {
+            "type": "string",
+            "default": "",
+            "description": "岗位",
+            "example": "讲师"
+          },
+          "intro": {
+            "type": "string",
+            "default": "",
+            "description": "个人介绍",
+            "example": "黑马高级Java讲师"
+          },
+          "photo": {
+            "type": "string",
+            "default": "",
+            "description": "形象照地址",
+            "example": "default-teacher-photo.jpg"
+          },
+          "username": {
+            "type": "string",
+            "default": "",
+            "description": "用户名",
+            "example": "13800010004"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "default": "",
+            "description": "邮箱"
+          },
+          "qq": {
+            "type": "string",
+            "default": "",
+            "description": "QQ号码"
+          },
+          "province": {
+            "type": "string",
+            "default": "",
+            "description": "省"
+          },
+          "city": {
+            "type": "string",
+            "default": "",
+            "description": "市"
+          },
+          "district": {
+            "type": "string",
+            "default": "",
+            "description": "区"
+          },
+          "gender": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "性别：0-男性，1-女性",
+            "example": 0
+          },
+          "oldPassword": {
+            "type": "string",
+            "default": "",
+            "description": "原始密码",
+            "example": "123321"
+          },
+          "password": {
+            "type": "string",
+            "default": "",
+            "description": "新密码",
+            "example": "123321"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "UserDTO": {
+        "type": "object",
+        "default": null,
+        "description": "用户详情",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "用户id",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "cellPhone": {
+            "type": "string",
+            "default": "",
+            "description": "手机",
+            "example": "13890011009",
+            "pattern": "^1([38][0-9]|4[579]|5[0-3,5-9]|6[6]|7[0135678]|9[89])\\d{8}$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "用户名称/昵称",
+            "example": "李四"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "用户类型，1-其他员工,2-普通学员，3-老师",
+            "example": 2
+          },
+          "roleId": {
+            "type": "string",
+            "default": "",
+            "description": "角色id，老师和学生不用填",
+            "example": 5,
+            "pattern": "^-?[0-9]+$"
+          },
+          "icon": {
+            "type": "string",
+            "default": "",
+            "description": "头像",
+            "example": "default-user-icon.jpg"
+          },
+          "job": {
+            "type": "string",
+            "default": "",
+            "description": "岗位",
+            "example": "讲师"
+          },
+          "intro": {
+            "type": "string",
+            "default": "",
+            "description": "个人介绍",
+            "example": "黑马高级Java讲师"
+          },
+          "photo": {
+            "type": "string",
+            "default": "",
+            "description": "形象照地址",
+            "example": "default-teacher-photo.jpg"
+          },
+          "username": {
+            "type": "string",
+            "default": "",
+            "description": "用户名",
+            "example": "13800010004"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "default": "",
+            "description": "邮箱"
+          },
+          "qq": {
+            "type": "string",
+            "default": "",
+            "description": "QQ号码"
+          },
+          "province": {
+            "type": "string",
+            "default": "",
+            "description": "省"
+          },
+          "city": {
+            "type": "string",
+            "default": "",
+            "description": "市"
+          },
+          "district": {
+            "type": "string",
+            "default": "",
+            "description": "区"
+          },
+          "gender": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "性别：0-男性，1-女性",
+            "example": 0
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "StudentFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "学生注册和修改密码的表单实体",
+        "properties": {
+          "cellPhone": {
+            "type": "string",
+            "default": "",
+            "description": "手机号",
+            "example": "13800010004"
+          },
+          "password": {
+            "type": "string",
+            "default": "",
+            "description": "密码",
+            "example": "123456"
+          },
+          "code": {
+            "type": "string",
+            "default": "",
+            "description": "验证码",
+            "example": "645632"
+          }
+        }
+      },
+      "UserDetailVO": {
+        "type": "object",
+        "default": null,
+        "description": "用户详情",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "用户id",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "名字",
+            "example": "张三"
+          },
+          "icon": {
+            "type": "string",
+            "default": "",
+            "description": "头像",
+            "example": "default-icon.jpg"
+          },
+          "cellPhone": {
+            "type": "string",
+            "default": "",
+            "description": "手机号",
+            "example": "13800010004"
+          },
+          "username": {
+            "type": "string",
+            "default": "",
+            "description": "用户名",
+            "example": "13800010004"
+          },
+          "email": {
+            "type": "string",
+            "default": "",
+            "description": "邮箱"
+          },
+          "qq": {
+            "type": "string",
+            "default": "",
+            "description": "QQ号码"
+          },
+          "intro": {
+            "type": "string",
+            "default": "",
+            "description": "个人介绍"
+          },
+          "province": {
+            "type": "string",
+            "default": "",
+            "description": "省"
+          },
+          "city": {
+            "type": "string",
+            "default": "",
+            "description": "市"
+          },
+          "district": {
+            "type": "string",
+            "default": "",
+            "description": "区"
+          },
+          "gender": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "性别：0-男性，1-女性",
+            "example": 0
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "注册时间",
+            "example": "2022-07-12"
+          },
+          "roleName": {
+            "type": "string",
+            "default": "",
+            "description": "角色名称",
+            "example": "教师"
+          }
+        }
+      },
+      "UserPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "教师分页查询条件",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "账户状态"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "教师名称"
+          },
+          "phone": {
+            "type": "string",
+            "default": "",
+            "description": "手机号码"
+          }
+        }
+      },
+      "PageDTOTeacherPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/TeacherPageVO"
+            }
+          }
+        }
+      },
+      "TeacherPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页教师信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "教师id，也是用户id",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "教师名称",
+            "example": "罗老师"
+          },
+          "icon": {
+            "type": "string",
+            "default": "",
+            "description": "头像",
+            "example": "default-user-icon.jpg"
+          },
+          "cellPhone": {
+            "type": "string",
+            "default": "",
+            "description": "手机号",
+            "example": "13980019001"
+          },
+          "job": {
+            "type": "string",
+            "default": "",
+            "description": "岗位",
+            "example": "讲师"
+          },
+          "intro": {
+            "type": "string",
+            "default": "",
+            "description": "介绍",
+            "example": "黑马高级Java讲师"
+          },
+          "courseAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "负责的课程数量",
+            "example": 10
+          },
+          "examQuestionAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "出题数量",
+            "example": 18
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "注册时间",
+            "example": "2022-07-12"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "账户状态，0-禁用，1-正常",
+            "example": 1
+          },
+          "photo": {
+            "type": "string",
+            "default": "",
+            "description": "形象照片地址",
+            "example": "default-user-icon.jpg"
+          }
+        }
+      },
+      "PageDTOStudentPageVo": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/StudentPageVo"
+            }
+          }
+        }
+      },
+      "StudentPageVo": {
+        "type": "object",
+        "default": null,
+        "description": "学生信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "学生id，也是用户id",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "学生名称",
+            "example": "张三"
+          },
+          "icon": {
+            "type": "string",
+            "default": "",
+            "description": "头像",
+            "example": "default-icon.jpg"
+          },
+          "cellPhone": {
+            "type": "string",
+            "default": "",
+            "description": "手机号",
+            "example": "13800010004"
+          },
+          "gender": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "性别：0-男性，1-女性",
+            "example": 0
+          },
+          "courseAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "购买/报名课程数量",
+            "example": 12
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "注册时间",
+            "example": "2022-07-12"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "账户状态，0-禁用，1-正常",
+            "example": 1
+          }
+        }
+      },
+      "PageDTOStaffVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/StaffVO"
+            }
+          }
+        }
+      },
+      "StaffVO": {
+        "type": "object",
+        "default": null,
+        "description": "员工用户",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "主键",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "icon": {
+            "type": "string",
+            "default": "",
+            "description": "头像",
+            "example": "default-user-icon.jpg"
+          },
+          "cellPhone": {
+            "type": "string",
+            "default": "",
+            "description": "手机号",
+            "example": "13800010002"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "员工姓名",
+            "example": "user_138foo0002"
+          },
+          "roleId": {
+            "type": "string",
+            "default": "",
+            "description": "角色id",
+            "example": 5,
+            "pattern": "^-?[0-9]+$"
+          },
+          "roleName": {
+            "type": "string",
+            "default": "",
+            "description": "角色名称",
+            "example": "5"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "注册时间",
+            "example": "2022-07-22"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "账号状态",
+            "example": 0
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "result": {},
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

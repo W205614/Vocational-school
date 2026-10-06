@@ -1,0 +1,3786 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "天机学堂 - 交易中心接口文档",
+    "description": "该服务提供购物车、订单管理等功能",
+    "contact": {
+      "name": "传智教育·研究院",
+      "url": "http://www.itcast.cn/",
+      "email": "zhanghuyi@itcast.cn"
+    },
+    "version": "v1.0"
+  },
+  "paths": {
+    "/api/v2/services/trade/refund-apply/cancel": {
+      "put": {
+        "tags": [
+          "退款相关接口"
+        ],
+        "summary": "取消退款申请",
+        "operationId": "cancelRefundApply",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundCancelDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/refund-apply/approval": {
+      "put": {
+        "tags": [
+          "退款相关接口"
+        ],
+        "summary": "审批退款申请",
+        "operationId": "approveRefundApply",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/orders/{id}/cancel": {
+      "put": {
+        "tags": [
+          "订单相关接口"
+        ],
+        "summary": "取消订单接口",
+        "operationId": "cancelOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "要取消订单的id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/orders/{id}/cancel": {
+      "put": {
+        "tags": [
+          "order-v-2-controller"
+        ],
+        "operationId": "cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/payment-conflicts/{id}": {
+      "put": {
+        "tags": [
+          "payment-conflict-controller"
+        ],
+        "operationId": "resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Resolution"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/refund-apply": {
+      "post": {
+        "tags": [
+          "退款相关接口"
+        ],
+        "summary": "退款申请",
+        "operationId": "applyRefund",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/pay/order": {
+      "post": {
+        "tags": [
+          "支付相关接口"
+        ],
+        "summary": "支付申请,返回支付二维码url",
+        "operationId": "applyPayOrder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayApplyFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/orders/placeOrder": {
+      "post": {
+        "tags": [
+          "订单相关接口"
+        ],
+        "summary": "下单接口",
+        "operationId": "placeOrder",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceOrderDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/orders/freeCourse/{courseId}": {
+      "post": {
+        "tags": [
+          "订单相关接口"
+        ],
+        "summary": "免费课立刻报名接口",
+        "operationId": "enrolledFreeCourse",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "description": "免费课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/carts": {
+      "get": {
+        "tags": [
+          "购物车相关接口"
+        ],
+        "summary": "获取购物车中的课程",
+        "operationId": "getMyCarts",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CartVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "购物车相关接口"
+        ],
+        "summary": "添加课程到购物车",
+        "operationId": "addCourse2Cart",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CartsAddDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "购物车相关接口"
+        ],
+        "summary": "批量删除购物车条目",
+        "operationId": "deleteCartById",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "购物车条目id集合",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/orders": {
+      "get": {
+        "tags": [
+          "order-v-2-controller"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/OrderPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "order-v-2-controller"
+        ],
+        "operationId": "create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceOrderDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/orders/free-courses/{courseId}": {
+      "post": {
+        "tags": [
+          "order-v-2-controller"
+        ],
+        "operationId": "enroll",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/trade/{id}/replay": {
+      "post": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/trade/{id}/replay": {
+      "post": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "replay_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/trade/{id}/replay": {
+      "post": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "replay_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/compensations/{kind}/{id}/replay": {
+      "post": {
+        "tags": [
+          "compensation-controller"
+        ],
+        "operationId": "replay_3",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/refund-apply/{id}": {
+      "get": {
+        "tags": [
+          "退款相关接口"
+        ],
+        "summary": "根据id查询退款详情",
+        "operationId": "queryRefundDetailById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "退款id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RefundApplyVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/refund-apply/page": {
+      "get": {
+        "tags": [
+          "退款相关接口"
+        ],
+        "summary": "分页查询退款申请",
+        "operationId": "queryRefundApplyByPage",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RefundApplyPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTORefundApplyPageVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/refund-apply/next": {
+      "get": {
+        "tags": [
+          "退款相关接口"
+        ],
+        "summary": "查询下一个待审批的退款申请",
+        "operationId": "nextRefundApplyToApprove",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RefundApplyVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/refund-apply/detail/{id}": {
+      "get": {
+        "tags": [
+          "退款相关接口"
+        ],
+        "summary": "根据子订单id查询退款详情",
+        "operationId": "queryRefundDetailByDetailId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "子订单id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RefundApplyVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/pay/channels": {
+      "get": {
+        "tags": [
+          "支付相关接口"
+        ],
+        "summary": "获取支付渠道列表接口",
+        "operationId": "queryPayChannels",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PayChannelVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/orders/{id}": {
+      "get": {
+        "tags": [
+          "订单相关接口"
+        ],
+        "summary": "根据id查询订单详细信息",
+        "operationId": "queryOrderById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "订单id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/OrderVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "订单相关接口"
+        ],
+        "summary": "删除订单接口",
+        "operationId": "deleteOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "要删除的订单id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/orders/{id}/status": {
+      "get": {
+        "tags": [
+          "订单相关接口"
+        ],
+        "summary": "查询订单支付状态",
+        "operationId": "queryOrderStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "订单id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlaceOrderResultVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/orders/prePlaceOrder": {
+      "get": {
+        "tags": [
+          "订单相关接口"
+        ],
+        "summary": "预下单接口，生成订单id，确认订单可用优惠券信息",
+        "operationId": "prePlaceOrder",
+        "parameters": [
+          {
+            "name": "courseIds",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-?[0-9]+$"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/OrderConfirmVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/orders/page": {
+      "get": {
+        "tags": [
+          "订单相关接口"
+        ],
+        "summary": "分页查询我的订单",
+        "operationId": "queryMyOrderPage",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/OrderPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOOrderPageVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/order-details/{id}": {
+      "get": {
+        "tags": [
+          "订单明细相关接口"
+        ],
+        "summary": "根据订单明细id获取详细信息",
+        "operationId": "queryOrdersDetailProgress",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "订单明细id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/OrderDetailAdminVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/order-details/purchaseInfo": {
+      "get": {
+        "tags": [
+          "订单明细相关接口"
+        ],
+        "operationId": "getPurchaseInfoOfCourse",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CoursePurchaseInfoDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/order-details/page": {
+      "get": {
+        "tags": [
+          "订单明细相关接口"
+        ],
+        "summary": "分页查询订单明细",
+        "operationId": "queryDetailForPage",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/OrderDetailPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOOrderDetailPageVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/order-details/enrollNum": {
+      "get": {
+        "tags": [
+          "订单明细相关接口"
+        ],
+        "summary": "统计课程报名人数",
+        "operationId": "countEnrollNumOfCourse",
+        "parameters": [
+          {
+            "name": "courseIdList",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-?[0-9]+$"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "format": "int32"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/order-details/enrollCourse": {
+      "get": {
+        "tags": [
+          "订单明细相关接口"
+        ],
+        "summary": "统计学生报名课程数量",
+        "operationId": "countEnrollCourseOfStudent",
+        "parameters": [
+          {
+            "name": "studentIds",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-?[0-9]+$"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "format": "int32"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/order-details/course/{id}": {
+      "get": {
+        "tags": [
+          "订单明细相关接口"
+        ],
+        "summary": "校验课程是否购买，是否过期",
+        "operationId": "checkCourseOrderInfo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/orders/{id}": {
+      "get": {
+        "tags": [
+          "order-v-2-controller"
+        ],
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/orders/{id}/status": {
+      "get": {
+        "tags": [
+          "order-v-2-controller"
+        ],
+        "operationId": "status",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/orders/confirmation": {
+      "get": {
+        "tags": [
+          "order-v-2-controller"
+        ],
+        "operationId": "confirm",
+        "parameters": [
+          {
+            "name": "courseIds",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-?[0-9]+$"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/operations/trade/{id}": {
+      "get": {
+        "tags": [
+          "operation-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/payment-conflicts": {
+      "get": {
+        "tags": [
+          "payment-conflict-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "OPEN"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/trade": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "list_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/trade/failures": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "failures",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/dashboard": {
+      "get": {
+        "tags": [
+          "dashboard-controller"
+        ],
+        "operationId": "dashboard",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/trade": {
+      "get": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "list_3",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/compensations/{kind}": {
+      "get": {
+        "tags": [
+          "compensation-controller"
+        ],
+        "operationId": "list_4",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/trade/carts/{id}": {
+      "delete": {
+        "tags": [
+          "购物车相关接口"
+        ],
+        "summary": "删除指定的购物车条目",
+        "operationId": "deleteCartById_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "购物车条目id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RefundCancelDTO": {
+        "type": "object",
+        "default": null,
+        "description": "退款取消",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "退款申请id，订单明细id和退款申请id二选一",
+            "pattern": "^-?[0-9]+$"
+          },
+          "orderDetailId": {
+            "type": "string",
+            "default": "",
+            "description": "订单明细id，订单明细id和退款申请id二选一",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "result": {},
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "ApproveFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "退款审批模型",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "退款id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "approveType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "审批类型，1：同意，2：拒绝"
+          },
+          "approveOpinion": {
+            "type": "string",
+            "default": "",
+            "description": "审批意见"
+          },
+          "remark": {
+            "type": "string",
+            "default": "",
+            "description": "备注"
+          }
+        },
+        "required": [
+          "approveType",
+          "id"
+        ]
+      },
+      "Resolution": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "resolution": {
+            "type": "string"
+          }
+        }
+      },
+      "RefundFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "退款申请数据",
+        "properties": {
+          "orderDetailId": {
+            "type": "string",
+            "default": "",
+            "description": "订单明细id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "refundReason": {
+            "type": "string",
+            "default": "",
+            "description": "退款原因"
+          },
+          "questionDesc": {
+            "type": "string",
+            "default": "",
+            "description": "问题说明"
+          }
+        },
+        "required": [
+          "orderDetailId",
+          "questionDesc",
+          "refundReason"
+        ]
+      },
+      "PayApplyFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "支付申请信息",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "payChannelCode": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道码，wxPay,aliPay"
+          }
+        },
+        "required": [
+          "orderId",
+          "payChannelCode"
+        ]
+      },
+      "PlaceOrderDTO": {
+        "type": "object",
+        "default": null,
+        "description": "下单模型",
+        "properties": {
+          "courseIds": {
+            "type": "array",
+            "default": "",
+            "description": "要购买的课程id列表，可以只买单个课程",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "couponIds": {
+            "type": "array",
+            "default": "",
+            "description": "该订单使用的优惠券id列表，可以为空",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          }
+        },
+        "required": [
+          "courseIds",
+          "orderId"
+        ]
+      },
+      "CartsAddDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程加入购物车",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "default": "",
+            "description": "要加入购物车的课程id",
+            "pattern": "^-?[0-9]+$"
+          }
+        },
+        "required": [
+          "courseId"
+        ]
+      },
+      "RefundApplyVO": {
+        "type": "object",
+        "default": null,
+        "description": "退款申请详细信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "退款id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "orderDetailId": {
+            "type": "string",
+            "default": "",
+            "description": "子订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "payOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "支付流水单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "payChannel": {
+            "type": "string",
+            "default": "",
+            "description": "支付方式"
+          },
+          "refundChannel": {
+            "type": "string",
+            "default": "",
+            "description": "退款方式"
+          },
+          "refundOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "退款流水单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "refundReason": {
+            "type": "string",
+            "default": "",
+            "description": "申请退款原因"
+          },
+          "questionDesc": {
+            "type": "string",
+            "default": "",
+            "description": "申请退款说明"
+          },
+          "studentName": {
+            "type": "string",
+            "default": "",
+            "description": "学员昵称"
+          },
+          "mobile": {
+            "type": "string",
+            "default": "",
+            "description": "手机号"
+          },
+          "refundProposerName": {
+            "type": "string",
+            "default": "",
+            "description": "退款申请人，格式：角色-名字"
+          },
+          "orderTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "订单时间"
+          },
+          "paySuccessTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "支付时间"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "退款申请时间"
+          },
+          "approveTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "退款审批时间"
+          },
+          "message": {
+            "type": "string",
+            "default": "",
+            "description": "状态描述"
+          },
+          "approveOpinion": {
+            "type": "string",
+            "default": "",
+            "description": "审批意见"
+          },
+          "remark": {
+            "type": "string",
+            "default": "",
+            "description": "审批意见"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程价格"
+          },
+          "realPayAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "实付金额"
+          },
+          "couponDesc": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券规则"
+          },
+          "discountAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠总金额"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款状态：1：待审批，2：取消退款，3：同意退款，4：拒绝退款，5：退款成功，6：退款失败"
+          },
+          "failedReason": {
+            "type": "string",
+            "default": "",
+            "description": "退款失败原因"
+          }
+        }
+      },
+      "RefundApplyPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "退款申请分页参数",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "退款id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "refundStatus": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款状态，1：待审批，2：取消退款，3：同意退款，4：拒绝退款，5：退款成功，6：退款失败"
+          },
+          "orderDetailId": {
+            "type": "string",
+            "default": "",
+            "description": "订单明细id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "mobile": {
+            "type": "string",
+            "default": "",
+            "description": "学员手机号"
+          },
+          "applyStartTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "申请开始时间"
+          },
+          "applyEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "申请结束时间"
+          }
+        }
+      },
+      "PageDTORefundApplyPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/RefundApplyPageVO"
+            }
+          }
+        }
+      },
+      "RefundApplyPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "退款信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "退款id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "orderDetailId": {
+            "type": "string",
+            "default": "",
+            "description": "订单明细id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "refundAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款金额"
+          },
+          "proposerName": {
+            "type": "string",
+            "default": "",
+            "description": "申请人"
+          },
+          "proposerMobile": {
+            "type": "string",
+            "default": "",
+            "description": "申请人手机号"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款申请状态"
+          },
+          "refundStatusDesc": {
+            "type": "string",
+            "default": "",
+            "description": "退款申请状态描述"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "退款申请时间"
+          },
+          "approverName": {
+            "type": "string",
+            "default": "",
+            "description": "审批人"
+          },
+          "approveTime": {
+            "type": "string",
+            "default": "",
+            "description": "审批时间"
+          },
+          "refundSuccessTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "退款成功时间"
+          }
+        }
+      },
+      "PayChannelVO": {
+        "type": "object",
+        "default": null,
+        "description": "支付渠道信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道名称"
+          },
+          "channelCode": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道编码，唯一标示"
+          },
+          "channelPriority": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "渠道优先级，数字越小优先级越高"
+          },
+          "channelIcon": {
+            "type": "string",
+            "default": "",
+            "description": "渠道图标"
+          }
+        }
+      },
+      "OrderDetailVO": {
+        "type": "object",
+        "default": null,
+        "description": "订单条目中的课程信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "订单条目id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "总订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseId": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "封面"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程价格"
+          },
+          "realPayAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "实付金额"
+          },
+          "refundStatus": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款状态"
+          },
+          "couponDesc": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券规则"
+          },
+          "canRefund": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否可以退款"
+          }
+        }
+      },
+      "OrderProgressNodeVO": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "订单进度节点名称"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "订单进度节点名称对应的时间"
+          }
+        }
+      },
+      "OrderVO": {
+        "type": "object",
+        "default": null,
+        "description": "订单详细信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "订单创建时间"
+          },
+          "realAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单实付金额"
+          },
+          "totalAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单明细金额"
+          },
+          "couponDesc": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券规则,可以有多个优惠券规则"
+          },
+          "discountAmount": {
+            "type": "number",
+            "format": "double",
+            "default": "",
+            "description": "优惠总金额"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单状态，1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名，6：已申请退款"
+          },
+          "statusDesc": {
+            "type": "string",
+            "default": "",
+            "description": "订单状态描述"
+          },
+          "message": {
+            "type": "string",
+            "default": "",
+            "description": "订单状态描述"
+          },
+          "progressNodes": {
+            "type": "array",
+            "default": "",
+            "description": "订单进度明细",
+            "items": {
+              "$ref": "#/components/schemas/OrderProgressNodeVO"
+            }
+          },
+          "details": {
+            "type": "array",
+            "default": "",
+            "description": "订单中课程明细",
+            "items": {
+              "$ref": "#/components/schemas/OrderDetailVO"
+            }
+          }
+        }
+      },
+      "PlaceOrderResultVO": {
+        "type": "object",
+        "default": null,
+        "description": "下单响应信息",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "订单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "payAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "支付金额"
+          },
+          "payOutTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "待支付的订单，超时时间"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单状态，1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名, 6:申请退款"
+          }
+        }
+      },
+      "CouponDiscountDTO": {
+        "type": "object",
+        "default": null,
+        "description": "订单的可用优惠券及折扣信息",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "default": "",
+            "description": "用户优惠券id集合",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "rules": {
+            "type": "array",
+            "default": "",
+            "description": "优惠券规则",
+            "items": {
+              "type": "string"
+            }
+          },
+          "discountAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "本订单最大优惠金额"
+          },
+          "discountDetail": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "default": "",
+            "description": "优惠明细, key是课程id, value是课程优惠金额"
+          }
+        }
+      },
+      "OrderConfirmVO": {
+        "type": "object",
+        "default": null,
+        "description": "订单确认页信息",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "totalAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单总金额"
+          },
+          "discounts": {
+            "type": "array",
+            "default": "",
+            "description": "优惠折扣方案",
+            "items": {
+              "$ref": "#/components/schemas/CouponDiscountDTO"
+            }
+          },
+          "courses": {
+            "type": "array",
+            "default": "",
+            "description": "订单中包含的课程",
+            "items": {
+              "$ref": "#/components/schemas/OrderCourseVO"
+            }
+          }
+        }
+      },
+      "OrderCourseVO": {
+        "type": "object",
+        "default": null,
+        "description": "订单中课程信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "课程封面url"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程价格，单位元"
+          }
+        }
+      },
+      "OrderPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "订单分页查询条件",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单状态"
+          }
+        }
+      },
+      "OrderPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "订单分页信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "订单创建时间"
+          },
+          "realAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单实付金额"
+          },
+          "totalAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单明细金额"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单状态1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名"
+          },
+          "statusDesc": {
+            "type": "string",
+            "default": "",
+            "description": "订单状态描述"
+          },
+          "details": {
+            "type": "array",
+            "default": "",
+            "description": "订单中课程明细",
+            "items": {
+              "$ref": "#/components/schemas/OrderDetailVO"
+            }
+          }
+        }
+      },
+      "PageDTOOrderPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/OrderPageVO"
+            }
+          }
+        }
+      },
+      "OrderDetailAdminVO": {
+        "type": "object",
+        "default": null,
+        "description": "管理端订单条目详细信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "订单条目id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "refundApplyId": {
+            "type": "string",
+            "default": "",
+            "description": "退款id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "payOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "支付流水单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "refundOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "退款流水单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "studentName": {
+            "type": "string",
+            "default": "",
+            "description": "学员昵称"
+          },
+          "mobile": {
+            "type": "string",
+            "default": "",
+            "description": "手机号"
+          },
+          "refundProposerName": {
+            "type": "string",
+            "default": "",
+            "description": "退款申请人，格式：角色-名字"
+          },
+          "payChannel": {
+            "type": "string",
+            "default": "",
+            "description": "支付方式"
+          },
+          "refundChannel": {
+            "type": "string",
+            "default": "",
+            "description": "退款方式"
+          },
+          "failedReason": {
+            "type": "string",
+            "default": "",
+            "description": "退款失败原因"
+          },
+          "refundReason": {
+            "type": "string",
+            "default": "",
+            "description": "申请退款原因"
+          },
+          "refundMessage": {
+            "type": "string",
+            "default": "",
+            "description": "申请退款描述"
+          },
+          "remark": {
+            "type": "string",
+            "default": "",
+            "description": "审批意见"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单状态，1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名"
+          },
+          "refundStatus": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款状态，1：待审批，2：取消退款，3：同意退款，4：拒绝退款，5：退款成功，6：退款失败"
+          },
+          "message": {
+            "type": "string",
+            "default": "",
+            "description": "状态描述"
+          },
+          "nodes": {
+            "type": "array",
+            "default": "",
+            "description": "订单节点进度节点列表",
+            "items": {
+              "$ref": "#/components/schemas/OrderProgressNodeVO"
+            }
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程价格"
+          },
+          "realPayAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "实付金额"
+          },
+          "couponDesc": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券规则"
+          },
+          "discountAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠总金额"
+          },
+          "studyValidTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "学习有效期"
+          },
+          "canRefund": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否可以退款"
+          }
+        }
+      },
+      "CoursePurchaseInfoDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程购买信息",
+        "properties": {
+          "enrollNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "报名人数"
+          },
+          "refundNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款人数"
+          },
+          "realPayAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "实付总金额"
+          }
+        }
+      },
+      "OrderDetailPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "订单明细查询条件",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "订单明细id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单状态：1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名"
+          },
+          "refundStatus": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款状态：1：待审批，2：取消退款，3：同意退款，4：拒绝退款，5：退款成功，6：退款失败"
+          },
+          "payChannel": {
+            "type": "string",
+            "default": "",
+            "description": "支付方式:wxPay:微信，aliPay：支付宝"
+          },
+          "mobile": {
+            "type": "string",
+            "default": "",
+            "description": "手机号"
+          },
+          "orderStartTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "下单开始时间"
+          },
+          "orderEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "下单结束时间"
+          }
+        }
+      },
+      "OrderDetailPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "订单明细分页结果",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "订单明细id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "orderId": {
+            "type": "string",
+            "default": "",
+            "description": "订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "学员姓名"
+          },
+          "mobile": {
+            "type": "string",
+            "default": "",
+            "description": "手机号"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单金额，也就是课程原价"
+          },
+          "realPayAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "实付金额"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "订单状态1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名"
+          },
+          "statusDesc": {
+            "type": "string",
+            "default": "",
+            "description": "订单状态描述"
+          },
+          "refundStatus": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款状态1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名，0：表示没有退款状态"
+          },
+          "refundStatusDesc": {
+            "type": "string",
+            "default": "",
+            "description": "退款状态描述"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "订单时间"
+          },
+          "payChannel": {
+            "type": "string",
+            "default": "",
+            "description": "支付方式"
+          }
+        }
+      },
+      "PageDTOOrderDetailPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/OrderDetailPageVO"
+            }
+          }
+        }
+      },
+      "CartVO": {
+        "type": "object",
+        "default": null,
+        "description": "购物车条目信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "购物车中条目id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseId": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseName": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "课程封面url"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "加入购物车时的课程价格，单位元"
+          },
+          "nowPrice": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "现在的课程价格，单位元"
+          },
+          "expired": {
+            "type": "boolean",
+            "default": false,
+            "description": "课程是否已经过期"
+          }
+        }
+      }
+    }
+  }
+}

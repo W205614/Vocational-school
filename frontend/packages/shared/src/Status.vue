@@ -1,0 +1,2 @@
+<script setup lang="ts">defineProps<{busy?:boolean;error?:string;message?:string}>();</script>
+<template><el-alert v-if="error" :title="error" type="error" show-icon :closable="false"/><el-alert v-if="message" :title="message" type="success" :closable="false"/><p v-if="busy" role="status">正在处理…</p></template>

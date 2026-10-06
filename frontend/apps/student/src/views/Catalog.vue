@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import {ref,onMounted} from 'vue';import {get} from '../../../../packages/shared/src/client';import {useTask,money,query,type Row} from '../../../../packages/shared/src/ui';import Status from '../../../../packages/shared/src/Status.vue';
+const task=useTask(),keyword=ref(''),page=ref(1),rows=ref<Row[]>([]),total=ref(0),sort=ref('');
+async function load(){await task.run(async()=>{const result=await get<Row>('/services/search/courses/portal?'+query({keyword:keyword.value,pageNo:page.value,pageSize:20,sortBy:sort.value}));rows.value=result.list||[];total.value=Number(result.total||0);});}
+onMounted(load);
+</script>
+<template><section class="card"><h2>课程中心</h2><div class="toolbar"><el-input v-model="keyword" placeholder="搜索课程" @keyup.enter="page=1;load()"/><el-select v-model="sort" placeholder="排序" style="width:150px"><el-option label="默认" value=""/><el-option label="价格" value="price"/><el-option label="销量" value="sold"/><el-option label="上架时间" value="publishTime"/></el-select><el-button type="primary" @click="page=1;load()">搜索</el-button></div><Status :busy="task.busy.value" :error="task.error.value"/>
+<div class="grid"><article v-for="course in rows" :key="course.id" class="card"><img v-if="course.coverUrl" :src="course.coverUrl" class="course-cover" alt="课程封面"/><h3><RouterLink :to="'/courses/'+course.id">{{course.name}}</RouterLink></h3><p class="price">{{course.free?'免费':money(course.price)}}</p><p class="muted">{{course.sectionNum}} 小节 · {{course.sold||0}} 人学习</p></article></div><el-empty v-if="!task.busy.value && !rows.length && !task.error.value" description="没有找到课程"/><el-pagination v-model:current-page="page" :page-size="20" :total="total" layout="prev,pager,next" @current-change="load"/></section></template>

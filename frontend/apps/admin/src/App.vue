@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import zhCn from "element-plus/es/locale/lang/zh-cn";
+import EnvironmentBanner from '../../../packages/shared/src/EnvironmentBanner.vue';
+import {ref,onMounted} from 'vue';import {useSession} from '../../../packages/shared/src/session';import {useOperations} from '../../../packages/shared/src/operations';import {useTask} from '../../../packages/shared/src/ui';import Status from '../../../packages/shared/src/Status.vue';import {resources} from './resources';
+import {computed} from 'vue';
+const session=useSession(),ops=useOperations(),task=useTask(),username=ref(''),password=ref('');onMounted(()=>{if(session.token)void ops.resume();});
+const visibleResources=computed(()=>session.role===3?{}:resources);
+</script>
+<template><el-config-provider :locale="zhCn"><div v-if="!session.token || !session.admin" class="card login"><h1>天机学堂管理中心</h1><Status :busy="task.busy.value" :error="task.error.value"/><el-form @submit.prevent="task.run(()=>session.login(username,password,true))"><el-form-item label="账号"><el-input v-model="username" autocomplete="username"/></el-form-item><el-form-item label="密码"><el-input v-model="password" type="password" autocomplete="current-password"/></el-form-item><el-button type="primary" native-type="submit" :disabled="task.busy.value || !username || !password">登录管理端</el-button></el-form></div>
+<div v-else class="layout"><aside class="sidebar"><h1>天机 · 管理中心</h1><nav><RouterLink v-if="session.role!==3" to="/">数据看板</RouterLink><RouterLink v-for="(resource,key) in visibleResources" :key="key" :to="'/'+key">{{resource.title}}</RouterLink><RouterLink v-if="session.role!==3" to="/role-permissions">角色权限绑定</RouterLink><RouterLink to="/exams">试卷与评分</RouterLink><RouterLink v-if="session.role!==3" to="/reliability">失败与补偿任务</RouterLink><RouterLink to="/operations">操作记录</RouterLink></nav></aside><main class="main"><header class="topbar"><strong>管理工作台</strong><el-button @click="task.run(()=>session.logout())">退出登录</el-button></header><Status :error="task.error.value"/><EnvironmentBanner/><RouterView/></main></div></el-config-provider></template>

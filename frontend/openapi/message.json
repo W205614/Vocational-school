@@ -1,0 +1,2402 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "天机学堂 - 消息中心接口文档",
+    "description": "该服务用于站内信、通知管理、短信发送等功能",
+    "contact": {
+      "name": "传智教育·研究院",
+      "url": "http://www.itcast.cn/",
+      "email": "zhanghuyi@itcast.cn"
+    },
+    "version": "v1.0"
+  },
+  "paths": {
+    "/api/v2/services/message/sms-platforms/{id}": {
+      "get": {
+        "tags": [
+          "短信平台管理接口"
+        ],
+        "summary": "根据id查询短信平台信息",
+        "operationId": "querySmsThirdPlatform",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "短信平台id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SmsThirdPlatformDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "短信平台管理接口"
+        ],
+        "summary": "更新短信平台信息",
+        "operationId": "updateSmsThirdPlatform",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "短信平台id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmsThirdPlatformFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/notice-templates/{id}": {
+      "get": {
+        "tags": [
+          "通知模板管理接口"
+        ],
+        "summary": "根据id查询模板",
+        "operationId": "queryNoticeTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "模板id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NoticeTemplateDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "通知模板管理接口"
+        ],
+        "summary": "更新通知模板",
+        "operationId": "updateNoticeTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "模板id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoticeTemplateFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/notice-tasks/{id}": {
+      "get": {
+        "tags": [
+          "短信任务管理接口"
+        ],
+        "summary": "根据id查询任务",
+        "operationId": "queryNoticeTask",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "任务id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NoticeTaskDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "短信任务管理接口"
+        ],
+        "summary": "更新通知任务",
+        "operationId": "updateNoticeTask",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "任务id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoticeTaskFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/message-templates/{id}": {
+      "get": {
+        "tags": [
+          "短信模板管理接口"
+        ],
+        "summary": "根据id查询短信模板",
+        "operationId": "queryMessageTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "模板id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MessageTemplateDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "短信模板管理接口"
+        ],
+        "summary": "更新短信模板",
+        "operationId": "updateMessageTemplate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "短信模板id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageTemplateFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/inboxes/{id}/read": {
+      "put": {
+        "tags": [
+          "用户收件箱接口"
+        ],
+        "operationId": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/sms/message": {
+      "post": {
+        "tags": [
+          "短信发送控制器"
+        ],
+        "summary": "同步发送短信",
+        "operationId": "sendMessage",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmsInfoDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/sms-platforms": {
+      "get": {
+        "tags": [
+          "短信平台管理接口"
+        ],
+        "summary": "分页查询短信平台信息",
+        "operationId": "querySmsThirdPlatforms",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SmsThirdPlatformPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOSmsThirdPlatformDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "短信平台管理接口"
+        ],
+        "summary": "新增短信平台信息",
+        "operationId": "saveSmsThirdPlatform",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmsThirdPlatformFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string",
+                      "pattern": "^-?[0-9]+$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/notice-templates": {
+      "get": {
+        "tags": [
+          "通知模板管理接口"
+        ],
+        "summary": "分页查询通知模板",
+        "operationId": "queryNoticeTemplates",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/NoticeTemplatePageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTONoticeTemplateDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "通知模板管理接口"
+        ],
+        "summary": "新增通知模板",
+        "operationId": "saveNoticeTemplate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoticeTemplateFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string",
+                      "pattern": "^-?[0-9]+$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/notice-tasks": {
+      "get": {
+        "tags": [
+          "短信任务管理接口"
+        ],
+        "summary": "分页查询通知任务",
+        "operationId": "queryNoticeTasks",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/NoticeTaskPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTONoticeTaskDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "短信任务管理接口"
+        ],
+        "summary": "新增通知任务",
+        "operationId": "saveNoticeTask",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoticeTaskFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/message-templates": {
+      "get": {
+        "tags": [
+          "短信模板管理接口"
+        ],
+        "summary": "分页查询短信模板",
+        "operationId": "queryMessageTemplates",
+        "parameters": [
+          {
+            "name": "pageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/MessageTemplatePageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOMessageTemplateDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "短信模板管理接口"
+        ],
+        "summary": "新增短信模板",
+        "operationId": "saveMessageTemplate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageTemplateFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string",
+                      "pattern": "^-?[0-9]+$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/inboxes": {
+      "get": {
+        "tags": [
+          "用户收件箱接口"
+        ],
+        "summary": "分页查询收件箱",
+        "operationId": "queryUserInBoxesPage",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UserInboxQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOUserInboxDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "用户收件箱接口"
+        ],
+        "summary": "发送私信",
+        "operationId": "sentMessageToUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserInboxFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string",
+                      "pattern": "^-?[0-9]+$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/message/{id}/replay": {
+      "post": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/message/{id}/replay": {
+      "post": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "replay_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/deliveries/{kind}/{id}/replay": {
+      "post": {
+        "tags": [
+          "delivery-task-controller"
+        ],
+        "operationId": "replay_2",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/message/{id}/replay": {
+      "post": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "replay_3",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/operations/message/{id}": {
+      "get": {
+        "tags": [
+          "operation-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/message": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/message/failures": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "failures",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/deliveries/{kind}": {
+      "get": {
+        "tags": [
+          "delivery-task-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/message": {
+      "get": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "list_2",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SmsThirdPlatformFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "短信第三方平台信息的表单实体",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "短信平台id，新增时无需填写",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "短信平台名称"
+          },
+          "code": {
+            "type": "string",
+            "default": "",
+            "description": "短信平台代码，例如：ali"
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "数字越小优先级越高，最小为0"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "短信平台状态：0-禁用，1-启用"
+          }
+        }
+      },
+      "MessageTemplateFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "短信模板表单实体",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "信发送模板id，新增时无需填写",
+            "pattern": "^-?[0-9]+$"
+          },
+          "platformCode": {
+            "type": "string",
+            "default": "",
+            "description": "第三方短信平台代号"
+          },
+          "signName": {
+            "type": "string",
+            "default": "",
+            "description": "第三方平台短信签名"
+          },
+          "thirdTemplateCode": {
+            "type": "string",
+            "default": "",
+            "description": "第三方平台短信模板code"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "模板状态:  0-草稿，1-使用中，2-停用"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "短信模板名称，如果是通知模板下的短信模板，则无需填写"
+          },
+          "content": {
+            "type": "string",
+            "default": "",
+            "description": "短信模板内容预览，如果是通知模板下的短信模板，则无需填写"
+          }
+        }
+      },
+      "NoticeTemplateFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "通知模板表单实体",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "主键id，新增时无需填写",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "模板名称"
+          },
+          "code": {
+            "type": "string",
+            "default": "",
+            "description": "模板代号，例如：VERIFY_CODE"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "通知类型：0-系统通知，1-笔记通知，2-问答通知，3-其它通知"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "模板状态:  0-草稿，1-使用中，2-停用"
+          },
+          "title": {
+            "type": "string",
+            "default": "",
+            "description": "通知标题"
+          },
+          "content": {
+            "type": "string",
+            "default": "",
+            "description": "通知内容"
+          },
+          "isSmsTemplate": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否是短信模板，默认false"
+          },
+          "messageTemplates": {
+            "type": "array",
+            "default": "",
+            "description": "如果需要添加短信模板时填写这个，可以包含不同短信渠道",
+            "items": {
+              "$ref": "#/components/schemas/MessageTemplateFormDTO"
+            }
+          },
+          "deleteMessageTemplates": {
+            "type": "array",
+            "default": "",
+            "description": "如果需要删除已添加的短信模板时填写这个，只填id",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        }
+      },
+      "NoticeTaskFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "通知任务的表单实体",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "任务id，新增时无需填写",
+            "pattern": "^-?[0-9]+$"
+          },
+          "templateId": {
+            "type": "string",
+            "default": "",
+            "description": "任务要发送的通知模板id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "任务名称"
+          },
+          "partial": {
+            "type": "boolean",
+            "default": false,
+            "description": "true-指定部分用户;false-通知所有人。默认false"
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "pushTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "任务预期执行时间，如果为null，或者小于等于当前时间，则立刻执行"
+          },
+          "maxTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "任务重复执行次数上限，0则不重复"
+          },
+          "interval": {
+            "type": "string",
+            "default": "",
+            "description": "任务重复执行时间间隔，单位是分钟",
+            "pattern": "^-?[0-9]+$"
+          },
+          "expireTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "任务失效时间"
+          }
+        }
+      },
+      "SmsInfoDTO": {
+        "type": "object",
+        "default": null,
+        "description": "短信发送参数",
+        "properties": {
+          "templateCode": {
+            "type": "string"
+          },
+          "phones": {},
+          "templateParams": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UserInboxFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "用户私信表单实体",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "default": "",
+            "description": "目标用户id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "content": {
+            "type": "string",
+            "default": "",
+            "description": "私信内容"
+          }
+        }
+      },
+      "SmsThirdPlatformPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "通知模板查询对象",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "keyword": {
+            "type": "string"
+          }
+        }
+      },
+      "PageDTOSmsThirdPlatformDTO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/SmsThirdPlatformDTO"
+            }
+          }
+        }
+      },
+      "SmsThirdPlatformDTO": {
+        "type": "object",
+        "default": null,
+        "description": "短信第三方平台信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "短信平台id，新增时无需填写",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "短信平台名称"
+          },
+          "code": {
+            "type": "string",
+            "default": "",
+            "description": "短信平台代码，例如：ali"
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "数字越小优先级越高，最小为0"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "短信平台状态：0-禁用，1-启用"
+          }
+        }
+      },
+      "NoticeTemplatePageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "通知模板查询对象",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "keyword": {
+            "type": "string"
+          }
+        }
+      },
+      "NoticeTemplateDTO": {
+        "type": "object",
+        "default": null,
+        "description": "通知模板实体",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "主键id，新增时无需填写",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "模板名称"
+          },
+          "code": {
+            "type": "string",
+            "default": "",
+            "description": "模板代号，例如：VERIFY_CODE"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "通知类型：0-系统通知，1-笔记通知，2-问答通知，3-其它通知"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "模板状态:  0-草稿，1-使用中，2-停用"
+          },
+          "title": {
+            "type": "string",
+            "default": "",
+            "description": "通知标题"
+          },
+          "content": {
+            "type": "string",
+            "default": "",
+            "description": "通知内容"
+          },
+          "isSmsTemplate": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否是短信模板，默认false"
+          }
+        }
+      },
+      "PageDTONoticeTemplateDTO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/NoticeTemplateDTO"
+            }
+          }
+        }
+      },
+      "NoticeTaskPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "通知模板查询对象",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "finished": {
+            "type": "boolean"
+          },
+          "keyword": {
+            "type": "string"
+          },
+          "minPushTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maxPushTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "NoticeTaskDTO": {
+        "type": "object",
+        "default": null,
+        "description": "通知任务",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "任务id，新增时无需填写",
+            "pattern": "^-?[0-9]+$"
+          },
+          "templateId": {
+            "type": "string",
+            "default": "",
+            "description": "任务要发送的通知模板id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "任务名称"
+          },
+          "partial": {
+            "type": "boolean",
+            "default": false,
+            "description": "true-通知指定用户;false-全员公告。默认false"
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "pushTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "任务预期执行时间"
+          },
+          "maxTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "任务重复执行次数上限，0则不重复"
+          },
+          "interval": {
+            "type": "string",
+            "default": "",
+            "description": "任务重复执行时间间隔，单位是分钟",
+            "pattern": "^-?[0-9]+$"
+          },
+          "expireTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "任务失效时间"
+          },
+          "finished": {
+            "type": "boolean",
+            "default": false,
+            "description": "任务是否已经完成。默认false"
+          }
+        }
+      },
+      "PageDTONoticeTaskDTO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/NoticeTaskDTO"
+            }
+          }
+        }
+      },
+      "MessageTemplatePageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "通知模板查询对象",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "thirdPlatformId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "keyword": {
+            "type": "string"
+          }
+        }
+      },
+      "MessageTemplateDTO": {
+        "type": "object",
+        "default": null,
+        "description": "短信模板",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "信发送模板id，新增时无需填写",
+            "pattern": "^-?[0-9]+$"
+          },
+          "platformCode": {
+            "type": "string",
+            "default": "",
+            "description": "第三方短信推送渠道id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "platformName": {
+            "type": "string",
+            "default": "",
+            "description": "第三方短信推送渠道名称"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "短信模板名称"
+          },
+          "content": {
+            "type": "string",
+            "default": "",
+            "description": "短信模板预览内容"
+          },
+          "signName": {
+            "type": "string",
+            "default": "",
+            "description": "第三方平台短信签名"
+          },
+          "thirdTemplateCode": {
+            "type": "string",
+            "default": "",
+            "description": "第三方平台短信模板code"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "模板状态:  0-草稿，1-使用中，2-停用"
+          }
+        }
+      },
+      "PageDTOMessageTemplateDTO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/MessageTemplateDTO"
+            }
+          }
+        }
+      },
+      "UserInboxQuery": {
+        "type": "object",
+        "default": null,
+        "description": "通知模板查询对象",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "isRead": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PageDTOUserInboxDTO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/UserInboxDTO"
+            }
+          }
+        }
+      },
+      "UserInboxDTO": {
+        "type": "object",
+        "default": null,
+        "description": "用户收件箱消息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "收件箱消息id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "通知类型：0-系统通知，1-笔记通知，2-问答通知，3-其它通知，4-私信"
+          },
+          "title": {
+            "type": "string",
+            "default": "",
+            "description": "通知标题"
+          },
+          "content": {
+            "type": "string",
+            "default": "",
+            "description": "通知或私信内容"
+          },
+          "isRead": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否已读"
+          },
+          "publisher": {
+            "type": "string",
+            "default": "",
+            "description": "消息发送者id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pushTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "收件箱消息id"
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "result": {},
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

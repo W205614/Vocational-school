@@ -1,0 +1,3429 @@
+export interface paths {
+    "/api/v2/services/course/categorys/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 更新课程分类 */
+        put: operations["updateCategory"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/categorys/disableOrEnable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 课程分类停用或启用 */
+        put: operations["disableOrEnable"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/upShelf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 课程上架 */
+        post: operations["upShelf"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/teachers/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 保存老师信息 */
+        post: operations["teachersSave"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/subjects/save/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 保存小节或练习中的题目 */
+        post: operations["saveSuject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/media/save/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 课程视频 */
+        post: operations["mediaSave"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/downShelf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 课程下架 */
+        post: operations["downShelf"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/catas/save/{id}/{step}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 保存章节 */
+        post: operations["catasSave"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/baseInfo/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 保存课程基本信息 */
+        post: operations["save"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/categorys/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 新增课程分类 */
+        post: operations["add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/operation-failures/course/{id}/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["replay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/events/course/{id}/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["replay_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/consumer-failures/course/{id}/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["replay_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/course/{id}/searchInfo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 课程上架时，需要查询课程信息，加入索引库 */
+        get: operations["getSearchInfo_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/course/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取课程信息 */
+        get: operations["getById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/course/section/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sectionInfo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/course/name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["queryCoursesIdByName"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/course/media/useInfo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mediaUserInfo_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/course/infoByTeacherIds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 通过老师id获取老师负责的课程和出的题目数量 */
+        get: operations["infoByTeacherIds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/{id}/catalogs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询课程基本信息、目录、学习进度 */
+        get: operations["queryCourseAndCatalogById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/teachers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询课程相关的老师信息 */
+        get: operations["teacher"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/subjects/get/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取小节或练习中的题目（用于编辑） */
+        get: operations["getSuject"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/simpleInfo/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 根根条件列表获取课程信息 */
+        get: operations["getSimpleInfoList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 管理端课程搜索接口 */
+        get: operations["queryForPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/generator": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 生成练习id */
+        get: operations["generator"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/checkName": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 校验课程名称是否已经存在 */
+        get: operations["checkNameExist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/checkBeforeUpShelf/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 课程上架前校验 */
+        get: operations["checkBeforeUpShelf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/catas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取课程的章节 */
+        get: operations["catas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/catas/index/list/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 根据课程id，查询所有章节的序号 */
+        get: operations["catasIndexList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/baseInfo/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取课程基础信息 */
+        get: operations["baseInfo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/categorys/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取课程分类信息 */
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        /** 删除分类信息 */
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/categorys/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询课程分类信息 */
+        get: operations["list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/categorys/getAllOfOneLevel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取所有的课程分类，不分层 */
+        get: operations["allOfOneLevel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/categorys/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取所有的课程分类信息，只包含id,名称，课程分类关系 */
+        get: operations["all"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/catalogues/querySectionInfoById/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取小节信息 */
+        get: operations["querySectionInfoById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/catalogues/batchQuery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 根据章节目录批量查询基础信息 */
+        get: operations["batchQuery"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/operations/course/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/operation-failures/course": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/events/course/failures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["failures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/consumer-failures/course": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/course/courses/delete/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 课程删除 */
+        delete: operations["deleteById"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+}
+export type webhooks = Record<string, never>;
+export interface components {
+    schemas: {
+        /**
+         * @description 分类信息更新模型
+         * @default null
+         */
+        CategoryUpdateDTO: {
+            /**
+             * @description 分类id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 分类序号
+             * @default
+             */
+            index: number;
+        };
+        /**
+         * @description 课程分类启用/禁用
+         * @default null
+         */
+        CategoryDisableOrEnableDTO: {
+            /**
+             * @description 课程分类id
+             * @default
+             */
+            id: string;
+            /**
+             * Format: int32
+             * @description 课程分类状态，1：启用，0：禁用
+             * @default
+             */
+            status: number;
+        };
+        /**
+         * @description 课程id
+         * @default null
+         */
+        CourseIdDTO: {
+            /**
+             * @description 课程id
+             * @default
+             */
+            id: string;
+        };
+        /**
+         * @description 课程老师关系模型
+         * @default null
+         */
+        CourseTeacherSaveDTO: {
+            /**
+             * @description 课程id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 老师id和用户端是否展示，该列表按照界面上的顺序
+             * @default
+             */
+            teachers: components["schemas"]["TeacherInfo"][];
+        };
+        /**
+         * @description 老师id和用户端是否显示
+         * @default null
+         */
+        TeacherInfo: {
+            /**
+             * @description 老师id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 用户端是否展示
+             * @default false
+             */
+            isShow: boolean;
+        };
+        /**
+         * @description 小节、练习和题目关系模型
+         * @default null
+         */
+        CataSubjectDTO: {
+            /**
+             * @description 题目id
+             * @default
+             */
+            subjectIds: string[];
+            /**
+             * @description 小节或练习id
+             * @default
+             */
+            cataId: string;
+        };
+        /**
+         * @description 课程视频模型
+         * @default null
+         */
+        CourseMediaDTO: {
+            /**
+             * @description 目录id
+             * @default
+             */
+            cataId: string;
+            /**
+             * @description 媒资id
+             * @default
+             */
+            mediaId: string;
+            /**
+             * @description 是否支持试看
+             * @default false
+             */
+            trailer: boolean;
+            /**
+             * @description 媒资名称
+             * @default
+             */
+            videoName: string;
+            /**
+             * Format: int32
+             * @description 媒资时长，单位s
+             * @default
+             */
+            mediaDuration: number;
+        };
+        /**
+         * @description 章节
+         * @default null
+         */
+        CataSaveDTO: {
+            /**
+             * @description 章、节、练习id
+             * @default
+             */
+            id: string;
+            /**
+             * Format: int32
+             * @description 目录类型1：章，2：节，3：测试
+             * @default
+             */
+            type: number;
+            /**
+             * @description 章节练习名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 章排序，章一定要传，小节和练习不需要传
+             * @default
+             */
+            index: number;
+            /**
+             * @description 当前章的小节或练习
+             * @default
+             */
+            sections: components["schemas"]["CataSaveDTO"][];
+        };
+        /**
+         * @description 课程基本信息保存
+         * @default null
+         */
+        CourseBaseInfoSaveDTO: {
+            /**
+             * @description 课程id，新课程该值不能传，老课程必填
+             * @default
+             */
+            id: string;
+            /**
+             * @description 课程名称
+             * @default
+             */
+            name: string;
+            /**
+             * @description 三级课程分类id
+             * @default
+             */
+            thirdCateId: string;
+            /**
+             * @description 封面链接url
+             * @default
+             */
+            coverUrl: string;
+            /**
+             * @description 是否是免费
+             * @default false
+             */
+            free: boolean;
+            /**
+             * Format: int32
+             * @description 课程价格
+             * @default
+             */
+            price: number;
+            /** Format: date-time */
+            purchaseStartTime?: string;
+            /**
+             * Format: date-time
+             * @description 购买周期结束时间
+             * @default
+             */
+            purchaseEndTime: string;
+            /**
+             * @description 课程介绍
+             * @default
+             */
+            introduce: string;
+            /**
+             * @description 使用人群
+             * @default
+             */
+            usePeople: string;
+            /**
+             * @description 详情
+             * @default
+             */
+            detail: string;
+            /**
+             * Format: int32
+             * @description 学习周期，0或不传表示没有期限，其他表示月数
+             * @default
+             */
+            validDuration: number;
+        };
+        /**
+         * @description 课程保存结果
+         * @default null
+         */
+        CourseSaveVO: {
+            /**
+             * @description 课程id
+             * @default
+             */
+            id: string;
+        };
+        /**
+         * @description 课程分类新增模型
+         * @default null
+         */
+        CategoryAddDTO: {
+            /**
+             * @description 父分类id, 如果是新增一级分类parentId传0
+             * @default
+             */
+            parentId: string;
+            /**
+             * @description 名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 分类序号
+             * @default
+             */
+            index: number;
+        };
+        /**
+         * @description 课程信息
+         * @default null
+         */
+        CourseDTO: {
+            /**
+             * @description 课程id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 课程名称
+             * @default
+             */
+            name: string;
+            /**
+             * @description 一级课程分类id
+             * @default
+             */
+            categoryIdLv1: string;
+            /**
+             * @description 二级课程分类id
+             * @default
+             */
+            categoryIdLv2: string;
+            /**
+             * @description 三级课程分类id
+             * @default
+             */
+            categoryIdLv3: string;
+            /**
+             * @description 课程封面
+             * @default
+             */
+            coverUrl: string;
+            /**
+             * Format: date-time
+             * @description 创建时间
+             * @default
+             */
+            createTime: string;
+            /**
+             * Format: date-time
+             * @description 更新时间
+             * @default
+             */
+            updateTime: string;
+            /**
+             * Format: int32
+             * @description 价格
+             * @default
+             */
+            price: number;
+            /**
+             * Format: int32
+             * @description 视频播放时长
+             * @default
+             */
+            duration: number;
+            /**
+             * Format: int32
+             * @description 课程有效期天数
+             * @default
+             */
+            validDuration: number;
+            /**
+             * @description 是否免费
+             * @default false
+             */
+            free: boolean;
+            /**
+             * Format: date-time
+             * @description 发布时间
+             * @default
+             */
+            publishTime: string;
+            /**
+             * Format: int32
+             * @description 章节数
+             * @default
+             */
+            sections: number;
+            /**
+             * Format: byte
+             * @description 课程状态
+             * @default
+             */
+            status: string;
+            /**
+             * @description 老师id
+             * @default
+             */
+            teacher: string;
+            /**
+             * Format: int32
+             * @description 课程类型，1：直播课程，2：录播课程
+             * @default
+             */
+            courseType: number;
+            /**
+             * @description 更新时间
+             * @default
+             */
+            updater: string;
+            /**
+             * Format: int32
+             * @description 课程进行到的步骤，1：基本信息，2：目录，3：课程视频，4：课程题目，5：课程老师
+             * @default
+             */
+            step: number;
+            /**
+             * Format: int32
+             * @description 课程报名人数（销量）
+             * @default
+             * @example 3920
+             */
+            sold: number;
+            /**
+             * Format: int32
+             * @description 课程评价得分，45代表4.5星
+             * @default
+             * @example 35
+             */
+            score: number;
+            /**
+             * Format: int32
+             * @description 课程是否禁用,0:禁用，1：启用
+             * @default
+             */
+            enable: number;
+        };
+        /**
+         * @description 课程目录
+         * @default null
+         */
+        CatalogueDTO: {
+            /**
+             * @description 章、节、练习id
+             * @default
+             */
+            id: string;
+            /**
+             * Format: int32
+             * @description 序号
+             * @default
+             */
+            index: number;
+            /**
+             * @description 章节练习名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 课程总时长,单位秒
+             * @default
+             */
+            mediaDuration: number;
+            /**
+             * @description 是否支持免费试看
+             * @default false
+             */
+            trailer: boolean;
+            /**
+             * @description 媒资名称
+             * @default
+             */
+            mediaName: string;
+            /**
+             * @description 媒资id
+             * @default
+             */
+            mediaId: string;
+            /**
+             * Format: int32
+             * @description 目录类型1：章，2：节，3：测试
+             * @default
+             */
+            type: number;
+            /**
+             * Format: int32
+             * @description 题目数量
+             * @default
+             */
+            subjectNum: number;
+            /**
+             * Format: int32
+             * @description 题目总分
+             * @default
+             */
+            totalScore: number;
+            /**
+             * @description 是否可以修改,默认不能修改
+             * @default false
+             */
+            canUpdate: boolean;
+            /**
+             * @description 该章的所有小节和练习
+             * @default
+             */
+            sections: components["schemas"]["CatalogueDTO"][];
+        };
+        /**
+         * @description 课程详细信息，包含课程、目录、教师
+         * @default null
+         */
+        CourseFullInfoDTO: {
+            free?: boolean;
+            /** Format: int32 */
+            status?: number;
+            introduce?: string;
+            detail?: string;
+            usePeople?: string;
+            /**
+             * @description 课程id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 课程名称
+             * @default
+             */
+            name: string;
+            /**
+             * @description 封面链接
+             * @default
+             */
+            coverUrl: string;
+            /**
+             * Format: int32
+             * @description 价格
+             * @default
+             */
+            price: number;
+            /**
+             * @description 一级课程分类id
+             * @default
+             */
+            firstCateId: string;
+            /**
+             * @description 二级课程分类id
+             * @default
+             */
+            secondCateId: string;
+            /**
+             * @description 三级课程分类id
+             * @default
+             */
+            thirdCateId: string;
+            /**
+             * Format: int32
+             * @description 课程总节数
+             * @default
+             */
+            sectionNum: number;
+            /**
+             * Format: date-time
+             * @description 课程购买有效期结束时间
+             * @default
+             */
+            purchaseEndTime: string;
+            /**
+             * Format: int32
+             * @description 课程学习有效期
+             * @default
+             */
+            validDuration: number;
+            /**
+             * @description 课程章信息
+             * @default
+             */
+            chapters: components["schemas"]["CatalogueDTO"][];
+            /**
+             * @description 老师列表
+             * @default
+             */
+            teacherIds: string[];
+        };
+        /**
+         * @description 小节信息，包含课程id和媒资id
+         * @default null
+         */
+        SectionInfoDTO: {
+            /**
+             * @description 课程id
+             * @default
+             */
+            courseId: string;
+            /**
+             * @description 媒资id
+             * @default
+             */
+            mediaId: string;
+            /**
+             * @description 是否支持免费试看
+             * @default false
+             */
+            trailer: boolean;
+            /**
+             * Format: int32
+             * @description 免费时长，不免费为0，单位分钟
+             * @default
+             */
+            freeDuration: number;
+            /**
+             * Format: int32
+             * @description 视频时长，秒，由媒资元数据确定
+             * @default
+             */
+            mediaDuration: number;
+            /** Format: int32 */
+            type?: number;
+        };
+        /**
+         * @description 媒资被引用情况
+         * @default null
+         */
+        MediaQuoteDTO: {
+            /**
+             * @description 媒资id
+             * @default
+             */
+            mediaId: string;
+            /**
+             * Format: int32
+             * @description 引用数
+             * @default
+             */
+            quoteNum: number;
+        };
+        /**
+         * @description 老师id和老师对应的课程数，出题数
+         * @default null
+         */
+        SubNumAndCourseNumDTO: {
+            /**
+             * @description 老师id
+             * @default
+             */
+            teacherId: string;
+            /**
+             * Format: int32
+             * @description 老师负责的课程数
+             * @default
+             */
+            courseNum: number;
+            /**
+             * Format: int32
+             * @description 老师出题数
+             * @default
+             */
+            subjectNum: number;
+        };
+        /**
+         * @description 章信息
+         * @default null
+         */
+        ChapterVO: {
+            /**
+             * @description 章id
+             * @default
+             */
+            id: string;
+            /**
+             * Format: int32
+             * @description 章索引
+             * @default
+             */
+            index: number;
+            /**
+             * @description 章名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 本章视频总时长
+             * @default
+             */
+            mediaDuration: number;
+            sections?: components["schemas"]["SectionVO"][];
+        };
+        /**
+         * @description 课程和目录及学习进度信息
+         * @default null
+         */
+        CourseAndSectionVO: {
+            /**
+             * @description id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 课程名称
+             * @default
+             */
+            name: string;
+            /**
+             * @description 课程封面
+             * @default
+             */
+            coverUrl: string;
+            /**
+             * Format: int32
+             * @description 课程章节数量
+             * @default
+             */
+            sections: number;
+            /**
+             * @description 教师头像
+             * @default
+             */
+            teacherIcon: string;
+            /**
+             * @description 教师名称
+             * @default
+             */
+            teacherName: string;
+            /**
+             * @description id
+             * @default
+             */
+            lessonId: string;
+            /**
+             * @description 正在学习的小节id
+             * @default
+             */
+            latestSectionId: string;
+            chapters?: components["schemas"]["ChapterVO"][];
+        };
+        /**
+         * @description 小节信息及学习进度
+         * @default null
+         */
+        SectionVO: {
+            /**
+             * @description 对应章节的id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 对应章节的名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 小节序号
+             * @default
+             */
+            index: number;
+            /**
+             * Format: int32
+             * @description 对应章节的类型，2-视频（小节），3-考试
+             * @default
+             */
+            type: number;
+            /**
+             * Format: int32
+             * @description 视频总时长，单位秒
+             * @default
+             */
+            mediaDuration: number;
+            /**
+             * @description 媒资id
+             * @default
+             */
+            mediaId: string;
+            /**
+             * @description 是否支持免费试看
+             * @default false
+             */
+            trailer: boolean;
+            /**
+             * Format: int32
+             * @description 题目数量
+             * @default
+             */
+            subjectNum: number;
+            /**
+             * @description 是否包含小节测试
+             * @default false
+             */
+            hasTest: boolean;
+            /**
+             * Format: int32
+             * @description 视频的当前观看时长，单位秒
+             * @default
+             */
+            moment: number;
+            /**
+             * @description 是否完成学习，默认false
+             * @default false
+             */
+            finished: boolean;
+        };
+        /**
+         * @description 老师课程信息
+         * @default null
+         */
+        CourseTeacherVO: {
+            /**
+             * @description 老师课程关系id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 老师头像
+             * @default
+             */
+            icon: string;
+            /**
+             * @description 形象照
+             * @default
+             */
+            photo: string;
+            /**
+             * @description 老师姓名
+             * @default
+             */
+            name: string;
+            /**
+             * @description 老师介绍
+             * @default
+             */
+            introduce: string;
+            /**
+             * @description 用户端是否显示
+             * @default false
+             */
+            isShow: boolean;
+            /**
+             * @description 职位
+             * @default
+             */
+            job: string;
+        };
+        CataSimpleSubjectVO: {
+            /**
+             * @description 小节或练习id
+             * @default
+             */
+            cataId: string;
+            /**
+             * @description 题目id
+             * @default
+             */
+            subjects: components["schemas"]["SubjectInfo"][];
+        };
+        SubjectInfo: {
+            id?: string;
+            name?: string;
+        };
+        CourseSimpleInfoListDTO: {
+            /**
+             * @description 三级分类id列表
+             * @default
+             */
+            thirdCataIds: string[];
+            /**
+             * @description 课程id列表
+             * @default
+             */
+            ids: string[];
+        };
+        CourseSimpleInfoDTO: {
+            /**
+             * @description 课程id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 课程名称
+             * @default
+             */
+            name: string;
+            /**
+             * @description 封面url
+             * @default
+             */
+            coverUrl: string;
+            /**
+             * Format: int32
+             * @description 价格
+             * @default
+             */
+            price: number;
+            /**
+             * Format: int32
+             * @description 课程状态
+             * @default
+             */
+            status: number;
+            /**
+             * @description 是否是免费课程
+             * @default false
+             */
+            free: boolean;
+            /**
+             * @description 一级分类id
+             * @default
+             */
+            firstCateId: string;
+            /**
+             * @description 二级分类id
+             * @default
+             */
+            secondCateId: string;
+            /**
+             * @description 三级分类id
+             * @default
+             */
+            thirdCateId: string;
+            /**
+             * Format: int32
+             * @description 小节数量
+             * @default
+             */
+            sectionNum: number;
+            /**
+             * Format: date-time
+             * @description 课程购买有效期结束时间
+             * @default
+             */
+            purchaseEndTime: string;
+            /**
+             * Format: int32
+             * @description 课程学习有效期，单位：月
+             * @default
+             */
+            validDuration: number;
+        };
+        /**
+         * @description 课程搜索条件
+         * @default null
+         */
+        CoursePageQuery: {
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            isAsc?: boolean;
+            sortBy?: string;
+            /**
+             * @description 搜索关键字
+             * @default
+             * @example Redis
+             */
+            keyword: string;
+            /**
+             * @description 课程1级分类id
+             * @default
+             * @example 1
+             */
+            firstCateId: string;
+            /**
+             * @description 课程2级分类id
+             * @default
+             * @example 2
+             */
+            secondCateId: string;
+            /**
+             * @description 课程3级分类id
+             * @default
+             * @example 3
+             */
+            thirdCateId: string;
+            /**
+             * @description 售卖模式，true：免费，false：收费
+             * @default false
+             * @example true
+             */
+            free: boolean;
+            /**
+             * Format: int32
+             * @description 课程状态，1：待上架，2：已上架，3：已下架，4：已完结
+             * @default
+             * @example 1
+             */
+            status: number;
+            /**
+             * Format: int32
+             * @description 课程类型，1-录播，2-直播
+             * @default
+             * @example 1
+             */
+            courseType: number;
+            /**
+             * Format: date-time
+             * @description 更新时间区间的开始时间
+             * @default
+             * @example 2022-7-18 19:52:36
+             */
+            beginTime: string;
+            /**
+             * Format: date-time
+             * @description 更新时间区间的结束时间
+             * @default
+             * @example 2022-7-18 19:52:36
+             */
+            endTime: string;
+        };
+        /**
+         * @description 课程信息
+         * @default null
+         */
+        CoursePageVO: {
+            /**
+             * @description 课程id
+             * @default
+             * @example 1
+             */
+            id: string;
+            /**
+             * @description 课程名称
+             * @default
+             * @example Java
+             */
+            name: string;
+            /**
+             * @description 课程价格，单位分
+             * @default
+             * @example 32900
+             */
+            price: string;
+            /**
+             * @description 课程封面地址
+             * @default
+             * @example default-cover-url.jpg
+             */
+            coverUrl: string;
+            /**
+             * @description 课程分类，三级分类，以/隔开
+             * @default
+             */
+            categories: string;
+            /**
+             * Format: int32
+             * @description 课程章节数量
+             * @default
+             * @example 25
+             */
+            sections: number;
+            /**
+             * Format: int32
+             * @description 课程报名人数（销量）
+             * @default
+             * @example 3920
+             */
+            sold: number;
+            /**
+             * Format: int32
+             * @description 课程评价得分，45代表4.5星
+             * @default
+             * @example 35
+             */
+            score: number;
+            /**
+             * Format: int32
+             * @description 课程状态，1：待上架，2：已上架，3：已下架，4：已完结
+             * @default
+             * @example 1
+             */
+            status: number;
+            /**
+             * @description 更新人名字
+             * @default
+             * @example 32900
+             */
+            updaterName: string;
+            /**
+             * Format: date-time
+             * @description 更新时间
+             * @default
+             * @example 2022-7-18 19:52:36
+             */
+            updateTime: string;
+            /**
+             * Format: int32
+             * @description 课程编辑进度：1：基本信息已经保存，2：课程目录已经保存，3：课程视频已保存，4：课程题目已保存，5：课程老师已经保存
+             * @default
+             */
+            step: number;
+            /**
+             * Format: date-time
+             * @description 课程发布时间
+             * @default
+             */
+            publishTime: string;
+            /**
+             * Format: date-time
+             * @description 下架时间
+             * @default
+             */
+            purchaseEndTime: string;
+        };
+        /**
+         * @description 分页结果
+         * @default null
+         */
+        PageDTOCoursePageVO: {
+            /**
+             * @description 总条数
+             * @default
+             */
+            total: string;
+            /**
+             * @description 总页码数
+             * @default
+             */
+            pages: string;
+            /**
+             * @description 当前页数据
+             * @default
+             */
+            list: components["schemas"]["CoursePageVO"][];
+        };
+        CourseCataIdVO: {
+            id?: string;
+        };
+        NameExistVO: {
+            existed?: boolean;
+        };
+        /**
+         * @description 课程目录
+         * @default null
+         */
+        CataVO: {
+            /**
+             * @description 章、节、练习id
+             * @default
+             */
+            id: string;
+            /**
+             * Format: int32
+             * @description 序号
+             * @default
+             */
+            index: number;
+            /**
+             * @description 章节练习名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 课程总时长,单位秒
+             * @default
+             */
+            mediaDuration: number;
+            /**
+             * @description 是否支持免费试看
+             * @default false
+             */
+            trailer: boolean;
+            /**
+             * @description 媒资名称
+             * @default
+             */
+            mediaName: string;
+            /**
+             * @description 媒资id
+             * @default
+             */
+            mediaId: string;
+            /**
+             * Format: int32
+             * @description 目录类型1：章，2：节，3：测试
+             * @default
+             */
+            type: number;
+            /**
+             * Format: int32
+             * @description 题目数量
+             * @default
+             */
+            subjectNum: number;
+            /**
+             * Format: int32
+             * @description 题目总分
+             * @default
+             */
+            totalScore: number;
+            /**
+             * @description 是否可以修改,默认不能修改
+             * @default false
+             */
+            canUpdate: boolean;
+            /**
+             * @description 该章的所有小节和练习
+             * @default
+             */
+            sections: components["schemas"]["CataVO"][];
+            /**
+             * Format: int32
+             * @description 已上架最大序号，查看时值为空，编辑查看时小节必有值
+             * @default
+             */
+            maxIndexOnShelf: number;
+            /**
+             * Format: int32
+             * @description 已上架小节最大序号，查看时，值为空，编辑查看时小节必有字段
+             * @default
+             */
+            maxSectionIndexOnShelf: number;
+        };
+        /**
+         * @description 目录简单信息
+         * @default null
+         */
+        CataSimpleInfoVO: {
+            /**
+             * @description 目录id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 目录名称
+             * @default
+             */
+            name: string;
+            /**
+             * @description 目录序号1-1
+             * @default
+             */
+            index: string;
+            /**
+             * Format: int32
+             * @description 数字序号章序号
+             * @default
+             */
+            chapterIndex: number;
+            /** Format: int32 */
+            cindex?: number;
+        };
+        /**
+         * @description 课程基本信息
+         * @default null
+         */
+        CourseBaseInfoVO: {
+            /**
+             * @description 课程id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 一级分类id
+             * @default
+             */
+            firstCateId: string;
+            /**
+             * @description 二级分类id
+             * @default
+             */
+            secondCateId: string;
+            /**
+             * @description 三级分类id
+             * @default
+             */
+            thirdCateId: string;
+            /**
+             * @description 课程创建人
+             * @default
+             */
+            createrName: string;
+            creater?: string;
+            /**
+             * Format: date-time
+             * @description 创建时间
+             * @default
+             */
+            createTime: string;
+            /**
+             * @description 封面url
+             * @default
+             */
+            coverUrl: string;
+            /**
+             * Format: date-time
+             * @description 更新时间
+             * @default
+             */
+            updateTime: string;
+            /**
+             * @description 更新人名称
+             * @default
+             */
+            updaterName: string;
+            updater?: string;
+            /**
+             * Format: int32
+             * @description 课时总数量,去掉章，测试，用于编辑回显时该值为空
+             * @default
+             */
+            cataTotalNum: number;
+            /**
+             * Format: double
+             * @description 课程评分，用于编辑回显时该值为空
+             * @default
+             */
+            coureScore: number;
+            /**
+             * Format: int32
+             * @description 课程评分
+             * @default
+             */
+            score: number;
+            /**
+             * Format: int32
+             * @description 报名人数，用于编辑回显时该值为空
+             * @default
+             */
+            enrollNum: number;
+            /**
+             * Format: int32
+             * @description 学习人数，用于编辑回显时该值为空
+             * @default
+             */
+            studyNum: number;
+            /**
+             * Format: int32
+             * @description 退款人数，用于编辑回显时该值为空
+             * @default
+             */
+            refundNum: number;
+            /**
+             * Format: int32
+             * @description 实付总金额，用于编辑回显时该值为空
+             * @default
+             */
+            realPayAmount: number;
+            /**
+             * @description 课程名称
+             * @default
+             */
+            name: string;
+            /**
+             * @description 课程分类名称，中间使用/隔开
+             * @default
+             */
+            cateNames: string;
+            /**
+             * Format: int32
+             * @description 课程价格
+             * @default
+             */
+            price: number;
+            /**
+             * Format: date-time
+             * @description 购买有效期开始
+             * @default
+             */
+            purchaseStartTime: string;
+            /**
+             * Format: date-time
+             * @default
+             */
+            purchaseEndTime: string;
+            /**
+             * Format: int32
+             * @description 有效期
+             * @default
+             */
+            validDuration: number;
+            /**
+             * @description 课程介绍
+             * @default
+             */
+            introduce: string;
+            /**
+             * @description 使用人群
+             * @default
+             */
+            usePeople: string;
+            /**
+             * @description 详情
+             * @default
+             */
+            detail: string;
+            /**
+             * @description 是否可以修改，默认不能修改
+             * @default false
+             */
+            canUpdate: boolean;
+            /**
+             * @description 是否免费
+             * @default false
+             */
+            free: boolean;
+            /**
+             * Format: int32
+             * @description 步骤,1:已保存基本信息，2：已保存课程目录，3：已保存课程视频，4：已保存题目，5：已保存课程老师
+             * @default
+             */
+            step: number;
+            /**
+             * Format: int32
+             * @description 课程状态，1：待上架，2：已上架，3：下架，4：已完结
+             * @default
+             */
+            status: number;
+        };
+        CategoryInfoVO: {
+            /**
+             * @description 课程分类id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 课程分类名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 状态：1：正常，2：禁用
+             * @default
+             */
+            status: number;
+            /**
+             * @description 状态描述
+             * @default
+             */
+            statusDesc: string;
+            /**
+             * Format: date-time
+             * @description 创建时间
+             * @default
+             */
+            createTime: string;
+            /**
+             * Format: date-time
+             * @description 更新时间
+             * @default
+             */
+            updateTime: string;
+            /**
+             * Format: int32
+             * @description 分类级别，1：一级分类，2：二级分类，3：三级分类
+             * @default
+             */
+            categoryLevel: number;
+            /**
+             * @description 一级分类名称
+             * @default
+             */
+            firstCategoryName: string;
+            /**
+             * @description 二级分类名称
+             * @default
+             */
+            secondCategoryName: string;
+            /**
+             * Format: int32
+             * @description 排序
+             * @default
+             */
+            index: number;
+        };
+        /**
+         * @description 课程类目分页查询条件
+         * @default null
+         */
+        CategoryListDTO: {
+            /**
+             * Format: int32
+             * @description 类目状态1:正常，2：禁用
+             * @default
+             */
+            status: number;
+            /**
+             * @description 类目名称
+             * @default
+             */
+            name: string;
+        };
+        /**
+         * @description 课程分类信息
+         * @default null
+         */
+        CategoryVO: {
+            /**
+             * @description 课程分类id
+             * @default
+             */
+            id: string;
+            /**
+             * @description 课程分类名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 三级分类数量
+             * @default
+             */
+            thirdCategoryNum: number;
+            /**
+             * Format: int32
+             * @description 课程数量
+             * @default
+             */
+            courseNum: number;
+            /**
+             * Format: int32
+             * @description 状态：1：正常，2：禁用
+             * @default
+             */
+            status: number;
+            /**
+             * @description 状态描述
+             * @default
+             */
+            statusDesc: string;
+            /**
+             * Format: date-time
+             * @description 创建时间
+             * @default
+             */
+            createTime: string;
+            /**
+             * Format: date-time
+             * @description 更新时间
+             * @default
+             */
+            updateTime: string;
+            /**
+             * Format: int32
+             * @description 排序
+             * @default
+             */
+            index: number;
+            /**
+             * @description 父id
+             * @default
+             */
+            parentId: string;
+            /**
+             * Format: int32
+             * @description 级别
+             * @default
+             */
+            level: number;
+            /**
+             * @description 子分类列表
+             * @default
+             */
+            children: components["schemas"]["CategoryVO"][];
+        };
+        /**
+         * @description 所有课程分类数据
+         * @default null
+         */
+        SimpleCategoryVO: {
+            id?: string;
+            name?: string;
+            children?: components["schemas"]["SimpleCategoryVO"][];
+            /** Format: int32 */
+            level?: number;
+            parentId?: string;
+        };
+        View: {
+            operationId?: string;
+            status?: string;
+            result?: unknown;
+            errorCode?: string;
+            errorMessage?: string;
+        };
+    };
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
+}
+export type $defs = Record<string, never>;
+export interface operations {
+    updateCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryUpdateDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    disableOrEnable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryDisableOrEnableDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    upShelf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourseIdDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    teachersSave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourseTeacherSaveDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    saveSuject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 课程id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CataSubjectDTO"][];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    mediaSave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 课程id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourseMediaDTO"][];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    downShelf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourseIdDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    catasSave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 课程id */
+                id: string;
+                /** @description 步骤 */
+                step: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CataSaveDTO"][];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourseBaseInfoSaveDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseSaveVO"];
+                    };
+                };
+            };
+        };
+    };
+    add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryAddDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    replay: {
+        parameters: {
+            query: {
+                version: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    replay_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    replay_2: {
+        parameters: {
+            query: {
+                version: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    getSearchInfo_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 课程id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseDTO"];
+                    };
+                };
+            };
+        };
+    };
+    getById: {
+        parameters: {
+            query?: {
+                /** @description 是否要查询目录信息 */
+                withCatalogue?: string;
+                /** @description 是否查询课程老师信息 */
+                withTeachers?: string;
+            };
+            header?: never;
+            path: {
+                /** @description 获取课程信息 */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseFullInfoDTO"];
+                    };
+                };
+            };
+        };
+    };
+    sectionInfo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 小节id，不支持章id或者练习id查询 */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["SectionInfoDTO"];
+                    };
+                };
+            };
+        };
+    };
+    queryCoursesIdByName: {
+        parameters: {
+            query: {
+                name: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: string[];
+                    };
+                };
+            };
+        };
+    };
+    mediaUserInfo_1: {
+        parameters: {
+            query: {
+                mediaIds: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["MediaQuoteDTO"][];
+                    };
+                };
+            };
+        };
+    };
+    infoByTeacherIds: {
+        parameters: {
+            query: {
+                teacherIds: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["SubNumAndCourseNumDTO"][];
+                    };
+                };
+            };
+        };
+    };
+    queryCourseAndCatalogById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseAndSectionVO"];
+                    };
+                };
+            };
+        };
+    };
+    teacher: {
+        parameters: {
+            query?: {
+                /** @description 是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用 */
+                see?: string;
+            };
+            header?: never;
+            path: {
+                /** @description 课程id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseTeacherVO"][];
+                    };
+                };
+            };
+        };
+    };
+    getSuject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 课程id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CataSimpleSubjectVO"][];
+                    };
+                };
+            };
+        };
+    };
+    getSimpleInfoList: {
+        parameters: {
+            query: {
+                courseSimpleInfoListDTO: components["schemas"]["CourseSimpleInfoListDTO"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseSimpleInfoDTO"][];
+                    };
+                };
+            };
+        };
+    };
+    queryForPage: {
+        parameters: {
+            query: {
+                coursePageQuery: components["schemas"]["CoursePageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["PageDTOCoursePageVO"];
+                    };
+                };
+            };
+        };
+    };
+    generator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseCataIdVO"];
+                    };
+                };
+            };
+        };
+    };
+    checkNameExist: {
+        parameters: {
+            query: {
+                /** @description id */
+                id?: string;
+                /** @description 课程名称 */
+                name: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["NameExistVO"];
+                    };
+                };
+            };
+        };
+    };
+    checkBeforeUpShelf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    catas: {
+        parameters: {
+            query?: {
+                /** @description 是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用 */
+                see?: string;
+                withPractice?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description 课程id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CataVO"][];
+                    };
+                };
+            };
+        };
+    };
+    catasIndexList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 课程id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CataSimpleInfoVO"][];
+                    };
+                };
+            };
+        };
+    };
+    baseInfo: {
+        parameters: {
+            query?: {
+                /** @description 是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用 */
+                see?: string;
+            };
+            header?: never;
+            path: {
+                /** @description 课程id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseBaseInfoVO"];
+                    };
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 分类id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CategoryInfoVO"];
+                    };
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 分类id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query: {
+                categoryListDTO: components["schemas"]["CategoryListDTO"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CategoryVO"][];
+                    };
+                };
+            };
+        };
+    };
+    allOfOneLevel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CategoryVO"][];
+                    };
+                };
+            };
+        };
+    };
+    all: {
+        parameters: {
+            query?: {
+                admin?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["SimpleCategoryVO"][];
+                    };
+                };
+            };
+        };
+    };
+    querySectionInfoById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CataSimpleInfoVO"];
+                    };
+                };
+            };
+        };
+    };
+    batchQuery: {
+        parameters: {
+            query: {
+                ids: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CataSimpleInfoVO"][];
+                    };
+                };
+            };
+        };
+    };
+    get_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["View"];
+                    };
+                };
+            };
+        };
+    };
+    list_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    failures: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    list_2: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    deleteById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+}

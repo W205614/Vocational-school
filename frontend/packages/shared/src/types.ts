@@ -1,0 +1,10 @@
+export type Id=string;
+export interface Envelope<T>{code:number;msg:string;data:T;requestId:string}
+export interface Operation<T=unknown>{operationId:Id;status:'PENDING'|'SUCCEEDED'|'FAILED';result:T|null;errorCode:string|null;errorMessage:string|null}
+export interface Page<T>{list:T[];total:number;pages?:number;pageNo?:number}
+export interface Course{id:Id;name:string;coverUrl:string;price:number;free:boolean;sectionNum:number;description?:string;catalogue?:unknown[]}
+export interface Note{id:Id;course_id:Id;section_id:Id|null;moment:number|null;content:string;version:Id}
+export interface Paper{id:Id;course_id:Id;section_id:Id;version:number;total_score:number;pass_percent:number}
+export interface ExamQuestion{question_id:Id;name:string;type:number;score:number;options:string[]|null}
+export interface ExamAnswer{question_id:Id;response:string;score:number|null;feedback:string|null;version:Id}
+export interface Attempt{id:Id;paper_id:Id;status:'IN_PROGRESS'|'WAIT_GRADING'|'FINISHED';score:number|null;passed:boolean|null;questions:ExamQuestion[];answers?:ExamAnswer[]}

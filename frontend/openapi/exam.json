@@ -1,0 +1,2116 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "天机学堂 - 考试中心接口文档",
+    "description": "该服务提供题目管理、考试管理、数据统计等功能",
+    "contact": {
+      "name": "传智教育·研究院",
+      "url": "http://www.itcast.cn/",
+      "email": "zhanghuyi@itcast.cn"
+    },
+    "version": "v1.0"
+  },
+  "paths": {
+    "/api/v2/services/exam/questions/{id}": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "查询题目详情",
+        "operationId": "queryQuestionDetailById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "要查询的题目的id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/QuestionDetailVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "修改题目",
+        "operationId": "updateQuestion",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "要修改的题目的id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "删除题目",
+        "operationId": "deleteQuestionById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "要删除的题目的id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/questions": {
+      "post": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "新增题目",
+        "operationId": "addQuestion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/question-biz/list": {
+      "post": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "批量保存题目和业务关系",
+        "operationId": "saveQuestionBizInfoBatch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/QuestionBizDTO"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/teacher/exam-attempts/{id}/grades": {
+      "post": {
+        "tags": [
+          "exam-workflow-controller"
+        ],
+        "operationId": "grade",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/exam-papers/{id}/attempts": {
+      "post": {
+        "tags": [
+          "exam-workflow-controller"
+        ],
+        "operationId": "start",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/exam-attempts/{id}/submit": {
+      "post": {
+        "tags": [
+          "exam-workflow-controller"
+        ],
+        "operationId": "submit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/exam/{id}/replay": {
+      "post": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/exam-papers": {
+      "post": {
+        "tags": [
+          "exam-workflow-controller"
+        ],
+        "operationId": "publish",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/exam/{id}/replay": {
+      "post": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "replay_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/exam/{id}/replay": {
+      "post": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "replay_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/questions/scores": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "查询题目分值",
+        "operationId": "queryQuestionScores",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "要查询的题目的id集合",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "format": "int32"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/questions/page": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "分页查询题目",
+        "operationId": "queryQuestionByPage",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/QuestionPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOQuestionPageVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/questions/numOfTeacher": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "查询老师出题数量",
+        "operationId": "countSubjectNumOfTeacher",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "要查询的老师的集合",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "format": "int32"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/questions/list": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "查询题目列表",
+        "operationId": "queryQuestionByIds",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "要查询的题目的id集合",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QuestionDTO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/questions/listOfBiz": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "查询业务关联的题目列表",
+        "operationId": "queryQuestionByBizId",
+        "parameters": [
+          {
+            "name": "bizId",
+            "in": "query",
+            "description": "要查询的题目的id集合",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QuestionDTO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/questions/checkName": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "校验名称是否有效，存在则无效返回false，不存在返回true",
+        "operationId": "checkNameValid",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/question-biz/scores": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "查询业务下的题目分数和",
+        "operationId": "queryQuestionScoresByBizIds",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-?[0-9]+$"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "format": "int32"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/question-biz/biz/{id}": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "查询与业务有关的题目id",
+        "operationId": "queryQuestionIdsByBizId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "业务id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QuestionBizDTO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/exam/question-biz/biz/list": {
+      "get": {
+        "tags": [
+          "题目管理相关接口"
+        ],
+        "summary": "批量查询与业务有关的题目id",
+        "operationId": "queryQuestionIdsByBizIds",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "业务id集合",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/QuestionBizDTO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/teacher/exam-attempts": {
+      "get": {
+        "tags": [
+          "exam-workflow-controller"
+        ],
+        "operationId": "pending",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/teacher/exam-attempts/{id}": {
+      "get": {
+        "tags": [
+          "exam-workflow-controller"
+        ],
+        "operationId": "grading",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/operations/exam/{id}": {
+      "get": {
+        "tags": [
+          "operation-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/exam-papers": {
+      "get": {
+        "tags": [
+          "exam-workflow-controller"
+        ],
+        "operationId": "papers",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/exam-attempts/{id}": {
+      "get": {
+        "tags": [
+          "exam-workflow-controller"
+        ],
+        "operationId": "attempt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/exam": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/exam/failures": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "failures",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/exam": {
+      "get": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "QuestionFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "考试题目表单实体",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "题目id，新增不用填写",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "题目名称，题干"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目类型，1：单选题，2：多选题，3：不定向选择题，4：判断题，5：主观题"
+          },
+          "cateIds": {
+            "type": "array",
+            "default": "",
+            "description": "课程三级分类的id集合",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "difficulty": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "难易度，1：简单，2：中等，3：困难"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "分值"
+          },
+          "options": {
+            "type": "array",
+            "default": "",
+            "description": "选择题选项，json数组格式",
+            "items": {
+              "type": "string"
+            }
+          },
+          "answer": {
+            "type": "string",
+            "default": "",
+            "description": "选择题正确答案1到10，如果有多个答案，中间使用逗号隔开，如果是判断题，1：代表正确，其他代表错误"
+          },
+          "analysis": {
+            "type": "string",
+            "default": "",
+            "description": "答案解析",
+            "maxLength": 300,
+            "minLength": 5
+          }
+        },
+        "required": [
+          "answer",
+          "difficulty",
+          "type"
+        ]
+      },
+      "QuestionBizDTO": {
+        "type": "object",
+        "default": null,
+        "description": "题目与业务关联信息",
+        "properties": {
+          "bizId": {
+            "type": "string",
+            "default": "",
+            "description": "业务id，要关联问题的某业务id，例如小节id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "questionId": {
+            "type": "string",
+            "default": "",
+            "description": "题目id",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "Command": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "paperId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "attemptId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "lessonId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "answers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "questionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "feedback": {
+            "type": "string"
+          },
+          "actorRole": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "result": {},
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "PublishRequest": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "questionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "passPercent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "graders": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        }
+      },
+      "QuestionDetailVO": {
+        "type": "object",
+        "default": null,
+        "description": "考试详情数据",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "题目id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "题目名称，题干"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目类型，1：单选题，2：多选题，3：不定向选择题，4：判断题，5：主观题"
+          },
+          "cateId1": {
+            "type": "string",
+            "default": "",
+            "description": "1级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "cateId2": {
+            "type": "string",
+            "default": "",
+            "description": "2级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "cateId3": {
+            "type": "string",
+            "default": "",
+            "description": "3级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "categories": {
+            "type": "array",
+            "default": "",
+            "description": "课程三级分类的名称集合",
+            "items": {
+              "type": "string"
+            }
+          },
+          "difficulty": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "难易度，1：简单，2：中等，3：困难"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "分值"
+          },
+          "useTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "引用次数"
+          },
+          "correctTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "回答正确次数"
+          },
+          "answerTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "回答次数"
+          },
+          "updater": {
+            "type": "string",
+            "default": "",
+            "description": "更新人"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间"
+          },
+          "options": {
+            "type": "array",
+            "default": "",
+            "description": "选择题选项，json数组格式",
+            "items": {
+              "type": "string"
+            }
+          },
+          "answer": {
+            "type": "string",
+            "default": "",
+            "description": "选择题正确答案1到10，如果有多个答案，中间使用逗号隔开，如果是判断题，1：代表正确，其他代表错误"
+          },
+          "analysis": {
+            "type": "string",
+            "default": "",
+            "description": "答案解析"
+          }
+        }
+      },
+      "QuestionPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "题目分页查询条件",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "cateIds": {
+            "type": "array",
+            "default": "",
+            "description": "三级分类id集合",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "types": {
+            "type": "array",
+            "default": "",
+            "description": "题目类型，1：单选题，2：多选题，3：不定向选择题，4：判断题，5：主观题",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "difficulty": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "难易度，1：简单，2：中等，3：困难"
+          },
+          "keyword": {
+            "type": "string",
+            "default": "",
+            "description": "题目名称关键字"
+          },
+          "creater": {
+            "type": "string",
+            "default": "",
+            "description": "题目录入者id",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "PageDTOQuestionPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/QuestionPageVO"
+            }
+          }
+        }
+      },
+      "QuestionPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "考试题目分页数据",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "题目id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "题目名称，题干"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目类型，1：单选题，2：多选题，3：不定向选择题，4：判断题，5：主观题"
+          },
+          "categories": {
+            "type": "array",
+            "default": "",
+            "description": "课程三级分类的名称集合",
+            "items": {
+              "type": "string"
+            }
+          },
+          "difficulty": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "难易度，1：简单，2：中等，3：困难"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "分值"
+          },
+          "useTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "引用次数"
+          },
+          "answerTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "回答次数"
+          },
+          "updater": {
+            "type": "string",
+            "default": "",
+            "description": "更新人"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间"
+          }
+        }
+      },
+      "QuestionDTO": {
+        "type": "object",
+        "default": null,
+        "description": "题目数据",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "题目id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "题目名称，题干"
+          },
+          "type": {
+            "type": "string",
+            "default": "",
+            "description": "题目类型，1：单选题，2：多选题，3：不定向选择题，4：判断题，5：主观题"
+          },
+          "difficulty": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "难易度，1：简单，2：中等，3：困难"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "分值"
+          },
+          "options": {
+            "type": "array",
+            "default": "",
+            "description": "选择题选项，json数组格式",
+            "items": {
+              "type": "string"
+            }
+          },
+          "answer": {
+            "type": "string",
+            "default": "",
+            "description": "选择题正确答案1到10，如果有多个答案，中间使用逗号隔开，如果是判断题，1：代表正确，其他代表错误"
+          },
+          "analysis": {
+            "type": "string",
+            "default": "",
+            "description": "答案解析"
+          }
+        }
+      }
+    }
+  }
+}

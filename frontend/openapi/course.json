@@ -1,0 +1,4175 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "天机学堂 - 课程系统接口文档",
+    "description": "该服务包含课程管理相关功能",
+    "contact": {
+      "name": "传智教育·研究院",
+      "url": "http://www.itcast.cn/",
+      "email": "zhanghuyi@itcast.cn"
+    },
+    "version": "v1.0"
+  },
+  "paths": {
+    "/api/v2/services/course/categorys/update": {
+      "put": {
+        "tags": [
+          "课程分类相关接口"
+        ],
+        "summary": "更新课程分类",
+        "operationId": "updateCategory",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryUpdateDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/categorys/disableOrEnable": {
+      "put": {
+        "tags": [
+          "课程分类相关接口"
+        ],
+        "summary": "课程分类停用或启用",
+        "operationId": "disableOrEnable",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryDisableOrEnableDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/upShelf": {
+      "post": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "课程上架",
+        "operationId": "upShelf",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseIdDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/teachers/save": {
+      "post": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "保存老师信息",
+        "operationId": "teachersSave",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseTeacherSaveDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/subjects/save/{id}": {
+      "post": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "保存小节或练习中的题目",
+        "operationId": "saveSuject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CataSubjectDTO"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/media/save/{id}": {
+      "post": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "课程视频",
+        "operationId": "mediaSave",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CourseMediaDTO"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/downShelf": {
+      "post": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "课程下架",
+        "operationId": "downShelf",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseIdDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/catas/save/{id}/{step}": {
+      "post": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "保存章节",
+        "operationId": "catasSave",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "step",
+            "in": "path",
+            "description": "步骤",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CataSaveDTO"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/baseInfo/save": {
+      "post": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "保存课程基本信息",
+        "operationId": "save",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseBaseInfoSaveDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseSaveVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/categorys/add": {
+      "post": {
+        "tags": [
+          "课程分类相关接口"
+        ],
+        "summary": "新增课程分类",
+        "operationId": "add",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryAddDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/course/{id}/replay": {
+      "post": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/course/{id}/replay": {
+      "post": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "replay_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/course/{id}/replay": {
+      "post": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "replay_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/course/{id}/searchInfo": {
+      "get": {
+        "tags": [
+          "课程相关接口，内部调用"
+        ],
+        "summary": "课程上架时，需要查询课程信息，加入索引库",
+        "operationId": "getSearchInfo_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/course/{id}": {
+      "get": {
+        "tags": [
+          "课程相关接口，内部调用"
+        ],
+        "summary": "获取课程信息",
+        "operationId": "getById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "获取课程信息",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "withCatalogue",
+            "in": "query",
+            "description": "是否要查询目录信息",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "withTeachers",
+            "in": "query",
+            "description": "是否查询课程老师信息",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseFullInfoDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/course/section/{id}": {
+      "get": {
+        "tags": [
+          "课程相关接口，内部调用"
+        ],
+        "operationId": "sectionInfo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "小节id，不支持章id或者练习id查询",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SectionInfoDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/course/name": {
+      "get": {
+        "tags": [
+          "课程相关接口，内部调用"
+        ],
+        "operationId": "queryCoursesIdByName",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^-?[0-9]+$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/course/media/useInfo": {
+      "get": {
+        "tags": [
+          "课程相关接口，内部调用"
+        ],
+        "operationId": "mediaUserInfo_1",
+        "parameters": [
+          {
+            "name": "mediaIds",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-?[0-9]+$"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MediaQuoteDTO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/course/infoByTeacherIds": {
+      "get": {
+        "tags": [
+          "课程相关接口，内部调用"
+        ],
+        "summary": "通过老师id获取老师负责的课程和出的题目数量",
+        "operationId": "infoByTeacherIds",
+        "parameters": [
+          {
+            "name": "teacherIds",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-?[0-9]+$"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SubNumAndCourseNumDTO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/{id}/catalogs": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "查询课程基本信息、目录、学习进度",
+        "operationId": "queryCourseAndCatalogById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseAndSectionVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/teachers/{id}": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "查询课程相关的老师信息",
+        "operationId": "teacher",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "see",
+            "in": "query",
+            "description": "是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CourseTeacherVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/subjects/get/{id}": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "获取小节或练习中的题目（用于编辑）",
+        "operationId": "getSuject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CataSimpleSubjectVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/simpleInfo/list": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "根根条件列表获取课程信息",
+        "operationId": "getSimpleInfoList",
+        "parameters": [
+          {
+            "name": "courseSimpleInfoListDTO",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CourseSimpleInfoListDTO"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CourseSimpleInfoDTO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/page": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "管理端课程搜索接口",
+        "operationId": "queryForPage",
+        "parameters": [
+          {
+            "name": "coursePageQuery",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CoursePageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOCoursePageVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/generator": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "生成练习id",
+        "operationId": "generator",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseCataIdVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/checkName": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "校验课程名称是否已经存在",
+        "operationId": "checkNameExist",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "id",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "课程名称",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NameExistVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/checkBeforeUpShelf/{id}": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "课程上架前校验",
+        "operationId": "checkBeforeUpShelf",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/catas/{id}": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "获取课程的章节",
+        "operationId": "catas",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "see",
+            "in": "query",
+            "description": "是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "withPractice",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CataVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/catas/index/list/{id}": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "根据课程id，查询所有章节的序号",
+        "operationId": "catasIndexList",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CataSimpleInfoVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/baseInfo/{id}": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "获取课程基础信息",
+        "operationId": "baseInfo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          },
+          {
+            "name": "see",
+            "in": "query",
+            "description": "是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseBaseInfoVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/categorys/{id}": {
+      "get": {
+        "tags": [
+          "课程分类相关接口"
+        ],
+        "summary": "获取课程分类信息",
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "分类id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CategoryInfoVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "课程分类相关接口"
+        ],
+        "summary": "删除分类信息",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "分类id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/categorys/list": {
+      "get": {
+        "tags": [
+          "课程分类相关接口"
+        ],
+        "summary": "查询课程分类信息",
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "categoryListDTO",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CategoryListDTO"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CategoryVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/categorys/getAllOfOneLevel": {
+      "get": {
+        "tags": [
+          "课程分类相关接口"
+        ],
+        "summary": "获取所有的课程分类，不分层",
+        "operationId": "allOfOneLevel",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CategoryVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/categorys/all": {
+      "get": {
+        "tags": [
+          "课程分类相关接口"
+        ],
+        "summary": "获取所有的课程分类信息，只包含id,名称，课程分类关系",
+        "operationId": "all",
+        "parameters": [
+          {
+            "name": "admin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SimpleCategoryVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/catalogues/querySectionInfoById/{id}": {
+      "get": {
+        "tags": [
+          "章节目录相关接口"
+        ],
+        "summary": "获取小节信息",
+        "operationId": "querySectionInfoById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CataSimpleInfoVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/catalogues/batchQuery": {
+      "get": {
+        "tags": [
+          "章节目录相关接口"
+        ],
+        "summary": "根据章节目录批量查询基础信息",
+        "operationId": "batchQuery",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-?[0-9]+$"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CataSimpleInfoVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/operations/course/{id}": {
+      "get": {
+        "tags": [
+          "operation-controller"
+        ],
+        "operationId": "get_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/course": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "list_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/course/failures": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "failures",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/course": {
+      "get": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "list_2",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/course/courses/delete/{id}": {
+      "delete": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "summary": "课程删除",
+        "operationId": "deleteById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CategoryUpdateDTO": {
+        "type": "object",
+        "default": null,
+        "description": "分类信息更新模型",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "名称",
+            "maxLength": 15,
+            "minLength": 0
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "分类序号",
+            "maximum": 99,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "index",
+          "name"
+        ]
+      },
+      "CategoryDisableOrEnableDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程分类启用/禁用",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程分类状态，1：启用，0：禁用"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "CourseIdDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程id",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "CourseTeacherSaveDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程老师关系模型",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "teachers": {
+            "type": "array",
+            "default": "",
+            "description": "老师id和用户端是否展示，该列表按照界面上的顺序",
+            "items": {
+              "$ref": "#/components/schemas/TeacherInfo"
+            },
+            "maxItems": 5,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "teachers"
+        ]
+      },
+      "TeacherInfo": {
+        "type": "object",
+        "default": null,
+        "description": "老师id和用户端是否显示",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "老师id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "isShow": {
+            "type": "boolean",
+            "default": false,
+            "description": "用户端是否展示"
+          }
+        },
+        "required": [
+          "id",
+          "isShow"
+        ]
+      },
+      "CataSubjectDTO": {
+        "type": "object",
+        "default": null,
+        "description": "小节、练习和题目关系模型",
+        "properties": {
+          "subjectIds": {
+            "type": "array",
+            "default": "",
+            "description": "题目id",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            },
+            "maxItems": 2147483647,
+            "minItems": 1
+          },
+          "cataId": {
+            "type": "string",
+            "default": "",
+            "description": "小节或练习id",
+            "pattern": "^-?[0-9]+$"
+          }
+        },
+        "required": [
+          "cataId",
+          "subjectIds"
+        ]
+      },
+      "CourseMediaDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程视频模型",
+        "properties": {
+          "cataId": {
+            "type": "string",
+            "default": "",
+            "description": "目录id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "mediaId": {
+            "type": "string",
+            "default": "",
+            "description": "媒资id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "trailer": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否支持试看"
+          },
+          "videoName": {
+            "type": "string",
+            "default": "",
+            "description": "媒资名称"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "媒资时长，单位s",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "cataId",
+          "mediaDuration",
+          "mediaId",
+          "trailer",
+          "videoName"
+        ]
+      },
+      "CataSaveDTO": {
+        "type": "object",
+        "default": null,
+        "description": "章节",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "章、节、练习id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "目录类型1：章，2：节，3：测试"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "章节练习名称"
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "章排序，章一定要传，小节和练习不需要传"
+          },
+          "sections": {
+            "type": "array",
+            "default": "",
+            "description": "当前章的小节或练习",
+            "items": {
+              "$ref": "#/components/schemas/CataSaveDTO"
+            },
+            "maxItems": 2147483647,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "CourseBaseInfoSaveDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程基本信息保存",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id，新课程该值不能传，老课程必填",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "thirdCateId": {
+            "type": "string",
+            "default": "",
+            "description": "三级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "封面链接url"
+          },
+          "free": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否是免费"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程价格",
+            "minimum": 0
+          },
+          "purchaseStartTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "purchaseEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "购买周期结束时间"
+          },
+          "introduce": {
+            "type": "string",
+            "default": "",
+            "description": "课程介绍"
+          },
+          "usePeople": {
+            "type": "string",
+            "default": "",
+            "description": "使用人群"
+          },
+          "detail": {
+            "type": "string",
+            "default": "",
+            "description": "详情"
+          },
+          "validDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "学习周期，0或不传表示没有期限，其他表示月数"
+          }
+        },
+        "required": [
+          "coverUrl",
+          "detail",
+          "free",
+          "introduce",
+          "name",
+          "purchaseEndTime",
+          "thirdCateId",
+          "usePeople",
+          "validDuration"
+        ]
+      },
+      "CourseSaveVO": {
+        "type": "object",
+        "default": null,
+        "description": "课程保存结果",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "CategoryAddDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程分类新增模型",
+        "properties": {
+          "parentId": {
+            "type": "string",
+            "default": "",
+            "description": "父分类id, 如果是新增一级分类parentId传0",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "名称",
+            "maxLength": 15,
+            "minLength": 0
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "分类序号",
+            "maximum": 99,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "index",
+          "name"
+        ]
+      },
+      "CourseDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "categoryIdLv1": {
+            "type": "string",
+            "default": "",
+            "description": "一级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "categoryIdLv2": {
+            "type": "string",
+            "default": "",
+            "description": "二级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "categoryIdLv3": {
+            "type": "string",
+            "default": "",
+            "description": "三级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "课程封面"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "创建时间"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "价格"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "视频播放时长"
+          },
+          "validDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程有效期天数"
+          },
+          "free": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否免费"
+          },
+          "publishTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "发布时间"
+          },
+          "sections": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "章节数"
+          },
+          "status": {
+            "type": "string",
+            "format": "byte",
+            "default": "",
+            "description": "课程状态"
+          },
+          "teacher": {
+            "type": "string",
+            "default": "",
+            "description": "老师id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程类型，1：直播课程，2：录播课程"
+          },
+          "updater": {
+            "type": "string",
+            "default": "",
+            "description": "更新时间",
+            "pattern": "^-?[0-9]+$"
+          },
+          "step": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程进行到的步骤，1：基本信息，2：目录，3：课程视频，4：课程题目，5：课程老师"
+          },
+          "sold": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程报名人数（销量）",
+            "example": 3920
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程评价得分，45代表4.5星",
+            "example": 35
+          },
+          "enable": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程是否禁用,0:禁用，1：启用"
+          }
+        }
+      },
+      "CatalogueDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程目录",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "章、节、练习id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "序号"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "章节练习名称"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程总时长,单位秒"
+          },
+          "trailer": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否支持免费试看"
+          },
+          "mediaName": {
+            "type": "string",
+            "default": "",
+            "description": "媒资名称"
+          },
+          "mediaId": {
+            "type": "string",
+            "default": "",
+            "description": "媒资id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "目录类型1：章，2：节，3：测试"
+          },
+          "subjectNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目数量"
+          },
+          "totalScore": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目总分"
+          },
+          "canUpdate": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否可以修改,默认不能修改"
+          },
+          "sections": {
+            "type": "array",
+            "default": "",
+            "description": "该章的所有小节和练习",
+            "items": {
+              "$ref": "#/components/schemas/CatalogueDTO"
+            }
+          }
+        }
+      },
+      "CourseFullInfoDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程详细信息，包含课程、目录、教师",
+        "properties": {
+          "free": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "introduce": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "usePeople": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "封面链接"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "价格"
+          },
+          "firstCateId": {
+            "type": "string",
+            "default": "",
+            "description": "一级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "secondCateId": {
+            "type": "string",
+            "default": "",
+            "description": "二级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "thirdCateId": {
+            "type": "string",
+            "default": "",
+            "description": "三级课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程总节数"
+          },
+          "purchaseEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "课程购买有效期结束时间"
+          },
+          "validDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程学习有效期"
+          },
+          "chapters": {
+            "type": "array",
+            "default": "",
+            "description": "课程章信息",
+            "items": {
+              "$ref": "#/components/schemas/CatalogueDTO"
+            }
+          },
+          "teacherIds": {
+            "type": "array",
+            "default": "",
+            "description": "老师列表",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        }
+      },
+      "SectionInfoDTO": {
+        "type": "object",
+        "default": null,
+        "description": "小节信息，包含课程id和媒资id",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "mediaId": {
+            "type": "string",
+            "default": "",
+            "description": "媒资id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "trailer": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否支持免费试看"
+          },
+          "freeDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "免费时长，不免费为0，单位分钟"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "视频时长，秒，由媒资元数据确定"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MediaQuoteDTO": {
+        "type": "object",
+        "default": null,
+        "description": "媒资被引用情况",
+        "properties": {
+          "mediaId": {
+            "type": "string",
+            "default": "",
+            "description": "媒资id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "quoteNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "引用数"
+          }
+        }
+      },
+      "SubNumAndCourseNumDTO": {
+        "type": "object",
+        "default": null,
+        "description": "老师id和老师对应的课程数，出题数",
+        "properties": {
+          "teacherId": {
+            "type": "string",
+            "default": "",
+            "description": "老师id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "老师负责的课程数"
+          },
+          "subjectNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "老师出题数"
+          }
+        }
+      },
+      "ChapterVO": {
+        "type": "object",
+        "default": null,
+        "description": "章信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "章id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "章索引"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "章名称"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "本章视频总时长"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SectionVO"
+            }
+          }
+        }
+      },
+      "CourseAndSectionVO": {
+        "type": "object",
+        "default": null,
+        "description": "课程和目录及学习进度信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "课程封面"
+          },
+          "sections": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程章节数量"
+          },
+          "teacherIcon": {
+            "type": "string",
+            "default": "",
+            "description": "教师头像"
+          },
+          "teacherName": {
+            "type": "string",
+            "default": "",
+            "description": "教师名称"
+          },
+          "lessonId": {
+            "type": "string",
+            "default": "",
+            "description": "id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "latestSectionId": {
+            "type": "string",
+            "default": "",
+            "description": "正在学习的小节id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChapterVO"
+            }
+          }
+        }
+      },
+      "SectionVO": {
+        "type": "object",
+        "default": null,
+        "description": "小节信息及学习进度",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "对应章节的id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "对应章节的名称"
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "小节序号"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "对应章节的类型，2-视频（小节），3-考试"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "视频总时长，单位秒"
+          },
+          "mediaId": {
+            "type": "string",
+            "default": "",
+            "description": "媒资id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "trailer": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否支持免费试看"
+          },
+          "subjectNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目数量"
+          },
+          "hasTest": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否包含小节测试"
+          },
+          "moment": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "视频的当前观看时长，单位秒"
+          },
+          "finished": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否完成学习，默认false"
+          }
+        }
+      },
+      "CourseTeacherVO": {
+        "type": "object",
+        "default": null,
+        "description": "老师课程信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "老师课程关系id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "icon": {
+            "type": "string",
+            "default": "",
+            "description": "老师头像"
+          },
+          "photo": {
+            "type": "string",
+            "default": "",
+            "description": "形象照"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "老师姓名"
+          },
+          "introduce": {
+            "type": "string",
+            "default": "",
+            "description": "老师介绍"
+          },
+          "isShow": {
+            "type": "boolean",
+            "default": false,
+            "description": "用户端是否显示"
+          },
+          "job": {
+            "type": "string",
+            "default": "",
+            "description": "职位"
+          }
+        }
+      },
+      "CataSimpleSubjectVO": {
+        "type": "object",
+        "properties": {
+          "cataId": {
+            "type": "string",
+            "default": "",
+            "description": "小节或练习id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "subjects": {
+            "type": "array",
+            "default": "",
+            "description": "题目id",
+            "items": {
+              "$ref": "#/components/schemas/SubjectInfo"
+            }
+          }
+        }
+      },
+      "SubjectInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "CourseSimpleInfoListDTO": {
+        "type": "object",
+        "properties": {
+          "thirdCataIds": {
+            "type": "array",
+            "default": "",
+            "description": "三级分类id列表",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "ids": {
+            "type": "array",
+            "default": "",
+            "description": "课程id列表",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        }
+      },
+      "CourseSimpleInfoDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "封面url"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "价格"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程状态"
+          },
+          "free": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否是免费课程"
+          },
+          "firstCateId": {
+            "type": "string",
+            "default": "",
+            "description": "一级分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "secondCateId": {
+            "type": "string",
+            "default": "",
+            "description": "二级分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "thirdCateId": {
+            "type": "string",
+            "default": "",
+            "description": "三级分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "小节数量"
+          },
+          "purchaseEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "课程购买有效期结束时间"
+          },
+          "validDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程学习有效期，单位：月"
+          }
+        }
+      },
+      "CoursePageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "课程搜索条件",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "keyword": {
+            "type": "string",
+            "default": "",
+            "description": "搜索关键字",
+            "example": "Redis"
+          },
+          "firstCateId": {
+            "type": "string",
+            "default": "",
+            "description": "课程1级分类id",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "secondCateId": {
+            "type": "string",
+            "default": "",
+            "description": "课程2级分类id",
+            "example": 2,
+            "pattern": "^-?[0-9]+$"
+          },
+          "thirdCateId": {
+            "type": "string",
+            "default": "",
+            "description": "课程3级分类id",
+            "example": 3,
+            "pattern": "^-?[0-9]+$"
+          },
+          "free": {
+            "type": "boolean",
+            "default": false,
+            "description": "售卖模式，true：免费，false：收费",
+            "example": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程状态，1：待上架，2：已上架，3：已下架，4：已完结",
+            "example": 1
+          },
+          "courseType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程类型，1-录播，2-直播",
+            "example": 1
+          },
+          "beginTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间区间的开始时间",
+            "example": "2022-7-18 19:52:36"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间区间的结束时间",
+            "example": "2022-7-18 19:52:36"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CoursePageVO": {
+        "type": "object",
+        "default": null,
+        "description": "课程信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称",
+            "example": "Java"
+          },
+          "price": {
+            "type": "string",
+            "default": "",
+            "description": "课程价格，单位分",
+            "example": 32900,
+            "pattern": "^-?[0-9]+$"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "课程封面地址",
+            "example": "default-cover-url.jpg"
+          },
+          "categories": {
+            "type": "string",
+            "default": "",
+            "description": "课程分类，三级分类，以/隔开"
+          },
+          "sections": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程章节数量",
+            "example": 25
+          },
+          "sold": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程报名人数（销量）",
+            "example": 3920
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程评价得分，45代表4.5星",
+            "example": 35
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程状态，1：待上架，2：已上架，3：已下架，4：已完结",
+            "example": 1
+          },
+          "updaterName": {
+            "type": "string",
+            "default": "",
+            "description": "更新人名字",
+            "example": "32900"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间",
+            "example": "2022-7-18 19:52:36"
+          },
+          "step": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程编辑进度：1：基本信息已经保存，2：课程目录已经保存，3：课程视频已保存，4：课程题目已保存，5：课程老师已经保存"
+          },
+          "publishTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "课程发布时间"
+          },
+          "purchaseEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "下架时间"
+          }
+        }
+      },
+      "PageDTOCoursePageVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/CoursePageVO"
+            }
+          }
+        }
+      },
+      "CourseCataIdVO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "NameExistVO": {
+        "type": "object",
+        "properties": {
+          "existed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CataVO": {
+        "type": "object",
+        "default": null,
+        "description": "课程目录",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "章、节、练习id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "序号"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "章节练习名称"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程总时长,单位秒"
+          },
+          "trailer": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否支持免费试看"
+          },
+          "mediaName": {
+            "type": "string",
+            "default": "",
+            "description": "媒资名称"
+          },
+          "mediaId": {
+            "type": "string",
+            "default": "",
+            "description": "媒资id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "目录类型1：章，2：节，3：测试"
+          },
+          "subjectNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目数量"
+          },
+          "totalScore": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目总分"
+          },
+          "canUpdate": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否可以修改,默认不能修改"
+          },
+          "sections": {
+            "type": "array",
+            "default": "",
+            "description": "该章的所有小节和练习",
+            "items": {
+              "$ref": "#/components/schemas/CataVO"
+            }
+          },
+          "maxIndexOnShelf": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "已上架最大序号，查看时值为空，编辑查看时小节必有值"
+          },
+          "maxSectionIndexOnShelf": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "已上架小节最大序号，查看时，值为空，编辑查看时小节必有字段"
+          }
+        }
+      },
+      "CataSimpleInfoVO": {
+        "type": "object",
+        "default": null,
+        "description": "目录简单信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "目录id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "目录名称"
+          },
+          "index": {
+            "type": "string",
+            "default": "",
+            "description": "目录序号1-1"
+          },
+          "chapterIndex": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "数字序号章序号"
+          },
+          "cindex": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CourseBaseInfoVO": {
+        "type": "object",
+        "default": null,
+        "description": "课程基本信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "firstCateId": {
+            "type": "string",
+            "default": "",
+            "description": "一级分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "secondCateId": {
+            "type": "string",
+            "default": "",
+            "description": "二级分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "thirdCateId": {
+            "type": "string",
+            "default": "",
+            "description": "三级分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "createrName": {
+            "type": "string",
+            "default": "",
+            "description": "课程创建人"
+          },
+          "creater": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "创建时间"
+          },
+          "coverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "封面url"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间"
+          },
+          "updaterName": {
+            "type": "string",
+            "default": "",
+            "description": "更新人名称"
+          },
+          "updater": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "cataTotalNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课时总数量,去掉章，测试，用于编辑回显时该值为空"
+          },
+          "coureScore": {
+            "type": "number",
+            "format": "double",
+            "default": "",
+            "description": "课程评分，用于编辑回显时该值为空"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程评分"
+          },
+          "enrollNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "报名人数，用于编辑回显时该值为空"
+          },
+          "studyNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "学习人数，用于编辑回显时该值为空"
+          },
+          "refundNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款人数，用于编辑回显时该值为空"
+          },
+          "realPayAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "实付总金额，用于编辑回显时该值为空"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "cateNames": {
+            "type": "string",
+            "default": "",
+            "description": "课程分类名称，中间使用/隔开"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程价格"
+          },
+          "purchaseStartTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "购买有效期开始"
+          },
+          "purchaseEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": ""
+          },
+          "validDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "有效期"
+          },
+          "introduce": {
+            "type": "string",
+            "default": "",
+            "description": "课程介绍"
+          },
+          "usePeople": {
+            "type": "string",
+            "default": "",
+            "description": "使用人群"
+          },
+          "detail": {
+            "type": "string",
+            "default": "",
+            "description": "详情"
+          },
+          "canUpdate": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否可以修改，默认不能修改"
+          },
+          "free": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否免费"
+          },
+          "step": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "步骤,1:已保存基本信息，2：已保存课程目录，3：已保存课程视频，4：已保存题目，5：已保存课程老师"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程状态，1：待上架，2：已上架，3：下架，4：已完结"
+          }
+        }
+      },
+      "CategoryInfoVO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程分类名称"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "状态：1：正常，2：禁用"
+          },
+          "statusDesc": {
+            "type": "string",
+            "default": "",
+            "description": "状态描述"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "创建时间"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间"
+          },
+          "categoryLevel": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "分类级别，1：一级分类，2：二级分类，3：三级分类"
+          },
+          "firstCategoryName": {
+            "type": "string",
+            "default": "",
+            "description": "一级分类名称"
+          },
+          "secondCategoryName": {
+            "type": "string",
+            "default": "",
+            "description": "二级分类名称"
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "排序"
+          }
+        }
+      },
+      "CategoryListDTO": {
+        "type": "object",
+        "default": null,
+        "description": "课程类目分页查询条件",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "类目状态1:正常，2：禁用"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "类目名称"
+          }
+        }
+      },
+      "CategoryVO": {
+        "type": "object",
+        "default": null,
+        "description": "课程分类信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课程分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "课程分类名称"
+          },
+          "thirdCategoryNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "三级分类数量"
+          },
+          "courseNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程数量"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "状态：1：正常，2：禁用"
+          },
+          "statusDesc": {
+            "type": "string",
+            "default": "",
+            "description": "状态描述"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "创建时间"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间"
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "排序"
+          },
+          "parentId": {
+            "type": "string",
+            "default": "",
+            "description": "父id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "级别"
+          },
+          "children": {
+            "type": "array",
+            "default": "",
+            "description": "子分类列表",
+            "items": {
+              "$ref": "#/components/schemas/CategoryVO"
+            }
+          }
+        }
+      },
+      "SimpleCategoryVO": {
+        "type": "object",
+        "default": null,
+        "description": "所有课程分类数据",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimpleCategoryVO"
+            }
+          },
+          "level": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "parentId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "result": {},
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,2230 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "天机学堂 - 促销中心接口文档",
+    "description": "该服务包含用户优惠卷促销的各种辅助功能",
+    "contact": {
+      "name": "传智教育·研究院",
+      "url": "http://www.itcast.cn/",
+      "email": "zhanghuyi@itcast.cn"
+    },
+    "version": "v1.0"
+  },
+  "paths": {
+    "/api/v2/services/promotion/user-coupons/use": {
+      "put": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "核销指定优惠券",
+        "operationId": "writeOffCoupon",
+        "parameters": [
+          {
+            "name": "couponIds",
+            "in": "query",
+            "description": "用户优惠券id集合",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/user-coupons/refund": {
+      "put": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "退还指定优惠券",
+        "operationId": "refundCoupon",
+        "parameters": [
+          {
+            "name": "couponIds",
+            "in": "query",
+            "description": "用户优惠券id集合",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/coupons/{id}": {
+      "get": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "根据id查询优惠卷",
+        "operationId": "queryCouponById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CouponDetailVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "根据id修改优惠卷",
+        "operationId": "updateCouponById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "根据id删除优惠卷",
+        "operationId": "deleteCouponById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/coupons/{id}/pause": {
+      "put": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "根据id暂停发放优惠卷",
+        "operationId": "pauseIssueCouponById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/coupons/{id}/issue": {
+      "put": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "发放优惠卷接口",
+        "operationId": "beginIssue",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponIssueFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/user-coupons/{couponId}/receive": {
+      "post": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "领取优惠卷接口",
+        "operationId": "receiveCoupon",
+        "parameters": [
+          {
+            "name": "couponId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/user-coupons/{code}/exchange": {
+      "post": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "兑换码兑换优惠券接口",
+        "operationId": "exchangeCoupon",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/user-coupons/discount": {
+      "post": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "根据券方案计算订单优惠明细",
+        "operationId": "queryDiscountDetailByOrder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderCouponDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CouponDiscountDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/user-coupons/available": {
+      "post": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "查询我的优惠券可用方案",
+        "operationId": "findDiscountSolution",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/OrderCourseDTO"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CouponDiscountDTO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/coupons": {
+      "post": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "新增优惠卷接口",
+        "operationId": "saveCoupon",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CouponFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/coupons/{id}/claims": {
+      "post": {
+        "tags": [
+          "coupon-v-2-controller"
+        ],
+        "operationId": "claim",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/coupon-exchanges": {
+      "post": {
+        "tags": [
+          "coupon-v-2-controller"
+        ],
+        "operationId": "exchange",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/promotion/{id}/replay": {
+      "post": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/promotion/{id}/replay": {
+      "post": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "replay_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/promotion/{id}/replay": {
+      "post": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "replay_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/user-coupons/rules": {
+      "get": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "分页查询我的优惠券接口",
+        "operationId": "queryDiscountRules",
+        "parameters": [
+          {
+            "name": "couponIds",
+            "in": "query",
+            "description": "用户优惠券id集合",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/user-coupons/page": {
+      "get": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "分页查询我的优惠券",
+        "operationId": "queryMyCouponPage",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UserCouponQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOCouponVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/coupons/page": {
+      "get": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "分页查询优惠卷接口",
+        "operationId": "queryCouponByPage",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CouponQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOCouponPageVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/coupons/list": {
+      "get": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "summary": "查询发放中的优惠卷列表",
+        "operationId": "queryIssuingCoupons",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CouponVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/codes/page": {
+      "get": {
+        "tags": [
+          "兑换码相关接口"
+        ],
+        "summary": "分页查询兑换码",
+        "operationId": "queryExchangeCodeByPage",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CodeQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOExchangeCodeVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/operations/promotion/{id}": {
+      "get": {
+        "tags": [
+          "operation-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/promotion": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/promotion/failures": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "failures",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/promotion": {
+      "get": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CouponReservationDTO": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "couponIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CouponFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "优惠券表单数据",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券id，新增不需要添加，更新必填",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券名称",
+            "maxLength": 20,
+            "minLength": 4
+          },
+          "specific": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否添限定使用范围，true：限定了，false：没限定"
+          },
+          "scopes": {
+            "type": "array",
+            "default": "",
+            "description": "优惠券使用范围",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "discountType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券类型，1：每满减，2：折扣，3：无门槛，4：普通满减",
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "thresholdAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "折扣门槛，0代表无门槛"
+          },
+          "discountValue": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "折扣值，满减填抵扣金额；打折填折扣值：80标示打8折"
+          },
+          "maxDiscountAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "最大优惠金额"
+          },
+          "totalNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券总量"
+          },
+          "userLimit": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "每人领取的上限"
+          },
+          "obtainWay": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "获取方式1：手动领取，2：指定发放（通过兑换码兑换）",
+            "enum": [
+              1,
+              2
+            ]
+          }
+        },
+        "required": [
+          "discountType",
+          "name",
+          "obtainWay"
+        ]
+      },
+      "CouponIssueFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "优惠券发放的表单实体",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "issueBeginTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "发放开始时间"
+          },
+          "issueEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "发放结束时间"
+          },
+          "termDays": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "有效天数"
+          },
+          "termBeginTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "使用有效期开始时间"
+          },
+          "termEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "使用有效期结束时间"
+          }
+        },
+        "required": [
+          "issueEndTime"
+        ]
+      },
+      "OrderCouponDTO": {
+        "type": "object",
+        "default": null,
+        "description": "订单中课程及优惠券信息",
+        "properties": {
+          "userCouponIds": {
+            "type": "array",
+            "default": "",
+            "description": "用户优惠券id",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "courseList": {
+            "type": "array",
+            "default": "",
+            "description": "订单中的课程列表",
+            "items": {
+              "$ref": "#/components/schemas/OrderCourseDTO"
+            }
+          },
+          "orderId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "OrderCourseDTO": {
+        "type": "object",
+        "default": null,
+        "description": "订单中的课程信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "cateId": {
+            "type": "string",
+            "default": "",
+            "description": "课程的三级分类id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程价格"
+          }
+        }
+      },
+      "CouponDiscountDTO": {
+        "type": "object",
+        "default": null,
+        "description": "订单的可用优惠券及折扣信息",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "default": "",
+            "description": "用户优惠券id集合",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "rules": {
+            "type": "array",
+            "default": "",
+            "description": "优惠券规则",
+            "items": {
+              "type": "string"
+            }
+          },
+          "discountAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "本订单最大优惠金额"
+          },
+          "discountDetail": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "default": "",
+            "description": "优惠明细, key是课程id, value是课程优惠金额"
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "result": {},
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "Request": {
+        "type": "object",
+        "properties": {
+          "couponId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "UserCouponQuery": {
+        "type": "object",
+        "default": null,
+        "description": "用户优惠券查询参数",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券状态，1：未使用，2：已使用，3：已过期"
+          }
+        }
+      },
+      "CouponVO": {
+        "type": "object",
+        "default": null,
+        "description": "用户端优惠券信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券id，新增不需要添加，更新必填",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券名称"
+          },
+          "specific": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否限定使用范围"
+          },
+          "discountType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券类型，1：每满减，2：折扣，3：无门槛，4：普通满减",
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "thresholdAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "折扣门槛，0代表无门槛"
+          },
+          "discountValue": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "折扣值，满减填抵扣金额；打折填折扣值：80标示打8折"
+          },
+          "maxDiscountAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "最大优惠金额"
+          },
+          "termDays": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "有效天数"
+          },
+          "termEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "使用有效期结束时间"
+          },
+          "available": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否可以领取"
+          },
+          "received": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否可以使用"
+          }
+        }
+      },
+      "PageDTOCouponVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/CouponVO"
+            }
+          }
+        }
+      },
+      "CouponDetailVO": {
+        "type": "object",
+        "default": null,
+        "description": "优惠券详细数据",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券id，新增不需要添加，更新必填",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券名称"
+          },
+          "scopes": {
+            "type": "array",
+            "default": "",
+            "description": "优惠券使用范围，key范围类型(0-没有限制，1-限定分类，2-限定课程)，值是范围ID",
+            "items": {
+              "$ref": "#/components/schemas/CouponScopeVO"
+            }
+          },
+          "discountType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券类型，1：每满减，2：折扣，3：无门槛，4：普通满减",
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "thresholdAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "折扣门槛，0代表无门槛"
+          },
+          "discountValue": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "折扣值，满减填抵扣金额；打折填折扣值：80标示打8折"
+          },
+          "maxDiscountAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "最大优惠金额"
+          },
+          "issueBeginTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "发放开始时间"
+          },
+          "issueEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "发放结束时间"
+          },
+          "termDays": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "有效天数"
+          },
+          "termBeginTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "使用有效期开始时间"
+          },
+          "termEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "使用有效期结束时间"
+          },
+          "totalNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券总量，如果为0代表无上限"
+          },
+          "userLimit": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "每人领取的上限"
+          },
+          "obtainWay": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "获取方式1：手动领取，2：指定发放（通过兑换码兑换）",
+            "enum": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      "CouponScopeVO": {
+        "type": "object",
+        "default": null,
+        "description": "优惠券使用范围",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "范围id集合",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "范围名称集合"
+          }
+        }
+      },
+      "CouponQuery": {
+        "type": "object",
+        "default": null,
+        "description": "优惠券查询参数",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券折扣类型：1：每满减，2：折扣，3：无门槛，4：满减"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券状态，1：待发放，2：发放中，3：已结束, 4：取消/终止"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券名称"
+          }
+        }
+      },
+      "CouponPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "优惠券分页数据",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券id，新增不需要添加，更新必填",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "优惠券名称"
+          },
+          "specific": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否限定使用范围"
+          },
+          "discountType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券类型，1：每满减，2：折扣，3：无门槛，4：普通满减",
+            "enum": [
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "thresholdAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "折扣门槛，0代表无门槛"
+          },
+          "discountValue": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "折扣值，满减填抵扣金额；打折填折扣值：80标示打8折"
+          },
+          "maxDiscountAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "最大优惠金额"
+          },
+          "obtainWay": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "获取方式1：手动领取，2：指定发放（通过兑换码兑换）",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "usedNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "已使用"
+          },
+          "issueNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "已发放数量"
+          },
+          "totalNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "优惠券总量"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "优惠券创建时间"
+          },
+          "issueBeginTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "发放开始时间"
+          },
+          "issueEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "发放结束时间"
+          },
+          "termDays": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "有效天数"
+          },
+          "termBeginTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "使用有效期开始时间"
+          },
+          "termEndTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "使用有效期结束时间"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "状态",
+            "enum": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          }
+        }
+      },
+      "PageDTOCouponPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/CouponPageVO"
+            }
+          }
+        }
+      },
+      "CodeQuery": {
+        "type": "object",
+        "default": null,
+        "description": "兑换码查询参数",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "couponId": {
+            "type": "string",
+            "default": "",
+            "description": "兑换码对应的优惠券id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "兑换码状态，1：未兑换，2：已兑换"
+          }
+        },
+        "required": [
+          "couponId",
+          "status"
+        ]
+      },
+      "ExchangeCodeVO": {
+        "type": "object",
+        "default": null,
+        "description": "兑换码实体",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "兑换码id"
+          },
+          "code": {
+            "type": "string",
+            "default": "",
+            "description": "兑换码"
+          }
+        }
+      },
+      "PageDTOExchangeCodeVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/ExchangeCodeVO"
+            }
+          }
+        }
+      }
+    }
+  }
+}

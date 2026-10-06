@@ -1,0 +1,3662 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "天机学堂 - 学习中心接口文档",
+    "description": "该服务包含用户学习的各种辅助功能",
+    "contact": {
+      "name": "传智教育·研究院",
+      "url": "http://www.itcast.cn/",
+      "email": "zhanghuyi@itcast.cn"
+    },
+    "version": "v1.0"
+  },
+  "paths": {
+    "/api/v2/services/learning/questions/{id}": {
+      "get": {
+        "tags": [
+          "互动问答的相关接口"
+        ],
+        "summary": "根据id查询互动问题",
+        "operationId": "queryQuestionById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/QuestionVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "互动问答的相关接口"
+        ],
+        "summary": "修改互动问题",
+        "operationId": "updateQuestion",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "互动问答的相关接口"
+        ],
+        "summary": "删除我的问题",
+        "operationId": "deleteQuestionById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/notes/{id}": {
+      "get": {
+        "tags": [
+          "learning-features-controller"
+        ],
+        "operationId": "note",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "learning-features-controller"
+        ],
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mutation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "learning-features-controller"
+        ],
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/favorites/{courseId}": {
+      "get": {
+        "tags": [
+          "learning-features-controller"
+        ],
+        "operationId": "favoriteState",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "learning-features-controller"
+        ],
+        "operationId": "favorite",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "learning-features-controller"
+        ],
+        "operationId": "unfavorite",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/admin/replies/{id}/hidden/{hidden}": {
+      "put": {
+        "tags": [
+          "回答或评论相关接口"
+        ],
+        "summary": "隐藏或显示回答或评论",
+        "operationId": "hiddenReplyAdmin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "hidden",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/admin/questions/{id}/hidden/{hidden}": {
+      "put": {
+        "tags": [
+          "互动问答的相关接口"
+        ],
+        "summary": "隐藏或显示问题",
+        "operationId": "hiddenQuestionAdmin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "hidden",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/sign-records": {
+      "get": {
+        "tags": [
+          "签到相关接口"
+        ],
+        "summary": "查询签到记录",
+        "operationId": "querySignRecords",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SignRecordVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "签到相关接口"
+        ],
+        "summary": "签到功能接口",
+        "operationId": "addSignRecords",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SignResultVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/replies": {
+      "post": {
+        "tags": [
+          "回答或评论相关接口"
+        ],
+        "summary": "新增回答或评论",
+        "operationId": "saveReply",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/questions": {
+      "post": {
+        "tags": [
+          "互动问答的相关接口"
+        ],
+        "summary": "新增互动问题",
+        "operationId": "saveQuestion",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/lessons/plans": {
+      "get": {
+        "tags": [
+          "我的课表相关接口"
+        ],
+        "summary": "查询我的学习计划",
+        "operationId": "queryMyPlans",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LearningPlanPageVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "我的课表相关接口"
+        ],
+        "summary": "创建学习计划",
+        "operationId": "createLearningPlans",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearningPlanDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/learning-records": {
+      "post": {
+        "tags": [
+          "学习记录的相关接口"
+        ],
+        "summary": "提交学习记录",
+        "operationId": "addLearningRecord",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearningRecordFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/sign-ins": {
+      "get": {
+        "tags": [
+          "sign-v-2-controller"
+        ],
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sign-v-2-controller"
+        ],
+        "operationId": "sign",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/notes": {
+      "get": {
+        "tags": [
+          "learning-features-controller"
+        ],
+        "operationId": "notes",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          },
+          {
+            "name": "courseId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "learning-features-controller"
+        ],
+        "operationId": "create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Mutation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/points-projections/{month}/rebuild": {
+      "post": {
+        "tags": [
+          "points-projection-controller"
+        ],
+        "operationId": "rebuild",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/learning/{id}/replay": {
+      "post": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/learning/{id}/replay": {
+      "post": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "replay_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/learning/{id}/replay": {
+      "post": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "replay_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/replies/page": {
+      "get": {
+        "tags": [
+          "回答或评论相关接口"
+        ],
+        "summary": "分页查询回答或评论列表",
+        "operationId": "queryReplyVOPage",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ReplyPageQuery"
+            }
+          },
+          {
+            "name": "isAdmin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOReplyVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/questions/page": {
+      "get": {
+        "tags": [
+          "互动问答的相关接口"
+        ],
+        "summary": "分页查询互动问题",
+        "operationId": "queryQuestionPage",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/QuestionPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOQuestionVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/points/today": {
+      "get": {
+        "tags": [
+          "积分相关接口"
+        ],
+        "summary": "查询我的今日积分情况",
+        "operationId": "queryMyPointsToday",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PointsStatisticsVO"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/lessons/{courseId}": {
+      "get": {
+        "tags": [
+          "我的课表相关接口"
+        ],
+        "summary": "查询用户课表中指定课程状态",
+        "operationId": "isLessonStatus",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LearningLessonVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/lessons/{courseId}/valid": {
+      "get": {
+        "tags": [
+          "我的课表相关接口"
+        ],
+        "summary": "校验当前用户是否可以学习当前课程",
+        "operationId": "isLessonValid",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string",
+                      "pattern": "^-?[0-9]+$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/lessons/page": {
+      "get": {
+        "tags": [
+          "我的课表相关接口"
+        ],
+        "summary": "查询我的课表",
+        "operationId": "queryMyLessons",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOLearningLessonVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/lessons/now": {
+      "get": {
+        "tags": [
+          "我的课表相关接口"
+        ],
+        "summary": "查询我正在学习的课程",
+        "operationId": "queryMyCurrentLesson",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LearningLessonVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/lessons/lessons/{courseId}/count": {
+      "get": {
+        "tags": [
+          "我的课表相关接口"
+        ],
+        "summary": "统计课程学习人数",
+        "operationId": "countLearningLessonByCourse",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "integer",
+                      "format": "int32"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/learning-records/course/{courseId}": {
+      "get": {
+        "tags": [
+          "学习记录的相关接口"
+        ],
+        "summary": "查询指定课程的学习记录",
+        "operationId": "queryLearningRecordByCourse",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "description": "课程id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 2
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LearningLessonDTO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/boards": {
+      "get": {
+        "tags": [
+          "积分相关接口"
+        ],
+        "summary": "分页查询指定赛季的积分排行榜",
+        "operationId": "queryPointsBoardBySeason",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PointsBoardQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PointsBoardVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/board/seasons/list": {
+      "get": {
+        "tags": [
+          "赛季相关接口"
+        ],
+        "summary": "查询赛季列表",
+        "operationId": "queryPointsBoardSeasonList",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PointsBoardSeason"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/operations/learning/{id}": {
+      "get": {
+        "tags": [
+          "operation-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/favorites": {
+      "get": {
+        "tags": [
+          "learning-features-controller"
+        ],
+        "operationId": "favorites",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/points-projections": {
+      "get": {
+        "tags": [
+          "points-projection-controller"
+        ],
+        "operationId": "status",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/learning": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "list_1",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/learning/failures": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "failures",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/learning": {
+      "get": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "list_2",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/admin/replies/{id}": {
+      "get": {
+        "tags": [
+          "回答或评论相关接口"
+        ],
+        "summary": "根据id查询回答或评论详情",
+        "operationId": "queryReplyVOByIdAdmin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReplyVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/admin/replies/page": {
+      "get": {
+        "tags": [
+          "回答或评论相关接口"
+        ],
+        "summary": "分页查询回答或评论列表",
+        "operationId": "queryReplyVOPageAdmin",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ReplyPageQuery"
+            }
+          },
+          {
+            "name": "isAdmin",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOReplyVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/admin/questions/{id}": {
+      "get": {
+        "tags": [
+          "互动问答的相关接口"
+        ],
+        "summary": "根据id查询问题详情",
+        "operationId": "queryQuestionAdminVOById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/QuestionAdminVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/admin/questions/page": {
+      "get": {
+        "tags": [
+          "互动问答的相关接口"
+        ],
+        "summary": "管理端分页查询互动问题",
+        "operationId": "queryQuestionPageAdmin",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/QuestionAdminPageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOQuestionAdminVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/lessons/lessons/{courseId}": {
+      "delete": {
+        "tags": [
+          "我的课表相关接口"
+        ],
+        "summary": "删除表中的某课程",
+        "operationId": "deleteLesson",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "QuestionFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "互动问题表单信息",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "chapterId": {
+            "type": "string",
+            "default": "",
+            "description": "章id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionId": {
+            "type": "string",
+            "default": "",
+            "description": "小节id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "title": {
+            "type": "string",
+            "default": "",
+            "description": "标题"
+          },
+          "description": {
+            "type": "string",
+            "default": "",
+            "description": "互动问题描述"
+          },
+          "anonymity": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否匿名提问"
+          }
+        },
+        "required": [
+          "chapterId",
+          "courseId",
+          "description",
+          "sectionId",
+          "title"
+        ]
+      },
+      "Mutation": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "moment": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "result": {},
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "SignResultVO": {
+        "type": "object",
+        "default": null,
+        "description": "签到结果",
+        "properties": {
+          "signDays": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "连续签到天数"
+          },
+          "signPoints": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "签到得分"
+          },
+          "rewardPoints": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "连续签到奖励积分，连续签到超过7天以上才有奖励"
+          }
+        }
+      },
+      "ReplyDTO": {
+        "type": "object",
+        "default": null,
+        "description": "互动回答信息",
+        "properties": {
+          "content": {
+            "type": "string",
+            "default": "",
+            "description": "回答内容"
+          },
+          "anonymity": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否匿名提问"
+          },
+          "questionId": {
+            "type": "string",
+            "default": "",
+            "description": "互动问题id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "answerId": {
+            "type": "string",
+            "default": "",
+            "description": "回复的上级回答id，没有可不填",
+            "pattern": "^-?[0-9]+$"
+          },
+          "targetReplyId": {
+            "type": "string",
+            "default": "",
+            "description": "回复的目标回复id，没有可不填",
+            "pattern": "^-?[0-9]+$"
+          },
+          "targetUserId": {
+            "type": "string",
+            "default": "",
+            "description": "回复的目标用户id，没有可不填",
+            "pattern": "^-?[0-9]+$"
+          },
+          "isStudent": {
+            "type": "boolean",
+            "default": false,
+            "description": "标记是否是学生提交的回答，默认true"
+          }
+        },
+        "required": [
+          "content",
+          "questionId"
+        ]
+      },
+      "LearningPlanDTO": {
+        "type": "object",
+        "default": null,
+        "description": "学习计划表单实体",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "default": "",
+            "description": "课程表id",
+            "minimum": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "freq": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "每周学习频率"
+          }
+        },
+        "required": [
+          "courseId",
+          "freq"
+        ]
+      },
+      "LearningRecordFormDTO": {
+        "type": "object",
+        "default": null,
+        "description": "学习记录",
+        "properties": {
+          "sectionType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "小节类型：1-视频，2-考试",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "lessonId": {
+            "type": "string",
+            "default": "",
+            "description": "课表id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionId": {
+            "type": "string",
+            "default": "",
+            "description": "对应节的id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "视频总时长，单位秒"
+          },
+          "moment": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "视频的当前观看时长，单位秒，第一次提交填0"
+          },
+          "commitTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "提交时间"
+          }
+        },
+        "required": [
+          "lessonId",
+          "sectionId",
+          "sectionType"
+        ]
+      },
+      "SignRecordVO": {
+        "type": "object",
+        "default": null,
+        "description": "签到结果",
+        "properties": {
+          "signDays": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "连续签到天数"
+          },
+          "signRecords": {
+            "type": "array",
+            "default": "",
+            "description": "签到记录，例如：[0,1,1,0,1]，按照数组角标0~30，代表当月1~31号, 0代表未签到，1代表已签到",
+            "items": {
+              "type": "string",
+              "format": "byte"
+            }
+          }
+        }
+      },
+      "ReplyPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "互动回答分页查询条件",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "questionId": {
+            "type": "string",
+            "default": "",
+            "description": "问题id，不为空则代表根据问题查询回答",
+            "pattern": "^-?[0-9]+$"
+          },
+          "answerId": {
+            "type": "string",
+            "default": "",
+            "description": "回答id，不为空则代表根据回答查询评论",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "PageDTOReplyVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/ReplyVO"
+            }
+          }
+        }
+      },
+      "ReplyVO": {
+        "type": "object",
+        "default": null,
+        "description": "互动回答信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "content": {
+            "type": "string",
+            "default": "",
+            "description": "回答内容"
+          },
+          "anonymity": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否匿名提问"
+          },
+          "hidden": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否隐藏"
+          },
+          "replyTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "评论数量"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "创建时间，也就是回答时间"
+          },
+          "userId": {
+            "type": "string",
+            "default": "",
+            "description": "当前回复者id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "userName": {
+            "type": "string",
+            "default": "",
+            "description": "当前回复者昵称"
+          },
+          "userIcon": {
+            "type": "string",
+            "default": "",
+            "description": "当前回复者头像"
+          },
+          "userType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "当前回复者类型，2-学员，其它-老师"
+          },
+          "liked": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否点过赞"
+          },
+          "likedTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "点赞数量"
+          },
+          "targetUserName": {
+            "type": "string",
+            "default": "",
+            "description": "目标用户名字"
+          }
+        }
+      },
+      "QuestionVO": {
+        "type": "object",
+        "default": null,
+        "description": "用户端互动问题信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "主键id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "title": {
+            "type": "string",
+            "default": "",
+            "description": "互动问题名称"
+          },
+          "description": {
+            "type": "string",
+            "default": "",
+            "description": "互动问题描述"
+          },
+          "answerTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "回答数量，0表示没有回答"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "创建时间",
+            "example": "2022-7-18 19:52:36"
+          },
+          "anonymity": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否匿名提问"
+          },
+          "userId": {
+            "type": "string",
+            "default": "",
+            "description": "提问者id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "userName": {
+            "type": "string",
+            "default": "",
+            "description": "提问者昵称"
+          },
+          "userIcon": {
+            "type": "string",
+            "default": "",
+            "description": "提问者头像"
+          },
+          "latestReplyContent": {
+            "type": "string",
+            "default": "",
+            "description": "最新的回答信息"
+          },
+          "latestReplyUser": {
+            "type": "string",
+            "default": "",
+            "description": "最新的回答者昵称"
+          }
+        }
+      },
+      "QuestionPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "互动问题分页查询条件",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "courseId": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionId": {
+            "type": "string",
+            "default": "",
+            "description": "小节id",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "onlyMine": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否只查询我的问题",
+            "example": 1
+          }
+        }
+      },
+      "PageDTOQuestionVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/QuestionVO"
+            }
+          }
+        }
+      },
+      "PointsStatisticsVO": {
+        "type": "object",
+        "default": null,
+        "description": "每日积分统计实体",
+        "properties": {
+          "type": {
+            "type": "string",
+            "default": "",
+            "description": "获取积分方式"
+          },
+          "points": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "今日已获取积分值"
+          },
+          "maxPoints": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "单日积分上限"
+          }
+        }
+      },
+      "LearningLessonVO": {
+        "type": "object",
+        "default": null,
+        "description": "课程表信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "主键lessonId",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseId": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseName": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "courseCoverUrl": {
+            "type": "string",
+            "default": "",
+            "description": "课程封面"
+          },
+          "sections": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程章节数量"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程状态，0-未学习，1-学习中，2-已学完，3-已失效",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          "learnedSections": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "总已学习章节数"
+          },
+          "courseAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "总已报名课程数"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "课程购买时间"
+          },
+          "expireTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "课程过期时间，如果为null代表课程永久有效"
+          },
+          "planStatus": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "习计划状态，0-没有计划，1-计划进行中",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "weekFreq": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "计划的学习频率"
+          },
+          "latestSectionName": {
+            "type": "string",
+            "default": "",
+            "description": "最近学习的小节名"
+          },
+          "latestSectionIndex": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "最近学习的小节编号"
+          }
+        }
+      },
+      "PageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "分页请求参数",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          }
+        }
+      },
+      "LearningPlanPageVO": {
+        "type": "object",
+        "default": null,
+        "description": "学习计划分页统计结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/LearningPlanVO"
+            }
+          },
+          "weekPoints": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "本周积分值"
+          },
+          "weekFinished": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "本周完成的计划数量"
+          },
+          "weekTotalPlan": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "总的计划学习数量"
+          }
+        }
+      },
+      "LearningPlanVO": {
+        "type": "object",
+        "default": null,
+        "description": "课程计划信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "主键lessonId",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseId": {
+            "type": "string",
+            "default": "",
+            "description": "课程id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseName": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "weekFreq": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "每周计划学习章节数"
+          },
+          "sections": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程章节数量"
+          },
+          "weekLearnedSections": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "本周已学习章节数"
+          },
+          "learnedSections": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "总已学习章节数"
+          },
+          "latestLearnTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "最近一次学习时间"
+          }
+        }
+      },
+      "PageDTOLearningLessonVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/LearningLessonVO"
+            }
+          }
+        }
+      },
+      "LearningLessonDTO": {
+        "type": "object",
+        "default": null,
+        "description": "学习课表进度信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "课表id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "latestSectionId": {
+            "type": "string",
+            "default": "",
+            "description": "最近学习的小节id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "records": {
+            "type": "array",
+            "default": "",
+            "description": "学习过的小节的记录",
+            "items": {
+              "$ref": "#/components/schemas/LearningRecordDTO"
+            }
+          }
+        }
+      },
+      "LearningRecordDTO": {
+        "type": "object",
+        "default": null,
+        "description": "小节信息及学习进度",
+        "properties": {
+          "sectionId": {
+            "type": "string",
+            "default": "",
+            "description": "对应节的id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "moment": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "视频的当前观看时长，单位秒"
+          },
+          "finished": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否完成学习，默认false"
+          }
+        }
+      },
+      "PointsBoardQuery": {
+        "type": "object",
+        "default": null,
+        "description": "积分排行榜分页查询条件",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "season": {
+            "type": "string",
+            "default": "",
+            "description": "赛季id，为null或者0则代表查询当前赛季",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "PointsBoardItemVO": {
+        "type": "object",
+        "default": null,
+        "description": "积分榜单信息",
+        "properties": {
+          "points": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "积分值"
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "名次"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "学生姓名"
+          }
+        }
+      },
+      "PointsBoardVO": {
+        "type": "object",
+        "default": null,
+        "description": "积分榜单汇总信息",
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "我的榜单排名"
+          },
+          "points": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "我的积分值"
+          },
+          "boardList": {
+            "type": "array",
+            "default": "",
+            "description": "前100名上榜人信息",
+            "items": {
+              "$ref": "#/components/schemas/PointsBoardItemVO"
+            }
+          }
+        }
+      },
+      "PointsBoardSeason": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "beginTime": {
+            "type": "string",
+            "format": "date"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "QuestionAdminVO": {
+        "type": "object",
+        "default": null,
+        "description": "用户端互动问题信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "主键id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "title": {
+            "type": "string",
+            "default": "",
+            "description": "互动问题名称"
+          },
+          "description": {
+            "type": "string",
+            "default": "",
+            "description": "互动问题描述"
+          },
+          "answerTimes": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "回答数量，0表示没有回答"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "创建时间",
+            "example": "2022-7-18 19:52:36"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "管理端问题状态：0-未查看，1-已查看"
+          },
+          "hidden": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否被隐藏"
+          },
+          "userName": {
+            "type": "string",
+            "default": "",
+            "description": "提问者昵称"
+          },
+          "userIcon": {
+            "type": "string",
+            "default": "",
+            "description": "提问者头像"
+          },
+          "teacherName": {
+            "type": "string",
+            "default": "",
+            "description": "教师名称"
+          },
+          "courseName": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称"
+          },
+          "chapterName": {
+            "type": "string",
+            "default": "",
+            "description": "章名称"
+          },
+          "sectionName": {
+            "type": "string",
+            "default": "",
+            "description": "节名称"
+          },
+          "categoryName": {
+            "type": "string",
+            "default": "",
+            "description": "三级分类名称，中间使用/隔开"
+          }
+        }
+      },
+      "QuestionAdminPageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "互动问题管理端分页查询条件",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "courseName": {
+            "type": "string",
+            "default": "",
+            "description": "课程名称搜索关键字",
+            "example": "Redis"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "管理端问题状态：0-未查看，1-已查看",
+            "example": 1
+          },
+          "beginTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间区间的开始时间",
+            "example": "2022-7-18 19:52:36"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "更新时间区间的结束时间",
+            "example": "2022-7-18 19:52:36"
+          }
+        }
+      },
+      "PageDTOQuestionAdminVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/QuestionAdminVO"
+            }
+          }
+        }
+      }
+    }
+  }
+}

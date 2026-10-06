@@ -1,0 +1,672 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "天机学堂 - 支付中心接口文档",
+    "description": "该服务提供微信、支付宝等各种平台的支付、退款等功能",
+    "contact": {
+      "name": "传智教育·研究院",
+      "url": "http://www.itcast.cn/",
+      "email": "zhanghuyi@itcast.cn"
+    },
+    "version": "v1.0"
+  },
+  "paths": {
+    "/api/v2/simulator/payments/{business}/confirm": {
+      "post": {
+        "tags": [
+          "simulated-payment-controller"
+        ],
+        "operationId": "confirm",
+        "parameters": [
+          {
+            "name": "business",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/pay/{id}/replay": {
+      "post": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "replay",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/pay/{id}/replay": {
+      "post": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "replay_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/pay/{id}/replay": {
+      "post": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "replay_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/operations/pay/{id}": {
+      "get": {
+        "tags": [
+          "operation-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/pay": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/pay/failures": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "failures",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/consumer-failures/pay": {
+      "get": {
+        "tags": [
+          "consumer-failure-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PayChannelDTO": {
+        "type": "object",
+        "default": null,
+        "description": "支付渠道信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道名称"
+          },
+          "channelCode": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道编码，唯一标示",
+            "pattern": "\\w{1,30}"
+          },
+          "channelPriority": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "渠道优先级，数字越小优先级越高"
+          },
+          "channelIcon": {
+            "type": "string",
+            "default": "",
+            "description": "渠道图标"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "支付渠道状态，1：使用中，2：停用。新增时默认为1"
+          }
+        },
+        "required": [
+          "channelCode",
+          "channelIcon",
+          "channelPriority",
+          "name"
+        ]
+      },
+      "RefundApplyDTO": {
+        "type": "object",
+        "default": null,
+        "description": "退款请求参数",
+        "properties": {
+          "bizOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "支付时传入的业务订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "bizRefundOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "本次要退款的业务订单id，因为有拆单，这里是子订单id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "refundAmount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "子订单的退款金额,单位为分"
+          }
+        }
+      },
+      "RefundResultDTO": {
+        "type": "object",
+        "default": null,
+        "description": "支付结果",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "退款状态，1：退款中，2：退款失败，3：退款成功"
+          },
+          "msg": {
+            "type": "string",
+            "default": "",
+            "description": "支付失败原因"
+          },
+          "bizPayOrderId": {
+            "type": "string",
+            "default": "",
+            "description": "业务端支付订单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "bizRefundOrderId": {
+            "type": "string",
+            "default": "",
+            "description": "业务端退款订单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "payOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "支付流水交易单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "refundOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "退款交易单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "payChannel": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道"
+          },
+          "refundChannel": {
+            "type": "string",
+            "default": "",
+            "description": "退款渠道"
+          }
+        }
+      },
+      "PayApplyDTO": {
+        "type": "object",
+        "default": null,
+        "description": "支付申请参数",
+        "properties": {
+          "bizOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "业务订单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "bizUserId": {
+            "type": "string",
+            "default": "",
+            "description": "下单用户id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "支付金额，以分为单位",
+            "minimum": 1
+          },
+          "payChannelCode": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道编码，例如：aliPay"
+          },
+          "payType": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "支付方式: 1-h5；2-小程序；3-公众号；4-扫码"
+          },
+          "orderInfo": {
+            "type": "string",
+            "default": "",
+            "description": "订单中的商品信息"
+          }
+        },
+        "required": [
+          "bizOrderNo",
+          "bizUserId",
+          "orderInfo",
+          "payChannelCode",
+          "payType"
+        ]
+      },
+      "PayResultDTO": {
+        "type": "object",
+        "default": null,
+        "description": "支付结果",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "支付结果，1：支付中，2：支付失败，3：支付成功"
+          },
+          "msg": {
+            "type": "string",
+            "default": "",
+            "description": "支付失败原因"
+          },
+          "bizOrderId": {
+            "type": "string",
+            "default": "",
+            "description": "业务订单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "payOrderNo": {
+            "type": "string",
+            "default": "",
+            "description": "业务订单号",
+            "pattern": "^-?[0-9]+$"
+          },
+          "payChannel": {
+            "type": "string",
+            "default": "",
+            "description": "支付渠道"
+          },
+          "successTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "支付成功时间"
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "result": {},
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

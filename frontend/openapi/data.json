@@ -1,0 +1,542 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "天机学堂 - 数据中心接口文档",
+    "description": "该服务包含数据看板统计的功能",
+    "contact": {
+      "name": "传智教育·研究院",
+      "url": "http://www.itcast.cn/",
+      "email": "zhanghuyi@itcast.cn"
+    },
+    "version": "v1.0"
+  },
+  "paths": {
+    "/api/v2/services/data/data/top10/set": {
+      "put": {
+        "tags": [
+          "工作台top10数据相关接口"
+        ],
+        "summary": "设置top10数据",
+        "operationId": "setTop10Data",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Top10DataSetDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/data/data/today/set": {
+      "put": {
+        "tags": [
+          "今日数据相关接口"
+        ],
+        "summary": "设置线上数据",
+        "operationId": "set",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodayDataDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/data/data/board/set": {
+      "put": {
+        "tags": [
+          "看板数据相关操作"
+        ],
+        "summary": "看板数据设置",
+        "operationId": "setBoardData",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardDataSetDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/data/data/top10": {
+      "get": {
+        "tags": [
+          "工作台top10数据相关接口"
+        ],
+        "summary": "top10数据获取",
+        "operationId": "getTop10Data",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Top10DataVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/data/data/today": {
+      "get": {
+        "tags": [
+          "今日数据相关接口"
+        ],
+        "summary": "获取今日数据",
+        "operationId": "get",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TodayDataVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/data/data/board": {
+      "get": {
+        "tags": [
+          "看板数据相关操作"
+        ],
+        "summary": "看板数据获取",
+        "operationId": "boardData",
+        "parameters": [
+          {
+            "name": "types",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EchartsVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Top10DataSetDTO": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Top10DataSetUnitDTO"
+            },
+            "maxItems": 2147483647,
+            "minItems": 10
+          }
+        }
+      },
+      "Top10DataSetUnitDTO": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "newStuNum": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "orderAmount": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "required": [
+          "category",
+          "name",
+          "newStuNum",
+          "orderAmount"
+        ]
+      },
+      "TodayDataDTO": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "visits": {
+            "type": "number",
+            "format": "double"
+          },
+          "orderAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "orderNum": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stuNewNum": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "BoardDataSetDTO": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 9,
+            "minimum": 1
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "maxItems": 15,
+            "minItems": 15
+          }
+        },
+        "required": [
+          "data",
+          "type",
+          "version"
+        ]
+      },
+      "CourseInfo": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "newStuNum": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "orderAmount": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "Top10DataVO": {
+        "type": "object",
+        "properties": {
+          "hot": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseInfo"
+            }
+          },
+          "hotSales": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseInfo"
+            }
+          }
+        }
+      },
+      "TodayDataVO": {
+        "type": "object",
+        "properties": {
+          "visits": {
+            "type": "number",
+            "format": "double",
+            "default": "",
+            "description": "访问量，万次单位"
+          },
+          "orderAmount": {
+            "type": "number",
+            "format": "double",
+            "default": "",
+            "description": "今日订单金额,万元单位"
+          },
+          "orderNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "今日订单笔数"
+          },
+          "stuNewNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "今日新增学员数"
+          }
+        }
+      },
+      "AxisVO": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "max": {
+            "type": "number",
+            "format": "double"
+          },
+          "min": {
+            "type": "number",
+            "format": "double"
+          },
+          "average": {
+            "type": "number",
+            "format": "double"
+          },
+          "data": {
+            "type": "array",
+            "items": {}
+          },
+          "interval": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "EchartsVO": {
+        "type": "object",
+        "properties": {
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SerierVO"
+            }
+          },
+          "xaxis": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AxisVO"
+            }
+          },
+          "yaxis": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AxisVO"
+            }
+          }
+        }
+      },
+      "SerierVO": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {}
+          },
+          "max": {
+            "type": "string"
+          },
+          "min": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+<script setup lang="ts">
+import {ref,onMounted} from 'vue';import {useRoute,RouterLink} from 'vue-router';import {get,write,newKey} from '../../../../packages/shared/src/client';import {useTask} from '../../../../packages/shared/src/ui';import Status from '../../../../packages/shared/src/Status.vue';
+const route=useRoute(),task=useTask(),enabled=ref(false),confirmed=ref(false);
+onMounted(()=>task.run(async()=>{const environment=await get<{mode:string}>('/environment');enabled.value=environment.mode==='SIMULATED';}));
+async function confirm(){await task.run(async()=>{if(!enabled.value)throw new Error('当前环境没有启用本地模拟器');await write('/simulator/payments/'+String(route.params.id)+'/confirm','POST',{},newKey());confirmed.value=true;task.message.value='模拟器已保存支付事实，业务订单正在通过通知和对账更新';});}
+</script><template><section class="card"><h2>本地模拟支付</h2><el-alert title="这是隔离的本地模拟器，不会产生真实扣款。" type="warning" :closable="false"/><Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value"/><p>订单 {{route.params.id}}</p><el-button type="primary" @click="confirm" :disabled="!enabled || confirmed || task.busy.value">确认模拟支付成功</el-button><RouterLink to="/orders">查看业务订单结果</RouterLink></section></template>
