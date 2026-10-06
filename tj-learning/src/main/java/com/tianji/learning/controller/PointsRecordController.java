@@ -3,8 +3,8 @@ package com.tianji.learning.controller;
 
 import com.tianji.learning.domain.vo.PointsStatisticsVO;
 import com.tianji.learning.service.IPointsRecordService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,13 +24,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/points")
 @RequiredArgsConstructor
-@Api(tags = "积分相关接口")
+@Tag(name = "积分相关接口")
 public class PointsRecordController {
 
     private final IPointsRecordService recordService;
 
     @GetMapping("/today")
-    @ApiOperation("查询我的今日积分情况")
+    @Operation(summary = "查询我的今日积分情况")
     public List<PointsStatisticsVO> queryMyPointsToday() {
         return recordService.queryMyPointsToday();
     }

@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +33,7 @@ public class SmsServiceImpl implements ISmsService {
 
     @Resource
     private Map<String, ISmsHandler> smsHandlers;
-    private final Executor asyncSmsExecutor;
+    private final SmsDeliveryTasks deliveries;
     private final ISmsThirdPlatformService platformService;
     private final INoticeTemplateService noticeTemplateService;
     private final IMessageTemplateService messageTemplateService;
@@ -47,7 +47,7 @@ public class SmsServiceImpl implements ISmsService {
         info.setPhones(phones);
         info.setTemplateCode(noticeTemplate.getCode());
         // 3.发送
-        sendMessage(info);
+        sendMessageAsync(info);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class SmsServiceImpl implements ISmsService {
                 log.error("短信发送异常，平台{}, 原因{}, 稍后重试", template.getPlatformCode(), e.getMessage(), e);
             }
         }
-        log.error("短信发送失败，所有平台都已尝试，放弃发送");
+        throw new CommonException("短信发送失败，任务保留等待重试");
     }
 
     private List<MessageTemplate> sortMessageTemplate(List<MessageTemplate> messageTemplates) {
@@ -99,8 +99,6 @@ public class SmsServiceImpl implements ISmsService {
 
     @Override
     public void sendMessageAsync(SmsInfoDTO smsInfoDTO) {
-        asyncSmsExecutor.execute(
-                new MarkedRunnable(() -> this.sendMessage(smsInfoDTO))
-        );
+        deliveries.stage(java.util.UUID.randomUUID().toString(),smsInfoDTO);
     }
 }

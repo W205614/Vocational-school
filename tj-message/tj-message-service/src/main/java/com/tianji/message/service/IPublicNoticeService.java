@@ -2,7 +2,7 @@ package com.tianji.message.service;
 
 import com.tianji.message.domain.po.NoticeTemplate;
 import com.tianji.message.domain.po.PublicNotice;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * <p>

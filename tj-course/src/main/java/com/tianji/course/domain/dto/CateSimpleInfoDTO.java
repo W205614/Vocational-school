@@ -1,7 +1,6 @@
 package com.tianji.course.domain.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -12,13 +11,13 @@ import lombok.Data;
  * @Version
  **/
 @Data
-@ApiModel("分类")
+@Schema(description = "分类")
 public class CateSimpleInfoDTO {
-    @ApiModelProperty("一级分类")
+    @Schema(description = "一级分类")
     private Long firstCateId;
-    @ApiModelProperty("二级分类id")
+    @Schema(description = "二级分类id")
     private Long secondCateId;
-    @ApiModelProperty("三级分类id")
+    @Schema(description = "三级分类id")
     private Long thirdCateId;
 
 }

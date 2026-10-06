@@ -1,7 +1,7 @@
 package com.tianji.learning.service;
 
 import com.tianji.learning.domain.po.PointsBoardSeason;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 import java.time.LocalDateTime;
 

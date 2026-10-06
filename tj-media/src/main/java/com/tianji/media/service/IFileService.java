@@ -1,6 +1,6 @@
 package com.tianji.media.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.media.domain.dto.FileDTO;
 import com.tianji.media.domain.po.File;
 import org.springframework.web.multipart.MultipartFile;

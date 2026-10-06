@@ -1,6 +1,6 @@
 package com.tianji.course.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.api.dto.course.*;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.course.domain.dto.CoursePageQuery;

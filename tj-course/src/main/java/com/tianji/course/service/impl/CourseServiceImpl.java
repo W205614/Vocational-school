@@ -3,7 +3,7 @@ package com.tianji.course.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.client.exam.ExamClient;
 import com.tianji.api.client.learning.LearningClient;
 import com.tianji.api.client.trade.TradeClient;
@@ -67,7 +67,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     private ICourseDraftService courseDraftService;
 
     @Autowired
-    private RabbitMqHelper rabbitMqHelper;
+    private com.tianji.common.autoconfigure.reliability.OutboxStore outbox;
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @Autowired
     private ICourseCatalogueService courseCatalogueService;
@@ -155,11 +156,13 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void delete(Long id) {
+        jdbc.update("INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",id);
         //1.删除草稿信息
         courseDraftService.delete(id);
         //2.发送删除草稿mq
-        rabbitMqHelper.send(MqConstants.Exchange.COURSE_EXCHANGE, MqConstants.Key.COURSE_DELETE_KEY, id);
+        outbox.enqueue("course:"+id+":delete",MqConstants.Exchange.COURSE_EXCHANGE,MqConstants.Key.COURSE_DELETE_KEY,id);
     }
 
     @Override
@@ -197,7 +200,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                         .eq(Course::getName, name)
                         .last(id != null, " and id !=" + id);
         //2.统计数量
-        Integer num = baseMapper.selectCount(queryWrapper);
+        Integer num = Math.toIntExact(baseMapper.selectCount(queryWrapper));
         if (num > 0) {
             return NameExistVO.EXISTED;
         }
@@ -355,26 +358,15 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         if (CollUtils.isEmpty(courses)) {
             return 0;
         }
-        //2.组装数据
-        List<Course> updateCourses = new ArrayList<>();
-        for (Course course : courses) {
-            Course updateCourse = new Course();
-            //2.1.设置课程id
-            updateCourse.setId(course.getId());
-            //2.2.设置课程状态-已完结
-            updateCourse.setStatus(CourseStatus.FINISHED.getStatus());
-            updateCourses.add(updateCourse);
+        int changed=0;
+        for(Course course:courses){
+            jdbc.update("INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",course.getId());
+            if(jdbc.update("UPDATE course SET status=? WHERE id=? AND status IN(2,3) AND purchase_end_time<=NOW()",CourseStatus.FINISHED.getStatus(),course.getId())==1){
+                outbox.enqueue("course:"+course.getId()+":expired",MqConstants.Exchange.COURSE_EXCHANGE,MqConstants.Key.COURSE_EXPIRE_KEY,course.getId());
+                courseDraftService.delete(course.getId());changed++;
+            }
         }
-        //3.批量完结课程
-        updateBatchById(updateCourses);
-        //4.发送课程完结mq
-        sendFinishedCourse(courses);
-        //5.清理草稿
-        for (Course course: courses){
-            courseDraftService.delete(course.getId());
-        }
-
-        return updateCourses.size();
+        return changed;
     }
 
     @Override
@@ -419,7 +411,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                         .or().eq(Course::getSecondCateId, categoryId)
                         .or().eq(Course::getThirdCateId, categoryId);
         //2.统计课程数量
-        return baseMapper.selectCount(queryWrapper);
+        return Math.toIntExact(baseMapper.selectCount(queryWrapper));
     }
 
     @Override
@@ -520,14 +512,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
      *
      * @param finishedCourse
      */
-    private void sendFinishedCourse(List<Course> finishedCourse) {
-        //1.遍历发送课程完结mq
-        for (Course course : finishedCourse) {
-            rabbitMqHelper.sendAsync(MqConstants.Exchange.COURSE_EXCHANGE,
-                    MqConstants.Key.COURSE_EXPIRE_KEY,
-                    course.getId());
-        }
-    }
+
 
     /**
      * 统计课程分类上架和已完结课程的数量

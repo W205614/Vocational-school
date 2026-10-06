@@ -1,7 +1,7 @@
 package com.tianji.message.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.common.exceptions.BadRequestException;
 import com.tianji.common.utils.BeanUtils;
@@ -41,9 +41,19 @@ public class NoticeTemplateServiceImpl extends ServiceImpl<NoticeTemplateMapper,
 
     private final IMessageTemplateService messageTemplateService;
 
+    private void validate(NoticeTemplateFormDTO form){
+        com.tianji.common.utils.UserContext.requireAdmin();
+        if(form.getName()==null || form.getName().isBlank() || form.getName().length()>50 ||
+          form.getCode()==null || form.getCode().isBlank() || form.getCode().length()>50 ||
+          form.getTitle()!=null && form.getTitle().length()>50 || form.getContent()==null || form.getContent().isBlank() || form.getContent().length()>255 ||
+          form.getType()==null || form.getType()<0 || form.getType()>3 || form.getStatus()==null || form.getStatus()<0 || form.getStatus()>2)throw new BadRequestException("通知模板字段为空、超长或类型无效");
+        if(form.getIsSmsTemplate()==null)form.setIsSmsTemplate(false);
+        if(form.getIsSmsTemplate() && (form.getMessageTemplates()==null || form.getMessageTemplates().isEmpty()))throw new BadRequestException("短信模板需配置发送渠道");
+    }
     @Override
     @Transactional
     public Long saveNoticeTemplate(NoticeTemplateFormDTO noticeTemplateFormDTO) {
+        validate(noticeTemplateFormDTO);
         // 1.保存通知模板
         NoticeTemplate noticeTemplate = BeanUtils.copyBean(noticeTemplateFormDTO, NoticeTemplate.class);
         save(noticeTemplate);
@@ -69,6 +79,7 @@ public class NoticeTemplateServiceImpl extends ServiceImpl<NoticeTemplateMapper,
     @Override
     @Transactional
     public void updateNoticeTemplate(NoticeTemplateFormDTO noticeTemplateDTO) {
+        validate(noticeTemplateDTO);
         // 1.查询旧数据
         Long id = noticeTemplateDTO.getId();
         NoticeTemplate oldNT = getById(id);

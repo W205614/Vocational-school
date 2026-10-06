@@ -6,12 +6,11 @@ import com.tianji.common.utils.StringUtils;
 import com.tianji.common.validate.Checker;
 import com.tianji.course.constants.CourseConstants;
 import com.tianji.course.constants.CourseErrorInfo;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
@@ -20,19 +19,19 @@ import java.util.List;
  * @version 1.0.0
  **/
 @Data
-@ApiModel(description = "章节")
+@Schema(description = "章节")
 public class CataSaveDTO implements Checker {
-    @ApiModelProperty("章、节、练习id")
+    @Schema(description = "章、节、练习id")
     private Long id;
-    @ApiModelProperty("目录类型1：章，2：节，3：测试")
+    @Schema(description = "目录类型1：章，2：节，3：测试")
     @NotNull(message = "")
     private Integer type;
-    @ApiModelProperty("章节练习名称")
+    @Schema(description = "章节练习名称")
     private String name;
-    @ApiModelProperty("章排序，章一定要传，小节和练习不需要传")
+    @Schema(description = "章排序，章一定要传，小节和练习不需要传")
     private Integer index;
 
-    @ApiModelProperty("当前章的小节或练习")
+    @Schema(description = "当前章的小节或练习")
     @Size(min = 1, message = "不能出现空章")
     private List<CataSaveDTO> sections;
 

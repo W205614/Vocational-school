@@ -17,13 +17,15 @@ class DelayTaskTest {
         DelayQueue<DelayTask<String>> queue = new DelayQueue<>();
         // 2. 向队列中添加延迟执行的任务
         log.info("开始初始化延迟任务............");
-        queue.add(new DelayTask<>("延迟任务3", Duration.ofSeconds(3)));
-        queue.add(new DelayTask<>("延迟任务1", Duration.ofSeconds(1)));
-        queue.add(new DelayTask<>("延迟任务2", Duration.ofSeconds(2)));
+        queue.add(new DelayTask<>("延迟任务3", Duration.ofMillis(30)));
+        queue.add(new DelayTask<>("延迟任务1", Duration.ofMillis(10)));
+        queue.add(new DelayTask<>("延迟任务2", Duration.ofMillis(20)));
         // 3. 尝试执行任务
-        while(true) {
-            DelayTask<String> task = queue.take();
-            log.info("开始执行延迟任务: {}", task.getData());
+        for (int i = 1; i <= 3; i++) {
+            DelayTask<String> task = queue.poll(1, java.util.concurrent.TimeUnit.SECONDS);
+            assertNotNull(task);
+            assertEquals("延迟任务" + i, task.getData());
         }
+        assertTrue(queue.isEmpty());
     }
 }

@@ -1,0 +1,1 @@
+ALTER TABLE sms_delivery_task ADD COLUMN version BIGINT NOT NULL DEFAULT 0;

@@ -1,12 +1,11 @@
 package com.tianji.course.domain.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author wusongsong
@@ -14,11 +13,11 @@ import javax.validation.constraints.NotNull;
  * @version 1.0.0
  **/
 @Data
-@ApiModel(description = "课程保存结果")
+@Schema(description = "课程保存结果")
 @AllArgsConstructor
 @NotNull
 @Builder
 public class CourseSaveVO {
-    @ApiModelProperty("课程id")
+    @Schema(description = "课程id")
     private Long id;
 }

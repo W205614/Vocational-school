@@ -1,7 +1,6 @@
 package com.tianji.course.domain.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -11,12 +10,12 @@ import lombok.Data;
  * @version 1.0.0
  **/
 @Data
-@ApiModel(description = "课程视频保存模型")
+@Schema(description = "课程视频保存模型")
 public class CourseMediaSaveDTO {
-    @ApiModelProperty("小节id")
+    @Schema(description = "小节id")
     private Long cataId;
-    @ApiModelProperty("媒资id")
+    @Schema(description = "媒资id")
     private Long mediaId;
-    @ApiModelProperty("是否支持试看")
+    @Schema(description = "是否支持试看")
     private Boolean trailer;
 }

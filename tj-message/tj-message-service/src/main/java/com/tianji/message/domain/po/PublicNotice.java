@@ -54,6 +54,7 @@ public class PublicNotice implements Serializable {
     /**
      * 通知发布时间
      */
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
     private LocalDateTime createTime;
 
     /**

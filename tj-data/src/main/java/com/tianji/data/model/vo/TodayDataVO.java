@@ -1,6 +1,6 @@
 package com.tianji.data.model.vo;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -11,12 +11,12 @@ import lombok.Data;
  **/
 @Data
 public class TodayDataVO {
-    @ApiModelProperty("访问量，万次单位")
+    @Schema(description = "访问量，万次单位")
     private Double visits;
-    @ApiModelProperty("今日订单金额,万元单位")
+    @Schema(description = "今日订单金额,万元单位")
     private Double orderAmount;
-    @ApiModelProperty("今日订单笔数")
+    @Schema(description = "今日订单笔数")
     private Integer orderNum;
-    @ApiModelProperty("今日新增学员数")
+    @Schema(description = "今日新增学员数")
     private Integer stuNewNum;
 }

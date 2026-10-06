@@ -1,0 +1,1 @@
+CREATE TABLE storage_cleanup_task(id CHAR(36) PRIMARY KEY,kind VARCHAR(16) NOT NULL,object_key VARCHAR(255) NOT NULL,status VARCHAR(16) NOT NULL DEFAULT 'PENDING',attempts INT NOT NULL DEFAULT 0,lease_token CHAR(36),next_attempt_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),last_error VARCHAR(1000),KEY ix_cleanup_due(status,next_attempt_at));

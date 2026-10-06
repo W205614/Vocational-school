@@ -41,7 +41,7 @@ public class NoticeTask implements Serializable {
     private String name;
 
     /**
-     * true-通知所有人;false-通知部分人。默认false
+     * true-通知指定用户;false-全员公告。默认false
      */
     private Boolean partial;
 
@@ -58,7 +58,8 @@ public class NoticeTask implements Serializable {
     /**
      * 任务延迟执行时间间隔，单位是分钟
      */
-    private Integer interval;
+    @TableField("\u0060interval\u0060")
+    private Long interval;
 
     /**
      * 任务失效时间

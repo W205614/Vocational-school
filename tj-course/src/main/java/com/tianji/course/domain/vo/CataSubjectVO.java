@@ -1,7 +1,6 @@
 package com.tianji.course.domain.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -11,16 +10,16 @@ import lombok.Data;
  * @version 1.0.0
  **/
 @Data
-@ApiModel(description = "课程题目统计")
+@Schema(description = "课程题目统计")
 public class CataSubjectVO {
-    @ApiModelProperty("小节或测试id")
+    @Schema(description = "小节或测试id")
     private Long cataId;
-    @ApiModelProperty("小节或测试名称")
+    @Schema(description = "小节或测试名称")
     private String cataName;
-    @ApiModelProperty("类型，2：节，3：测试")
+    @Schema(description = "类型，2：节，3：测试")
     private Integer type;
-    @ApiModelProperty("题目数量")
+    @Schema(description = "题目数量")
     private Integer subjectNum;
-    @ApiModelProperty("题目总分")
+    @Schema(description = "题目总分")
     private Integer subjectScore;
 }

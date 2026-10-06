@@ -29,5 +29,11 @@ public class ExecutorTest {
                 //任务
             }
         });
+        poolExecutor.shutdown();
+        try {
+            if(!poolExecutor.awaitTermination(5,TimeUnit.SECONDS)) poolExecutor.shutdownNow();
+        } catch(InterruptedException interrupted) {
+            poolExecutor.shutdownNow();Thread.currentThread().interrupt();
+        }
     }
 }

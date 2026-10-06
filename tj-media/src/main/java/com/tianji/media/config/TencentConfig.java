@@ -42,7 +42,7 @@ public class TencentConfig {
         ClientProfile clientProfile = new ClientProfile();
         clientProfile.setHttpProfile(httpProfile);
         // 2.初始化客户端
-        return new VodClient(cred, properties.getVod().getRegion());
+        return new VodClient(cred, properties.getVod().getRegion(), clientProfile);
     }
 
     @Bean
@@ -58,7 +58,7 @@ public class TencentConfig {
         return new TencentMediaStorage(tencentVodClient, properties);
     }
 
-    @Bean
+    @Bean(destroyMethod="shutdown")
     @ConditionalOnProperty(prefix = "tj.platform", name = "file", havingValue = "TENCENT")
     public COSClient tencentCosClient(TencentProperties properties){
         // 1.授权信息
@@ -70,12 +70,12 @@ public class TencentConfig {
         return new COSClient(cred, clientConfig);
     }
 
-    @Bean
+    @Bean(destroyMethod="shutdownNow")
     @ConditionalOnProperty(prefix = "tj.platform", name = "file", havingValue = "TENCENT")
-    public TransferManager transferManager(COSClient tencentCosClient, TencentProperties properties){
+    public TransferManager transferManager(COSClient tencentCosClient, TencentProperties properties,@org.springframework.beans.factory.annotation.Qualifier("tencentUploadExecutor") org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor managed){
         // 自定义线程池大小，建议在客户端与 COS 网络充足（例如使用腾讯云的 CVM，同地域上传 COS）的情况下，设置成16或32即可，可较充分的利用网络资源
         // 对于使用公网传输且网络带宽质量不高的情况，建议减小该值，避免因网速过慢，造成请求超时。
-        ExecutorService threadPool = Executors.newFixedThreadPool(4);
+        ExecutorService threadPool = managed.getThreadPoolExecutor();
 
         // 传入一个 threadPool, 若不传入线程池，默认 TransferManager 中会生成一个单线程的线程池。
         TransferManager transferManager = new TransferManager(tencentCosClient, threadPool);
@@ -88,6 +88,10 @@ public class TencentConfig {
         transferManager.setConfiguration(transferManagerConfiguration);
 
         return transferManager;
+    }
+    @Bean @ConditionalOnProperty(prefix="tj.platform",name="file",havingValue="TENCENT")
+    public org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor tencentUploadExecutor(){
+        var pool=new org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor();pool.setCorePoolSize(2);pool.setMaxPoolSize(4);pool.setQueueCapacity(16);pool.setThreadNamePrefix("tencent-upload-");pool.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.AbortPolicy());pool.setWaitForTasksToCompleteOnShutdown(true);pool.setAwaitTerminationSeconds(30);return pool;
     }
 
     @Bean

@@ -6,8 +6,8 @@ import com.tianji.message.domain.dto.UserInboxDTO;
 import com.tianji.message.domain.dto.UserInboxFormDTO;
 import com.tianji.message.domain.query.UserInboxQuery;
 import com.tianji.message.service.IUserInboxService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,21 +19,27 @@ import org.springframework.web.bind.annotation.*;
  * @author 虎哥
  * @since 2022-08-19
  */
-@Api(tags = "用户收件箱接口")
+@Tag(name = "用户收件箱接口")
 @RestController
 @RequestMapping("/inboxes")
 @RequiredArgsConstructor
 public class UserInboxController {
 
     private final IUserInboxService inboxService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    @PutMapping("/{id}/read") public void read(@PathVariable long id){
+        long user=com.tianji.common.utils.UserContext.requireUser();
+        if(jdbc.update("UPDATE user_inbox SET is_read=1 WHERE id=? AND user_id=?",id,user)!=1 && jdbc.queryForObject("SELECT COUNT(*) FROM user_inbox WHERE id=? AND user_id=?",Integer.class,id,user)!=1)
+            throw new com.tianji.common.exceptions.BadRequestException("消息不存在");
+    }
 
     @PostMapping
-    @ApiOperation("发送私信")
+    @Operation(summary = "发送私信")
     public Long sentMessageToUser(@RequestBody UserInboxFormDTO userInboxFormDTO){
         return inboxService.sentMessageToUser(userInboxFormDTO);
     }
 
-    @ApiOperation("分页查询收件箱")
+    @Operation(summary = "分页查询收件箱")
     @GetMapping
     public PageDTO<UserInboxDTO> queryUserInBoxesPage(UserInboxQuery query){
         return inboxService.queryUserInBoxesPage(query);

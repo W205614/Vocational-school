@@ -23,8 +23,8 @@ public class LearningPointsListener {
             exchange = @Exchange(name = MqConstants.Exchange.LEARNING_EXCHANGE, type = ExchangeTypes.TOPIC),
             key = MqConstants.Key.WRITE_REPLY
     ))
-    public void listenWriteReplyMessage(Long userId) {
-        recordService.addPointsRecord(userId, 5, PointsRecordType.QA);
+    public void listenWriteReplyMessage(Long userId, org.springframework.amqp.core.Message raw) {
+        recordService.addPointsRecord(userId, 5, PointsRecordType.QA, raw.getMessageProperties().getMessageId());
     }
 
     @RabbitListener(bindings = @QueueBinding(
@@ -32,7 +32,7 @@ public class LearningPointsListener {
             exchange = @Exchange(name = MqConstants.Exchange.LEARNING_EXCHANGE, type = ExchangeTypes.TOPIC),
             key = MqConstants.Key.SIGN_IN
     ))
-    public void listenSignInMessage(SignInMessage message) {
-        recordService.addPointsRecord(message.getUserId(), message.getPoints(), PointsRecordType.SIGN);
+    public void listenSignInMessage(SignInMessage message, org.springframework.amqp.core.Message raw) {
+        recordService.addPointsRecord(message.getUserId(), message.getPoints(), PointsRecordType.SIGN, raw.getMessageProperties().getMessageId());
     }
 }

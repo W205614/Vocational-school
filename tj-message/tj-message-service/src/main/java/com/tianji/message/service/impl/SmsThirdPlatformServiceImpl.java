@@ -1,7 +1,7 @@
 package com.tianji.message.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.tianji.message.domain.dto.SmsThirdPlatformDTO;
 import com.tianji.message.domain.dto.SmsThirdPlatformFormDTO;
@@ -14,7 +14,7 @@ import com.tianji.message.mapper.SmsThirdPlatformMapper;
 import com.tianji.message.service.ISmsThirdPlatformService;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 /**

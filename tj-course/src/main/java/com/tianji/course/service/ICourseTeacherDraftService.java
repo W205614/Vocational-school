@@ -2,7 +2,7 @@ package com.tianji.course.service;
 
 import com.tianji.course.domain.dto.CourseTeacherSaveDTO;
 import com.tianji.course.domain.po.CourseTeacherDraft;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.course.domain.vo.CourseTeacherVO;
 
 import java.util.List;

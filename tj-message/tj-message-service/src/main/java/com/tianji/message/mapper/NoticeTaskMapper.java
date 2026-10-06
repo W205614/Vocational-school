@@ -16,6 +16,6 @@ import java.util.List;
  */
 public interface NoticeTaskMapper extends BaseMapper<NoticeTask> {
 
-    @Select("SELECT user_id FROM notice_task_target WHERE task_id = #{task_id}")
+    @Select("SELECT target_id FROM notice_task_target WHERE task_id = #{taskId}")
     List<Long> queryTaskTargetByTaskId(Long taskId);
 }

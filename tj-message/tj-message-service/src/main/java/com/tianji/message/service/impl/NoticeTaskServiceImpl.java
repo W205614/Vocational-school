@@ -1,7 +1,7 @@
 package com.tianji.message.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.client.user.UserClient;
 import com.tianji.api.dto.user.UserDTO;
 import com.tianji.common.domain.dto.PageDTO;
@@ -46,76 +46,67 @@ public class NoticeTaskServiceImpl extends ServiceImpl<NoticeTaskMapper, NoticeT
     private final IPublicNoticeService publicNoticeService;
     private final IUserInboxService inboxService;
     private final ISmsService smsService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final org.springframework.transaction.PlatformTransactionManager transactions;
 
     @Override
+    @Transactional
     public Long saveNoticeTask(NoticeTaskFormDTO noticeTaskFormDTO) {
-        // 1.保存任务
-        NoticeTask noticeTask = BeanUtils.copyBean(noticeTaskFormDTO, NoticeTask.class);
-        save(noticeTask);
-        Long taskId = noticeTask.getId();
-        // 2.判断是否有执行时间
-        LocalDateTime pushTime = noticeTask.getPushTime();
-        if(pushTime == null || pushTime.isBefore(LocalDateTime.now())){
-            // 没有执行时间，或者执行时间小于当前时间，立刻执行任务
-            asyncNoticeExecutor.execute(new MarkedRunnable(() -> handleTask(noticeTask)));
-        }
+        com.tianji.common.utils.UserContext.requireAdmin();validate(noticeTaskFormDTO);
+        NoticeTask noticeTask=BeanUtils.copyBean(noticeTaskFormDTO,NoticeTask.class);
+        if(noticeTask.getPushTime()==null)noticeTask.setPushTime(LocalDateTime.now());
+        save(noticeTask);Long taskId=noticeTask.getId();
+        if(Boolean.TRUE.equals(noticeTask.getPartial()))for(Long user:noticeTaskFormDTO.getUserIds().stream().distinct().toList())
+            jdbc.update("INSERT INTO notice_task_target(task_id,target_id) VALUES(?,?)",taskId,user);
         return taskId;
     }
 
     @Override
-    @Transactional
-    public void handleTask(NoticeTask task) {
-        // 1.获取任务要发送的通知模板
-        Long templateId = task.getTemplateId();
-        NoticeTemplate noticeTemplate = noticeTemplateService.getById(templateId);
-        if(noticeTemplate == null){
-            // 模板不存在或者无法使用
-            log.error("通知任务无法执行，模板id【{}】，原因：{}", templateId, MessageErrorInfo.NOTICE_TEMPLATE_NOT_EXISTS);
-            return;
-        }
-        if(noticeTemplate.getStatus() != TemplateStatus.IN_SERVICE.getValue()){
-            // 模板不存在或者无法使用
-            log.error("通知任务无法执行，模板id【{}】，原因：{}", templateId, MessageErrorInfo.NOTICE_TEMPLATE_CANNOT_USE);
-            return;
-        }
-        // 2.获取通知对应的目标用户
-        List<UserDTO> users = null;
-        if (task.getPartial()) {
-            // 针对部分用户，需要查询用户信息
-            List<Long> userIds = getBaseMapper().queryTaskTargetByTaskId(task.getId());
-            if(CollUtils.isNotEmpty(userIds)){
-                users = userClient.queryUserByIds(userIds);
+    public void handleTask(NoticeTask hint) {
+        List<UserDTO> users;
+        if(Boolean.TRUE.equals(hint.getPartial())){
+            List<Long> ids=getBaseMapper().queryTaskTargetByTaskId(hint.getId());
+            if(ids==null || ids.isEmpty())throw new com.tianji.common.exceptions.BadRequestException("指定接收人为空，任务不能转为广播");
+            users=userClient.queryUserByIds(ids);
+            if(users==null || users.size()!=ids.stream().distinct().count())throw new com.tianji.common.exceptions.CommonException("接收人核对未完成");
+        }else users=java.util.List.of();
+        new org.springframework.transaction.support.TransactionTemplate(transactions).executeWithoutResult(tx->{
+            jdbc.queryForMap("SELECT id FROM notice_task WHERE id=? FOR UPDATE",hint.getId());
+            NoticeTask task=getById(hint.getId());
+            if(task==null || Boolean.TRUE.equals(task.getFinished()) || task.getPushTime().isAfter(LocalDateTime.now()))return;
+            if(!java.util.Objects.equals(task.getTemplateId(),hint.getTemplateId()) || !java.util.Objects.equals(task.getPartial(),hint.getPartial()) || !java.util.Objects.equals(task.getUpdateTime(),hint.getUpdateTime()))return;
+            if(task.getExpireTime()!=null && !task.getExpireTime().isAfter(LocalDateTime.now())){
+                jdbc.update("UPDATE notice_task SET finished=1 WHERE id=?",task.getId());return;
             }
-        }
-
-        // 3.判断是全部用户还是部分
-        if (CollUtils.isEmpty(users)) {
-            // 3.1.全部用户，直接存入公告箱，用户查看消息时才拉取(pull mode)
-            publicNoticeService.saveNoticeOfTemplate(noticeTemplate);
-        }else{
-            // 3.2.部分用户，需要写入用户信箱
-            inboxService.saveNoticeToInbox(noticeTemplate, users);
-            // 3.3.判断是否需要发短信通知
-            if(noticeTemplate.getIsSmsTemplate()){
-                // 需要发送短信通知
-                smsService.sendMessageByTemplate(noticeTemplate, users);
-            }
-        }
-        // 4.到这里说明任务完成，更新任务状态
-        boolean shouldRepeat = task.getMaxTimes() > 0;
-        lambdaUpdate()
-                .set(!shouldRepeat, NoticeTask::getFinished, true)
-                .set(shouldRepeat, NoticeTask::getPushTime, task.getPushTime().plusMinutes(task.getInterval()))
-                .setSql(shouldRepeat, "max_times = max_times - 1")
-                .eq(NoticeTask::getId, task.getId())
-                .update();
-        task = null;
+            NoticeTemplate template=noticeTemplateService.getById(task.getTemplateId());
+            if(template==null || template.getStatus()!=TemplateStatus.IN_SERVICE.getValue())throw new com.tianji.common.exceptions.BadRequestException("通知模板不可用");
+            if(Boolean.TRUE.equals(task.getPartial())){
+                inboxService.saveNoticeToInbox(template,users);
+                if(Boolean.TRUE.equals(template.getIsSmsTemplate()))smsService.sendMessageByTemplate(template,users);
+            }else publicNoticeService.saveNoticeOfTemplate(template);
+            boolean repeat=task.getMaxTimes()!=null && task.getMaxTimes()>0;
+            jdbc.update("UPDATE notice_task SET finished=?,push_time=?,max_times=GREATEST(COALESCE(max_times,0)-1,0) WHERE id=?",!repeat,repeat?task.getPushTime().plusMinutes(task.getInterval()):task.getPushTime(),task.getId());
+        });
     }
 
+    private void validate(NoticeTaskFormDTO form){
+        if(form.getTemplateId()==null || form.getName()==null || form.getName().isBlank())throw new com.tianji.common.exceptions.BadRequestException("通知模板与名称不能为空");
+        if(form.getPartial()==null)form.setPartial(false);
+        if(form.getMaxTimes()==null)form.setMaxTimes(0);
+        if(form.getMaxTimes()<0 || form.getMaxTimes()>1000 || form.getMaxTimes()>0 && (form.getInterval()==null || form.getInterval()<=0 || form.getInterval()>Integer.MAX_VALUE))throw new com.tianji.common.exceptions.BadRequestException("重复次数或间隔无效");
+        if(Boolean.TRUE.equals(form.getPartial()) && (form.getUserIds()==null || form.getUserIds().isEmpty() || form.getUserIds().size()>100 || form.getUserIds().stream().anyMatch(java.util.Objects::isNull)))throw new com.tianji.common.exceptions.BadRequestException("请指定 1 到 100 位接收人");
+    }
     @Override
+    @Transactional
     public void updateNoticeTask(NoticeTaskFormDTO noticeTaskFormDTO) {
+        com.tianji.common.utils.UserContext.requireAdmin();validate(noticeTaskFormDTO);
+        jdbc.queryForMap("SELECT id FROM notice_task WHERE id=? FOR UPDATE",noticeTaskFormDTO.getId());
+        jdbc.update("DELETE FROM notice_task_target WHERE task_id=?",noticeTaskFormDTO.getId());
+        if(Boolean.TRUE.equals(noticeTaskFormDTO.getPartial()))for(Long user:noticeTaskFormDTO.getUserIds().stream().distinct().toList())jdbc.update("INSERT INTO notice_task_target(task_id,target_id) VALUES(?,?)",noticeTaskFormDTO.getId(),user);
         NoticeTask noticeTask = BeanUtils.copyBean(noticeTaskFormDTO, NoticeTask.class);
+        if(noticeTask.getPushTime()==null)noticeTask.setPushTime(LocalDateTime.now());
         updateById(noticeTask);
+        jdbc.update("UPDATE notice_task SET delivery_status='PENDING',delivery_attempts=0,delivery_token=NULL,delivery_next_attempt=NOW(3),delivery_error=NULL,delivery_version=delivery_version+1 WHERE id=?",noticeTask.getId());
     }
 
     @Override
@@ -135,7 +126,8 @@ public class NoticeTaskServiceImpl extends ServiceImpl<NoticeTaskMapper, NoticeT
 
     @Override
     public NoticeTaskDTO queryNoticeTask(Long id) {
-        return BeanUtils.copyBean(getById(id), NoticeTaskDTO.class);
+        NoticeTaskDTO result=BeanUtils.copyBean(getById(id), NoticeTaskDTO.class);
+        if(result!=null)result.setUserIds(getBaseMapper().queryTaskTargetByTaskId(id));return result;
     }
 
     @Override

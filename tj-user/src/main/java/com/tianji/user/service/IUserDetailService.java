@@ -1,7 +1,7 @@
 package com.tianji.user.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.user.domain.po.UserDetail;
 import com.tianji.user.domain.query.UserPageQuery;
 import com.tianji.common.enums.UserType;

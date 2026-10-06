@@ -7,7 +7,7 @@ import com.tianji.message.domain.query.UserInboxQuery;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.message.domain.po.NoticeTemplate;
 import com.tianji.message.domain.po.UserInbox;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 import java.util.List;
 

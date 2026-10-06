@@ -1,7 +1,7 @@
 package com.tianji.user.service.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.client.auth.AuthClient;
 import com.tianji.api.dto.auth.RoleDTO;
 import com.tianji.api.dto.user.LoginFormDTO;
@@ -126,7 +126,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 1.验证码校验
         codeService.verifyCode(user.getCellPhone(), code);
         // 2.判断手机号是否存在
-        Integer count = lambdaQuery().eq(User::getCellPhone, user.getCellPhone()).count();
+        Integer count = Math.toIntExact(lambdaQuery().eq(User::getCellPhone, user.getCellPhone()).count());
         if (count > 0) {
             throw new BadRequestException(PHONE_ALREADY_EXISTS);
         }
@@ -212,11 +212,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
+    @Transactional
     public void updateUserWithPassword(UserFormDTO userDTO) {
+        long currentUser=UserContext.requireUser();
         // 1.尝试更新密码
         String pw = userDTO.getPassword();
         String oldPw = userDTO.getOldPassword();
-        if(StringUtils.isNotBlank(pw) && StringUtils.isNotBlank(pw)) {
+        if(StringUtils.isNotBlank(pw)) {
+            if(StringUtils.isBlank(oldPw) || pw.length()<8 || pw.length()>72)
+                throw new com.tianji.common.exceptions.BadRequestException("修改密码需要原密码，新密码长度须为 8 到 72 个字符");
             Long userId = UserContext.getUser();
             // 1.1.查询用户
             User user = getById(userId);
@@ -237,6 +241,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         // 2.更新用户详情
         UserDetail detail = BeanUtils.toBean(userDTO, UserDetail.class);
+        detail.setId(currentUser);
         detail.setRoleId(null);
         detail.setType(null);
         detailService.updateById(detail);

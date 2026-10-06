@@ -5,7 +5,7 @@ import com.tianji.message.domain.dto.MessageTemplateFormDTO;
 import com.tianji.message.domain.query.MessageTemplatePageQuery;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.message.domain.po.MessageTemplate;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 import java.util.List;
 

@@ -2,7 +2,7 @@ package com.tianji.message.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.dto.user.UserDTO;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.common.utils.CollUtils;
@@ -39,6 +39,7 @@ import java.util.List;
 public class UserInboxServiceImpl extends ServiceImpl<UserInboxMapper, UserInbox> implements IUserInboxService {
 
     private final MessageProperties properties;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final IPublicNoticeService publicNoticeService;
 
     @Override
@@ -65,32 +66,17 @@ public class UserInboxServiceImpl extends ServiceImpl<UserInboxMapper, UserInbox
     @Override
     @Transactional
     public PageDTO<UserInboxDTO> queryUserInBoxesPage(UserInboxQuery query) {
-        // 1.获取用户信息
-        Long userId = UserContext.getUser();
-        // 2.查询用户信箱中的最后一条公告，确认本次加载公告的最早时间点
-        UserInbox latest = getBaseMapper().queryLatestPublicNotice(userId);
-        // 2.1.默认时间点是当前时间减去公告的最大有效期时间（未过期的最早公告时间）
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime minTime = now.minusMonths(properties.getNoticeTtlMonths());
-        // 2.2.如果有最后一条公告，判断公告时间是不是比最早时间要晚
-        if(latest != null && latest.getPushTime().isAfter(minTime)){
-            // 用户上次加载时间比最早时间晚，更新一下时间
-            minTime = latest.getPushTime();
-        }
-        // 3.按照发布时间倒序，查看公告箱中的消息，最多加载200条
-        Page<PublicNotice> page = new Page<PublicNotice>(1, 200)
-                .addOrder(new OrderItem("push_time", false));
-        page = publicNoticeService.lambdaQuery()
-                .ge(PublicNotice::getPushTime, minTime)
-                .page(page);
-        // 4.将公告写入用户收件箱
-        if (CollUtils.isNotEmpty(page.getRecords())) {
-            saveNoticeListToInbox(page.getRecords(), userId);
-        }
+        Long userId=UserContext.requireUser();LocalDateTime now=LocalDateTime.now();
+        List<PublicNotice> notices=publicNoticeService.lambdaQuery()
+            .gt(PublicNotice::getExpireTime,now).le(PublicNotice::getPushTime,now)
+            .apply("NOT EXISTS(SELECT 1 FROM user_inbox i WHERE i.user_id={0} AND i.public_notice_id=public_notice.id)",userId)
+            .orderByAsc(PublicNotice::getPushTime).last("LIMIT 100").list();
+        if(!notices.isEmpty())saveNoticeListToInbox(notices,userId);
         // 5.分页查询收件箱信息并返回
         Page<UserInbox> userInboxPage = query.toMpPage("push_time", false);
         userInboxPage = lambdaQuery()
                 .eq(UserInbox::getUserId, userId)
+                .gt(UserInbox::getExpireTime,now)
                 .eq(query.getIsRead() != null, UserInbox::getIsRead, query.getIsRead())
                 .eq(query.getType() != null, UserInbox::getType, query.getType())
                 .page(userInboxPage);
@@ -98,18 +84,8 @@ public class UserInboxServiceImpl extends ServiceImpl<UserInboxMapper, UserInbox
     }
 
     private void saveNoticeListToInbox(List<PublicNotice> notices, Long userId) {
-        List<UserInbox> list = new ArrayList<>(notices.size());
-        for (PublicNotice notice : notices) {
-            UserInbox box = new UserInbox();
-            box.setTitle(notice.getTitle());
-            box.setContent(notice.getContent());
-            box.setUserId(userId);
-            box.setType(notice.getType());
-            box.setPushTime(notice.getPushTime());
-            box.setExpireTime(notice.getExpireTime());
-            list.add(box);
-        }
-        saveBatch(list);
+        for(PublicNotice notice:notices)jdbc.update("INSERT IGNORE INTO user_inbox(id,user_id,type,title,content,push_time,expire_time,public_notice_id) VALUES(?,?,?,?,?,?,?,?)",com.baomidou.mybatisplus.core.toolkit.IdWorker.getId(),userId,notice.getType(),notice.getTitle(),notice.getContent(),notice.getPushTime(),notice.getExpireTime(),notice.getId());
+
     }
 
     @Override

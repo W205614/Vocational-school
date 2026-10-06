@@ -1,6 +1,6 @@
 package com.tianji.message.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.message.config.MessageProperties;
 import com.tianji.message.domain.po.NoticeTemplate;
 import com.tianji.message.domain.po.PublicNotice;

@@ -3,7 +3,7 @@ package com.tianji.media.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.client.course.CourseClient;
 import com.tianji.api.client.learning.LearningClient;
 import com.tianji.api.client.user.UserClient;
@@ -44,8 +44,14 @@ import static com.tianji.media.constants.FileErrorInfo.MEDIA_NOT_EXISTS;
 @Service
 @RequiredArgsConstructor
 public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements IMediaService {
+    private void requireMediaEditor() {
+        UserContext.requireUser();
+        if(!Long.valueOf(1).equals(UserContext.getRole()) && !Long.valueOf(3).equals(UserContext.getRole()))
+            throw new ForbiddenException("需要教师或管理员权限");
+    }
 
     private final IMediaStorage mediaStorage;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     private final CourseClient courseClient;
 
@@ -55,6 +61,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
 
     @Override
     public String getUploadSignature() {
+        requireMediaEditor();
         return mediaStorage.getUploadSignature();
     }
 
@@ -62,6 +69,8 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
     public VideoPlayVO getPlaySignatureBySectionId(Long sectionId) {
         // 1.根据sectionId查询媒课程信息
         SectionInfoDTO sectionInfo = courseClient.sectionInfo(sectionId);
+        if(sectionInfo==null || sectionInfo.getCourseId()==null || sectionInfo.getMediaId()==null)
+            throw new com.tianji.common.exceptions.BadRequestException("视频小节不存在");
         Long courseId = sectionInfo.getCourseId();
         // 2.查询用户课程表，是否是购买过的课程
         Long lessonId = learningClient.isLessonValid(courseId);
@@ -75,12 +84,13 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
             // 2）返回
             VideoPlayVO vo = new VideoPlayVO();
             vo.setSignature(signature);
+            if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage)vo.setPlayUrl(signature);
             vo.setFileId(media.getFileId());
             return vo;
         }
         // 2.2.否，判断课程章节是否免费
         Boolean trailer = sectionInfo.getTrailer();
-        if(BooleanUtils.isFalse(trailer)) {
+        if(!Boolean.TRUE.equals(trailer)) {
             // 2.3.不免费，抛出异常
             throw new ForbiddenException(FileErrorInfo.MEDIA_NOT_FREE);
         }
@@ -94,6 +104,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
         // 5.返回
         VideoPlayVO vo = new VideoPlayVO();
         vo.setSignature(signature);
+        if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage)vo.setPlayUrl(signature);
         vo.setFileId(media.getFileId());
         return vo;
     }
@@ -101,26 +112,33 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
 
     @Override
     public VideoPlayVO getPlaySignatureByMediaId(Long mediaId) {
+        requireMediaEditor();
         // 1.根据id查询媒资信息
         Media media = getById(mediaId);
+        AssertUtils.isNotNull(media,MEDIA_NOT_EXISTS);
+        if(!Long.valueOf(1).equals(UserContext.getRole()) && !Objects.equals(media.getCreater(),UserContext.getUser()))
+            throw new ForbiddenException("无权预览此媒资");
         // 2.获取签名
         String signature =  mediaStorage.getPlaySignature(media.getFileId(), UserContext.getUser(), null);
         // 3.返回
         VideoPlayVO vo = new VideoPlayVO();
         vo.setSignature(signature);
+        if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage)vo.setPlayUrl(signature);
         vo.setFileId(media.getFileId());
         return vo;
     }
 
     @Override
     public PageDTO<MediaVO> queryMediaPage(MediaQuery query) {
+        requireMediaEditor();query.validate();query.validateSort(Set.of("create_time","filename","duration","size"));
         // 1.分页条件
         Page<Media> mediaPage = new Page<>(query.getPageNo(), query.getPageSize());
         if(StringUtils.isNotBlank(query.getSortBy())){
-            mediaPage.addOrder(new OrderItem(query.getSortBy(), query.getIsAsc()));
+            mediaPage.addOrder(new OrderItem().setColumn(query.getSortBy()).setAsc(Boolean.TRUE.equals(query.getIsAsc())));
         }
         // 2.分页搜索
         lambdaQuery()
+                .eq(!Long.valueOf(1).equals(UserContext.getRole()),Media::getCreater,UserContext.getUser())
                 .like(StringUtils.isNotBlank(query.getName()), Media::getFilename, query.getName())
                 .page(mediaPage);
         // 3.解析数据
@@ -137,7 +155,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
         createIds.remove(0L);
         // 4.查询引用次数
         List<MediaQuoteDTO> mediaQuoteDTOS = courseClient.mediaUserInfo(ids);
-        AssertUtils.isNotEmpty(mediaQuoteDTOS, FileErrorInfo.MEDIA_QUOTE_NOT_EXISTS);
+        if(mediaQuoteDTOS==null)mediaQuoteDTOS=java.util.List.of();
         Map<Long, Integer> quoteMap = mediaQuoteDTOS
                 .stream()
                 .collect(Collectors.toMap(MediaQuoteDTO::getMediaId, MediaQuoteDTO::getQuoteNum));
@@ -153,7 +171,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
         List<MediaVO> list = new ArrayList<>(records.size());
         for (Media m : records) {
             MediaVO v = BeanUtils.toBean(m, MediaVO.class);
-            v.setUseTimes(quoteMap.get(m.getId()));
+            v.setUseTimes(quoteMap.getOrDefault(m.getId(),0));
             if(userMap != null) {
                 v.setCreater(userMap.get(m.getCreater()));
             }
@@ -163,18 +181,23 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
     }
 
     @Override
+    @Transactional
     public MediaDTO save(MediaUploadResultDTO result) {
+        jdbc.update("INSERT INTO media_registration_guard(file_id) VALUES(?) ON DUPLICATE KEY UPDATE file_id=VALUES(file_id)",result.getFileId());
+        requireMediaEditor();
         // 1.查询视频信息
         List<Media> list = mediaStorage.queryMediaInfos(result.getFileId());
         AssertUtils.isNotEmpty(list, MEDIA_NOT_EXISTS);
         // 2.判断是否存在，幂等处理
         Media media = lambdaQuery().eq(Media::getFileId, result.getFileId()).one();
         if (media != null) {
+            if(!Long.valueOf(1).equals(UserContext.getRole()) && !Objects.equals(media.getCreater(),UserContext.getUser()))throw new ForbiddenException("无权登记此媒资");
             // 已经存在并且处理过
             return BeanUtils.toBean(media, MediaDTO.class);
         }
         // 3.查询视频信息
         media = list.get(0);
+        if(!Long.valueOf(1).equals(UserContext.getRole()) && !Objects.equals(media.getCreater(),UserContext.getUser()))throw new ForbiddenException("无法核实媒资上传归属");
         // 4.直接保存数据库
         save(list.get(0));
         return BeanUtils.toBean(media, MediaDTO.class);

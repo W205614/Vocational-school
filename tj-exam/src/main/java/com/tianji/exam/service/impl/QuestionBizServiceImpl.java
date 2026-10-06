@@ -8,7 +8,7 @@ import com.tianji.common.utils.CollUtils;
 import com.tianji.exam.domain.po.QuestionBiz;
 import com.tianji.exam.mapper.QuestionBizMapper;
 import com.tianji.exam.service.IQuestionBizService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,9 +30,9 @@ public class QuestionBizServiceImpl extends ServiceImpl<QuestionBizMapper, Quest
 
     @Override
     public int countUsedTimes(Long questionId) {
-        Integer count = lambdaQuery()
+        Integer count = Math.toIntExact(lambdaQuery()
                 .eq(QuestionBiz::getQuestionId, questionId)
-                .count();
+                .count());
         return count == null ? 0 : count;
     }
 

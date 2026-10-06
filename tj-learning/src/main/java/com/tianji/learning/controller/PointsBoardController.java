@@ -4,8 +4,8 @@ package com.tianji.learning.controller;
 import com.tianji.learning.domain.query.PointsBoardQuery;
 import com.tianji.learning.domain.vo.PointsBoardVO;
 import com.tianji.learning.service.IPointsBoardService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author 虎哥
  * @since 2026-02-07
  */
-@Api(tags = "积分相关接口")
+@Tag(name = "积分相关接口")
 @RestController
 @RequestMapping("/boards")
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class PointsBoardController {
     private final IPointsBoardService pointsBoardService;
 
     @GetMapping
-    @ApiOperation("分页查询指定赛季的积分排行榜")
+    @Operation(summary = "分页查询指定赛季的积分排行榜")
     public PointsBoardVO queryPointsBoardBySeason(PointsBoardQuery query) {
         return pointsBoardService.queryPointsBoardBySeason(query);
     }

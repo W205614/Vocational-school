@@ -1,6 +1,6 @@
 package com.tianji.exam.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.api.dto.exam.QuestionBizDTO;
 import com.tianji.exam.domain.po.QuestionBiz;
 

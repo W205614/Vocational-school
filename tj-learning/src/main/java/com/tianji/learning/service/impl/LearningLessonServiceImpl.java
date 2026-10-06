@@ -24,7 +24,7 @@ import com.tianji.learning.enums.PlanStatus;
 import com.tianji.learning.mapper.LearningLessonMapper;
 import com.tianji.learning.mapper.LearningRecordMapper;
 import com.tianji.learning.service.ILearningLessonService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -161,9 +161,9 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         vo.setCourseCoverUrl(cInfo.getCoverUrl());
         vo.setSections(cInfo.getSectionNum());
         // 5.统计课表中的课程数量 select count(1) from xxx where user_id = #{userId}
-        Integer courseAmount  = lambdaQuery()
+        Integer courseAmount  = Math.toIntExact(lambdaQuery()
                 .eq(LearningLesson::getUserId, userId)
-                .count();
+                .count());
         vo.setCourseAmount(courseAmount);
         // 6.查询小节信息
         // 6.查询小节信息
@@ -219,7 +219,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         }
         // 2.课程状态是否是有效的状态（未过期） 如果小于当前时间就是过期
         LocalDateTime now = LocalDateTime.now();
-        if (lesson.getExpireTime() != null && now.isAfter(lesson.getExpireTime())) {
+        if (LessonStatus.EXPIRED == lesson.getStatus() || lesson.getExpireTime() != null && !now.isBefore(lesson.getExpireTime())) {
             // 课程已过期
             return null;
         }
@@ -251,9 +251,9 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
     @Override
     public Integer countLearningLessonByCourse(Long courseId) {
         // 1.根据课程id统计人数
-        Integer count = lambdaQuery()
+        Integer count = Math.toIntExact(lambdaQuery()
                 .eq(LearningLesson::getCourseId, courseId)
-                .count();
+                .count());
 
         return count;
     }
@@ -261,13 +261,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
     // 删除表中的某课程
     @Override
     public void deleteLesson(Long courseId) {
-        // 1.获取当前用户信息
-        Long userId = UserContext.getUser();
-        // 2.删除课程
-        lambdaUpdate()
-                .eq(LearningLesson::getUserId, userId)
-                .eq(LearningLesson::getCourseId, courseId)
-                .remove();
+        throw new com.tianji.common.exceptions.BadRequestException("课程权益必须按订单条目撤销，不能删除学习历史");
     }
 
     // 查询课表
@@ -309,12 +303,12 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
 
         // 3. 查询总的统计数据
         // 3.1 本周总的已学习小节数量
-        Integer weekFinished = recordMapper.selectCount(new LambdaQueryWrapper<LearningRecord>()
+        Integer weekFinished = Math.toIntExact(recordMapper.selectCount(new LambdaQueryWrapper<LearningRecord>()
                 .eq(LearningRecord::getUserId, userId)
                 .eq(LearningRecord::getFinished, true)
                 .gt(LearningRecord::getFinishTime, begin)
                 .lt(LearningRecord::getFinishTime, end)
-        );
+        ));
         result.setWeekFinished(weekFinished);
 
         // 3.2 本周总的计划学习小节数量

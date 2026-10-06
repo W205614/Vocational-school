@@ -10,7 +10,7 @@ import com.tianji.learning.domain.vo.PointsStatisticsVO;
 import com.tianji.learning.enums.PointsRecordType;
 import com.tianji.learning.mapper.PointsRecordMapper;
 import com.tianji.learning.service.IPointsRecordService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -31,39 +31,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PointsRecordServiceImpl extends ServiceImpl<PointsRecordMapper, PointsRecord> implements IPointsRecordService {
 
-    private final StringRedisTemplate redisTemplate;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final com.tianji.common.autoconfigure.reliability.InboxStore inbox;
 
     @Override
-    public void addPointsRecord(Long userId, int points, PointsRecordType type) {
-        LocalDateTime now = LocalDateTime.now();
-        // 1. 判断当前方式有没有积分上限
-        int maxPoints = type.getMaxPoints();
-        int realPoints = points;
-        if(maxPoints > 0) {
-            // 2. 有, 则需要判断是否超过上限
-            LocalDateTime begin = DateUtils.getDayStartTime(now);
-            LocalDateTime end = DateUtils.getDayEndTime(now);
-            // 2.1 查询今日已得积分
-            int currentPoints = queryUserPointsByTypeAndDate(userId, type, begin, end);
-            // 2.2 判断是否超过上限
-            if(currentPoints >= maxPoints) {
-                // 2.3 超过, 直接结束
-                return;
-            }
-            // 2.4 没超过, 保存积分记录
-            if(currentPoints + points > maxPoints) {
-                realPoints = maxPoints - currentPoints;
-            }
-        }
-        // 3. 没有, 直接保存积分记录
-        PointsRecord p = new PointsRecord();
-        p.setPoints(realPoints);
-        p.setUserId(userId);
-        p.setType(type);
-        save(p);
-        // 4. 累计积分数据到redis的sortedset中
-        String key = RedisConstants.POINTS_BOARD_KEY_PREFIX + now.format(DateUtils.POINTS_BOARD_SUFFIX_FORMATTER);
-        redisTemplate.opsForZSet().incrementScore(key, userId.toString(), realPoints);
+    public void addPointsRecord(Long userId,int points,PointsRecordType type,String sourceEventId) {
+        if(userId==null || type==null || points<=0) throw new com.tianji.common.exceptions.BadRequestException("积分事件无效");
+        inbox.once("points."+type.getValue(),sourceEventId,() -> {
+            java.time.LocalDate date=java.time.LocalDate.now();
+            jdbc.update("INSERT INTO points_daily_quota(user_id,type,quota_day,points) VALUES(?,?,?,0) ON DUPLICATE KEY UPDATE points=points",userId,type.getValue(),date);
+            Integer used=jdbc.queryForObject("SELECT points FROM points_daily_quota WHERE user_id=? AND type=? AND quota_day=? FOR UPDATE",Integer.class,userId,type.getValue(),date);
+            int awarded=type.getMaxPoints()==0?points:Math.max(0,Math.min(points,type.getMaxPoints()-used));
+            if(awarded==0) return;
+            jdbc.update("UPDATE points_daily_quota SET points=points+? WHERE user_id=? AND type=? AND quota_day=?",awarded,userId,type.getValue(),date);
+            jdbc.update("INSERT INTO points_record(user_id,type,points,source_event_id) VALUES(?,?,?,?)",userId,type.getValue(),awarded,sourceEventId);
+            String month=date.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMM"));
+            jdbc.update("INSERT INTO points_projection(board_month,user_id,points,version,processed_version) VALUES(?,?,?,1,0) ON DUPLICATE KEY UPDATE points=points+VALUES(points),version=version+1",month,userId,awarded);
+        });
     }
 
     @Override

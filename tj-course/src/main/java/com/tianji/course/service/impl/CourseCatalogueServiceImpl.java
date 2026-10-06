@@ -2,7 +2,7 @@ package com.tianji.course.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.client.exam.ExamClient;
 import com.tianji.api.dto.course.CatalogueDTO;
 import com.tianji.api.dto.course.MediaQuoteDTO;
@@ -122,7 +122,7 @@ public class CourseCatalogueServiceImpl extends ServiceImpl<CourseCatalogueMappe
             return new SectionInfoDTO();
         }
         //3.判断目录类型是否为小节
-        if (courseCatalogue.getType() != CourseConstants.CataType.SECTION) {
+        if (courseCatalogue.getType() != CourseConstants.CataType.SECTION && courseCatalogue.getType() != 3) {
             return new SectionInfoDTO();
         }
         //4.组装数据

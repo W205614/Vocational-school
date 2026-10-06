@@ -16,6 +16,11 @@ public class MyBatisConfiguration {
     public DynamicTableNameInnerInterceptor dynamicTableNameInnerInterceptor() {
         Map<String, TableNameHandler> map = new HashMap<>(1);
         map.put("points_board", ((sql, tableName) -> TableInfoContext.getInfo()));
-        return new DynamicTableNameInnerInterceptor(map);
+        return new DynamicTableNameInnerInterceptor((sql,tableName) -> {
+            if(!"points_board".equals(tableName)) return tableName;
+            String name=TableInfoContext.getInfo();
+            if(name==null || !name.matches("points_board_[0-9]+")) throw new IllegalArgumentException("Invalid points board table");
+            return name;
+        });
     }
 }

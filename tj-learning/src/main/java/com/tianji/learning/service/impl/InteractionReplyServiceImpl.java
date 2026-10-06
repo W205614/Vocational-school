@@ -19,7 +19,7 @@ import com.tianji.learning.enums.QuestionStatus;
 import com.tianji.learning.mapper.InteractionQuestionMapper;
 import com.tianji.learning.mapper.InteractionReplyMapper;
 import com.tianji.learning.service.IInteractionReplyService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,40 +46,48 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
     private final InteractionQuestionMapper questionMapper;
     private final UserClient userClient;
     private final RemarkClient remarkClient;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @Override
+    @Transactional
     public void saveReply(ReplyDTO dto) {
         //1.获取当前登录用户id
-        Long userId = UserContext.getUser();
+        Long userId = UserContext.requireUser();
+        InteractionQuestion question=questionMapper.selectById(dto.getQuestionId());
+        if(question==null || Boolean.TRUE.equals(question.getHidden()))throw new BadRequestException("问题不存在");
+        boolean staff=Set.of(1L,3L).contains(UserContext.getRole());
+        if(!staff && jdbc.queryForObject("SELECT COUNT(*) FROM learning_lesson WHERE user_id=? AND course_id=? AND status<>3 AND (expire_time IS NULL OR expire_time>NOW())",Integer.class,userId,question.getCourseId())!=1)
+            throw new com.tianji.common.exceptions.ForbiddenException("需要有效课程权益才能回答");
+        if(dto.getAnswerId()!=null){var parent=getById(dto.getAnswerId());
+            if(parent==null || !Objects.equals(parent.getQuestionId(),question.getId()) || parent.getAnswerId()!=null)throw new BadRequestException("评论所属回答无效");}
+        if(dto.getTargetReplyId()!=null){var target=getById(dto.getTargetReplyId());
+            if(target==null || !Objects.equals(target.getQuestionId(),question.getId()))throw new BadRequestException("回复目标无效");dto.setTargetUserId(target.getUserId());}
+        else dto.setTargetUserId(null);
 
         //2.保存回答或者评论
         //表：interaction_reply
         InteractionReply reply = BeanUtils.copyBean(dto, InteractionReply.class);
         reply.setUserId(userId);
+        reply.setAnonymity(Boolean.TRUE.equals(dto.getAnonymity()));
         this.save(reply);
 
         //获取问题实体
-        InteractionQuestion question = questionMapper.selectById(dto.getQuestionId());
 
         //3.判断是否是回答
         //dto.getAnswerId()为空则是回答，不为空则是评论
         if (dto.getAnswerId() != null) {
             //3.1.如果不是回答(评论)，累加回答下的评论次数
-            InteractionReply commentInfo = this.getById(dto.getAnswerId());
-            commentInfo.setReplyTimes(commentInfo.getReplyTimes() + 1);  //评论次数累加
-            this.updateById(commentInfo);
+            jdbc.update("UPDATE interaction_reply SET reply_times=reply_times+1 WHERE id=?",dto.getAnswerId());
         }else {
             //3.2.如果是回答，修改问题表最近一次回答id，同时累加问题表的回答次数
-            question.setLatestAnswerId(reply.getId());
-            question.setAnswerTimes(question.getAnswerTimes() + 1);  //问题表的回答次数累加
+            jdbc.update("UPDATE interaction_question SET latest_answer_id=GREATEST(COALESCE(latest_answer_id,0),?),answer_times=answer_times+1 WHERE id=?",reply.getId(),question.getId());
         }
 
-        if (dto.getIsStudent()) {
+        if (!staff) {
             //4.判断是否是学生提交
             //dto.getIsStudent()为true则代表学生提交，如果是将问题表中该问题的status字段改为未查看
-            question.setStatus(QuestionStatus.UN_CHECK);
+            jdbc.update("UPDATE interaction_question SET status=0 WHERE id=?",question.getId());
         }
-        questionMapper.updateById(question);
     }
 
     @Override
@@ -99,8 +107,8 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
                 // 如果不是管理端, 则查询非隐藏的数据
                 .eq(!isAdmin, InteractionReply::getHidden, false)
                 .page(query.toMpPage(// 先根据点赞数排序，点赞数相同，再按照创建时间排序
-                        new OrderItem(DATA_FIELD_NAME_LIKED_TIME, false),
-                        new OrderItem(DATA_FIELD_NAME_CREATE_TIME, true)));
+                        OrderItem.desc(DATA_FIELD_NAME_LIKED_TIME),
+                        OrderItem.asc(DATA_FIELD_NAME_CREATE_TIME)));
         List<InteractionReply> records = page.getRecords();
         if (CollUtils.isEmpty(records)) {
             return PageDTO.empty(0L, 0L);

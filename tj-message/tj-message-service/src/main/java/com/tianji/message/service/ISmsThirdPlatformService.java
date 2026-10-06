@@ -5,7 +5,7 @@ import com.tianji.message.domain.dto.SmsThirdPlatformFormDTO;
 import com.tianji.message.domain.query.SmsThirdPlatformPageQuery;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.message.domain.po.SmsThirdPlatform;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 import java.util.List;
 

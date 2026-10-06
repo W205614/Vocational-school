@@ -1,144 +1,50 @@
 package com.tianji.learning.service.impl;
-
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.client.user.UserClient;
-import com.tianji.api.dto.user.UserDTO;
-import com.tianji.common.utils.CollUtils;
-import com.tianji.common.utils.DateUtils;
+import com.tianji.common.exceptions.BadRequestException;
 import com.tianji.common.utils.UserContext;
-import com.tianji.learning.constants.RedisConstants;
 import com.tianji.learning.domain.po.PointsBoard;
 import com.tianji.learning.domain.query.PointsBoardQuery;
-import com.tianji.learning.domain.vo.PointsBoardItemVO;
-import com.tianji.learning.domain.vo.PointsBoardVO;
+import com.tianji.learning.domain.vo.*;
 import com.tianji.learning.mapper.PointsBoardMapper;
 import com.tianji.learning.service.IPointsBoardService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.BoundZSetOperations;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
-
-/**
- * <p>
- * 学霸天梯榜 服务实现类
- * </p>
- *
- * @author 虎哥
- * @since 2026-02-07
- */
-@Service
-@RequiredArgsConstructor
-public class PointsBoardServiceImpl extends ServiceImpl<PointsBoardMapper, PointsBoard> implements IPointsBoardService {
-
-    private final StringRedisTemplate redisTemplate;
-
-    private final UserClient userClient;
-
-    @Override
-    public PointsBoardVO queryPointsBoardBySeason(PointsBoardQuery query) {
-        // 1. 判断是否是查询当前赛季
-        Long season = query.getSeason();
-        boolean isCurrent = season == null || season == 0;
-        // 2. 获取redis的key
-        LocalDateTime now = LocalDateTime.now();
-        String key = RedisConstants.POINTS_BOARD_KEY_PREFIX + now.format(DateUtils.POINTS_BOARD_SUFFIX_FORMATTER);
-        // 3. 查询我的积分和排名
-        PointsBoard myBoard = isCurrent ?
-                queryMyCurrentBoard(key) : // 查询当前榜单(redis)
-                queryMyHistoryBoard(season); // 查询历史榜单(MySQL)
-        // 4. 查询榜单列表
-        List<PointsBoard> list = isCurrent ?
-                queryCurrentBoardList(key, query.getPageNo(), query.getPageSize()) :
-                queryHistoryBoardList(query);
-        // 5. 封装VO
-        PointsBoardVO vo = new PointsBoardVO();
-        // 5.1 处理我的信息
-        if(myBoard != null) {
-            vo.setPoints(myBoard.getPoints());
-            vo.setRank(myBoard.getRank());
-        }
-        if(CollUtils.isEmpty(list)) {
-            return vo;
-        }
-        // 5.2 查询用户信息
-        Set<Long> uIds = list.stream().map(PointsBoard::getUserId).collect(Collectors.toSet());
-        List<UserDTO> users = userClient.queryUserByIds(uIds);
-        Map<Long, String> userMap = new HashMap<>(uIds.size());
-        if(CollUtils.isNotEmpty(users)) {
-            userMap = users.stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getName));
-        }
-        // 5.3 处理榜单列表
-        List<PointsBoardItemVO> items = new ArrayList<>(list.size());
-        for (PointsBoard p : list) {
-            PointsBoardItemVO v = new PointsBoardItemVO();
-            items.add(v);
-            v.setPoints(p.getPoints());
-            v.setRank(p.getRank());
-            v.setName(userMap.get(p.getUserId()));
-        }
-        vo.setBoardList(items);
-        return vo;
-    }
-
-    @Override
-    public void createPointsBoardTableBySeason(Integer season) {
-        getBaseMapper().createPointsBoardTable("points_board_" + season);
-    }
-
-    private List<PointsBoard> queryHistoryBoardList(PointsBoardQuery query) {
-        return null;
-    }
-
-    @Override
-    public List<PointsBoard> queryCurrentBoardList(String key, Integer pageNo, Integer pageSize) {
-        // 1. 计算分页
-        int from = (pageNo - 1) * pageSize;
-        // 2. 查询
-        Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet()
-                .reverseRangeWithScores(key, from, from + pageSize - 1);
-        if(CollUtils.isEmpty(tuples)) {
-            return CollUtils.emptyList();
-        }
-        // 3. 封装
-        int rank = from + 1;
-        List<PointsBoard> list = new ArrayList<>(tuples.size());
-        for (ZSetOperations.TypedTuple<String> tuple : tuples) {
-            String userId = tuple.getValue();
-            Double points = tuple.getScore();
-            if(userId == null || points == null) {
-                continue;
-            }
-            PointsBoard p = new PointsBoard();
-            p.setUserId(Long.valueOf(userId));
-            p.setPoints(points.intValue());
-            p.setRank(rank++);
-            list.add(p);
-        }
-        return list;
-    }
-
-    private PointsBoard queryMyHistoryBoard(Long season) {
-        return null;
-    }
-
-    private PointsBoard queryMyCurrentBoard(String key) {
-        // 1. 绑定key
-        BoundZSetOperations<String, String> ops = redisTemplate.boundZSetOps(key);
-        // 2. 获取当前用户信息
-        String userId = UserContext.getUser().toString();
-        // 3. 查询积分
-        Double points = ops.score(userId);
-        // 4. 查询排名
-        Long rank = ops.reverseRank(userId);
-        // 5. 封装返回
-        PointsBoard p = new PointsBoard();
-        p.setPoints(points == null ? 0 : points.intValue());
-        p.setRank(rank == null ? 0 : rank.intValue() + 1);
-        return p;
-    }
+@Service @RequiredArgsConstructor
+public class PointsBoardServiceImpl extends ServiceImpl<PointsBoardMapper,PointsBoard> implements IPointsBoardService {
+ private final JdbcTemplate jdbc;private final UserClient users;
+ private static final DateTimeFormatter MONTH=DateTimeFormatter.ofPattern("yyyyMM");
+ @Override public PointsBoardVO queryPointsBoardBySeason(PointsBoardQuery query){
+  query.validate();long user=UserContext.requireUser();
+  String begin=LocalDate.now().format(MONTH),end=begin;
+  if(query.getSeason()!=null && query.getSeason()!=0){
+   var rows=jdbc.queryForList("SELECT begin_time,end_time FROM points_board_season WHERE id=?",query.getSeason());
+   if(rows.isEmpty())throw new BadRequestException("赛季不存在");
+   begin=LocalDate.parse(rows.getFirst().get("begin_time").toString()).format(MONTH);
+   end=LocalDate.parse(rows.getFirst().get("end_time").toString()).format(MONTH);
+  }
+  String ranked="SELECT user_id,SUM(points) points,ROW_NUMBER() OVER(ORDER BY SUM(points) DESC,CAST(user_id AS CHAR) DESC) rank_no FROM points_projection WHERE board_month BETWEEN ? AND ? GROUP BY user_id";
+  var mine=jdbc.queryForList("SELECT * FROM ("+ranked+") ranked WHERE user_id=?",begin,end,user);
+  var result=new PointsBoardVO();result.setPoints(mine.isEmpty()?0:((Number)mine.getFirst().get("points")).intValue());result.setRank(mine.isEmpty()?0:((Number)mine.getFirst().get("rank_no")).intValue());
+  var rows=jdbc.queryForList("SELECT * FROM ("+ranked+") ranked ORDER BY rank_no LIMIT ? OFFSET ?",begin,end,query.getPageSize(),query.from());
+  Map<Long,String> names=new HashMap<>();
+  if(!rows.isEmpty()){var ids=rows.stream().map(r->((Number)r.get("user_id")).longValue()).toList();var details=users.queryUserByIds(ids);if(details!=null)details.forEach(u->names.put(u.getId(),u.getName()));}
+  List<PointsBoardItemVO> items=new ArrayList<>();
+  for(var row:rows){long id=((Number)row.get("user_id")).longValue();var item=new PointsBoardItemVO();item.setName(names.getOrDefault(id,"用户 "+id));item.setPoints(((Number)row.get("points")).intValue());item.setRank(((Number)row.get("rank_no")).intValue());items.add(item);}
+  result.setBoardList(items);return result;
+ }
+ @Override public void createPointsBoardTableBySeason(Integer season){
+  if(season==null || season<1)throw new BadRequestException("赛季无效");
+  jdbc.execute("CREATE TABLE IF NOT EXISTS points_board_"+season+"(id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL UNIQUE,points INT NOT NULL)");
+ }
+ @Override public List<PointsBoard> queryCurrentBoardList(String key,Integer pageNo,Integer pageSize){
+  if(pageNo==null || pageNo<1 || pageSize==null || pageSize<1 || pageSize>1000)throw new BadRequestException("榜单分页无效");
+  if(key==null || !key.matches(".*[0-9]{6}$"))throw new BadRequestException("榜单月份无效");
+  String month=key.substring(key.length()-6);
+  return jdbc.query("SELECT user_id,points,ROW_NUMBER() OVER(ORDER BY points DESC,CAST(user_id AS CHAR) DESC) rank_no FROM points_projection WHERE board_month=? ORDER BY rank_no LIMIT ? OFFSET ?",(rs,n)->new PointsBoard().setUserId(rs.getLong("user_id")).setPoints(rs.getInt("points")).setRank(rs.getInt("rank_no")),month,pageSize,(long)(pageNo-1)*pageSize);
+ }
 }

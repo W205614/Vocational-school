@@ -5,7 +5,7 @@ import com.tianji.message.domain.dto.NoticeTaskFormDTO;
 import com.tianji.message.domain.query.NoticeTaskPageQuery;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.message.domain.po.NoticeTask;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * <p>

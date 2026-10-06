@@ -1,6 +1,6 @@
 package com.tianji.media.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.media.domain.dto.MediaDTO;
 import com.tianji.media.domain.dto.MediaUploadResultDTO;

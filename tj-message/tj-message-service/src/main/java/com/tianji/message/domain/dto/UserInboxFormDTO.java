@@ -1,7 +1,6 @@
 package com.tianji.message.domain.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -13,12 +12,12 @@ import lombok.Data;
  * @since 2022-08-20
  */
 @Data
-@ApiModel(description = "用户私信表单实体")
+@Schema(description = "用户私信表单实体")
 public class UserInboxFormDTO {
 
-    @ApiModelProperty("目标用户id")
+    @Schema(description = "目标用户id")
     private Long userId;
 
-    @ApiModelProperty("私信内容")
+    @Schema(description = "私信内容")
     private String content;
 }

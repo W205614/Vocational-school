@@ -1,89 +1,25 @@
 package com.tianji.learning.handler;
-
-import com.tianji.common.utils.CollUtils;
 import com.tianji.common.utils.DateUtils;
 import com.tianji.learning.constants.RedisConstants;
-import com.tianji.learning.domain.po.PointsBoard;
-import com.tianji.learning.service.IPointsBoardSeasonService;
-import com.tianji.learning.service.IPointsBoardService;
-import com.tianji.learning.utils.TableInfoContext;
+import com.tianji.learning.service.*;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
-import java.util.List;
-
-@Component
-@RequiredArgsConstructor
+@Component @RequiredArgsConstructor
 public class PointsBoardPersistentHandler {
-
-    private final IPointsBoardSeasonService seasonService;
-
-    private final IPointsBoardService pointsBoardService;
-
-    private final StringRedisTemplate redisTemplate;
-
-    @XxlJob("createTableJob")
-    public void createPointsBoardTableOfLastSeason() {
-        // 1. 获取上月时间
-        LocalDateTime time = LocalDateTime.now().minusMonths(1);
-        // 2. 查询赛季id
-        Integer season = seasonService.querySeasonByTime(time);
-        if(season == null) {
-            return;
-        }
-        // 3. 创建表
-        pointsBoardService.createPointsBoardTableBySeason(season);
-    }
-
-    @XxlJob("savePointsBoard2DB")
-    public void savePointsBoard2DB() {
-        // 1. 获取上月时间
-        LocalDateTime time = LocalDateTime.now().minusMonths(1);
-
-        // 2. 计算动态表名
-        // 2.1 查询赛季信息
-        Integer season = seasonService.querySeasonByTime(time);
-        // 2.2 存入ThreadLocal
-        TableInfoContext.setInfo("points_board_" + season);
-
-        // 3. 查询榜单数据
-        // 3.1 拼接key
-        String key = RedisConstants.POINTS_BOARD_KEY_PREFIX + time.format(DateUtils.POINTS_BOARD_SUFFIX_FORMATTER);
-        // 3.2 查询数据
-        int index = XxlJobHelper.getShardIndex();
-        int total = XxlJobHelper.getShardTotal();
-        int pageNo = index + 1;
-        int pageSize = 1000;
-        while(true) {
-            List<PointsBoard> boardList = pointsBoardService.queryCurrentBoardList(key, pageNo, pageSize);
-            if(CollUtils.isEmpty(boardList)) {
-                break;
-            }
-            // 4. 持久化到数据库
-            // 4.1 把排名信息写入id
-            boardList.forEach(b -> {
-                b.setId(b.getRank().longValue());
-                b.setRank(null);
-            });
-            // 4.2 持久化
-            pointsBoardService.saveBatch(boardList);
-            // 5. 翻页
-            pageNo += total;
-        }
-    }
-
-    @XxlJob("cleanPointsBoardFromRedis")
-    public void cleanPointsBoardFromRedis() {
-        // 1. 获取上月时间
-        LocalDateTime time = LocalDateTime.now().minusMonths(1);
-        // 2. 计算key
-        String key = RedisConstants.POINTS_BOARD_KEY_PREFIX + time.format(DateUtils.POINTS_BOARD_SUFFIX_FORMATTER);
-        // 3. 删除
-        redisTemplate.unlink(key);
-    }
+ private final IPointsBoardSeasonService seasons;private final IPointsBoardService boards;private final JdbcTemplate jdbc;
+ @XxlJob("createTableJob") public void createPointsBoardTableOfLastSeason(){Integer season=seasons.querySeasonByTime(LocalDateTime.now().minusMonths(1));if(season!=null)boards.createPointsBoardTableBySeason(season);}
+ @XxlJob("savePointsBoard2DB") public void savePointsBoard2DB(){
+  var time=LocalDateTime.now().minusMonths(1);Integer season=seasons.querySeasonByTime(time);if(season==null)return;
+  boards.createPointsBoardTableBySeason(season);String table="points_board_"+season;
+  String key=RedisConstants.POINTS_BOARD_KEY_PREFIX+time.format(DateUtils.POINTS_BOARD_SUFFIX_FORMATTER);
+  int shards=Math.max(1,XxlJobHelper.getShardTotal()),page=Math.max(0,XxlJobHelper.getShardIndex())+1;
+  for(;;page+=shards){var batch=boards.queryCurrentBoardList(key,page,100);if(batch.isEmpty())break;
+   for(var row:batch)jdbc.update("INSERT INTO "+table+"(id,user_id,points) VALUES(?,?,?) ON DUPLICATE KEY UPDATE id=VALUES(id),points=VALUES(points)",row.getRank(),row.getUserId(),row.getPoints());
+  }
+ }
+ @XxlJob("cleanPointsBoardFromRedis") public void cleanPointsBoardFromRedis(){/* Durable projections are retained for rebuild and history. */}
 }

@@ -4,8 +4,8 @@ package com.tianji.data.controller;
 import com.tianji.data.model.dto.TodayDataDTO;
 import com.tianji.data.model.vo.TodayDataVO;
 import com.tianji.data.service.TodayDataService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,20 +18,20 @@ import org.springframework.web.bind.annotation.*;
  **/
 @RestController
 @RequestMapping("/data/today")
-@Api(tags = "今日数据相关接口")
+@Tag(name = "今日数据相关接口")
 public class TodayDataController {
 
     @Autowired
     private TodayDataService todayDataService;
 
     @GetMapping("")
-    @ApiOperation("获取今日数据")
+    @Operation(summary = "获取今日数据")
     public TodayDataVO get(){
         return todayDataService.get();
     }
 
     @PutMapping("set")
-    @ApiOperation("设置线上数据")
+    @Operation(summary = "设置线上数据")
     public void set(@RequestBody TodayDataDTO todayDataDTO) {
         todayDataService.set(todayDataDTO);
     }

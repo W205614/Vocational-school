@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.client.exam.ExamClient;
 import com.tianji.api.client.learning.LearningClient;
 import com.tianji.api.client.trade.TradeClient;
@@ -33,13 +33,13 @@ import com.tianji.course.domain.vo.CourseSaveVO;
 import com.tianji.course.domain.vo.NameExistVO;
 import com.tianji.course.mapper.*;
 import com.tianji.course.service.*;
-import io.seata.spring.annotation.GlobalTransactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.validation.ValidatorFactory;
+import jakarta.validation.ValidatorFactory;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -94,7 +94,8 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
     private ICategoryService categoryService;
 
     @Autowired
-    private RabbitMqHelper rabbitMqHelper;
+    private com.tianji.common.autoconfigure.reliability.OutboxStore outbox;
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @Autowired
     private TradeClient tradeClient;
@@ -323,6 +324,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = {DbException.class, Exception.class})
     public void upShelf(Long id) {
+        jdbc.update("INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",id);
         // 1.信息获取
         //1.1获取上架的课程草稿信息
         CourseDraft courseDraft = baseMapper.selectById(id);
@@ -404,7 +406,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
 
         }
         //5.课程上架mq
-        rabbitMqHelper.send(MqConstants.Exchange.COURSE_EXCHANGE, MqConstants.Key.COURSE_UP_KEY, id);
+        outbox.enqueue("course:"+id+":up:"+publishTimes,MqConstants.Exchange.COURSE_EXCHANGE,MqConstants.Key.COURSE_UP_KEY,id);
     }
 
     @Override
@@ -452,6 +454,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = {DbException.class, Exception.class})
     public void downShelf(Long id) {
+        jdbc.update("INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",id);
         //1.查询课程基本信息
         Course course = courseService.getById(id);
         //1.1课程状态判断
@@ -471,10 +474,10 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
         //7.课程老师copy到草稿中
         courseTeacherDraftMapper.insertFromCourseTeacher(id);
         //8.下架mq广播
-        rabbitMqHelper.send(MqConstants.Exchange.COURSE_EXCHANGE, MqConstants.Key.COURSE_DOWN_KEY, id);
+        outbox.enqueue("course:"+id+":down:"+course.getPublishTimes(),MqConstants.Exchange.COURSE_EXCHANGE,MqConstants.Key.COURSE_DOWN_KEY,id);
     }
 
-    @GlobalTransactional
+    @Transactional
     public void copySubject2Draft(Long courseId) {
         // 1.查询课程有关的小节信息
         List<Long> sectionIds = courseCatalogueDraftMapper.getSectionIdByCourseId(courseId);
@@ -617,7 +620,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                         .eq(CourseDraft::getName, name)
                         .last(id != null, " and id !=" + id);
         //2.统计同名课程数量
-        Integer num = baseMapper.selectCount(queryWrapper);
+        Integer num = Math.toIntExact(baseMapper.selectCount(queryWrapper));
         //3.返回同名课程VO
         return new NameExistVO(num > 0);
     }

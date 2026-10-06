@@ -3,7 +3,7 @@ package com.tianji.course.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.api.client.exam.ExamClient;
 import com.tianji.api.dto.exam.QuestionBizDTO;
 import com.tianji.api.dto.exam.QuestionDTO;
@@ -364,7 +364,7 @@ public class CourseCatalogueDraftServiceImpl extends ServiceImpl<CourseCatalogue
         queryWrapper.eq(CourseCatalogueDraft::getCourseId, courseId)
                 .in(CourseCatalogueDraft::getType,
                         Arrays.asList(CourseConstants.CataType.SECTION, CourseConstants.CataType.PRATICE));
-        return count(queryWrapper);
+        return Math.toIntExact(count(queryWrapper));
     }
 
     @Override

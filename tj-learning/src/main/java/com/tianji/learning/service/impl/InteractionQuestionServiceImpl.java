@@ -28,7 +28,7 @@ import com.tianji.learning.domain.vo.QuestionVO;
 import com.tianji.learning.enums.QuestionStatus;
 import com.tianji.learning.mapper.InteractionQuestionMapper;
 import com.tianji.learning.service.IInteractionQuestionService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.learning.service.IInteractionReplyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -56,14 +56,18 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
     private final SearchClient searchClient;
     private final CatalogueClient catalogueClient;
     private final CategoryCache categoryCache;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     @Override
     public void saveQuestion(QuestionFormDTO questionDTO) {
         // 1. 获取当前登录的用户id
-        Long userId = UserContext.getUser();
+        Long userId = UserContext.requireUser();
+        if(jdbc.queryForObject("SELECT COUNT(*) FROM learning_lesson WHERE user_id=? AND course_id=? AND status<>3 AND (expire_time IS NULL OR expire_time>NOW())",Integer.class,userId,questionDTO.getCourseId())!=1)
+            throw new com.tianji.common.exceptions.ForbiddenException("需要有效课程权益才能提问");
         // 2. 数据封装
         InteractionQuestion question = BeanUtils.copyBean(questionDTO, InteractionQuestion.class);
         question.setUserId(userId);
+        question.setAnonymity(Boolean.TRUE.equals(questionDTO.getAnonymity()));
         // 3. 写入数据库
         save(question);
     }
@@ -80,7 +84,7 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
         // 2. 分页查询
         Page<InteractionQuestion> page = lambdaQuery()
                 .select(InteractionQuestion.class, info -> !info.getProperty().equals("description"))
-                .eq(query.getOnlyMine(), InteractionQuestion::getUserId, UserContext.getUser())
+                .eq(Boolean.TRUE.equals(query.getOnlyMine()), InteractionQuestion::getUserId, UserContext.getUser())
                 .eq(courseId != null, InteractionQuestion::getCourseId, courseId)
                 .eq(sectionId != null, InteractionQuestion::getSectionId, sectionId)
                 .eq(InteractionQuestion::getHidden, false)
@@ -141,7 +145,7 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
                 vo.setLatestReplyContent(reply.getContent());
                 if(!reply.getAnonymity()) {
                     UserDTO user = userMap.get(reply.getUserId());
-                    vo.setLatestReplyUser(user.getName());
+                    if(user!=null) vo.setLatestReplyUser(user.getName());
                 }
             }
         }

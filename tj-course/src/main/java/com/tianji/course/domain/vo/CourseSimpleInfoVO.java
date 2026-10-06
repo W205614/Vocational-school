@@ -1,7 +1,6 @@
 package com.tianji.course.domain.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -13,27 +12,27 @@ import java.time.LocalDateTime;
  * @version 1.0.0
  **/
 @Data
-@ApiModel("课程简单信息")
+@Schema(description = "课程简单信息")
 public class CourseSimpleInfoVO {
-    @ApiModelProperty("课程id")
+    @Schema(description = "课程id")
     private Long id;
-    @ApiModelProperty("课程名称")
+    @Schema(description = "课程名称")
     private String name;
-    @ApiModelProperty("封面url")
+    @Schema(description = "封面url")
     private String coverUrl;
-    @ApiModelProperty("价格")
+    @Schema(description = "价格")
     private Integer price;
-    @ApiModelProperty("一级分类id")
+    @Schema(description = "一级分类id")
     private Long firstCateId;
-    @ApiModelProperty("二级分类id")
+    @Schema(description = "二级分类id")
     private Long secondCateId;
-    @ApiModelProperty("三级分类id")
+    @Schema(description = "三级分类id")
     private Long thirdCateId;
 
-    @ApiModelProperty("章节数量")
+    @Schema(description = "章节数量")
     private Integer sectionNum;
-    @ApiModelProperty("课程有效期")
+    @Schema(description = "课程有效期")
     private Integer validDuration;
-    @ApiModelProperty("课程过期时间")
+    @Schema(description = "课程过期时间")
     private LocalDateTime purchaseEndTime;
 }
