@@ -16,7 +16,7 @@ def main():
  mysql("CREATE DATABASE IF NOT EXISTS acceptance_common")
  from migrate import apply_migrations
  apply_migrations('acceptance_common',list((BASE/'migrations/common').glob('V*.sql')))
- for target,origin,tables in [('acceptance_learning','tj_learning',['learning_lesson','learning_record','points_record','points_daily_quota','points_projection']),('acceptance_exam','tj_exam',['exam_paper_family','exam_paper','exam_paper_question','exam_grader','exam_attempt','exam_answer']),('acceptance_pay','tj_pay',['pay_order','refund_order','provider_payment_fact','provider_refund_fact','provider_refund_conflict','provider_request_guard'])]:
+ for target,origin,tables in [('acceptance_learning','tj_learning',['learning_lesson','learning_record','learning_entitlement','points_record','points_daily_quota','points_projection']),('acceptance_exam','tj_exam',['exam_paper_family','exam_paper','exam_paper_question','exam_grader','exam_attempt','exam_answer']),('acceptance_pay','tj_pay',['pay_order','refund_order','provider_payment_fact','provider_refund_fact','provider_refund_conflict','provider_request_guard'])]:
   mysql('CREATE DATABASE IF NOT EXISTS '+target)
   for table in tables:
    if mysql(f"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='{target}' AND table_name='{table}'")=='0':mysql(f'CREATE TABLE {table} LIKE {origin}.{table}',target)

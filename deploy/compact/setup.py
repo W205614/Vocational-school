@@ -119,11 +119,14 @@ def build(package=True,group=None):
  app_uid=os.getuid() if hasattr(os,'getuid') and os.getuid()!=0 else 10001
  app_gid=os.getgid() if hasattr(os,'getgid') and os.getgid()!=0 else 10001
  mvn=shutil.which('mvn') or 'mvn'
- if package:run([mvn,'-B','-Pcompact','-DskipTests','package'],'maven')
+ # Profile switches must rebuild plain dependency jars, never reuse standalone BOOT-INF jars.
+ if package:run([mvn,'-B','-Pcompact','-DskipTests','clean','package'],'maven')
+ from check_packaging import verify
  manifest=json.loads((LOCAL/'images.json').read_text(encoding='utf8')) if (LOCAL/'images.json').exists() else {}
  selected=[group] if group else list(GROUPS)+['gateway']
  for group in selected:
   jar=ROOT/('tj-gateway/target/tj-gateway.jar' if group=='gateway' else 'tj-compact/'+group+'/target/tj-'+group+'-app.jar')
+  if group!='gateway':verify(jar,GROUPS[group])
   folder=LOCAL/'images'/group;folder.mkdir(parents=True,exist_ok=True);shutil.copyfile(jar,folder/'app.jar')
   run([shutil.which('javac') or 'javac','-d',str(folder),str(ACC/'docker/HealthProbe.java')],'health-compile')
   heap='384m' if group=='gateway' else '768m'

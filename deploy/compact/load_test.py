@@ -2,6 +2,10 @@
 Formal protocol: --formal uses 10/50/100/200 x 1800s x 3. Default is a 60s smoke.
 Generated credentials and cookies stay in memory/ignored files; reports contain no tokens.
 """
+import sys
+if '--protocol' in sys.argv:
+ from mixed_load import main
+ raise SystemExit(main())
 import argparse,concurrent.futures,collections,json,math,random,threading,time,uuid,requests,subprocess,datetime
 from setup import LOCAL,PORTS,COMPOSE,secrets_config,GROUPS,mysql
 parser=argparse.ArgumentParser();parser.add_argument('--formal',action='store_true');parser.add_argument('--users',type=int,default=50);parser.add_argument('--seconds',type=int,default=60);parser.add_argument('--repeat',type=int,default=1);parser.add_argument('--base-url');args=parser.parse_args()
@@ -87,3 +91,4 @@ except KeyboardInterrupt:stop.set();raise
 finally:
  (output/'protocol.json').write_text(json.dumps({'formalRequested':args.formal,'completedRuns':len(results),'expectedRuns':12 if args.formal else args.repeat,'sourceImages':json.loads((LOCAL/'images.json').read_text(encoding='utf8'))},indent=2),encoding='utf8')
 print('Performance evidence: '+str(output))
+raise SystemExit(0 if results and all(r['targets']['queryP95Within500ms'] and r['targets']['asyncP95Within3000ms'] and not any(v for k,v in r['counts'].items() if not k.endswith(':ok')) for r in results) else 1)
