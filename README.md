@@ -1,295 +1,127 @@
-# 职业教育在线学习平台 🎓
+# 天机学堂 · 职业教育在线学习平台
 
-基于 Spring Cloud Alibaba 微服务架构构建的职业教育在线学习平台，覆盖课程、题库、考试、积分、排行榜、优惠券、订单支付、消息通知等完整业务闭环。后端以微服务方式拆分 16 个模块，支持高并发秒杀式领券、签到积分、兑换码发放、Redis + LUA 原子控制等企业级场景。
+Java 微服务与 Vue 3 双端应用，覆盖课程浏览、购买与退款、学习进度、私人笔记、收藏、问答点赞、考试评分、积分和优惠券。当前本机部署为 **`tianji-final` 一套 Docker Compose 服务组**：14 个后端服务、学生端和管理端两个前端、6 个基础设施服务，共 22 个容器。每个服务使用独立镜像。
 
-## ✨ 功能特点
+当前代码已迁移至 Java 21 / Spring Boot 4。支付、短信和云媒资提供显式本地模拟环境；本地视频上传、数据库记录、消息处理和学习权益使用真实持久化。模拟支付不会真实扣款，本地结果不代表真实第三方服务已验收。
 
-- 🏗️ **微服务架构**: 基于 Spring Cloud Alibaba，服务注册/配置中心 Nacos，统一网关 Gateway 负责路由转发与鉴权
-- 🔐 **统一鉴权体系**: 网关层 JWT 解析 + 权限校验（`AccountAuthFilter`），登录态通过请求头透传给下游微服务，RBAC 权限模型（角色-权限-菜单）
-- 🎫 **优惠券秒级领取**: Redis + LUA 脚本保证领券/兑换码高并发下的原子性与防超卖，MQ 异步落库削峰
-- 🏆 **积分排行榜**: 按赛季（周榜/总榜）动态建表 + Redis ZSet 排名，签到得积分、查榜单
-- 🔁 **兑换码机制**: 基于 Redis 位图（Bitmap）标记兑换状态 + ZSet 按序号区间快速定位优惠券，异步批量生成兑换码
-- 🧮 **折扣策略模式**: 满减/折扣等优惠规则通过策略模式统一管理，核销/退款支持批量操作
-- 🛒 **完整交易闭环**: 购物车 → 下单 → 支付（对接支付宝/微信）→ 退款，订单与支付分离服务
-- 📚 **课程与考试**: 课程目录/分类管理、题库管理、考试出题，学习进度与互动问答（含管理端审核）
-- 🔍 **全文搜索**: Elasticsearch 课程检索，搜索历史/兴趣偏好记录，个性化推荐接口
-- 🎬 **媒资管理**: 文件上传与视频媒资管理（对接阿里云 OSS / 腾讯云 COS、VOD）
-- 📊 **数据中心**: 首页数据看板、今日数据、TOP10 榜单配置，面向运营分析
-- 🧱 **工程化**: 公共模块抽离（统一异常/返回体/工具类/自动配置）、xxl-job 分布式定时任务、Redisson 分布式锁、Docker + Jenkins 一键部署
+## 访问入口
 
-## 🏗️ 技术栈
+| 入口 | 本机地址 |
+|---|---|
+| 学生门户 | <http://localhost/> 或 <http://127.0.0.1:23500/> |
+| 管理与教师工作台 | <http://localhost:81/> 或 <http://127.0.0.1:23501/> |
+| API 网关 | <http://127.0.0.1:23310/api/v2/> |
 
-- **基础框架**: Spring Boot 2.7.2 + Spring Cloud 2021.0.3 + Spring Cloud Alibaba 2021.0.1.0
-- **注册/配置中心**: Nacos（服务发现 + 共享配置 `shared-*.yaml`）
-- **网关**: Spring Cloud Gateway（路由 + 全局鉴权过滤器 + 跨域 + Swagger 聚合）
-- **ORM**: MyBatis-Plus 3.4.3（分页插件、条件构造器）
-- **缓存/分布式**: Redis + Redisson 3.13.6（分布式锁、LUA 脚本、位图、ZSet）
-- **消息队列**: RabbitMQ（异步削峰、业务解耦）
-- **定时任务**: xxl-job 2.3.1 分布式调度
-- **分布式事务**: Seata 1.5.1（依赖管理预留）
-- **搜索**: Elasticsearch 7.12.1
-- **接口文档**: Knife4j / Swagger 3.0.3（网关聚合各服务文档）
-- **云厂商 SDK**: 阿里云（OSS/KMS/支付宝）、腾讯云（COS/VOD）
-- **工具库**: Lombok、Hutool 5.7.17、MyBatis-Plus 代码生成
-- **部署**: Docker（`openjdk:11` 基础镜像 + 时区/内存配置）+ Jenkins 构建脚本（`startup.sh`）
+专用验收账号保存在本机忽略目录 `deploy/final/.local/accounts.json`，凭据不提交到 Git。管理端页面根据管理员、教师角色显示可用操作；学生接口和私人笔记、考试记录等仍校验归属。
 
-## 🏛️ 架构分层
+## 当前功能
 
-```
-                    ┌──────────────────────────────┐
-                    │   Nacos 注册中心 / 配置中心    │
-                    └──────────────▲───────────────┘
-                                   │ 注册 / 拉取配置
-┌──────────────┐   ┌───────────────┴───────────────┐
-│   前端 / APP  │──▶│   Gateway 网关 (10010)        │
-│              │   │  · 路由转发 (StripPrefix)      │
-│              │   │  · 鉴权 (JWT 解析 + 权限校验)   │
-│              │   │  · 跨域 / Swagger 聚合          │
-└──────────────┘   └───────────────┬───────────────┘
-                                   │
-         ┌─────────────┬───────────┼───────────┬─────────────┐
-         ▼             ▼           ▼           ▼             ▼
-   ┌─────────┐   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
-   │ auth    │   │ user    │  │ course  │  │ learning│  │ trade   │
-   │ (8081)  │   │ (8082)  │  │ (8086)  │  │ (8090)  │  │ (8088)  │
-   └─────────┘   └─────────┘  └─────────┘  └─────────┘  └─────────┘
-   ┌─────────┐   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
-   │ pay     │   │ search  │  │ media   │  │ message │  │ exam    │
-   │ (8087)  │   │ (8083)  │  │ (8084)  │  │ (8085)  │  │ (8089)  │
-   └─────────┘   └─────────┘  └─────────┘  └─────────┘  └─────────┘
-   ┌─────────┐   ┌─────────┐  ┌─────────┐
-   │ remark  │   │promotion│  │ data    │
-   │ (8091)  │   │ (8092)  │  │ (8093)  │
-   └─────────┘   └─────────┘  └─────────┘
+- 学生端：课程分类、检索与详情，购物车、优惠方案、订单及支付入口，取消与退款确认，课程学习、视频进度、随堂笔记、收藏、讨论点赞、积分、通知及个人设置。
+- 管理端：真实业务看板，课程草稿与上/下架、媒资、题库、试卷版本、授权教师评分、用户权限、营销、订单退款和通知管理。
+- 课程配置：按名称检索课程、视频、题目和教师；通过目录选择考试小节，已保存的关联刷新后回显。章节未保存时阻止关联写入，切换课程前提示未保存修改。
+- 内容修正：封面预览、PNG/JPEG 上传、三级分类选择、以元编辑价格、介绍与详情编辑。报名结束的草稿可保存内容修正并保留截止日期；重新上架需有效报名计划。新课程不会自动生成随机评分。
+- 考试：试卷和题目快照，客观题按完整答案集合评分，主观题由授权教师评分；提交后答案不可修改，重复提交不重复发出通过事件。草稿自动持久化，可在同一账号的另一设备继续；并发编辑提示版本冲突，载入最新草稿前保留可查看的本机备份。
+- 运维：操作状态、失败事件与补偿任务查询，Actuator 存活/就绪检查，Prometheus/Grafana 指标。
 
-   公共基础设施:  MySQL 8.0 · Redis · RabbitMQ · Elasticsearch · xxl-job
-   公共模块:     tj-common (统一返回体/异常/工具/自动配置) · tj-api (Feign DTO/客户端) · tj-auth (SDK)
-```
+历史课程缺失的真实图片、介绍和报名安排，需要管理员根据原始资料整理。程序提供编辑和失败提示，不自动编造课程资料或延长报名日期。
 
-## 📁 项目结构
+## 并发与可靠性设计
 
-```
-tjxt/                                  # 父工程 (pom 聚合, Spring Boot 2.7.2)
-├── tj-common/                         # 公共模块
-│   └── com/tianji/common/
-│       ├── autoconfigure/             # 自动配置 (mq / mvc / mybatis / redisson / swagger / xxljob)
-│       ├── constants/ enums/          # 常量与枚举
-│       ├── domain/                    # 统一返回体 R、分页 PageDTO 等
-│       ├── exceptions/                # 全局异常体系
-│       ├── filters/  utils/  validate/ # 过滤器、工具类、参数校验
-├── tj-api/                            # 跨服务 API 层
-│   ├── client/                        # 各服务 Feign/Http 客户端 (auth/course/exam/...)
-│   └── dto/                           # 跨服务 DTO
-├── tj-auth/                           # 认证授权中心
-│   ├── tj-auth-service/               # 账号 / 角色 / 权限 / 菜单 / 登录记录服务 (8081)
-│   ├── tj-auth-common/                # JWT 常量等公共定义
-│   ├── tj-auth-gateway-sdk/           # 网关鉴权 SDK (AuthUtil / JwtSignerHolder)
-│   └── tj-auth-resource-sdk/          # 资源服务 SDK (用户上下文解析)
-├── tj-gateway/                        # 网关 (10010): 路由 / 鉴权 / 跨域 / Swagger 聚合
-├── tj-user/                           # 用户服务 (8082): 学生 / 教师 / 员工
-├── tj-search/                         # 搜索服务 (8083): ES 课程检索 / 兴趣 / 推荐
-├── tj-media/                          # 媒资服务 (8084): 文件 / 视频媒资
-├── tj-message/                        # 消息服务 (8085): 短信等通知
-├── tj-course/                         # 课程服务 (8086): 课程 / 分类 / 目录
-├── tj-pay/                            # 支付服务 (8087): 对接第三方支付
-├── tj-trade/                          # 交易服务 (8088): 购物车 / 订单 / 退款
-├── tj-exam/                           # 考试服务 (8089): 题库 / 出题
-├── tj-learning/                       # 学习服务 (8090): 我的课表 / 学习记录 / 签到 / 积分 / 排行榜 / 互动问答
-├── tj-remark/                         # 点赞服务 (8091): 点赞记录
-├── tj-promotion/                      # 营销服务 (8092): 优惠券 / 兑换码 / 折扣策略
-├── tj-data/                           # 数据中心 (8093): 看板 / 今日数据 / TOP10
-├── Dockerfile                         # 通用镜像 (JDK11, 时区 Asia/Shanghai)
-├── startup.sh                         # Jenkins 构建部署脚本 (打镜像 + 起容器)
-└── pom.xml                            # 依赖版本统一管理
+关键异步写入使用持久操作记录；本地业务事务与 Outbox 一起提交，消费去重与业务更新同事务完成。跨服务使用幂等协议、条件状态更新和持久补偿，不以开启 Seata 替代业务状态设计。事件重发保留原事件标识。
+
+库存、限领、兑换和积分的最终依据在数据库；Redis 用于预校验、缓存和可重建投影。支付事实、订单状态和课程权益分别处理；退款保留学习和笔记历史。学习完成通过条件转换限制重复累加。优惠计算最多接受 6 张有效用户券，超限拒绝，超时不返回“全局最优”。
+
+容器重建可能改变 IP。网关 Reactor Netty、Java 客户端和 Nginx 代理使用有界 DNS 缓存；服务连接失败返回可重试的不可用状态。本机故障恢复验收见下方报告，不能推导多节点基础设施高可用或生产容量。
+
+## 技术栈
+
+以下版本来自当前依赖配置，不表示它们是最新版本。
+
+| 部分 | 当前配置 |
+|---|---|
+| Java / Spring Boot | Java 21 / 4.0.8 |
+| Spring Cloud / Alibaba | 2025.1.3 / 2025.1.0.0 |
+| ORM / 缓存 | MyBatis-Plus 3.5.17 / Redis、Redisson 3.52.0 |
+| 数据及消息 | MySQL、RabbitMQ、Elasticsearch |
+| 前端 | Vue 3、TypeScript、Vite、Vue Router、Pinia、Element Plus |
+| 验证及监控 | JUnit、Playwright、Actuator、Prometheus、Grafana |
+
+保留 Nacos 集成能力；当前本地 Compose 使用固定服务地址与挂载配置，关闭远程 Nacos 配置/发现和 XXL-Job。可靠任务由应用持久化机制处理。
+
+## 项目结构
+
+```text
+frontend/                    学生端、管理端、共享请求客户端及浏览器测试
+tj-common/                   返回体、资源治理、持久操作、Outbox 等公共基础
+tj-api/                      跨服务客户端与 DTO
+tj-auth/                     认证服务、公共定义、网关和资源服务 SDK
+tj-gateway/                  v2 路由、身份头清理、权限与调用隔离
+tj-user/ tj-course/ tj-media/ 用户、课程与媒资
+tj-trade/ tj-pay/             订单、退款及支付事实
+tj-exam/ tj-learning/         题库、考试评分、学习与笔记
+tj-promotion/ tj-remark/      优惠券、折扣、点赞
+tj-search/ tj-message/ tj-data/ 搜索、通知、数据看板
+deploy/acceptance/            独立验收脚本与版本化迁移
+deploy/final/                 最终 Compose、镜像构建与恢复验证
+docs/                        验收报告、脱敏证据与运行手册
 ```
 
-> 说明：服务与网关路由前缀一一对应，例如 `user-service` → `lb://user-service`，前端通过网关 `StripPrefix` 后按 `/us/**`、`/cs/**` 等前缀访问各业务接口。
+## 本机部署与开发
 
-## 🚀 快速开始
+已有部署可从仓库根目录运行：
 
-### 前提条件
-
-- JDK 11+
-- Maven 3.6+
-- MySQL 8.0、Redis、RabbitMQ、Elasticsearch 7.x（按需）
-- Nacos 注册中心（服务发现 + 配置中心），提供共享配置 `shared-spring.yaml`、`shared-redis.yaml`、`shared-logs.yaml`
-- Docker（可选，用于镜像部署）
-
-### 环境准备
-
-1. 启动 Nacos，导入共享配置（网关及各服务通过 `bootstrap.yml` 从 Nacos 拉取公共配置与日志配置）
-2. 修改各服务 `src/main/resources/bootstrap-local.yml` 中的 Nacos 地址与命名空间，选择本地 profile：
-   - 各服务 `bootstrap.yml` 默认 `active: dev`，本地联调时切换为 `local`
-3. 准备 MySQL 数据库并导入各服务建表脚本（表结构以各服务 `domain/po` 实体为准）
-
-### 编译与启动
-
-```bash
-# 1. 编译安装公共模块
-mvn install -pl tj-common -am -DskipTests
-mvn install -pl tj-api -am -DskipTests
-mvn install -pl tj-auth/tj-auth-common -am -DskipTests
-
-# 2. 依次启动各服务 (推荐启动顺序)
-mvn -pl tj-auth/tj-auth-service spring-boot:run   # 认证中心 8081
-mvn -pl tj-gateway spring-boot:run                # 网关 10010
-mvn -pl tj-user spring-boot:run                   # 用户 8082
-# ...其余业务服务按需启动
+```powershell
+docker compose -p tianji-final -f deploy/final/compose.yaml --env-file deploy/final/.env up -d --wait --wait-timeout 420
+docker compose -p tianji-final -f deploy/final/compose.yaml --env-file deploy/final/.env ps
 ```
 
-各服务端口一览：
+`deploy/final/.env`、签名密钥、已迁移的基础数据、镜像清单和私有配置均在本机保留。**全新克隆不能只凭 Compose 文件自动恢复这套环境**：还需自行准备这些私有配置、基础数据库与镜像，或使用经过核验的本机恢复工件。镜像和数据库备份没有上传到 GitHub。具体步骤及保护范围见 [最终部署说明](deploy/final/README.md)。
 
-| 服务 | 端口 | 服务 | 端口 |
-|---|---|---|---|
-| gateway-service | 10010 | trade-service | 8088 |
-| auth-service | 8081 | exam-service | 8089 |
-| user-service | 8082 | learning-service | 8090 |
-| search-service | 8083 | remark-service | 8091 |
-| media-service | 8084 | promotion-service | 8092 |
-| message-service | 8085 | data-service | 8093 |
-| course-service | 8086 | pay-service | 8087 |
+运行数据库、缓存和消息数据在命名卷中，新媒资在 `deploy/final/.local/objects`。备份与运行卷作用不同；不要对当前部署执行 `down -v` 或删除数据卷。
 
-### 访问接口文档
+开发构建需要 JDK 21、Maven，以及满足前端依赖要求的 Node.js：
 
-网关已聚合 Swagger，启动网关后访问：
-
-```
-http://localhost:10010/doc.html      # Knife4j 聚合文档
+```powershell
+mvn -B -DskipTests package
+npm --prefix frontend ci
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
 ```
 
-## 🔧 核心实现
+这组命令构建源代码；`-DskipTests` 不代表测试通过。部署前端改动运行 `python deploy/final/build_web.py`，再执行 Compose 启动命令。后端打包后通过 `build_backend.py --only 服务名 --tag 版本标签` 生成独立镜像，运行 `generate.py` 并启动服务组；Java 21 的 `java`、`javac` 必须位于 PATH。Python 脚本依赖以 [验收依赖文件](deploy/acceptance/requirements.txt) 为准。
 
-### 1. 网关统一鉴权（JWT + 权限校验）
+## 功能性测试与证据
 
-所有请求经网关 `AccountAuthFilter`（`GlobalFilter`，order=1000）：
+最新课程配置、持久考试草稿、容器恢复和浏览器回归结果见 [本轮验收报告](docs/admin-configuration-validation-20261007.md)。之前的门户与工作台恢复、完整交易学习路径见 [前端体验验收](docs/frontend-user-experience-validation-20261007.md)。历史压测、迁移和故障测试分别保留各自环境与范围，不能合并为生产性能结论。
 
-- 白名单路径（如登录）直接放行，其余需校验 `Authorization` 请求头中的 JWT
-- 解析出用户信息后，通过 `USER_HEADER` 请求头把 `userId` 透传给下游微服务
-- 结合 `authUtil.checkAuth` 做接口权限校验，权限不足直接拦截返回
+2026-10-07 最终回归：浏览器 **25 项通过、0 失败**（13 个执行槽按两端适用范围跳过），相关后端 **15 项通过、0 失败、0 跳过**，类型检查与双端生产构建成功。考试、网关、媒资实际地址变化后恢复访问，学习历史及封面保留；最终 **22 个服务健康**。详见 [脱敏证据](docs/evidence/2026-10-07/admin-ux/validation.json)，这些结果限于当前本机环境。
 
-```java
-// 获取请求，判断是否为无需登录的路径
-if (isExcludePath(antPath)) {
-    return chain.filter(exchange);
-}
-// 解析 token
-R<LoginUserDTO> r = authUtil.parseToken(token);
-// 登录态透传
-exchange.mutate().request(builder -> builder.header(USER_HEADER, r.getData().getUserId().toString())).build();
-// 校验权限
-authUtil.checkAuth(antPath, r);
+测试前创建新的专用课程夹具，并同步搜索：
+
+```powershell
+python deploy/final/runtime.py migrate
+python deploy/final/runtime.py browser_fixture
+python deploy/final/runtime.py rebuild_search
+$env:ACCEPTANCE_CONTAINER_UI = '1'
+$env:TJ_RUNTIME_HOME = (Resolve-Path deploy/final).Path
+$env:TJ_RUNTIME_PROJECT = 'tianji-final'
+$env:TJ_UI_RUNTIME_HOME = (Resolve-Path deploy/final/.local).Path
+npm --prefix frontend test
 ```
 
-下游服务通过 `UserContext` 获取当前登录用户 id，实现无状态鉴权。
+浏览器测试会使用专用学生、管理员和教师账号写入验收数据，覆盖两端页面、1440/845/390 像素布局、登录恢复、课程配置，以及购买 → 视频学习 → 笔记与问答 → 考试与教师评分 → 退款。
 
-### 2. 优惠券高并发领取（Redis LUA + MQ 异步落库）
+- `python deploy/final/verify_exam.py`：在独立 `acceptance_exam` 数据库运行考试与草稿并发测试，并打包考试服务。
+- `python deploy/final/verify_pay.py`：在独立 `acceptance_pay` 数据库测试支付可靠性；不调用真实支付商。
+- `python deploy/final/verify_dns_recovery.py`：会停止/重建考试服务、网关和媒资服务，验证依赖方访问恢复；应在专用本机验收期间运行，不能当作生产只读健康检查。
+- `python deploy/final/verify_history.py`：只读核对当前夹具的完成记录、考试和笔记。
+- `python deploy/final/archive_browser_fixtures.py`：正常下架专用 Browser course/free 课程，保留订单、考试、笔记和草稿。
+- `python deploy/final/final_backup.py`：保存本机 SQL、私有配置及媒资校验清单。
 
-领券/兑换码属于高并发写场景，采用 **LUA 脚本原子校验 + MQ 异步落库** 两级削峰：
+## 运行边界与文档
 
-1. **LUA 脚本**（`lua/receive_coupon.lua`、`lua/exchange_coupon.lua`）在 Redis 内原子完成：校验券状态、每人限领、库存扣减、标记已领取，避免并发超卖与重复领取
-2. 脚本执行成功后仅发送 MQ 消息（`PROMOTION_EXCHANGE`），由消费者 `checkAndCreateUserCoupon` 异步写库、累加发放数量
-3. 兑换码使用 **Redis 位图**（`COUPON_CODE_MAP_KEY`）标记序列号是否已被兑换，ZSet（`COUPON_RANGE_KEY`）记录各批次序列号区间，兑换时 `rangeByScore` 秒级定位目标券
+本轮功能回归不替代持续压测、真实第三方支付/短信验收、多节点故障恢复或原版全部页面逐项对照。真实环境不会自动回退为模拟成功。
 
-```java
-@Lock  // Redisson 分布式锁兜底
-public void receiveCoupon(Long couponId) {
-    // 1. 执行 LUA 脚本原子校验，结果非 0 抛业务异常
-    Long r = redisTemplate.execute(RECEIVE_COUPON_SCRIPT, List.of(key1, key2), userId.toString());
-    // 2. 发送 MQ 消息，异步落库
-    mqHelper.send(MqConstants.Exchange.PROMOTION_EXCHANGE, MqConstants.Key.COUPON_RECEIVE, uc);
-}
-```
-
-### 3. 折扣策略模式
-
-优惠券的满减/折扣规则通过策略模式组织（`strategy/discount/DiscountStrategy`）：
-
-- 不同优惠类型对应不同 `DiscountStrategy` 实现，统一通过 `DiscountStrategy.getDiscount(discountType)` 获取
-- 核销（`writeOffCoupon`）与退款（`refundCoupon`）支持批量处理，并在事务内维护优惠券已发放/已使用数量
-
-### 4. 积分签到与排行榜
-
-- **签到**: 按用户月维度使用 Redis 位图记录签到，连续签到发放积分
-- **积分记录**: `PointsRecord` 记录积分流水，来源涵盖签到、学习等行为
-- **排行榜**: 按赛季（周/总榜）动态建表，`PointsBoardSeason` 维护赛季信息，Redis ZSet 维护实时排名，定时任务结算落库，提供榜单查询与我的排名
-
-### 5. 分布式定时任务（xxl-job）
-
-- 通过 `tj-common` 的 xxl-job 自动配置接入调度中心
-- 典型场景：优惠券到期/过期处理、排行榜赛季结算、兑换码批次管理
-
-## 🧰 运维与部署
-
-### Docker 镜像
-
-根目录 `Dockerfile` 为通用微服务镜像（`openjdk:11.0-jre`，时区 `Asia/Shanghai`，支持 `JAVA_OPTS` 注入）：
-
-```bash
-docker build -t <service>:latest .
-docker run -d --name <service> \
-  -p "<port>:<port>" \
-  -e JAVA_OPTS="-Xms300m -Xmx300m" \
-  --network heima-net <service>:latest
-```
-
-### Jenkins 自动部署
-
-`startup.sh` 已封装「拷贝 jar → 打镜像 → 起容器」全流程：
-
-```bash
-# 参数: -c 容器名  -n 项目名(产物jar名)  -d 工作区相对路径  -p 端口  -o JAVA_OPTS  -a 调试端口(可选)
-sh startup.sh -c user-service -n user-service -d tj-user -p 8082
-# 开启远程调试 (5005)
-sh startup.sh -c user-service -n user-service -d tj-user -p 8082 -a 5005
-```
-
-## 📚 模块职责速览
-
-| 模块 | 职责 | 核心接口（Controller） |
-|---|---|---|
-| tj-auth | 账号/角色/权限/菜单、登录记录、JWT | AccountController、RoleController、MenuController、PrivilegeController |
-| tj-user | 学生/教师/员工管理 | StudentController、TeacherController、StaffController |
-| tj-course | 课程/分类/目录管理 | CourseController、CategoryController、CatalogueController |
-| tj-learning | 课表、学习记录、签到、积分、排行榜、互动问答 | LearningLessonController、SignRecordController、PointsRecordController、PointsBoardController、InteractionQuestionController |
-| tj-search | ES 课程检索、兴趣、推荐 | CourseController、InterestsController、RecommendController |
-| tj-media | 文件上传、视频媒资 | FileController、MediaController |
-| tj-message | 短信通知 | message-service |
-| tj-pay | 支付对接 | PayController |
-| tj-trade | 购物车/订单/退款 | CartController、OrderController、RefundApplyController |
-| tj-exam | 题库、出题 | QuestionController、QuestionBizController |
-| tj-remark | 点赞 | LikedRecordController |
-| tj-promotion | 优惠券、兑换码、折扣策略 | CouponController、CouponScopeController、ExchangeCodeController、UserCouponController |
-| tj-data | 首页看板、今日数据、TOP10 | BoardController、TodayDataController、Top10Controller |
-
-## ⚠️ 已知局限与后续优化方向
-
-> 以下为本项目当前的设计边界，供后续维护者据此优化。
-
-### 1. 本地联调依赖 Nacos 与共享配置 🟡
-
-- **现状**：各服务 `bootstrap.yml` 从 Nacos 拉取共享配置（`shared-spring/redis/logs.yaml`），本地启动前需自行准备 Nacos 与中间件环境
-- **优化方向**：补充完整的本地环境搭建文档 / docker-compose 一键拉起中间件
-
-### 2. 数据库脚本分散在各服务 🟡
-
-- **现状**：建表结构散落在各服务 `domain/po`，无统一 SQL 管理目录，初始化成本偏高
-- **优化方向**：收集整理统一 SQL 脚本并纳入版本管理
-
-### 3. 事务一致性依赖 Seata 配置 🟡
-
-- **现状**：依赖管理已引入 Seata 1.5.1，但具体业务场景（如订单-支付-营销联动）需按需开启全局事务
-- **优化方向**：梳理跨服务写链路，明确 Seata AT/TCC 接入范围
-
-## 🤝 贡献指南
-
-欢迎提交 Pull Request 或 Issue！
-
-## 🙏 文档和资源
-
-- [Spring Cloud Alibaba](https://github.com/alibaba/spring-cloud-alibaba) - 微服务框架
-- [Nacos](https://nacos.io/) - 注册/配置中心
-- [MyBatis-Plus](https://github.com/baomidou/mybatis-plus) - ORM 框架
-- [Knife4j](https://doc.xiaominfo.com/) - 接口文档聚合
-- [xxl-job](https://github.com/xuxueli/xxl-job) - 分布式任务调度
-- [Redisson](https://github.com/redisson/redisson) - Redis 客户端与分布式锁
-- [Hutool](https://hutool.cn/) - Java 工具库
+- [可靠性运行手册](docs/reliability-runbook.md)
+- [全链路交付状态与验证边界](docs/productionization-status.md)
+- [最终部署验证](docs/final-deployment-validation.md)

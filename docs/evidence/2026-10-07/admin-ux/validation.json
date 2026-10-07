@@ -1,0 +1,369 @@
+{
+  "verifiedAt": "2026-10-07T12:31:32.516995+08:00",
+  "composeProject": "tianji-final",
+  "scope": "local functional and application recovery; simulated payment and SMS",
+  "browser": {
+    "passed": 25,
+    "failed": 0,
+    "skippedByAudience": 13,
+    "workers": 1,
+    "retries": 0,
+    "browser": "Microsoft Edge",
+    "layoutWidths": [
+      1440,
+      845,
+      390
+    ]
+  },
+  "backend": {
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "module": "tj-course",
+        "testClass": "CourseDeadlineTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "module": "tj-course",
+        "testClass": "CourseTeacherDraftTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "module": "tj-media",
+        "testClass": "LocalCourseCoverStoreTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "module": "tj-exam",
+        "testClass": "ObjectiveScoringTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "module": "tj-exam",
+        "testClass": "ExamReliabilityTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "module": "tj-exam",
+        "testClass": "ExamDraftReliabilityTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "examTestDatabase": "acceptance_exam",
+    "gateway": "reactor packaging success; runtime failure and DNS recovery verified"
+  },
+  "frontend": {
+    "typecheck": "PASSED",
+    "studentProductionBuild": "PASSED",
+    "adminProductionBuild": "PASSED"
+  },
+  "dnsRecovery": {
+    "status": "PASSED",
+    "checks": [
+      {
+        "service": "app-exam",
+        "oldAddress": "172.24.0.17",
+        "newAddress": "172.24.0.3",
+        "addressChanged": true,
+        "postHealthRecoverySeconds": 0.7,
+        "studentProxyRecoverySeconds": 0.05,
+        "imageBytesUnchanged": null
+      },
+      {
+        "service": "app-gateway",
+        "oldAddress": "172.24.0.20",
+        "newAddress": "172.24.0.3",
+        "addressChanged": true,
+        "postHealthRecoverySeconds": 0.81,
+        "studentProxyRecoverySeconds": 0.04,
+        "imageBytesUnchanged": null
+      },
+      {
+        "service": "app-media",
+        "oldAddress": "172.24.0.17",
+        "newAddress": "172.24.0.20",
+        "addressChanged": true,
+        "postHealthRecoverySeconds": 0.14,
+        "studentProxyRecoverySeconds": 0.02,
+        "imageBytesUnchanged": true
+      }
+    ],
+    "examUnavailableStatus": 503,
+    "persistentCoverSha256": "f63304272ee9da82f718cb79fefad6e5ba0f67d2fed8316bce081a0de17fcb69"
+  },
+  "historyAfterDnsRestart": {
+    "status": "PASSED",
+    "completedSections": 2,
+    "lessonCompletedCount": 2,
+    "passedExamScore": 20,
+    "privateNoteRetained": true
+  },
+  "latestHistoryAfterRefundAndUnpublishing": {
+    "status": "PASSED",
+    "completedSections": 2,
+    "lessonCompletedCount": 2,
+    "passedExamScore": 20,
+    "privateNoteRetained": true
+  },
+  "fixtureArchive": {
+    "status": "PASSED",
+    "unpublishedCourses": 21,
+    "courseIds": [
+      "810000017913369700",
+      "810000017913376620",
+      "810000017913398860",
+      "810000017913401870",
+      "810000017913409020",
+      "810000017913411750",
+      "810000017913411770",
+      "810000017913413500",
+      "810000017913413520",
+      "810000017913430840",
+      "810000017913430860",
+      "810000017913437570",
+      "810000017913437590",
+      "810000017913442910",
+      "810000017913442930",
+      "810000017913445630",
+      "810000017913445650",
+      "810000017913465450",
+      "810000017913465470",
+      "810000017913472140",
+      "810000017913472160"
+    ],
+    "historyRetained": true
+  },
+  "localBackup": {
+    "sqlBytes": 1111428,
+    "databaseCount": 12,
+    "privateConfigArchiveRetained": true,
+    "mediaHashEntries": 27,
+    "mediaBytesBackup": false
+  },
+  "services": [
+    {
+      "service": "app-auth",
+      "image": "tianji-final/auth:ee045c7",
+      "imageId": "sha256:8e7ed801e5901ef3dd5b9f9fe1b999c74bb0f95959829ca134fbc660db6ce732",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-course",
+      "image": "tianji-final/course:ux-course-20261007",
+      "imageId": "sha256:460dd886b68d3f9416e6c76f6a8a5be8616dba31bfe702b7eb6cb700eb64bff9",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-data",
+      "image": "tianji-final/data:ee045c7",
+      "imageId": "sha256:218da6a9a3cffd291edb1c29bbceed6a742b8df6f260fd3efa78a232288342d0",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-exam",
+      "image": "tianji-final/exam:ux-draft-20261007",
+      "imageId": "sha256:e04c94e8d865ee24ecf738e1f514663a5fc37b8b7267a43b54a4daff1c28c724",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-gateway",
+      "image": "tianji-final/gateway:ux-dns-20261007",
+      "imageId": "sha256:90d48b2179bf30ab44e123eb7ea59bbbec88fc50dbd36c00490dc2defdf4662f",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-learning",
+      "image": "tianji-final/learning:ee045c7",
+      "imageId": "sha256:27e1c16f3db000265167a58ac1a4f4214d7941e535ea7d15ec0ef0172a094fc3",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-media",
+      "image": "tianji-final/media:ux-admin-20261007",
+      "imageId": "sha256:82f2a455e61f09df4917a296a9d9694a81671929e87e9d7dd79f7e0fb9adf3bb",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-message",
+      "image": "tianji-final/message:ee045c7",
+      "imageId": "sha256:824a817c03c8c1cb6020eeb3d27dd975bfe3cc215d99117a91ea8bcb8d0b8fed",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-pay",
+      "image": "tianji-final/pay:ux-20261007",
+      "imageId": "sha256:066c99913aee603e83266ae9187a524673424b897624f609300843348f8a7784",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-promotion",
+      "image": "tianji-final/promotion:ee045c7",
+      "imageId": "sha256:cdfa657a44c45d477266f548474876993ab08943a3406129420b57e9cc4dee9f",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-remark",
+      "image": "tianji-final/remark:ee045c7",
+      "imageId": "sha256:c86e059b0e11bfb1c5195993104ed8a72e4ba9037477421646d0f35c40835f48",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-search",
+      "image": "tianji-final/search:ee045c7",
+      "imageId": "sha256:b01e0f42af642361b89ba61c6e2109df9000c8682d841bae45ad3b9756684ed5",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-trade",
+      "image": "tianji-final/trade:ee045c7",
+      "imageId": "sha256:73b3910ce9c1fb8c439bf118c7223975f467cacbf2ba4ef84ceccce87bf1daad",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "app-user",
+      "image": "tianji-final/user:ee045c7",
+      "imageId": "sha256:7f9c49a532bae5f77a42ec76a43c03278eb96c325babe1db2a47ce02693274c5",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "elasticsearch",
+      "image": "docker.elastic.co/elasticsearch/elasticsearch:7.17.29",
+      "imageId": "sha256:3f55a7f6f29b95345dc33808d6e914f81d125d4ca90a414e26c81a3521400980",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "grafana",
+      "image": "grafana/grafana:11.5.2",
+      "imageId": "sha256:8b37a2f028f164ce7b9889e1765b9d6ee23fec80f871d156fbf436d6198d32b7",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "mysql",
+      "image": "mysql:8.4",
+      "imageId": "sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "prometheus",
+      "image": "prom/prometheus:v3.10.0",
+      "imageId": "sha256:4a61322ac1103a0e3aea2a61ef1718422a48fa046441f299d71e660a3bc71ae9",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "rabbitmq",
+      "image": "rabbitmq:4.1-management",
+      "imageId": "sha256:19c5ee40801d36eaa46020c9e2ff802c4ef7e74839a00b0f8bd43f935f845778",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "redis",
+      "image": "redis:7.4-alpine",
+      "imageId": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "web-admin",
+      "image": "sha256:1c0d43e6fab4a3c90de5b9120579e727e8690184b94c8836aa6695a192069783",
+      "imageId": "sha256:1c0d43e6fab4a3c90de5b9120579e727e8690184b94c8836aa6695a192069783",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "web-student",
+      "image": "sha256:5ca0f635ab4432b882eb9d0a1b1f5f8a46ceecdab96e024ad765c22bdda4901e",
+      "imageId": "sha256:5ca0f635ab4432b882eb9d0a1b1f5f8a46ceecdab96e024ad765c22bdda4901e",
+      "state": "running",
+      "health": "healthy"
+    }
+  ],
+  "updatedBackendArtifacts": {
+    "course": {
+      "image": "tianji-final/course:ux-course-20261007",
+      "finalTag": "tianji-final/course:ux-course-20261007",
+      "imageId": "sha256:460dd886b68d3f9416e6c76f6a8a5be8616dba31bfe702b7eb6cb700eb64bff9",
+      "jarSha256": "c8cb4c19c8048ece0dd4b9bf55e837767bb35a1b26c92e40a932e52099927ab9"
+    },
+    "exam": {
+      "image": "tianji-final/exam:ux-draft-20261007",
+      "finalTag": "tianji-final/exam:ux-draft-20261007",
+      "imageId": "sha256:e04c94e8d865ee24ecf738e1f514663a5fc37b8b7267a43b54a4daff1c28c724",
+      "jarSha256": "0c36054a119d25b015e2f06b68649594b2d8caf913326839aa3a390eb427974e"
+    },
+    "media": {
+      "image": "tianji-final/media:ux-admin-20261007",
+      "finalTag": "tianji-final/media:ux-admin-20261007",
+      "imageId": "sha256:82f2a455e61f09df4917a296a9d9694a81671929e87e9d7dd79f7e0fb9adf3bb",
+      "jarSha256": "e3ef9576b5dce1caa11159a383093dc1491f6af41e77c6122424d3eec790fa89"
+    },
+    "gateway": {
+      "image": "tianji-final/gateway:ux-dns-20261007",
+      "finalTag": "tianji-final/gateway:ux-dns-20261007",
+      "imageId": "sha256:90d48b2179bf30ab44e123eb7ea59bbbec88fc50dbd36c00490dc2defdf4662f",
+      "jarSha256": "2ac676b54d5c6696da140830c5c576e449fad10d30677ad212a0975ca43f9ea9"
+    }
+  },
+  "artifacts": {
+    "course-config.png": {
+      "bytes": 145691,
+      "sha256": "d1c173d0254ad1970f35cf8b8c46aee85c6b60cb2af8526d0e96b578fe4a4086"
+    },
+    "exam-390.png": {
+      "bytes": 71720,
+      "sha256": "374a8cf433ce88fa23a23249c74ab97dd5a9de8b86b36cd728b50c0cbb58715a"
+    },
+    "browser-results.txt": {
+      "sha256": "528822064723d05f8af9182ba22178151e221039845195a5640ca2094eb2f438"
+    },
+    "course-browser.png": {
+      "bytes": 100158,
+      "sha256": "a620842bd22cc4c8e1b03dd39aa3777975b8c6f1ae00749915f018770bff6e2b"
+    }
+  },
+  "unverified": [
+    "real third-party payment and SMS",
+    "production sustained capacity",
+    "multi-node infrastructure failover",
+    "all legacy pages individually compared"
+  ],
+  "implementationCommit": "b55d3733e039de494f28152150a5b97f1562a2dc"
+}

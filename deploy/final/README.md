@@ -34,4 +34,12 @@ docker compose -p tianji-final -f deploy/final/compose.yaml --env-file deploy/fi
 
 测试完成运行 `python deploy/final/archive_browser_fixtures.py`，通过课程正常下架流程移出专用测试课程，不删除历史。最新前端体验与浏览器结果见 [2026-10-07 验收报告](../../docs/frontend-user-experience-validation-20261007.md)。
 
+课程配置和考试草稿的后续改进见 [课程配置与恢复验收](../../docs/admin-configuration-validation-20261007.md)。管理端通过分页检索选择课程、视频、题目和教师；编辑课程资料时可修正本地 PNG/JPEG 封面、介绍与详情，报名结束的草稿保留原截止日期，上架仍需有效报名计划。本地封面单独保存在 `.local/objects/course-covers`，公开读取仅匹配内容哈希图片地址；上传仍要求管理员，私人视频继续使用原有授权与签名。
+
+考试草稿通过版本化迁移 `tj_exam/V003__exam_drafts.sql` 持久化。部署此代码前运行 `python deploy/final/runtime.py migrate`，然后重建、启动考试服务及前端。草稿自动同步，另一个设备使用同一账号可继续；冲突时保留本机未同步答案，提交检查草稿版本，已提交答卷拒绝后续写入。`python deploy/final/verify_exam.py` 在独立 `acceptance_exam` 数据库执行评分、并发创建/提交、教师评分、草稿冲突和归属测试并打包考试模块。
+
+容器重建后的服务发现使用 Docker DNS。生成器为所有 JVM 挂载追加的 `dns.security`（成功解析缓存 10 秒、失败 2 秒）；网关 Reactor Netty 和两端 Nginx 同样限制解析缓存。修改此配置后应执行生成器和完整 Compose 启动命令，使所有应用获得新挂载。没有关闭证书校验或替换系统其他安全配置。`python deploy/final/verify_dns_recovery.py` 会停止/重建考试服务、网关和媒资服务，验证两端代理恢复、服务不可用时的 503 和持久封面字节；仅在本地验收期间执行。`python deploy/final/verify_history.py` 可只读核对已完成考试、小节及私人笔记，须在当前夹具完成完整业务测试后执行。
+
 旧版数据卷和 `.local/backup` 中的 SQL、缓存和消息队列备份保留作恢复入口。历史错误队列消息已归档，没有自动重放。回退需要先停止新版、核对后续新增数据，再使用旧版部署配置；不能把旧备份直接覆盖到有新增业务的新版数据库上。
+
+`python deploy/final/final_backup.py` 保存 SQL、私有配置（包含 DNS 安全属性）和媒资校验清单。校验清单不是文件字节备份；恢复新上传视频及封面仍需保留 `.local/objects` 或另行复制这些文件。配置和备份均留在本机忽略目录，不随 GitHub 源代码提交。
