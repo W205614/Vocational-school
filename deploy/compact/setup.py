@@ -114,6 +114,10 @@ def configure_acceptance():
  return p
 def build(package=True,group=None):
  requested_group=group
+ # Linux bind mounts retain host ownership. Keep the container non-root while
+ # allowing the developer to read backups of files created by the application.
+ app_uid=os.getuid() if hasattr(os,'getuid') and os.getuid()!=0 else 10001
+ app_gid=os.getgid() if hasattr(os,'getgid') and os.getgid()!=0 else 10001
  mvn=shutil.which('mvn') or 'mvn'
  if package:run([mvn,'-B','-Pcompact','-DskipTests','package'],'maven')
  manifest=json.loads((LOCAL/'images.json').read_text(encoding='utf8')) if (LOCAL/'images.json').exists() else {}
@@ -123,7 +127,7 @@ def build(package=True,group=None):
   folder=LOCAL/'images'/group;folder.mkdir(parents=True,exist_ok=True);shutil.copyfile(jar,folder/'app.jar')
   run([shutil.which('javac') or 'javac','-d',str(folder),str(ACC/'docker/HealthProbe.java')],'health-compile')
   heap='384m' if group=='gateway' else '768m'
-  (folder/'Dockerfile').write_text('FROM eclipse-temurin:21-jre\nENV TZ=Asia/Shanghai\nWORKDIR /app\nRUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --home /app app && mkdir -p /app/logs/csp && chown -R app:app /app/logs\nCOPY app.jar /app/app.jar\nCOPY HealthProbe.class /app/health/HealthProbe.class\nUSER app\nENTRYPOINT ["java","-Xms96m","-Xmx'+heap+'","-XX:MaxDirectMemorySize=96m","-XX:ActiveProcessorCount=2","-jar","/app/app.jar"]\n',encoding='utf8')
+  (folder/'Dockerfile').write_text('FROM eclipse-temurin:21-jre\nENV TZ=Asia/Shanghai\nWORKDIR /app\nRUN groupadd --non-unique --gid '+str(app_gid)+' app && useradd --non-unique --uid '+str(app_uid)+' --gid app --home /app app && mkdir -p /app/logs/csp && chown -R app:app /app/logs\nCOPY app.jar /app/app.jar\nCOPY HealthProbe.class /app/health/HealthProbe.class\nUSER app\nENTRYPOINT ["java","-Xms96m","-Xmx'+heap+'","-XX:MaxDirectMemorySize=96m","-XX:ActiveProcessorCount=2","-jar","/app/app.jar"]\n',encoding='utf8')
   image='tianji-compact/'+group+':local';run(['docker','build','--pull=false','-t',image,str(folder)],'image-'+group)
   manifest[group]={'image':image,'jarSha256':hashlib.sha256(jar.read_bytes()).hexdigest(),'imageId':subprocess.check_output(['docker','image','inspect',image,'--format','{{.Id}}']).decode().strip()}
   print('Built compact '+group,flush=True)

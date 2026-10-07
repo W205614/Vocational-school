@@ -33,6 +33,8 @@ python deploy/compact/rebuild_search.py
 
 初始化只使用版本库中的结构、权限目录和合成演示数据，不读取本机历史 JAR 或旧用户订单。遇到已有业务库但没有本初始化器日志时直接拒绝覆盖。`.env`、签名密钥、账号、配置、对象和报告保存在被忽略的 `.local` 中；演示登录账号查看 `.local/accounts.json`，不要提交该文件。每个运行账号只有所属库的 DML 权限，DDL 由迁移入口执行。
 
+Linux 构建使用当前非 root 用户的 UID/GID 创建镜像用户，匹配媒资 bind mount 的所有者，避免上传文件和宿主备份互相失去权限；Windows 或 root 执行构建时仍使用非 root UID/GID 10001。恢复到不同 UID 的 Linux 主机时，需要单独核对对象目录与镜像用户的权限。CI 失败诊断只导出已脱敏的状态和日志片段，私有配置不上传。
+
 积分赛季归档表不再由运行账号动态创建；新增赛季后执行 `python deploy/compact/setup.py migrate` 预建归档表。数据库触发器更新账号安全版本；改密、禁用或修改角色后，网关最长缓存 5 秒，旧会话随后失效。刷新必须携带 `audience=student` 或 `audience=admin`，会话可独立撤销。
 
 单批启动可用 `setup.py up --group identity`，随后 commerce、education、support、gateway。所有合并组件都应通过验收后才允许历史入口切换。

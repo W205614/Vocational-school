@@ -78,15 +78,20 @@ jobs:
       - run: sleep 32 && python deploy/compact/run_browser.py
       - run: python deploy/compact/audit_smoke.py
       - run: python deploy/compact/redis_roundtrip.py
+      - name: Capture redacted diagnostics before stopping failed services
+        if: failure()
+        run: python deploy/compact/diagnose_ci.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: compact-sanitized-results
+          include-hidden-files: true
           path: |
             deploy/compact/.local/browser-result.json
             deploy/compact/.local/security-smoke.json
             deploy/compact/.local/audit-smoke.json
             deploy/compact/.local/redis-recovery-proof.json
+            deploy/compact/.local/ci-diagnostics.json
       - name: Stop isolated CI processes; retain data for failure diagnostics
         if: always()
         run: docker compose -p tianji-compact -f deploy/compact/compose.yaml --env-file deploy/compact/.env stop
