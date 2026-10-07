@@ -36,7 +36,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-pay:
-    image: tianji-final/pay:ee045c7
+    image: tianji-final/pay:ux-20261007
     restart: unless-stopped
     env_file:
     - ./.local/app.env
@@ -623,7 +623,7 @@ services:
       start_period: 20s
       retries: 30
   web-student:
-    image: tianji-final/student:ee045c7
+    image: tianji-final/student:ux-20261007
     restart: unless-stopped
     environment:
       GW_UPSTREAM: app-gateway:23310
@@ -635,7 +635,7 @@ services:
       app-gateway:
         condition: service_healthy
   web-admin:
-    image: tianji-final/admin:ee045c7
+    image: tianji-final/admin:ux-20261007
     restart: unless-stopped
     environment:
       GW_UPSTREAM: app-gateway:23310

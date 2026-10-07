@@ -23,6 +23,8 @@ def main():
   if isinstance(x,list):return [replace(v) for v in x]
   return replacement.get(x,x) if isinstance(x,str) else x
  images=json.loads((SOURCE/'containers/images.json').read_text(encoding='utf8'))
+ overrides=LOCAL/'backend-images.json'
+ if overrides.exists():images.update(json.loads(overrides.read_text(encoding='utf8')))
  services={}
  for name,(module,main,port,db) in MODULES.items():
   config=replace(yaml.safe_load((SOURCE/'containers/full'/(name+'.yml')).read_text(encoding='utf8')))
@@ -30,7 +32,7 @@ def main():
   (LOCAL/'configs'/(name+'.yml')).write_text(yaml.safe_dump(config,allow_unicode=True,sort_keys=False),encoding='utf8')
   image=images[name];actual=subprocess.check_output(['docker','image','inspect',image['image'],'--format','{{.Id}}']).decode().strip()
   if actual!=image['imageId']:raise RuntimeError('Verified image changed '+name)
-  tag='tianji-final/'+name+':'+RELEASE;subprocess.run(['docker','tag',actual,tag],check=True)
+  tag=image.get('finalTag','tianji-final/'+name+':'+RELEASE);subprocess.run(['docker','tag',actual,tag],check=True)
   services['app-'+name]={'image':tag,'restart':'unless-stopped','env_file':['./.local/app.env'],'environment':{'APP_PORT':str(port)},'ports':['127.0.0.1:'+str(port)+':'+str(port)],'volumes':['./.local/configs/'+name+'.yml:/run/acceptance/application.yml:ro','./.local/signing.jks:/run/acceptance/signing.jks:ro','./.local/objects:/run/objects'],'mem_limit':'768m','cpus':2,'healthcheck':{'test':['CMD','java','-Xms16m','-Xmx32m','-cp','/app/health','HealthProbe'],'interval':'10s','timeout':'4s','start_period':'40s','retries':30},'depends_on':{n:{'condition':'service_healthy'} for n in ['mysql','redis','rabbitmq']}}
   if name=='search':services['app-'+name]['depends_on']['elasticsearch']={'condition':'service_healthy'}
   if name=='gateway':services['app-'+name]['depends_on']['app-auth']={'condition':'service_healthy'}
@@ -55,7 +57,7 @@ def main():
   service['healthcheck']={'test':['CMD-SHELL','wget -q -O /dev/null http://127.0.0.1:'+('9090/-/ready' if name=='prometheus' else '3000/api/health')],'interval':'10s','timeout':'5s','start_period':'20s','retries':30} if name in ['prometheus','grafana'] else service.get('healthcheck',{})
   services[name]=service
  for app,port,alias in [('student',23500,80),('admin',23501,81)]:
-  tag='tianji-final/'+app+':'+RELEASE;subprocess.run(['docker','tag',images[app]['imageId'],tag],check=True)
+  tag='tianji-final/'+app+':ux-20261007'
   services['web-'+app]={'image':tag,'restart':'unless-stopped','environment':{'GW_UPSTREAM':'app-gateway:23310'},'ports':['127.0.0.1:'+str(port)+':8080','127.0.0.1:'+str(alias)+':8080'],'mem_limit':'128m','depends_on':{'app-gateway':{'condition':'service_healthy'}}}
  volumes={name.replace('acceptance_','final_'):{} for name in list(infra['volumes'])+list(extra['volumes'])}
  (BASE/'compose.yaml').write_text(yaml.safe_dump({'name':'tianji-final','services':services,'volumes':volumes},sort_keys=False),encoding='utf8')

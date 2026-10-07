@@ -25,7 +25,12 @@ def main():
  notes_values=','.join(notes_substitutions.get(c,'`'+c+'`') for c in columns)
  mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+notes_values+' FROM course WHERE id=1','tj_course')
  mysql(f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections) VALUES({notes_lesson},{accounts['student']['id']},{notes_course},NOW()+INTERVAL 1 YEAR,0,0)",'tj_learning')
- fixture=dict(marker=marker,notesCourse=str(notes_course),notesLesson=str(notes_lesson),course=str(course),chapter=str(chapter),video=str(video),exam=str(exam),objective=str(objective),subjective=str(subjective),name='Browser course '+marker)
+ # A current free course verifies enrollment without rewriting expired legacy courses.
+ free_course=course+20
+ free_substitutions={**substitutions,'id':str(free_course),'name':"'Browser free "+marker+"'",'free':'1','price':'0','section_num':'1'}
+ free_values=','.join(free_substitutions.get(c,'`'+c+'`') for c in columns)
+ mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+free_values+' FROM course WHERE id=1','tj_course')
+ fixture=dict(marker=marker,freeCourse=str(free_course),notesCourse=str(notes_course),notesLesson=str(notes_lesson),course=str(course),chapter=str(chapter),video=str(video),exam=str(exam),objective=str(objective),subjective=str(subjective),name='Browser course '+marker)
  (LOCAL/'browser-fixture.json').write_text(json.dumps(fixture,indent=2))
  print('Fresh isolated browser fixtures created')
 if __name__=='__main__':main()

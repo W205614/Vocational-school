@@ -1,0 +1,221 @@
+{
+  "at": "2026-10-07T02:59:09.588026+00:00",
+  "scope": "Local simulated-provider browser acceptance",
+  "browser": {
+    "passed": 24,
+    "skippedByAudience": 12,
+    "failed": 0,
+    "finalCssLayoutPassed": 6,
+    "widths": [
+      1440,
+      845,
+      390
+    ],
+    "concurrentPaymentRequests": 10,
+    "samePaymentLink": true,
+    "persistedPaymentRows": 1
+  },
+  "paymentReactor": {
+    "passed": 14,
+    "failed": 0,
+    "skipped": 0,
+    "classes": [
+      "com.tianji.common.reliability.AcceptanceFaultsTest",
+      "com.tianji.common.reliability.CookieBuilderTest",
+      "com.tianji.common.reliability.PageQueryTest",
+      "com.tianji.common.reliability.ResponseConverterTest",
+      "com.tianji.pay.reliability.ProviderSettlementTest"
+    ],
+    "database": "acceptance_pay"
+  },
+  "services": [
+    {
+      "service": "app-auth",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/auth:ee045c7"
+    },
+    {
+      "service": "app-course",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/course:ee045c7"
+    },
+    {
+      "service": "app-data",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/data:ee045c7"
+    },
+    {
+      "service": "app-exam",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/exam:ee045c7"
+    },
+    {
+      "service": "app-gateway",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/gateway:ee045c7"
+    },
+    {
+      "service": "app-learning",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/learning:ee045c7"
+    },
+    {
+      "service": "app-media",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/media:ee045c7"
+    },
+    {
+      "service": "app-message",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/message:ee045c7"
+    },
+    {
+      "service": "app-pay",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/pay:ux-20261007"
+    },
+    {
+      "service": "app-promotion",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/promotion:ee045c7"
+    },
+    {
+      "service": "app-remark",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/remark:ee045c7"
+    },
+    {
+      "service": "app-search",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/search:ee045c7"
+    },
+    {
+      "service": "app-trade",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/trade:ee045c7"
+    },
+    {
+      "service": "app-user",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/user:ee045c7"
+    },
+    {
+      "service": "elasticsearch",
+      "state": "running",
+      "health": "healthy",
+      "image": "docker.elastic.co/elasticsearch/elasticsearch:7.17.29"
+    },
+    {
+      "service": "grafana",
+      "state": "running",
+      "health": "healthy",
+      "image": "grafana/grafana:11.5.2"
+    },
+    {
+      "service": "mysql",
+      "state": "running",
+      "health": "healthy",
+      "image": "mysql:8.4"
+    },
+    {
+      "service": "prometheus",
+      "state": "running",
+      "health": "healthy",
+      "image": "prom/prometheus:v3.10.0"
+    },
+    {
+      "service": "rabbitmq",
+      "state": "running",
+      "health": "healthy",
+      "image": "rabbitmq:4.1-management"
+    },
+    {
+      "service": "redis",
+      "state": "running",
+      "health": "healthy",
+      "image": "redis:7.4-alpine"
+    },
+    {
+      "service": "web-admin",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/admin:ux-20261007"
+    },
+    {
+      "service": "web-student",
+      "state": "running",
+      "health": "healthy",
+      "image": "tianji-final/student:ux-20261007"
+    }
+  ],
+  "images": {
+    "student": {
+      "image": "tianji-final/student:ux-20261007",
+      "imageId": "sha256:5f62074966bdddad1b3c216661fef2bb0b29806f3f980c9bc86b149f2ee9d4a1"
+    },
+    "admin": {
+      "image": "tianji-final/admin:ux-20261007",
+      "imageId": "sha256:9058decac703a5642b6c8140fd7e97748520a23ac61fab8d5b2682738a639b71"
+    },
+    "pay": {
+      "image": "tianji-final/pay:ux-20261007",
+      "finalTag": "tianji-final/pay:ux-20261007",
+      "imageId": "sha256:066c99913aee603e83266ae9187a524673424b897624f609300843348f8a7784",
+      "jarSha256": "702fcd865a9780f236fc17f6be6c08629f69f92b9f6f0a372956205cfcc383c5"
+    }
+  },
+  "history": {
+    "status": "PASSED",
+    "completedSections": 2,
+    "lessonCompletedCount": 2,
+    "passedExamScore": 20,
+    "privateNoteRetained": true
+  },
+  "fixtureArchive": {
+    "status": "PASSED",
+    "unpublishedCourses": 9,
+    "courseIds": [
+      "810000017913369700",
+      "810000017913376620",
+      "810000017913398860",
+      "810000017913401870",
+      "810000017913409020",
+      "810000017913411750",
+      "810000017913411770",
+      "810000017913413500",
+      "810000017913413520"
+    ],
+    "historyRetained": true
+  },
+  "screenshots": {
+    "admin-1440.png": "9ac384e6bfb5d605428593337726ceb36d9737669e3d4320c475804ec7e2b6ef",
+    "admin-390.png": "d7fe4c78dae5ca78745fb13bc238c3fb21f025c5dd7059b4f3e368a6e6f25f13",
+    "admin-browser.png": "f386c8d8c1432addb9634450e2c9e3561a17a4bdd650e629952daae5c9a74c39",
+    "course-learning.png": "48bbc0e74beeac856b7409b2b7dd6aa26fbf5f262fd29e55836678821a743249",
+    "exam-390.png": "66ff758ffa5f7737225402809ae81dda31e3ef29028eea9c01dc6dfc2cd71d14",
+    "student-1440.png": "d01fc42013926e95afea2086bb64ffd9cada27aad8706c4de219f81a616631b5",
+    "student-390.png": "96712c73850539590770ae5f6f0f63e1ab213a8a822f6c9678b4148ad3deee92",
+    "student-browser.png": "4fe7b31e49d134a9632e05a0a90c6234a50f03376e7ca049de6dca0959f55788"
+  },
+  "logSha256": {
+    "ux-browser-final.log": "ef4aa89499b1731990f340d62ed6392d13f6629799661e85514faefcd3da9af0",
+    "ux-layout-final.log": "169a1f0e8aa2404ecf65084120464e3d38ee5dde197c2b767b28458c25002e32",
+    "ux-pay-tests.log": "f96fc0108d089bd02d291826d9fc85341e832c2f415476e7ed34fc9231ad5fb4"
+  },
+  "realPaymentVerified": false,
+  "productionCapacityMeasured": false
+}
