@@ -6,10 +6,12 @@ import com.tianji.pay.third.model.RefundResponse;
 import com.tianji.pay.third.wx.WxPayClient;
 import com.tianji.pay.third.wx.WxPayService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
+@EnabledIfEnvironmentVariable(named="TJ_REAL_PAYMENT_TESTS", matches="true")
 public class WxPayTest {
     @Autowired
     private WxPayClient wxPayClient;

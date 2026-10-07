@@ -54,7 +54,9 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
     private final ProviderRequestGuard requests;
 
     @Override
-    @Lock(name = PayConstants.RedisKeyFormatter.PAY_APPLY, leaseTime = 3, autoUnlock = false)
+    // Serialize provider creation, then immediately let retries read the stored link.
+    // The watchdog keeps the lock alive while an external provider is still responding.
+    @Lock(name = PayConstants.RedisKeyFormatter.PAY_APPLY)
     public String applyPayOrder(PayApplyDTO payApplyDTO) {
         log.debug("准备创建支付单，业务订单号：{}", payApplyDTO.getBizOrderNo());
         // 1.选择支付渠道
