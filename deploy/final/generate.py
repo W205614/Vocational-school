@@ -22,6 +22,7 @@ def main():
   if isinstance(x,dict):return {k:replace(v) for k,v in x.items()}
   if isinstance(x,list):return [replace(v) for v in x]
   return replacement.get(x,x) if isinstance(x,str) else x
+ (LOCAL/'configs'/'dns.security').write_text('networkaddress.cache.ttl=10\nnetworkaddress.cache.negative.ttl=2\n',encoding='utf8')
  images=json.loads((SOURCE/'containers/images.json').read_text(encoding='utf8'))
  overrides=LOCAL/'backend-images.json'
  if overrides.exists():images.update(json.loads(overrides.read_text(encoding='utf8')))
@@ -29,11 +30,14 @@ def main():
  for name,(module,main,port,db) in MODULES.items():
   config=replace(yaml.safe_load((SOURCE/'containers/full'/(name+'.yml')).read_text(encoding='utf8')))
   config['spring']['rabbitmq']['username']='tianji'
+  if name=='media':
+   excludes=config.setdefault('tj',{}).setdefault('auth',{}).setdefault('resource',{}).setdefault('excludeLoginPaths',[])
+   if '/course-covers/*' not in excludes:excludes.append('/course-covers/*')
   (LOCAL/'configs'/(name+'.yml')).write_text(yaml.safe_dump(config,allow_unicode=True,sort_keys=False),encoding='utf8')
   image=images[name];actual=subprocess.check_output(['docker','image','inspect',image['image'],'--format','{{.Id}}']).decode().strip()
   if actual!=image['imageId']:raise RuntimeError('Verified image changed '+name)
   tag=image.get('finalTag','tianji-final/'+name+':'+RELEASE);subprocess.run(['docker','tag',actual,tag],check=True)
-  services['app-'+name]={'image':tag,'restart':'unless-stopped','env_file':['./.local/app.env'],'environment':{'APP_PORT':str(port)},'ports':['127.0.0.1:'+str(port)+':'+str(port)],'volumes':['./.local/configs/'+name+'.yml:/run/acceptance/application.yml:ro','./.local/signing.jks:/run/acceptance/signing.jks:ro','./.local/objects:/run/objects'],'mem_limit':'768m','cpus':2,'healthcheck':{'test':['CMD','java','-Xms16m','-Xmx32m','-cp','/app/health','HealthProbe'],'interval':'10s','timeout':'4s','start_period':'40s','retries':30},'depends_on':{n:{'condition':'service_healthy'} for n in ['mysql','redis','rabbitmq']}}
+  services['app-'+name]={'image':tag,'restart':'unless-stopped','env_file':['./.local/app.env'],'environment':{'APP_PORT':str(port),'JAVA_TOOL_OPTIONS':'-Djava.security.properties=/run/acceptance/dns.security'},'ports':['127.0.0.1:'+str(port)+':'+str(port)],'volumes':['./.local/configs/dns.security:/run/acceptance/dns.security:ro','./.local/configs/'+name+'.yml:/run/acceptance/application.yml:ro','./.local/signing.jks:/run/acceptance/signing.jks:ro','./.local/objects:/run/objects'],'mem_limit':'768m','cpus':2,'healthcheck':{'test':['CMD','java','-Xms16m','-Xmx32m','-cp','/app/health','HealthProbe'],'interval':'10s','timeout':'4s','start_period':'40s','retries':30},'depends_on':{n:{'condition':'service_healthy'} for n in ['mysql','redis','rabbitmq']}}
   if name=='search':services['app-'+name]['depends_on']['elasticsearch']={'condition':'service_healthy'}
   if name=='gateway':services['app-'+name]['depends_on']['app-auth']={'condition':'service_healthy'}
  infra=yaml.safe_load((ACC/'compose.yaml').read_text(encoding='utf8'))

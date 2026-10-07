@@ -7,9 +7,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23895'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23895:23895
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/data.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -42,9 +44,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23883'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23883:23883
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/pay.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -77,9 +81,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23892'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23892:23892
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/promotion.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -112,9 +118,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23890'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23890:23890
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/learning.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -147,9 +155,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23888'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23888:23888
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/trade.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -176,15 +186,17 @@ services:
       rabbitmq:
         condition: service_healthy
   app-exam:
-    image: tianji-final/exam:ee045c7
+    image: tianji-final/exam:ux-draft-20261007
     restart: unless-stopped
     env_file:
     - ./.local/app.env
     environment:
       APP_PORT: '23885'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23885:23885
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/exam.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -211,15 +223,17 @@ services:
       rabbitmq:
         condition: service_healthy
   app-course:
-    image: tianji-final/course:ee045c7
+    image: tianji-final/course:ux-course-20261007
     restart: unless-stopped
     env_file:
     - ./.local/app.env
     environment:
       APP_PORT: '23881'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23881:23881
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/course.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -252,9 +266,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23882'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23882:23882
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/user.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -287,9 +303,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23884'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23884:23884
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/auth.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -316,15 +334,17 @@ services:
       rabbitmq:
         condition: service_healthy
   app-media:
-    image: tianji-final/media:ee045c7
+    image: tianji-final/media:ux-admin-20261007
     restart: unless-stopped
     env_file:
     - ./.local/app.env
     environment:
       APP_PORT: '23886'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23886:23886
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/media.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -357,9 +377,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23891'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23891:23891
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/remark.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -392,9 +414,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23889'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23889:23889
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/search.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -429,9 +453,11 @@ services:
     - ./.local/app.env
     environment:
       APP_PORT: '23887'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23887:23887
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/message.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects
@@ -458,15 +484,17 @@ services:
       rabbitmq:
         condition: service_healthy
   app-gateway:
-    image: tianji-final/gateway:ee045c7
+    image: tianji-final/gateway:ux-dns-20261007
     restart: unless-stopped
     env_file:
     - ./.local/app.env
     environment:
       APP_PORT: '23310'
+      JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
     - 127.0.0.1:23310:23310
     volumes:
+    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
     - ./.local/configs/gateway.yml:/run/acceptance/application.yml:ro
     - ./.local/signing.jks:/run/acceptance/signing.jks:ro
     - ./.local/objects:/run/objects

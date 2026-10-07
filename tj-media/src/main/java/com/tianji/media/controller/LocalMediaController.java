@@ -3,7 +3,13 @@ import com.tianji.media.storage.local.LocalObjectStore;import com.tianji.common.
 import lombok.RequiredArgsConstructor;import org.springframework.web.bind.annotation.*;import org.springframework.http.*;import org.springframework.core.io.Resource;import org.springframework.web.multipart.MultipartFile;import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;import java.util.*;
 @RestController @RequiredArgsConstructor @ConditionalOnProperty(name="tj.local-storage.enabled",havingValue="true")
 public class LocalMediaController {
- private final LocalObjectStore store;private final OperationStore operations;
+ private final LocalObjectStore store;private final OperationStore operations;private final com.tianji.media.storage.local.LocalCourseCoverStore covers;
+ @PostMapping("/api/v2/admin/course-cover-upload") public Map<String,String> uploadCover(@RequestParam MultipartFile file)throws java.io.IOException{
+  UserContext.requireAdmin();try(var input=file.getInputStream()){return Map.of("path",covers.upload(input,file.getSize()));}
+ }
+ @GetMapping("/course-covers/{key}") public ResponseEntity<Resource> cover(@PathVariable String key){
+  Resource resource=covers.read(key);return ResponseEntity.ok().contentType(key.endsWith(".png")?MediaType.IMAGE_PNG:MediaType.IMAGE_JPEG).header("X-Content-Type-Options","nosniff").cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(30)).cachePublic().immutable()).body(resource);
+ }
  @PostMapping("/api/v2/admin/media-upload") public ResponseEntity<?> upload(@RequestParam MultipartFile file,@RequestParam float duration,@RequestHeader("Idempotency-Key") String key)throws java.io.IOException{
   UserContext.requireAdmin();if(key==null || !key.matches("[A-Za-z0-9_.:-]{1,128}"))throw new com.tianji.common.exceptions.BadRequestException("需要有效的 Idempotency-Key");String name=file.getOriginalFilename();
   if(!Float.isFinite(duration) || duration<=0 || duration>86400 || name==null || name.length()>255 || !name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|webm)"))throw new com.tianji.common.exceptions.BadRequestException("请提供 MP4 或 WebM 视频及有效模拟时长");

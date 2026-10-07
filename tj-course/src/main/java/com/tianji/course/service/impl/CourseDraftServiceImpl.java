@@ -216,11 +216,11 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                 //1.8.设置实付金额
                 courseBaseInfoVO.setRealPayAmount(coursePurchaseInfoDTO.getRealPayAmount());
                 //1.9.设置课程详情
-                courseBaseInfoVO.setDetail(courseContent.getCourseDetail());
+                courseBaseInfoVO.setDetail(courseContent == null ? "" : courseContent.getCourseDetail());
                 //1.10.设置课程介绍
-                courseBaseInfoVO.setIntroduce(courseContent.getCourseIntroduce());
+                courseBaseInfoVO.setIntroduce(courseContent == null ? "" : courseContent.getCourseIntroduce());
                 //1.11.设置课程适用人群
-                courseBaseInfoVO.setUsePeople(courseContent.getUsePeople());
+                courseBaseInfoVO.setUsePeople(courseContent == null ? "" : courseContent.getUsePeople());
                 //1.12.设置小节总数量
                 courseBaseInfoVO.setCataTotalNum(course.getSectionNum());
             }
@@ -236,11 +236,11 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                 //2.4.查询课程内容信息
                 CourseContentDraft courseContentDraft = courseContentDraftMapper.selectById(id);
                 //2.5.设置课程详情
-                courseBaseInfoVO.setDetail(courseContentDraft.getCourseDetail());
+                courseBaseInfoVO.setDetail(courseContentDraft == null ? "" : courseContentDraft.getCourseDetail());
                 //2.6.设置课程介绍
-                courseBaseInfoVO.setIntroduce(courseContentDraft.getCourseIntroduce());
+                courseBaseInfoVO.setIntroduce(courseContentDraft == null ? "" : courseContentDraft.getCourseIntroduce());
                 //2.7.适用人群
-                courseBaseInfoVO.setUsePeople(courseContentDraft.getUsePeople());
+                courseBaseInfoVO.setUsePeople(courseContentDraft == null ? "" : courseContentDraft.getUsePeople());
                 //2.8.课程章节数
                 courseBaseInfoVO.setCataTotalNum(courseDraft.getSectionNum());
                 //2.9.设置课程评分
@@ -369,7 +369,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                 1 : NumberUtils.null2Zero(course.getPublishTimes()) + 1;
         courseToShelf.setPublishTimes(publishTimes);
         // 4.4.6.评分
-        courseToShelf.setScore((int)(Math.random() * 10) + 40);
+        courseToShelf.setScore(course == null ? 0 : NumberUtils.null2Zero(course.getScore()));
 
         //4.5.首次上架
         if (isFirstUpShelf) {

@@ -26,7 +26,7 @@ public class V2Routes {
   routes.route("v2-promotion",r->r.path("/api/v2/coupons/**","/api/v2/coupon-exchanges/**").uri(environment.getProperty("tj.routes.promotion","lb://promotion-service")));
   routes.route("v2-trade",r->r.path("/api/v2/orders/**","/api/v2/admin/dashboard","/api/v2/admin/payment-conflicts/**","/api/v2/admin/compensations/**").uri(environment.getProperty("tj.routes.trade","lb://trade-service")));
   routes.route("v2-message-delivery",r->r.path("/api/v2/admin/deliveries/**").uri(environment.getProperty("tj.routes.message","lb://message-service")));
-  routes.route("v2-media-upload",r->r.path("/api/v2/admin/media-upload").uri(environment.getProperty("tj.routes.media","lb://media-service")));
+  routes.route("v2-media-upload",r->r.path("/api/v2/admin/media-upload","/api/v2/admin/course-cover-upload").uri(environment.getProperty("tj.routes.media","lb://media-service")));
   routes.route("v2-storage-cleanup",r->r.path("/api/v2/admin/storage-cleanups/**").uri(environment.getProperty("tj.routes.media","lb://media-service")));
   routes.route("v2-search-projection",r->r.path("/api/v2/admin/search-projections/**").uri(environment.getProperty("tj.routes.search","lb://search-service")));
   routes.route("v2-exam",r->r.path("/api/v2/exam-papers/**","/api/v2/exam-attempts/**","/api/v2/admin/exam-papers/**","/api/v2/teacher/exam-attempts/**").uri(environment.getProperty("tj.routes.exam","lb://exam-service")));

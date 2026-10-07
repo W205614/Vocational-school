@@ -21,10 +21,10 @@ for name in args.services:
   for method,operation in item.items():
    if method not in {'get','post','put','delete','patch'}:continue
    for status,response in operation.get('responses',{}).items():
-    if status.startswith('2') and not response.get('content') and not path.startswith('/local-content/'):
+    if status.startswith('2') and not response.get('content') and not path.startswith(('/local-content/','/course-covers/')):
      response['content']={'application/json':{'schema':{'type':'null'}}}
     for content_type,media in list(response.get('content',{}).items()):
-     if content_type not in ('application/json','*/*') or path.startswith('/local-content/'):continue
+     if content_type not in ('application/json','*/*') or path.startswith(('/local-content/','/course-covers/')):continue
      if media.get('schema',{}).get('format')=='binary':continue
      if content_type=='*/*':response['content']['application/json']=response['content'].pop(content_type)
      original=media.get('schema',{})

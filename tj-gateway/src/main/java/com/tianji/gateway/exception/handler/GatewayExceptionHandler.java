@@ -56,6 +56,10 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler, Ordere
         } else if (ex instanceof NotFoundException) {
             message = "服务不存在";
             response.setStatusCode(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE);
+        } else if (unavailable(ex)) {
+            code=503;message="服务暂时不可用，请稍后重试";
+            response.setStatusCode(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE);
+            writeLog(exchange,ex);
         } else if (ex instanceof ResponseStatusException) {
             message = ex.getMessage();
             response.setStatusCode(((ResponseStatusException)ex).getStatusCode());
@@ -78,6 +82,12 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler, Ordere
                 Mono.fromSupplier(
                         () -> response.bufferFactory().wrap(resp)
                 ));
+    }
+
+    private boolean unavailable(Throwable error) {
+        for(int i=0;error!=null && i<10;i++,error=error.getCause())
+            if(error instanceof java.net.ConnectException || error instanceof java.net.UnknownHostException || error instanceof io.netty.handler.timeout.ReadTimeoutException || error instanceof io.netty.channel.ConnectTimeoutException)return true;
+        return false;
     }
 
     private void writeLog(ServerWebExchange exchange, Throwable ex) {

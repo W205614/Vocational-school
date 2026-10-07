@@ -30,7 +30,7 @@ public interface ExamClient {
     @GetMapping("/questions/numOfTeacher")
     Map<Long, Integer> countSubjectNumOfTeacher(@RequestParam("ids") Iterable<Long> createrIds);
 
-    @GetMapping("/questions//scores")
+    @GetMapping("/questions/scores")
     Map<Long, Integer> queryQuestionScores(
             @Parameter(description = "要查询的题目的id集合") @RequestParam("ids") Iterable<Long> ids);
 }

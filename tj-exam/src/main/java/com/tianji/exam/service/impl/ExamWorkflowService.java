@@ -64,6 +64,11 @@ public class ExamWorkflowService implements OperationHandler {
         var attempt=lockAttempt(cmd.attemptId());
         if(((Number)attempt.get("user_id")).longValue()!=user) throw new BadRequestException("考试记录不存在");
         if(!"IN_PROGRESS".equals(attempt.get("status"))) return view(cmd.attemptId(),user,false);
+        if(cmd.version()!=null) {
+            var drafts=jdbc.queryForList("SELECT version FROM exam_draft WHERE attempt_id=?",cmd.attemptId());
+            long version=drafts.isEmpty()?0:((Number)drafts.getFirst().get("version")).longValue();
+            if(cmd.version()!=version) throw new ConflictException("草稿已在其他页面更新，请载入最新草稿后提交");
+        }
         Map<Long,String> answers=cmd.answers()==null?Map.of():cmd.answers();
         var questions=jdbc.queryForList("SELECT * FROM exam_paper_question WHERE paper_id=? ORDER BY position",attempt.get("paper_id"));
         Set<Long> valid=new HashSet<>();questions.forEach(q->valid.add(((Number)q.get("question_id")).longValue()));

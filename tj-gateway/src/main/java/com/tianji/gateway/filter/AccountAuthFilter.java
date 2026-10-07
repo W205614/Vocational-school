@@ -32,6 +32,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
             throw new ForbiddenException("内部接口不对外开放");
         String ant=sanitized.getRequest().getMethod().name()+":"+path;
         if(ant.startsWith("GET:/api/v2/services/media/local-content/"))return chain.filter(sanitized);
+        if(ant.matches("GET:/api/v2/services/media/course-covers/[0-9a-f]{64}\\.(png|jpg)"))return chain.filter(sanitized);
         if(ant.equals("POST:/api/v2/auth/accounts/login") || ant.equals("POST:/api/v2/auth/accounts/admin/login") || ant.equals("GET:/api/v2/auth/accounts/refresh"))
             return chain.filter(sanitized);
         if(properties.getExcludePath().stream().anyMatch(p->matcher.match(p,ant))) return chain.filter(sanitized);

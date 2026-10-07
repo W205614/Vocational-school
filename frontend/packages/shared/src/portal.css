@@ -1445,3 +1445,19 @@
 }
 
 .actual-course-cover{width:100%;object-fit:cover;padding:0}
+
+/* Searchable course configuration forms. */
+.entity-picker{width:100%;min-width:0}
+.picker-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.picker-chips .el-tag{max-width:100%;height:auto;min-height:24px;white-space:normal}
+.entity-dialog{width:min(860px,92vw)!important;max-height:88vh;overflow:auto;margin-top:6vh!important}
+.entity-dialog .el-pagination{justify-content:center;margin-top:20px}
+.entity-dialog .toolbar>.el-input{flex:1;min-width:140px}
+.course-base-form .el-cascader,.course-base-form .el-date-editor,.exam-publish-form .el-select{max-width:100%;width:100%}
+.cover-editor{display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin-bottom:12px}
+.cover-editor img{width:200px;height:112px;object-fit:cover;border:1px solid #e3e8ee;border-radius:8px}
+.cover-editor input{max-width:100%}
+.course-base-form .el-form-item__content{display:block}
+.chapter-editor .toolbar>.el-input{flex:1;min-width:160px}
+.selection-summary{padding:12px 16px;border-radius:8px;background:#f1f6ff;color:#315d9c}
+@media(max-width:800px){.el-dialog{width:92vw!important}.entity-dialog .el-pagination{flex-wrap:wrap}.course-base-form .grid,.exam-publish-form .grid{grid-template-columns:1fr}}

@@ -63,7 +63,7 @@ def main():
  resource=config['tj'].setdefault('auth',{}).setdefault('resource',{})
  resource['enable']=True
  resource.setdefault('excludeLoginPaths',[]).append('/actuator/health/**')
- if args.service=='media':resource['excludeLoginPaths'].append('/local-content/**')
+ if args.service=='media':resource['excludeLoginPaths'].extend(['/local-content/**','/course-covers/*'])
  env['TJ_INTERNAL_TOKEN']=secrets['ACCEPTANCE_INTERNAL_TOKEN']
  # All cross-service requests remain inside this acceptance environment.
  clients=spring['cloud'].setdefault('openfeign',{}).setdefault('client',{}).setdefault('config',{})

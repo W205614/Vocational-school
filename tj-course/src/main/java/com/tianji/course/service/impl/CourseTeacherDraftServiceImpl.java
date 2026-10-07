@@ -68,6 +68,9 @@ public class CourseTeacherDraftServiceImpl extends ServiceImpl<CourseTeacherDraf
                             teacherDraft.setCourseId(courseTeacherSaveDTO.getId());
                             //2.2.设置老师id
                             teacherDraft.setTeacherId(teacherInfo.getId());
+                            // 教师 ID 不是关系行主键；每门课程必须生成自己的关系 ID。
+                            teacherDraft.setId(null);
+                            teacherDraft.setIsShow(Boolean.TRUE.equals(teacherInfo.getIsShow()) ? 1 : 0);
                             //2.3.设置课程中老师排序
                             teacherDraft.setCIndex(courseTeacherSaveDTO.getTeachers().indexOf(teacherInfo));
                         });

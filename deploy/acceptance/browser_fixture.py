@@ -16,7 +16,7 @@ def main():
  for i,name,type,parent in [(chapter,'Browser chapter',1,0),(video,'Browser video',2,chapter),(exam,'Browser exam',3,chapter)]:
   mysql(f"INSERT INTO course_catalogue(id,name,course_id,type,parent_catalogue_id,media_duration,c_index,dep_id,creater,updater) VALUES({i},'{name}',{course},{type},{parent},2,{1 if type<3 else 2},0,{admin},{admin})",'tj_course')
  mysql(f"INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES({course},{course},{teacher},1,1,0,NOW(),NOW(),{admin},{admin},0)",'tj_course')
- for i,name,type,answer in [(objective,'Browser objective',2,'1,2'),(subjective,'Browser subjective',5,'reference')]:
+ for i,name,type,answer in [(objective,'Browser objective '+marker,2,'1,2'),(subjective,'Browser subjective '+marker,5,'reference')]:
   mysql(f"INSERT INTO question(id,name,type,cate_id1,cate_id2,cate_id3,difficulty,score,creater,updater) VALUES({i},'{name}',{type},1,2,3,1,10,{admin},{admin});INSERT INTO question_detail(id,options,answer,analysis) VALUES({i},'[\"A\",\"B\",\"C\"]','{answer}','Acceptance');INSERT INTO question_biz(biz_id,question_id) VALUES({exam},{i})",'tj_exam')
  # Independent draft course + historical learning access for note tests.
  # Financial tests refund course 1; they must not remove this test's permission.

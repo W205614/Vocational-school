@@ -12,7 +12,8 @@ def main():
  archive=LOCAL/'backup/final-private-config.zip'
  with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED) as z:
   for f,name in [(BASE/'.env','.env'),(LOCAL/'signing.jks','signing.jks'),(LOCAL/'app.env','app.env')]:z.write(f,name)
-  for f in (LOCAL/'configs').glob('*.yml'):z.write(f,'configs/'+f.name)
+  for f in (LOCAL/'configs').iterdir():
+   if f.is_file() and f.suffix in {'.yml','.security'}:z.write(f,'configs/'+f.name)
  manifest={'at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'databaseCount':12,'sqlBytes':target.stat().st_size,'sqlSha256':hashlib.sha256(target.read_bytes()).hexdigest(),'privateConfigSha256':hashlib.sha256(archive.read_bytes()).hexdigest(),'mediaFiles':{str(f.relative_to(LOCAL/'objects')):hashlib.sha256(f.read_bytes()).hexdigest() for f in (LOCAL/'objects').rglob('*') if f.is_file()}}
  (LOCAL/'backup/final-manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf8')
  print('Validated final SQL and private configuration backed up locally',flush=True)

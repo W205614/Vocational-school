@@ -74,7 +74,9 @@ public class CourseBaseInfoSaveDTO implements Checker {
                 throw new BadRequestException(CourseErrorInfo.Msg.COURSE_SAVE_PRICE_FREE);
             }
         }
-        if(purchaseEndTime.isBefore(DateUtils.now())){
+        // Editing a closed draft must not silently reopen enrollment. Publishing still
+        // validates the deadline in checkBeforeUpShelf; new courses need a future date.
+        if(id == null && purchaseEndTime.isBefore(DateUtils.now())){
             throw new BadRequestException(CourseErrorInfo.Msg.COURSE_SAVE_PURCHASE_ILLEGAL);
         }
 //        if (purchaseStartTime.isAfter(purchaseEndTime)) {

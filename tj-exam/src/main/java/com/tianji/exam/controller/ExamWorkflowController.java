@@ -40,7 +40,7 @@ public class ExamWorkflowController {
     }
     @GetMapping("/exam-attempts/{id}") public Map<String,Object> attempt(@PathVariable long id) {return service.view(id,UserContext.requireUser(),false);}
     @PostMapping("/exam-attempts/{id}/submit") public ResponseEntity<OperationStore.View> submit(@PathVariable long id,@RequestBody Command form,@RequestHeader("Idempotency-Key") String key) {
-        return command(key,new Command("SUBMIT",null,id,null,form.answers(),null,null,null,null,null));
+        return command(key,new Command("SUBMIT",null,id,null,form.answers(),null,null,form.version(),null,null));
     }
     @GetMapping("/teacher/exam-attempts") public List<Map<String,Object>> pending() {
         long user=UserContext.requireUser();Long role=UserContext.getRole();
