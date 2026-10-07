@@ -1,0 +1,579 @@
+{
+  "verifiedAt": "2026-10-07T01:59:27.092460+00:00",
+  "deployment": "tianji-final",
+  "services": [
+    {
+      "service": "elasticsearch",
+      "image": "docker.elastic.co/elasticsearch/elasticsearch:7.17.29",
+      "imageId": "sha256:3f55a7f6f29b95345dc33808d6e914f81d125d4ca90a414e26c81a3521400980",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 1610612736,
+      "volumeNames": [
+        "tianji-final_final_search"
+      ]
+    },
+    {
+      "service": "web-admin",
+      "image": "tianji-final/admin:ee045c7",
+      "imageId": "sha256:839f5c32938347607a0b6b47dbb1bd402dbc5cf9164a9718f57f592ab404bbb5",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 134217728,
+      "volumeNames": []
+    },
+    {
+      "service": "prometheus",
+      "image": "prom/prometheus:v3.10.0",
+      "imageId": "sha256:4a61322ac1103a0e3aea2a61ef1718422a48fa046441f299d71e660a3bc71ae9",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 268435456,
+      "volumeNames": [
+        "tianji-final_final_prometheus"
+      ]
+    },
+    {
+      "service": "grafana",
+      "image": "grafana/grafana:11.5.2",
+      "imageId": "sha256:8b37a2f028f164ce7b9889e1765b9d6ee23fec80f871d156fbf436d6198d32b7",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 268435456,
+      "volumeNames": [
+        "tianji-final_final_grafana"
+      ]
+    },
+    {
+      "service": "mysql",
+      "image": "mysql:8.4",
+      "imageId": "sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 1073741824,
+      "volumeNames": [
+        "tianji-final_final_mysql"
+      ]
+    },
+    {
+      "service": "web-student",
+      "image": "tianji-final/student:ee045c7",
+      "imageId": "sha256:89756bccb31cf6502d17c590b2c5764f1295d94d840854a9b956ce2c8ad9851f",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 134217728,
+      "volumeNames": []
+    },
+    {
+      "service": "app-gateway",
+      "image": "tianji-final/gateway:ee045c7",
+      "imageId": "sha256:24923e81251da3277d6b93056a55c5b0edda4abd72fcbad4a521c5aa9d926c99",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-search",
+      "image": "tianji-final/search:ee045c7",
+      "imageId": "sha256:b01e0f42af642361b89ba61c6e2109df9000c8682d841bae45ad3b9756684ed5",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-media",
+      "image": "tianji-final/media:ee045c7",
+      "imageId": "sha256:4759d1d71b5a3608387deb696e03d3333fa95d8e427de216452e4c92b5fd0d51",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-pay",
+      "image": "tianji-final/pay:ee045c7",
+      "imageId": "sha256:1a358ec176093ff44d69caa329d07772e7898bc67d85ed7faf46aa5da64b1d6b",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-exam",
+      "image": "tianji-final/exam:ee045c7",
+      "imageId": "sha256:1750478fb52dcc9957b08c1a3650e040d6aeb07ebbf3fd6604610d053642e06e",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-learning",
+      "image": "tianji-final/learning:ee045c7",
+      "imageId": "sha256:27e1c16f3db000265167a58ac1a4f4214d7941e535ea7d15ec0ef0172a094fc3",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-data",
+      "image": "tianji-final/data:ee045c7",
+      "imageId": "sha256:218da6a9a3cffd291edb1c29bbceed6a742b8df6f260fd3efa78a232288342d0",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-course",
+      "image": "tianji-final/course:ee045c7",
+      "imageId": "sha256:46984687073f23053f054a10e70f042b3186ed80e321fdc01ec40da01ec15678",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-promotion",
+      "image": "tianji-final/promotion:ee045c7",
+      "imageId": "sha256:cdfa657a44c45d477266f548474876993ab08943a3406129420b57e9cc4dee9f",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-remark",
+      "image": "tianji-final/remark:ee045c7",
+      "imageId": "sha256:c86e059b0e11bfb1c5195993104ed8a72e4ba9037477421646d0f35c40835f48",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-trade",
+      "image": "tianji-final/trade:ee045c7",
+      "imageId": "sha256:73b3910ce9c1fb8c439bf118c7223975f467cacbf2ba4ef84ceccce87bf1daad",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-message",
+      "image": "tianji-final/message:ee045c7",
+      "imageId": "sha256:824a817c03c8c1cb6020eeb3d27dd975bfe3cc215d99117a91ea8bcb8d0b8fed",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-user",
+      "image": "tianji-final/user:ee045c7",
+      "imageId": "sha256:7f9c49a532bae5f77a42ec76a43c03278eb96c325babe1db2a47ce02693274c5",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "app-auth",
+      "image": "tianji-final/auth:ee045c7",
+      "imageId": "sha256:8e7ed801e5901ef3dd5b9f9fe1b999c74bb0f95959829ca134fbc660db6ce732",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 805306368,
+      "volumeNames": []
+    },
+    {
+      "service": "redis",
+      "image": "redis:7.4-alpine",
+      "imageId": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 134217728,
+      "volumeNames": [
+        "tianji-final_final_redis"
+      ]
+    },
+    {
+      "service": "rabbitmq",
+      "image": "rabbitmq:4.1-management",
+      "imageId": "sha256:19c5ee40801d36eaa46020c9e2ff802c4ef7e74839a00b0f8bd43f935f845778",
+      "running": true,
+      "health": "healthy",
+      "oomKilled": false,
+      "restartCount": 0,
+      "memoryLimitBytes": 536870912,
+      "volumeNames": [
+        "tianji-final_final_rabbit"
+      ]
+    }
+  ],
+  "gates": {
+    "rebuild_search": {
+      "status": "PASSED"
+    },
+    "api_smoke": {
+      "status": "PASSED"
+    },
+    "financial_smoke": {
+      "status": "PASSED"
+    },
+    "auxiliary_smoke": {
+      "status": "PASSED"
+    },
+    "page_api_smoke": {
+      "status": "PASSED"
+    },
+    "projection_security_smoke": {
+      "status": "PASSED",
+      "attempts": 2,
+      "priorFailure": "Test environment adaptation fixed; retained in validation report"
+    },
+    "concurrency_edges": {
+      "status": "PASSED",
+      "attempts": 1
+    },
+    "verify_observability": {
+      "status": "PASSED",
+      "attempts": 1
+    },
+    "migration_audit": {
+      "status": "PASSED",
+      "attempts": 1
+    }
+  },
+  "browser": {
+    "passed": 11,
+    "expectedCrossProjectSkips": 7,
+    "desktopAndMobileRetestPassed": 4
+  },
+  "recovery": {
+    "status": "PASSED",
+    "learningCrashRecoverySeconds": 15.52,
+    "groupRestartRecoverySeconds": 90.36,
+    "verifiedTables": 14,
+    "verifiedMediaFiles": 4
+  },
+  "retainedHistory": {
+    "status": "PASSED",
+    "completedSections": 2,
+    "lessonCompletedCount": 2,
+    "passedExamScore": 20,
+    "privateNoteRetained": true
+  },
+  "migration": {
+    "schemaMigrations": 68,
+    "initialExactTables": 58,
+    "relationChecks": {
+      "duplicate_learning_records": 0,
+      "duplicate_favorites": 0,
+      "duplicate_likes": 0,
+      "active_exam_conflicts": 0,
+      "coupon_oversell": 0,
+      "dangling_entitlements": 0,
+      "cancelled_orders_with_entitlements": 0
+    },
+    "baselineSha256": "9a0dbaadb1e30337210cc35adae3fd2d4e1c5dde8c785ab2578469590b81b036",
+    "legacyErrorMessagesArchived": 10
+  },
+  "cleanup": {
+    "removedContainers": 28,
+    "preservedVolumeCount": 17,
+    "otherProjectsUntouched": true
+  },
+  "resourceSample": [
+    {
+      "BlockIO": "21.4MB / 85.6MB",
+      "CPUPerc": "0.26%",
+      "Container": "71f4318c4dc2b968513db9430c4dd0591c393e1c286d1302e47c4013b9b3ff74",
+      "ID": "71f4318c4dc2",
+      "MemPerc": "56.61%",
+      "MemUsage": "869.6MiB / 1.5GiB",
+      "Name": "tianji-final-elasticsearch-1",
+      "NetIO": "5.41kB / 126B",
+      "PIDs": "84"
+    },
+    {
+      "BlockIO": "1.67MB / 4.1kB",
+      "CPUPerc": "0.00%",
+      "Container": "2df8a734d951e80150f88bc226f4e0da0a26038868cc87093f49b771894b6d3b",
+      "ID": "2df8a734d951",
+      "MemPerc": "8.96%",
+      "MemUsage": "11.47MiB / 128MiB",
+      "Name": "tianji-final-web-admin-1",
+      "NetIO": "20.8kB / 14.4kB",
+      "PIDs": "13"
+    },
+    {
+      "BlockIO": "7.2MB / 463kB",
+      "CPUPerc": "0.00%",
+      "Container": "cdf7cd35d08a7c65bf87823bb29114ffb542dc8d8eb960b84ad8a4e60f1aefc0",
+      "ID": "cdf7cd35d08a",
+      "MemPerc": "14.48%",
+      "MemUsage": "37.07MiB / 256MiB",
+      "Name": "tianji-final-prometheus-1",
+      "NetIO": "8.55MB / 272kB",
+      "PIDs": "17"
+    },
+    {
+      "BlockIO": "5.43MB / 81.9kB",
+      "CPUPerc": "0.93%",
+      "Container": "edee065aee9623af00d531bcfaebbc9de4c92b5b5ee53b383aac9b1dccdfb75f",
+      "ID": "edee065aee96",
+      "MemPerc": "26.06%",
+      "MemUsage": "66.7MiB / 256MiB",
+      "Name": "tianji-final-grafana-1",
+      "NetIO": "12.6kB / 5.54kB",
+      "PIDs": "17"
+    },
+    {
+      "BlockIO": "83.8MB / 27.6MB",
+      "CPUPerc": "2.96%",
+      "Container": "dc42e4eec77e8389b2965df9ce118df6a47233c541879a6c98c07b6ca8c8f909",
+      "ID": "dc42e4eec77e",
+      "MemPerc": "51.78%",
+      "MemUsage": "530.2MiB / 1GiB",
+      "Name": "tianji-final-mysql-1",
+      "NetIO": "5.38MB / 19.6MB",
+      "PIDs": "69"
+    },
+    {
+      "BlockIO": "32.8kB / 4.1kB",
+      "CPUPerc": "0.00%",
+      "Container": "8c1225c3724118343ca9d2b29172051d68608db18ba67225e8bd006805a18fac",
+      "ID": "8c1225c37241",
+      "MemPerc": "7.81%",
+      "MemUsage": "10MiB / 128MiB",
+      "Name": "tianji-final-web-student-1",
+      "NetIO": "21.1kB / 14.4kB",
+      "PIDs": "13"
+    },
+    {
+      "BlockIO": "168kB / 1.2MB",
+      "CPUPerc": "0.13%",
+      "Container": "30203d89b48041e92be19dac168d10aca0e70c823e079700098ba3b561779b8d",
+      "ID": "30203d89b480",
+      "MemPerc": "34.03%",
+      "MemUsage": "261.4MiB / 768MiB",
+      "Name": "tianji-final-app-gateway-1",
+      "NetIO": "55.9kB / 39kB",
+      "PIDs": "28"
+    },
+    {
+      "BlockIO": "50.2MB / 1.11MB",
+      "CPUPerc": "6.71%",
+      "Container": "a0d9286e54f6c209e74b4028f8e89b6783ac11167676791b2660df50ae57c49c",
+      "ID": "a0d9286e54f6",
+      "MemPerc": "46.32%",
+      "MemUsage": "355.7MiB / 768MiB",
+      "Name": "tianji-final-app-search-1",
+      "NetIO": "1.29MB / 1.16MB",
+      "PIDs": "100"
+    },
+    {
+      "BlockIO": "77.8kB / 1.11MB",
+      "CPUPerc": "0.38%",
+      "Container": "c68a2d1694415443d465f2783c76eec8bed1a337c4c3e06ac2521a29b999b432",
+      "ID": "c68a2d169441",
+      "MemPerc": "34.77%",
+      "MemUsage": "267MiB / 768MiB",
+      "Name": "tianji-final-app-media-1",
+      "NetIO": "1.82MB / 1.06MB",
+      "PIDs": "33"
+    },
+    {
+      "BlockIO": "49.2kB / 1.22MB",
+      "CPUPerc": "6.98%",
+      "Container": "15c5d3e3e06212dbfae4f7bb779039d4a8dbaed1ec122237b2ab8214b95aeee4",
+      "ID": "15c5d3e3e062",
+      "MemPerc": "43.10%",
+      "MemUsage": "331MiB / 768MiB",
+      "Name": "tianji-final-app-pay-1",
+      "NetIO": "786kB / 952kB",
+      "PIDs": "86"
+    },
+    {
+      "BlockIO": "45.1kB / 1.22MB",
+      "CPUPerc": "0.72%",
+      "Container": "c8f76007a1e5504db966250dfb46c9ea8bad48d1f6b613ba5b9cf3f2ee630207",
+      "ID": "c8f76007a1e5",
+      "MemPerc": "41.18%",
+      "MemUsage": "316.3MiB / 768MiB",
+      "Name": "tianji-final-app-exam-1",
+      "NetIO": "2.24MB / 1.22MB",
+      "PIDs": "38"
+    },
+    {
+      "BlockIO": "49.2kB / 1.22MB",
+      "CPUPerc": "1.33%",
+      "Container": "1466e7abb8403453d9b607aff62f19790f159d7a3e6ab32a8630d9dcdc0af1b7",
+      "ID": "1466e7abb840",
+      "MemPerc": "46.37%",
+      "MemUsage": "356.1MiB / 768MiB",
+      "Name": "tianji-final-app-learning-1",
+      "NetIO": "3.4MB / 1.79MB",
+      "PIDs": "98"
+    },
+    {
+      "BlockIO": "41kB / 1.2MB",
+      "CPUPerc": "0.59%",
+      "Container": "c43f4f7c798f837f87f0c58461a567a1dd7bccf2a70e5fad6964420244e53ea5",
+      "ID": "c43f4f7c798f",
+      "MemPerc": "40.66%",
+      "MemUsage": "312.3MiB / 768MiB",
+      "Name": "tianji-final-app-data-1",
+      "NetIO": "67kB / 501kB",
+      "PIDs": "84"
+    },
+    {
+      "BlockIO": "139kB / 1.22MB",
+      "CPUPerc": "0.79%",
+      "Container": "8e19c1b25e4c4126a667743cc697799f2f8573f886824c2d1c61cfccd447838a",
+      "ID": "8e19c1b25e4c",
+      "MemPerc": "45.66%",
+      "MemUsage": "350.7MiB / 768MiB",
+      "Name": "tianji-final-app-course-1",
+      "NetIO": "789kB / 939kB",
+      "PIDs": "87"
+    },
+    {
+      "BlockIO": "73.7kB / 1.22MB",
+      "CPUPerc": "1.01%",
+      "Container": "d903f38fbd4603280f15f777f7c3768ee86df62b274314d45cced35e081358e9",
+      "ID": "d903f38fbd46",
+      "MemPerc": "45.06%",
+      "MemUsage": "346.1MiB / 768MiB",
+      "Name": "tianji-final-app-promotion-1",
+      "NetIO": "1.55MB / 1.11MB",
+      "PIDs": "94"
+    },
+    {
+      "BlockIO": "77.8kB / 1.11MB",
+      "CPUPerc": "0.35%",
+      "Container": "6e5f5e1838803ca05a9119be0ae77edf84dea852e47a0fc759a87d8845900046",
+      "ID": "6e5f5e183880",
+      "MemPerc": "40.24%",
+      "MemUsage": "309MiB / 768MiB",
+      "Name": "tianji-final-app-remark-1",
+      "NetIO": "799kB / 937kB",
+      "PIDs": "38"
+    },
+    {
+      "BlockIO": "45.1kB / 1.26MB",
+      "CPUPerc": "1.26%",
+      "Container": "5c487838a71495d9b971447c97430a9344fdcd96aa848dea33f9d567ba9735ac",
+      "ID": "5c487838a714",
+      "MemPerc": "46.13%",
+      "MemUsage": "354.3MiB / 768MiB",
+      "Name": "tianji-final-app-trade-1",
+      "NetIO": "3.52MB / 1.76MB",
+      "PIDs": "93"
+    },
+    {
+      "BlockIO": "49.2kB / 1.22MB",
+      "CPUPerc": "0.55%",
+      "Container": "89a490d3b7a5b1713f26fa3f68f56f93cdc9b9708f887b414722e390a79f30d7",
+      "ID": "89a490d3b7a5",
+      "MemPerc": "42.34%",
+      "MemUsage": "325.2MiB / 768MiB",
+      "Name": "tianji-final-app-message-1",
+      "NetIO": "2.52MB / 1.44MB",
+      "PIDs": "43"
+    },
+    {
+      "BlockIO": "49.2kB / 1.11MB",
+      "CPUPerc": "0.41%",
+      "Container": "5dcd4bdd2df87ce48539c296f1ba78e7fc833a7d4f42b91c5607f299ffeebb5d",
+      "ID": "5dcd4bdd2df8",
+      "MemPerc": "39.94%",
+      "MemUsage": "306.7MiB / 768MiB",
+      "Name": "tianji-final-app-user-1",
+      "NetIO": "783kB / 907kB",
+      "PIDs": "38"
+    },
+    {
+      "BlockIO": "77.8kB / 1.12MB",
+      "CPUPerc": "1.03%",
+      "Container": "bd98ff50c4806f858030ed94fcfe1fbd463f3e0c604adc706172ba79a710e80d",
+      "ID": "bd98ff50c480",
+      "MemPerc": "46.69%",
+      "MemUsage": "358.6MiB / 768MiB",
+      "Name": "tianji-final-app-auth-1",
+      "NetIO": "780kB / 984kB",
+      "PIDs": "99"
+    },
+    {
+      "BlockIO": "10.7MB / 0B",
+      "CPUPerc": "1.00%",
+      "Container": "c4bcd0bb89458f22db00681c0f3d0c99250bfa56146b01027dde2a1d8b71aa31",
+      "ID": "c4bcd0bb8945",
+      "MemPerc": "7.17%",
+      "MemUsage": "9.18MiB / 128MiB",
+      "Name": "tianji-final-redis-1",
+      "NetIO": "423kB / 412kB",
+      "PIDs": "6"
+    },
+    {
+      "BlockIO": "26.1MB / 160kB",
+      "CPUPerc": "157.57%",
+      "Container": "55a3969a1fd55af74900a046fdd2fb0a4cba846a5373e361ebce5b3c461d329a",
+      "ID": "55a3969a1fd5",
+      "MemPerc": "38.21%",
+      "MemUsage": "195.6MiB / 512MiB",
+      "Name": "tianji-final-rabbitmq-1",
+      "NetIO": "40.8kB / 28kB",
+      "PIDs": "87"
+    }
+  ],
+  "localSimulation": true,
+  "realProvidersAndMultiNodeHA": "NOT_TESTED"
+}

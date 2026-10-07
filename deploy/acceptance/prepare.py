@@ -1,9 +1,10 @@
 """Isolated acceptance data clone. Original deployment is only read."""
 from pathlib import Path
-import subprocess,secrets,argparse,json,time
+import subprocess,secrets,argparse,json,time,os
 BASE=Path(__file__).resolve().parent
-LOCAL=BASE/'.local'
-COMPOSE=['docker','compose','--project-name','vocational-acceptance','--file',str(BASE/'compose.yaml'),'--env-file',str(BASE/'.env')]
+RUNTIME=Path(os.environ.get('TJ_RUNTIME_HOME',str(BASE))).resolve()
+LOCAL=RUNTIME/'.local'
+COMPOSE=['docker','compose','--project-name',os.environ.get('TJ_RUNTIME_PROJECT','vocational-acceptance'),'--file',str(RUNTIME/'compose.yaml'),'--env-file',str(RUNTIME/'.env')]
 DATABASES=['tj_auth','tj_user','tj_course','tj_learning','tj_trade','tj_promotion','tj_exam','tj_remark','tj_pay','tj_search','tj_message','tj_media']
 def run(args,**kwargs):
     result=subprocess.run(args,check=False,**kwargs)
@@ -20,9 +21,11 @@ def mysql(sql,db=None):
 
 def local_secrets():
     LOCAL.mkdir(exist_ok=True)
-    path=BASE/'.env'
+    path=RUNTIME/'.env'
     if not path.exists():path.write_text('ACCEPTANCE_DB_PASSWORD='+secrets.token_hex(24)+'\nACCEPTANCE_MQ_PASSWORD='+secrets.token_hex(24)+'\n',encoding='utf8')
     values=dict(line.split('=',1) for line in path.read_text(encoding='utf8').splitlines() if '=' in line)
+    if 'FINAL_DB_PASSWORD' in values:
+        return dict(ACCEPTANCE_MQ_USERNAME='tianji',ACCEPTANCE_DB_PASSWORD=values['FINAL_DB_PASSWORD'],ACCEPTANCE_MQ_PASSWORD=values['FINAL_MQ_PASSWORD'],ACCEPTANCE_INTERNAL_TOKEN=values['FINAL_INTERNAL_TOKEN'],ACCEPTANCE_GRAFANA_PASSWORD=values['FINAL_GRAFANA_PASSWORD'])
     if 'ACCEPTANCE_INTERNAL_TOKEN' not in values:
         values['ACCEPTANCE_INTERNAL_TOKEN']=secrets.token_hex(32)
         with path.open('a',encoding='utf8') as output:output.write('\nACCEPTANCE_INTERNAL_TOKEN='+values['ACCEPTANCE_INTERNAL_TOKEN']+'\n')

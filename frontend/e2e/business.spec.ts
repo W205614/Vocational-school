@@ -1,7 +1,7 @@
 import {test,expect,type Page} from '@playwright/test';
 import fs from 'node:fs';import {execFileSync} from 'node:child_process';
-const accounts=JSON.parse(fs.readFileSync('../deploy/acceptance/.local/accounts.json','utf8'));
-const fixture=JSON.parse(fs.readFileSync('../deploy/acceptance/.local/browser-fixture.json','utf8'));
+const accounts=JSON.parse(fs.readFileSync((process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local')+'/accounts.json','utf8'));
+const fixture=JSON.parse(fs.readFileSync((process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local')+'/browser-fixture.json','utf8'));
 async function login(page:Page,role:string,path:string){await page.goto(path);await page.locator('input[autocomplete="username"]').fill(accounts[role].username);await page.locator('input[autocomplete="current-password"]').fill(accounts[role].password);await page.getByRole('button',{name:role==='student'?'登录':'登录管理端',exact:true}).click();await expect(page.locator('.sidebar')).toBeVisible();}
 async function api(page:Page,path:string,method='GET',data?:unknown){const token=await page.evaluate(()=>sessionStorage.getItem('school-token'));const r=await page.request.fetch('/api/v2'+path,{method,data,headers:{Authorization:'Bearer '+token,'Idempotency-Key':crypto.randomUUID()}});const body=await r.json();expect(r.ok(),JSON.stringify(body)).toBeTruthy();expect(body.code).toBe(200);return body.data;}
 async function fill(page:Page,label:string,value:string){await page.locator('.el-form-item').filter({has:page.locator('label').filter({hasText:label})}).first().locator('input').fill(value);}

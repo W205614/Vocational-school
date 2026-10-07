@@ -18,7 +18,14 @@ def main():
  mysql(f"INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES({course},{course},{teacher},1,1,0,NOW(),NOW(),{admin},{admin},0)",'tj_course')
  for i,name,type,answer in [(objective,'Browser objective',2,'1,2'),(subjective,'Browser subjective',5,'reference')]:
   mysql(f"INSERT INTO question(id,name,type,cate_id1,cate_id2,cate_id3,difficulty,score,creater,updater) VALUES({i},'{name}',{type},1,2,3,1,10,{admin},{admin});INSERT INTO question_detail(id,options,answer,analysis) VALUES({i},'[\"A\",\"B\",\"C\"]','{answer}','Acceptance');INSERT INTO question_biz(biz_id,question_id) VALUES({exam},{i})",'tj_exam')
- fixture=dict(marker=marker,course=str(course),chapter=str(chapter),video=str(video),exam=str(exam),objective=str(objective),subjective=str(subjective),name='Browser course '+marker)
+ # Independent draft course + historical learning access for note tests.
+ # Financial tests refund course 1; they must not remove this test's permission.
+ notes_course=course+10;notes_lesson=course+11
+ notes_substitutions={**substitutions,'id':str(notes_course),'name':"'Browser notes "+marker+"'",'status':'1'}
+ notes_values=','.join(notes_substitutions.get(c,'`'+c+'`') for c in columns)
+ mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+notes_values+' FROM course WHERE id=1','tj_course')
+ mysql(f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections) VALUES({notes_lesson},{accounts['student']['id']},{notes_course},NOW()+INTERVAL 1 YEAR,0,0)",'tj_learning')
+ fixture=dict(marker=marker,notesCourse=str(notes_course),notesLesson=str(notes_lesson),course=str(course),chapter=str(chapter),video=str(video),exam=str(exam),objective=str(objective),subjective=str(subjective),name='Browser course '+marker)
  (LOCAL/'browser-fixture.json').write_text(json.dumps(fixture,indent=2))
  print('Fresh isolated browser fixtures created')
 if __name__=='__main__':main()

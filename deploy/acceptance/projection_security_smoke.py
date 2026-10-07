@@ -12,7 +12,7 @@ def publish(exchange,key,payload,event=None):
  identity=event or uuid.uuid4().hex
  if isinstance(payload,dict) and 'eventId' in payload:payload=dict(payload,eventId=identity)
  else:payload=dict(eventId=identity,businessKey='acceptance:'+identity,eventType=key,schemaVersion=1,occurredAt='2026-10-06T00:00:00Z',payload=payload)
- r=requests.post('http://127.0.0.1:23372/api/exchanges/%2F/'+exchange+'/publish',auth=('acceptance',local_secrets()['ACCEPTANCE_MQ_PASSWORD']),json=dict(properties=dict(delivery_mode=2,message_id=identity,content_type='application/json'),routing_key=key,payload=json.dumps(payload),payload_encoding='string'),timeout=10);r.raise_for_status();assert r.json()['routed']
+ r=requests.post('http://127.0.0.1:23372/api/exchanges/%2F/'+exchange+'/publish',auth=(local_secrets().get('ACCEPTANCE_MQ_USERNAME','acceptance'),local_secrets()['ACCEPTANCE_MQ_PASSWORD']),json=dict(properties=dict(delivery_mode=2,message_id=identity,content_type='application/json'),routing_key=key,payload=json.dumps(payload),payload_encoding='string'),timeout=10);r.raise_for_status();assert r.json()['routed']
  return identity
 def doc(identity):
  r=requests.get(ES+'/course/_doc/'+str(identity),timeout=5)

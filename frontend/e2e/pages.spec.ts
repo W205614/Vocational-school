@@ -1,6 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import fs from 'node:fs';import {resources} from '../apps/admin/src/resources';
-const accounts=JSON.parse(fs.readFileSync('../deploy/acceptance/.local/accounts.json','utf8'));
+const accounts=JSON.parse(fs.readFileSync((process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local')+'/accounts.json','utf8'));
 async function login(page:Page,role:string){await page.goto('/');await page.locator('input[autocomplete="username"]').fill(accounts[role].username);await page.locator('input[autocomplete="current-password"]').fill(accounts[role].password);await page.getByRole('button',{name:role==='student'?'登录':'登录管理端',exact:true}).click();await expect(page.locator('.sidebar')).toBeVisible();}
 test('administrator resource pages load persistent data without server errors',async({page},info)=>{
  test.skip(info.project.name!=='admin');test.setTimeout(120000);await login(page,'admin');
