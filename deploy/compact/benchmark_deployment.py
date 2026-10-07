@@ -7,9 +7,22 @@ import shutil
 import subprocess
 import yaml
 
+def bind_source(compose, ref, verify_worktree=True):
+    from setup import LOCAL, ROOT
+    commit = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', ref], text=True).strip()
+    changed = subprocess.check_output(['git', '-C', str(ROOT), 'diff', '--name-only', commit], text=True).splitlines()
+    production = [name for name in changed if '/src/main/' in name or name.endswith('pom.xml') or name.startswith('frontend/')]
+    untracked = subprocess.check_output(['git', '-C', str(ROOT), 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
+    production += [name for name in untracked if '/src/main/' in name or name.endswith('pom.xml')]
+    if verify_worktree and production: raise RuntimeError('Commit does not describe current production source')
+    images = {name: subprocess.check_output(['docker', 'image', 'inspect', value['image'], '--format', '{{.Id}}'], text=True).strip()
+              for name, value in compose['services'].items() if name.startswith(('app-', 'web-'))}
+    (LOCAL / 'build-source.json').write_text(json.dumps({'sourceCommit': commit, 'imageDigests': images}, indent=2), encoding='utf8')
+
 def build_standalone(tag):
     from setup import LOCAL, ROOT, ACC, MODULES, run
     images = {}
+    source_commit = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', tag], text=True).strip()
     for alias, (module, _, _, _) in MODULES.items():
         jar = ROOT / module / 'target' / (Path(module).name + '.jar')
         folder = LOCAL / 'standalone-images' / alias
@@ -19,14 +32,17 @@ def build_standalone(tag):
         run(['javac', '-encoding', 'UTF-8', '-d', str(folder), str(ACC / 'docker' / 'HealthProbe.java')], 'probe-' + alias)
         image = 'tianji-opt/standalone-' + alias + ':' + tag
         run(['docker', 'build', '--pull=false', '-t', image, str(folder)], 'standalone-image-' + alias)
-        images[alias] = {'image': image, 'jarSha256': hashlib.sha256(jar.read_bytes()).hexdigest(),
+        images[alias] = {'image': image, 'sourceCommit': source_commit, 'jarSha256': hashlib.sha256(jar.read_bytes()).hexdigest(),
                          'imageId': subprocess.check_output(['docker', 'image', 'inspect', image, '--format', '{{.Id}}'], text=True).strip()}
         print('Frozen standalone image: ' + alias, flush=True)
     (LOCAL / 'standalone-images.json').write_text(json.dumps(images, indent=2), encoding='utf8')
 
-def standalone():
+def standalone(ref='HEAD'):
     from setup import LOCAL, BASE, PORTS, MODULES, GROUPS
     images = json.loads((LOCAL / 'standalone-images.json').read_text(encoding='utf8'))
+    from setup import ROOT
+    commit = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', ref], text=True).strip()
+    if any(details.get('sourceCommit') != commit for details in images.values()): raise RuntimeError('Standalone image provenance mismatch')
     compose = yaml.safe_load((BASE / 'compose.yaml').read_text(encoding='utf8'))
     aliases = sorted(alias for alias in MODULES if alias != 'gateway')
     ports = {alias: PORTS['gateway'] + 100 + index for index, alias in enumerate(aliases)}
@@ -43,6 +59,8 @@ def standalone():
         config['server']['tomcat'] = {'threads': {'max': 80, 'min-spare': 4}, 'accept-count': 50, 'max-connections': 2000}
         path.write_text(yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding='utf8')
     services = compose['services']
+    compact_images = json.loads((LOCAL / 'images.json').read_text(encoding='utf8'))
+    for web in ('student', 'admin'): services['web-' + web]['image'] = compact_images[web]['imageId']
     for group in GROUPS:
         del services['app-' + group]
     template = services['app-gateway']
@@ -64,6 +82,7 @@ def standalone():
     runtime = {'mode': 'standalone', 'metrics': {alias: targets[alias].replace('app-' + alias, '127.0.0.1') + '/actuator/prometheus' for alias in aliases},
                'javaServices': ['app-' + alias for alias in aliases] + ['app-gateway']}
     (LOCAL / 'benchmark-runtime.json').write_text(json.dumps(runtime, indent=2), encoding='utf8')
+    bind_source(compose, ref, verify_worktree=False)
     print('Standalone benchmark generated: 14 Java applications, same public gateway contract')
 
 def freeze_compact(tag):
@@ -84,6 +103,7 @@ def freeze_compact(tag):
     runtime = {'mode': 'compact', 'metrics': {alias: 'http://127.0.0.1:' + str(PORTS[group]) + '/_modules/' + alias + '/actuator/prometheus' for group, aliases in GROUPS.items() for alias in aliases},
                'javaServices': ['app-' + group for group in list(GROUPS) + ['gateway']]}
     (LOCAL / 'benchmark-runtime.json').write_text(json.dumps(runtime, indent=2), encoding='utf8')
+    bind_source(compose, tag)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -91,5 +111,5 @@ if __name__ == '__main__':
     parser.add_argument('--tag', default='9f97d25')
     args = parser.parse_args()
     if args.action == 'build-standalone': build_standalone(args.tag)
-    elif args.action == 'standalone': standalone()
+    elif args.action == 'standalone': standalone(args.tag)
     else: freeze_compact(args.tag)

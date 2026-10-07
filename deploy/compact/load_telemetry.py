@@ -24,6 +24,8 @@ class Telemetry:
                  'containers': [], 'metrics': {}, 'backgroundChanged': background != self.initial_background}
         raw = subprocess.check_output(['docker', 'stats', '--no-stream', '--format', '{{json .}}', *all_ids], text=True)
         value['containers'] = [json.loads(line) for line in raw.splitlines()]
+        background_short = {identifier[:12] for identifier in background}
+        value['backgroundCpuPercent'] = sum(float(row['CPUPerc'].rstrip('%')) for row in value['containers'] if row.get('ID') in background_short)
         for service in self.runtime['javaServices']:
             container = subprocess.check_output(self.compose + ['ps', '-q', service], text=True).strip()
             if not container: raise RuntimeError('Missing Java process: ' + service)
@@ -41,7 +43,7 @@ class Telemetry:
     def collect(self):
         while not self.stop.is_set():
             try: self.samples.append(self.sample())
-            except Exception as error: self.errors.append(type(error).__name__)
+            except Exception as error: self.errors.append({'type': type(error).__name__, 'reason': str(error)})
             self.stop.wait(10)
 
     def start(self): self.thread.start()
@@ -54,5 +56,6 @@ class Telemetry:
             # Continuing growth is insufficient evidence, not a memory saving.
             if median(tail[-third:]) <= median(tail[:third]) * 1.05:
                 rss = median(tail)
+        heavy_background = sum(sample.get('backgroundCpuPercent', 0) > 100 for sample in self.samples) >= 3
         return {'samples': self.samples, 'telemetryErrors': self.errors, 'javaRssMedianBytes': rss,
-                'contaminated': any(sample['backgroundChanged'] for sample in self.samples)}
+                'contaminated': heavy_background or any(sample['backgroundChanged'] for sample in self.samples)}

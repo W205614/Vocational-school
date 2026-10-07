@@ -28,7 +28,7 @@ def main():
     statements = []; users = []
     for index in range(200):
         uid = BASE_ID + index; username = 'opt-load-' + str(index)
-        values = {'id': str(uid), 'username': "'" + username + "'", 'password': "'" + hashed + "'", 'cell_phone': "'189" + str(index).zfill(8) + "'", 'auth_version': '0', 'status': '1'}
+        values = {'id': str(uid), 'username': "'" + username + "'", 'name': "'" + username + "'", 'password': "'" + hashed + "'", 'cell_phone': "'189" + str(index).zfill(8) + "'", 'auth_version': '0', 'status': '1'}
         for table, columns in schema.items():
             expressions = ','.join(values.get(column, '`' + column + '`') for column in columns)
             statements.append('INSERT INTO tj_user.' + table + '(' + ','.join('`' + column + '`' for column in columns) + ') SELECT ' + expressions + ' FROM tj_user.' + table + ' WHERE id=' + accounts['student']['id'] + ';')
@@ -44,7 +44,7 @@ def main():
         for index in range(20):
             uid = BASE_ID + 500 + role_index * 100 + index
             username = 'opt-' + role + '-' + str(index)
-            values = {'id': str(uid), 'username': "'" + username + "'", 'password': "'" + hashed + "'", 'cell_phone': "'188" + str(role_index * 100 + index).zfill(8) + "'", 'auth_version': '0', 'status': '1'}
+            values = {'id': str(uid), 'username': "'" + username + "'", 'name': "'" + username + "'", 'password': "'" + hashed + "'", 'cell_phone': "'188" + str(role_index * 100 + index).zfill(8) + "'", 'auth_version': '0', 'status': '1'}
             for table, columns in schema.items():
                 expressions = ','.join(values.get(column, '`' + column + '`') for column in columns)
                 statements.append('INSERT INTO tj_user.' + table + '(' + ','.join('`' + column + '`' for column in columns) + ') SELECT ' + expressions + ' FROM tj_user.' + table + ' WHERE id=' + accounts[role]['id'] + ';')

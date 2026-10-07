@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 from setup import LOCAL
-from evidence import save_report, validate
+from evidence import save_report, validate, digest
 from perf_protocol import check_configuration, memory_reduction
 
 def compare(standalone, compact):
@@ -25,6 +25,15 @@ def compare(standalone, compact):
             'javaMemoryReduction': reduction, 'failures': failures,
             'sourceCommit': right.get('sourceCommit'), 'completedRunsPerConfiguration': len(compact.get('runs', []))}
 
+def validate_raw(report, expected):
+    own_manifest = report.get('manifest', {})
+    if not own_manifest or not validate({**report, 'status': 'PASSED'}, own_manifest):
+        return ['raw report binding or timestamps invalid']
+    if own_manifest.get('releaseRunId') != expected.get('releaseRunId'):
+        return ['raw report belongs to an older audit batch']
+    if not report.get('workloadFingerprint'): return ['missing frozen workload fingerprint']
+    return []
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--standalone', required=True, type=Path); parser.add_argument('--compact', required=True, type=Path)
@@ -35,6 +44,15 @@ def main():
     value['baseline'] = compare(reports['baseline_standalone'], reports['baseline_compact'])
     value['rawReports'] = {name: str(getattr(args, name)) for name in reports}
     expected = json.loads((LOCAL / 'release-run.json').read_text(encoding='utf8'))
+    for name, report in reports.items():
+        errors = validate_raw(report, expected)
+        value['failures'].extend(name + ': ' + error for error in errors)
+        if name in ('standalone', 'compact') and report.get('status') != 'PASSED':
+            value['failures'].append(name + ': raw measurement failed')
+        if name.startswith('baseline_') and len(report.get('runs', [])) != 6:
+            value['failures'].append(name + ': baseline schedule incomplete')
+    value['rawReportHashes'] = {name: digest(getattr(args, name)) for name in reports}
+    if value['failures']: value['status'] = 'FAILED'
     # The final compact report must be the current release's exact tested build and data.
     evidence = reports['compact'].get('evidence', {})
     for key in ('sourceCommit', 'imageDigests', 'configFingerprint', 'baseSnapshotFingerprint'):

@@ -11,6 +11,7 @@ import random
 import threading
 import time
 import sys
+import traceback
 # Optional project-local dependency installation avoids changing the host Conda environment.
 sys.path.insert(0, str(Path(__file__).resolve().parent / '.local/python-deps'))
 import pymysql
@@ -55,17 +56,28 @@ class Observer:
         try:
             connection.ping(reconnect=True)
             with connection.cursor() as cursor:
-                cursor.execute(sql, values); row = cursor.fetchone()
+                cursor.execute(sql, values or None); row = cursor.fetchone()
                 return row[0] if row else None
         finally: self.pool.put(connection)
     def close(self):
         while not self.pool.empty(): self.pool.get().close()
+    def drain(self):
+        databases = self.scalar("SELECT GROUP_CONCAT(DISTINCT table_schema) FROM information_schema.tables WHERE table_name='reliability_outbox' AND table_schema LIKE 'tj\\_%'")
+        schemas = databases.split(',') if databases else []
+        end = time.monotonic() + 120
+        while time.monotonic() < end:
+            pending = sum(self.scalar('SELECT COUNT(*) FROM ' + schema + '.reliability_outbox WHERE status<>\'SENT\'') +
+                          self.scalar('SELECT COUNT(*) FROM ' + schema + '.reliability_operation WHERE status=\'PENDING\'') for schema in schemas)
+            if pending == 0: return True
+            time.sleep(.5)
+        return False
     def invariants(self):
         return all(self.scalar(sql) == 0 for sql in [
             'SELECT COUNT(*) FROM tj_promotion.coupon WHERE issue_num>total_num OR used_num>issue_num',
             'SELECT COUNT(*) FROM (SELECT coupon_id,user_id,COUNT(*) n FROM tj_promotion.user_coupon WHERE coupon_id>=850000000000200000 AND coupon_id<850000000000210000 GROUP BY coupon_id,user_id HAVING n>1) duplicate_claims',
             'SELECT COUNT(*) FROM tj_learning.learning_lesson l JOIN tj_course.course c ON c.id=l.course_id WHERE l.user_id>=850000000000000000 AND l.user_id<850000000000000200 AND l.learned_sections>c.section_num',
             'SELECT COUNT(*) FROM tj_exam.exam_attempt WHERE user_id>=850000000000000000 AND user_id<850000000000000200 AND status=\'FINISHED\' AND (score<>20 OR passed<>1)',
+            'SELECT COUNT(*) FROM tj_learning.learning_lesson l LEFT JOIN (SELECT user_id,course_id,COUNT(*) n,SUM(expires_at IS NULL) permanent,MAX(expires_at) expiry FROM tj_learning.learning_entitlement WHERE active=1 AND (expires_at IS NULL OR expires_at>NOW()) GROUP BY user_id,course_id) e ON e.user_id=l.user_id AND e.course_id=l.course_id WHERE l.user_id>=850000000000000000 AND l.user_id<850000000000000200 AND ((COALESCE(e.n,0)=0 AND l.status<>3) OR (COALESCE(e.n,0)>0 AND (l.status=3 OR (e.permanent>0 AND l.expire_time IS NOT NULL) OR (e.permanent=0 AND (l.expire_time IS NULL OR ABS(TIMESTAMPDIFF(SECOND,l.expire_time,e.expiry))>1)))))',
         ])
 
 def worker(actor, end, warm=False):
@@ -90,9 +102,12 @@ def main():
     parser.add_argument('--users', type=int, default=10); parser.add_argument('--seconds', type=int, default=30)
     parser.add_argument('--warm-seconds', type=int, default=300)
     parser.add_argument('--skip-reset', action='store_true')
+    parser.add_argument('--batch-manifest', type=Path)
     args = parser.parse_args()
     if args.protocol != 'smoke' and (args.skip_reset or args.warm_seconds != 300):
         parser.error('Formal protocols require a reset and five-minute warm-up per run')
+    if args.protocol != 'smoke' and args.batch_manifest is None:
+        parser.error('Formal measurements require the shared audit batch manifest')
     import benchmark_snapshot
     benchmark_snapshot.guard()
     env, _ = secrets_config()
@@ -114,7 +129,15 @@ def main():
             if not args.skip_reset: benchmark_snapshot.restore(args.snapshot)
             if expected is None:
                 expected = manifest(LOCAL, COMPOSE, ROOT, args.snapshot)
-                expected['sourceCommit'] = args.source_commit
+                build = json.loads((LOCAL / 'build-source.json').read_text(encoding='utf8'))
+                actual = {name: image for name, image in expected['imageDigests'].items() if name.startswith(('app-', 'web-'))}
+                if build['sourceCommit'] != args.source_commit or build['imageDigests'] != actual:
+                    raise RuntimeError('Frozen build/source binding mismatch')
+                expected['sourceCommit'] = build['sourceCommit']
+                if args.batch_manifest:
+                    batch = json.loads(args.batch_manifest.read_text(encoding='utf8'))
+                    expected['releaseRunId'] = batch['releaseRunId']
+                report['manifest'] = expected
             stats = Stats(); observer = Observer(env['ACCEPTANCE_DB_PASSWORD'])
             actors = []; profiles = allocation(users)
             roles = [name for name, count in profiles.items() for _ in range(count)]
@@ -146,9 +169,10 @@ def main():
                     for future in futures: future.result()
                     measured = time.monotonic()
                     measurements = telemetry.finish(end, users)
+                drained = observer.drain()
                 run = {'users': users, 'repeat': repeat, 'requestedSeconds': seconds, 'elapsedSeconds': measured - measure_started,
                        'sampleStartedAt': sample_started, 'sampleFinishedAt': utcnow(),
-                       'status': 'COMPLETED', 'profiles': profiles, 'invariants': observer.invariants(), **stats.result(), **measurements}
+                       'status': 'COMPLETED', 'profiles': profiles, 'queuesDrained': drained, 'invariants': drained and observer.invariants(), **stats.result(), **measurements}
                 # A worker cannot silently omit a profile while the allocation still looks correct.
                 if any(run['workflowCounts'].get(profile, 0) == 0 for profile in profiles): run['invariants'] = False
                 report['runs'].append(run)
@@ -162,6 +186,7 @@ def main():
         report['status'] = 'PASSED' if not report['failures'] else 'FAILED'
     except BaseException as error:
         report['status'] = 'FAILED'; report['failureType'] = type(error).__name__
+        (output / 'failure.log').write_text(traceback.format_exc(), encoding='utf8')
         if isinstance(error, KeyboardInterrupt): raise
         print('Measurement failed; private diagnostics and partial evidence retained: ' + type(error).__name__, flush=True)
     finally:
