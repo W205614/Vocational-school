@@ -2,7 +2,20 @@
 import {ref,onMounted} from 'vue';import {get} from '../../../../packages/shared/src/client';import {useTask,money,query,type Row} from '../../../../packages/shared/src/ui';import type {components} from '../../../../packages/shared/src/generated/search';import Status from '../../../../packages/shared/src/Status.vue';
 type Course=components['schemas']['CourseVO'];type CoursePage=components['schemas']['PageDTOCourseVO'];
 const failedCovers=ref(new Set<string>()),task=useTask(),keyword=ref(''),page=ref(1),rows=ref<Course[]>([]),total=ref(0),sort=ref(''),categories=ref<Row[]>([]),category=ref(''),free=ref(''),categoryError=ref('');
-async function load(){await task.run(async()=>{const result=await get<CoursePage>('/services/search/courses/portal?'+query({keyword:keyword.value,pageNo:page.value,pageSize:20,sortBy:sort.value,categoryIdLv1:category.value,free:free.value}));rows.value=result.list||[];total.value=Number(result.total||0);});}
+// Keep one request in flight and coalesce rapid filter changes into the latest query.
+let pendingLoad=false;
+async function load(){
+ pendingLoad=true;
+ if(task.busy.value)return;
+ await task.run(async()=>{
+  while(pendingLoad){
+   pendingLoad=false;
+   const result=await get<CoursePage>('/services/search/courses/portal?'+query({keyword:keyword.value,pageNo:page.value,pageSize:20,sortBy:sort.value,categoryIdLv1:category.value,free:free.value}));
+   if(!pendingLoad){rows.value=result.list||[];total.value=Number(result.total||0);}
+  }
+ });
+ if(pendingLoad)void load();
+}
 function filterCategory(id:string){category.value=id;page.value=1;void load();}
 function reset(){keyword.value='';category.value='';free.value='';sort.value='';page.value=1;void load();}
 onMounted(async()=>{void load();try{categories.value=await get<Row[]>('/services/course/categorys/list?status=1');}catch{categoryError.value='课程分类暂时无法加载，仍可搜索课程。';}});

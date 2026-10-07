@@ -27,7 +27,8 @@ jobs:
       - run: python deploy/acceptance/initialize_test_schemas.py
       - run: python deploy/acceptance/prepare_search.py --schema-only
       - name: Real database and broker regressions
-        run: python deploy/acceptance/run_tests.py --modules tj-remark,tj-user,tj-promotion,tj-learning,tj-exam,tj-pay/tj-pay-service,tj-auth/tj-auth-service,tj-search,tj-gateway --tests PageQueryTest,ReliabilityDatabaseTest,ResponseConverterTest,CookieBuilderTest,AcceptanceFaultsTest,LearningReliabilityTest,DelayTaskTest,ExamReliabilityTest,ObjectiveScoringTest,DiscountServiceTest,ProviderSettlementTest,CourseRepositoryBulkTest,FeignBulkheadTest,ReliabilityMetricsTest,AsyncSmsClientReliabilityTest,VerificationCodeReliabilityTest,LikeConcurrencyReliabilityTest
+        run: python deploy/acceptance/run_tests.py --modules tj-remark,tj-user,tj-promotion,tj-learning,tj-exam,tj-pay/tj-pay-service,tj-auth/tj-auth-service,tj-search,tj-gateway,tj-media,tj-course --tests PageQueryTest,ReliabilityDatabaseTest,ResponseConverterTest,CookieBuilderTest,AcceptanceFaultsTest,LearningReliabilityTest,DelayTaskTest,ExamReliabilityTest,ObjectiveScoringTest,DiscountServiceTest,ProviderSettlementTest,CourseRepositoryBulkTest,FeignBulkheadTest,ReliabilityMetricsTest,AsyncSmsClientReliabilityTest,VerificationCodeReliabilityTest,LikeConcurrencyReliabilityTest,ExamDraftReliabilityTest,CourseDeadlineTest,CourseTeacherDraftTest,LocalCourseCoverStoreTest,AccessPolicyTest,SessionStoreTest,JwtSignerPrefixTest,LoginFailureClassificationTest
+      - run: python deploy/compact/check_policy.py
       - name: Build every module
         run: mvn -B -DskipTests verify
       - uses: actions/upload-artifact@v4
@@ -51,3 +52,41 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+
+  compact-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21', cache: maven}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm, cache-dependency-path: frontend/package-lock.json}
+      - run: pip install -r deploy/compact/requirements.txt
+      - run: npm --prefix frontend ci
+      - run: cd frontend && npx playwright install --with-deps chromium
+      - run: python deploy/compact/setup.py prepare
+      - run: python deploy/compact/setup.py init
+      - run: python deploy/compact/run_transport_tests.py
+      - run: python deploy/compact/setup.py build
+      - run: python deploy/compact/setup.py up
+      - run: python deploy/compact/prepare_search.py
+      - run: python deploy/compact/rebuild_search.py
+      - run: python deploy/compact/security_smoke.py
+      - run: sleep 32 && python deploy/compact/run_browser.py
+      - run: python deploy/compact/audit_smoke.py
+      - run: python deploy/compact/redis_roundtrip.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compact-sanitized-results
+          path: |
+            deploy/compact/.local/browser-result.json
+            deploy/compact/.local/security-smoke.json
+            deploy/compact/.local/audit-smoke.json
+            deploy/compact/.local/redis-recovery-proof.json
+      - name: Stop isolated CI processes; retain data for failure diagnostics
+        if: always()
+        run: docker compose -p tianji-compact -f deploy/compact/compose.yaml --env-file deploy/compact/.env stop

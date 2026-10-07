@@ -11,7 +11,7 @@ import java.util.*;
 public class SimulatorRoutes {
  @Bean @ConditionalOnProperty(name="tj.simulators.enabled",havingValue="true") public RouteLocator localSimulatorRouteLocator(RouteLocatorBuilder builder,Environment environment){
   if(Arrays.stream(environment.getActiveProfiles()).noneMatch(Set.of("acceptance","local-simulator")::contains))throw new IllegalStateException("Local simulators are forbidden outside explicit local profiles");
-  return builder.routes().route("local-simulator",r->r.path("/api/v2/simulator/**").uri(environment.getRequiredProperty("tj.simulators.url"))).build();
+  return builder.routes().route("local-simulator",r->r.path("/api/v2/simulator/**").filters(f->f.prefixPath(java.util.Objects.toString(java.net.URI.create(environment.getRequiredProperty("tj.simulators.url")).getPath(),""))).uri(environment.getRequiredProperty("tj.simulators.url"))).build();
  }
  @RestController public static class EnvironmentController {
   private final Environment environment;EnvironmentController(Environment environment){this.environment=environment;}

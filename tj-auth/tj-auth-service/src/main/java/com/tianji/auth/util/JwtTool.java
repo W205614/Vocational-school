@@ -1,138 +1,21 @@
 package com.tianji.auth.util;
-
-import cn.hutool.core.exceptions.ValidateException;
-import cn.hutool.core.lang.UUID;
-import cn.hutool.json.JSONObject;
-import cn.hutool.jwt.JWT;
-import cn.hutool.jwt.JWTValidator;
-import cn.hutool.jwt.signers.JWTSigner;
-import cn.hutool.jwt.signers.JWTSignerUtil;
-import com.tianji.auth.common.constants.AuthErrorInfo;
-import com.tianji.auth.common.constants.JwtConstants;
-import com.tianji.common.domain.dto.LoginUserDTO;
-import com.tianji.common.exceptions.BadRequestException;
-import com.tianji.common.utils.AssertUtils;
-import com.tianji.common.utils.BooleanUtils;
-import com.tianji.common.utils.StringUtils;
-import com.tianji.common.utils.UserContext;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.stereotype.Component;
-
-import java.security.KeyPair;
-import java.time.Duration;
-import java.util.Date;
-
-import static com.tianji.auth.common.constants.JwtConstants.JWT_REFRESH_TTL;
-import static com.tianji.auth.common.constants.JwtConstants.JWT_TOKEN_TTL;
-
+import cn.hutool.json.JSONObject;import cn.hutool.jwt.*;import cn.hutool.jwt.signers.*;
+import com.tianji.common.domain.dto.LoginUserDTO;import com.tianji.auth.common.constants.JwtConstants;import com.tianji.auth.service.impl.SessionStore;import com.tianji.common.exceptions.UnauthorizedException;import com.tianji.common.utils.*;
+import org.springframework.stereotype.Component;import java.security.KeyPair;import java.time.*;import java.util.*;
 @Component
 public class JwtTool {
-    private final StringRedisTemplate stringRedisTemplate;
-    private final JWTSigner jwtSigner;
-
-    public JwtTool(StringRedisTemplate stringRedisTemplate, KeyPair keyPair) {
-        this.stringRedisTemplate = stringRedisTemplate;
-        this.jwtSigner = JWTSignerUtil.createSigner("rs256", keyPair);
-    }
-
-    /**
-     * 创建 access-token
-     *
-     * @param userDTO 用户信息
-     * @return access-token
-     */
-    public String createToken(LoginUserDTO userDTO) {
-        // 1.生成jws
-        return JWT.create()
-                .setPayload(JwtConstants.PAYLOAD_USER_KEY, userDTO)
-                .setExpiresAt(new Date(System.currentTimeMillis() + JWT_TOKEN_TTL.toMillis()))
-                .setSigner(jwtSigner)
-                .sign();
-    }
-
-    /**
-     * 创建刷新token，并将token的JTI记录到Redis中
-     *
-     * @param userDetail 用户信息
-     * @return 刷新token
-     */
-    public String createRefreshToken(LoginUserDTO userDetail) {
-        // 1.生成 JTI
-        String jti = UUID.randomUUID().toString(true);
-        // 2.生成jwt
-        // 2.1.如果是记住我，则有效期7天，否则30分钟
-        Duration ttl = BooleanUtils.isTrue(userDetail.getRememberMe()) ?
-                JwtConstants.JWT_REMEMBER_ME_TTL : JWT_REFRESH_TTL;
-        // 2.2.生成token
-        String token = JWT.create()
-                .setJWTId(jti)
-                .setPayload(JwtConstants.PAYLOAD_USER_KEY, userDetail)
-                .setExpiresAt(new Date(System.currentTimeMillis() + ttl.toMillis()))
-                .setSigner(jwtSigner)
-                .sign();
-        // 3.缓存jti，有效期与token一致，过期或删除JTI后，对应的refresh-token失效
-        stringRedisTemplate.opsForValue()
-                .set(JwtConstants.JWT_REDIS_KEY_PREFIX + userDetail.getUserId(), jti, ttl);
-        return token;
-    }
-
-    /**
-     * 解析刷新token
-     *
-     * @param refreshToken 刷新token
-     * @return 解析刷新token得到的用户信息
-     */
-    public LoginUserDTO parseRefreshToken(String refreshToken) {
-        // 1.校验token是否为空
-        AssertUtils.isNotNull(refreshToken, AuthErrorInfo.Msg.INVALID_TOKEN);
-        // 2.校验并解析jwt
-        JWT jwt;
-        try {
-            jwt = JWT.of(refreshToken).setSigner(jwtSigner);
-        } catch (Exception e) {
-            throw new BadRequestException(400, AuthErrorInfo.Msg.INVALID_TOKEN, e);
-        }
-        // 2.校验jwt是否有效
-        if (!jwt.verify()) {
-            // 验证失败
-            throw new BadRequestException(400, AuthErrorInfo.Msg.INVALID_TOKEN);
-        }
-        // 3.校验是否过期
-        try {
-            JWTValidator.of(jwt).validateDate();
-        } catch (ValidateException e) {
-            throw new BadRequestException(400, AuthErrorInfo.Msg.EXPIRED_TOKEN);
-        }
-        // 4.数据格式校验
-        Object userPayload = jwt.getPayload(JwtConstants.PAYLOAD_USER_KEY);
-        Object jtiPayload = jwt.getPayload(JwtConstants.PAYLOAD_JTI_KEY);
-        if (jtiPayload == null || userPayload == null) {
-            // 数据为空
-            throw new BadRequestException(400, AuthErrorInfo.Msg.INVALID_TOKEN);
-        }
-
-        // 5.数据解析
-        LoginUserDTO userDTO;
-        try {
-            userDTO = ((JSONObject) userPayload).toBean(LoginUserDTO.class);
-        } catch (RuntimeException e) {
-            // 数据格式有误
-            throw new BadRequestException(400, AuthErrorInfo.Msg.INVALID_TOKEN);
-        }
-
-        // 6.JTI校验
-        String jti = stringRedisTemplate.opsForValue().get(JwtConstants.JWT_REDIS_KEY_PREFIX + userDTO.getUserId());
-        if (!StringUtils.equals(jti, jtiPayload.toString())) {
-            // jti不一致
-            throw new BadRequestException(400, AuthErrorInfo.Msg.INVALID_TOKEN);
-        }
-        return userDTO;
-    }
-
-    /**
-     * 清理刷新refresh-token的jti，本质是refresh-token作废
-     */
-    public void cleanJtiCache() {
-        stringRedisTemplate.delete(JwtConstants.JWT_REDIS_KEY_PREFIX + UserContext.getUser());
-    }
+ private final JWTSigner signer;private final SessionStore sessions;
+ public JwtTool(KeyPair pair,SessionStore sessions){this.signer=JWTSignerUtil.createSigner("rs256",pair);this.sessions=sessions;}
+ private Map<String,Object> payload(LoginUserDTO user){var value=new LinkedHashMap<String,Object>();value.put("userId",user.getUserId());value.put("roleId",user.getRoleId());value.put("rememberMe",BooleanUtils.isTrue(user.getRememberMe()));value.put("sessionId",user.getSessionId());value.put("authVersion",user.getAuthVersion());return value;}
+ private String token(LoginUserDTO user,String kind,String jti,Instant expiry){return JWT.create().setJWTId(jti).setPayload("iss","tianji").setPayload("aud",user.getRoleId()==2?"student":"admin").setPayload("tokenType",kind).setPayload(JwtConstants.PAYLOAD_USER_KEY,payload(user)).setExpiresAt(Date.from(expiry)).setSigner(signer).sign();}
+ public String createToken(LoginUserDTO user){return token(user,"access",UUID.randomUUID().toString(),Instant.now().plus(JwtConstants.JWT_TOKEN_TTL));}
+ public String createRefreshToken(LoginUserDTO user){var ttl=BooleanUtils.isTrue(user.getRememberMe())?JwtConstants.JWT_REMEMBER_ME_TTL:JwtConstants.JWT_REFRESH_TTL;var rotation=sessions.rotate(user,ttl);return token(user,"refresh",rotation.jti(),rotation.expires());}
+ public LoginUserDTO parseRefreshToken(String value){
+  try{
+   JWT jwt=JWT.of(value).setSigner(signer);if(!jwt.verify() || !"tianji".equals(jwt.getPayload("iss")) || !"refresh".equals(jwt.getPayload("tokenType")))throw new UnauthorizedException("刷新令牌无效");JWTValidator.of(jwt).validateDate();
+   var user=((JSONObject)jwt.getPayload("user")).toBean(LoginUserDTO.class);if(user.getSessionId()==null || user.getAuthVersion()==null || jwt.getPayload("jti")==null || !Objects.equals(jwt.getPayload("aud"),user.getRoleId()==2?"student":"admin"))throw new UnauthorizedException("刷新令牌无效");
+   user.setRefreshJti(jwt.getPayload("jti").toString());return user;
+  }catch(UnauthorizedException e){throw e;}catch(Exception e){throw new UnauthorizedException("登录状态已失效，请重新登录");}
+ }
+ public void cleanJtiCache(){String id=UserContext.getSession();if(id!=null)sessions.revoke(id,UserContext.requireUser());else sessions.revokeAll(UserContext.requireUser());}
 }

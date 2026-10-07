@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ProviderSettlementTest {
  JdbcTemplate jdbc;TransactionTemplate tx;ProviderSettlementService service;
  @BeforeEach void setup(){
-  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:23316/acceptance_pay?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_pay?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
   jdbc=new JdbcTemplate(source);tx=new TransactionTemplate(new DataSourceTransactionManager(source));
   service=new ProviderSettlementService(jdbc,new OutboxStore(jdbc,JsonMapper.builder().build()));
   for(String table:List.of("reliability_outbox","provider_payment_fact","provider_refund_fact","provider_refund_conflict","refund_order","pay_order"))jdbc.update("DELETE FROM "+table);

@@ -18,6 +18,9 @@ import javax.sql.DataSource;
 @ConditionalOnProperty(name="tj.reliability.enabled",havingValue="true",matchIfMissing=true)
 @EnableScheduling
 public class ReliabilityConfiguration {
+    @Bean public AdminAudit adminAudit(JdbcTemplate jdbc){return new AdminAudit(jdbc);}
+    @Bean public AdminAudit.Query adminAuditQuery(JdbcTemplate jdbc){return new AdminAudit.Query(jdbc);}
+    @Bean public org.springframework.web.servlet.config.annotation.WebMvcConfigurer auditMvc(AdminAudit audit){return new org.springframework.web.servlet.config.annotation.WebMvcConfigurer(){@Override public void addInterceptors(org.springframework.web.servlet.config.annotation.InterceptorRegistry registry){registry.addInterceptor(audit).order(1000);}};}
     @Bean public ManagedExecutorMetrics managedExecutorMetrics(org.springframework.context.ApplicationContext context,MeterRegistry meters){return new ManagedExecutorMetrics(context,meters);}
     @Bean public OutboxStore outboxStore(JdbcTemplate jdbc,JsonMapper json) { return new OutboxStore(jdbc,json); }
     @Bean public InboxStore inboxStore(JdbcTemplate jdbc,PlatformTransactionManager manager) {
@@ -31,9 +34,9 @@ public class ReliabilityConfiguration {
             @org.springframework.beans.factory.annotation.Qualifier("operationExecutor") org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor executor) {
         return new OperationWorker(store,handlers,executor);
     }
-    @Bean public org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor operationExecutor() {
+    @Bean public org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor operationExecutor(org.springframework.core.env.Environment env) {
         var pool=new org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor();
-        pool.setCorePoolSize(4);pool.setMaxPoolSize(8);pool.setQueueCapacity(100);pool.setThreadNamePrefix("operation-");
+        pool.setCorePoolSize(env.getProperty("tj.reliability.operation-core",Integer.class,1));pool.setMaxPoolSize(env.getProperty("tj.reliability.operation-max",Integer.class,4));pool.setQueueCapacity(100);pool.setThreadNamePrefix("operation-");
         pool.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.AbortPolicy());
         pool.setWaitForTasksToCompleteOnShutdown(true);pool.setAwaitTerminationSeconds(30);return pool;
     }
@@ -53,9 +56,9 @@ public class ReliabilityConfiguration {
         var dispatcher=new OutboxDispatcher(store,helper,metrics,executor);dispatcher.setAcceptanceFaults(faults);return dispatcher;
     }
     }
-    @Bean public org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor outboxExecutor() {
+    @Bean public org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor outboxExecutor(org.springframework.core.env.Environment env) {
         var pool=new org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor();
-        pool.setCorePoolSize(2);pool.setMaxPoolSize(4);pool.setQueueCapacity(100);pool.setThreadNamePrefix("outbox-");
+        pool.setCorePoolSize(env.getProperty("tj.reliability.outbox-core",Integer.class,1));pool.setMaxPoolSize(env.getProperty("tj.reliability.outbox-max",Integer.class,2));pool.setQueueCapacity(100);pool.setThreadNamePrefix("outbox-");
         pool.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.AbortPolicy());
         pool.setWaitForTasksToCompleteOnShutdown(true);pool.setAwaitTerminationSeconds(30);return pool;
     }

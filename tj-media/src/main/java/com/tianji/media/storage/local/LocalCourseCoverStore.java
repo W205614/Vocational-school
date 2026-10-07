@@ -18,6 +18,7 @@ import java.util.*;
 @ConditionalOnProperty(name="tj.local-storage.enabled",havingValue="true")
 public class LocalCourseCoverStore {
     private final Path root;
+    private final java.util.concurrent.Semaphore decoding=new java.util.concurrent.Semaphore(2);
     public LocalCourseCoverStore(Environment environment) {
         if (Arrays.stream(environment.getActiveProfiles()).noneMatch(Set.of("acceptance","local-simulator")::contains))
             throw new IllegalStateException("Local covers require an explicit simulator profile");
@@ -25,6 +26,10 @@ public class LocalCourseCoverStore {
         try { Files.createDirectories(root); } catch(IOException error) { throw new IllegalStateException(error); }
     }
     public String upload(InputStream input,long length) throws IOException {
+        if(!decoding.tryAcquire())throw new com.tianji.common.exceptions.TooManyRequestsException("图片处理繁忙，请稍后重试");
+        try{return uploadBounded(input,length);}finally{decoding.release();}
+    }
+    private String uploadBounded(InputStream input,long length) throws IOException {
         if(length<=0 || length>5*1024*1024)throw new BadRequestException("封面大小必须在 1 字节到 5 MiB 之间");
         byte[] bytes=input.readNBytes(5*1024*1024+1);
         if(bytes.length!=length)throw new BadRequestException("封面上传不完整或超过大小限制");

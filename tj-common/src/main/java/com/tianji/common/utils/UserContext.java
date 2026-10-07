@@ -1,6 +1,9 @@
 package com.tianji.common.utils;
 
 public class UserContext {
+    private static final ThreadLocal<String> SESSION = new ThreadLocal<>();
+    public static void setSession(String id){SESSION.set(id);}
+    public static String getSession(){return SESSION.get();}
     private static final ThreadLocal<Long> TL = new ThreadLocal<>();
     private static final ThreadLocal<Long> ROLE = new ThreadLocal<>();
     public static void setRole(Long role) { ROLE.set(role); }
@@ -37,5 +40,6 @@ public class UserContext {
     public static void removeUser(){
         TL.remove();
         ROLE.remove();
+        SESSION.remove();
     }
 }

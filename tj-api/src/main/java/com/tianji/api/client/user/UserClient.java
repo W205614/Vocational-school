@@ -12,6 +12,8 @@ import java.util.List;
 
 @FeignClient(value = "user-service", fallbackFactory = UserClientFallback.class)
 public interface UserClient {
+    @GetMapping("/internal/v2/users/{id}/session-identity")
+    LoginUserDTO sessionIdentity(@PathVariable("id") long id);
 
     /**
      * 根据手机号查询用户id

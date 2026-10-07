@@ -1,4 +1,5 @@
 import {test,expect,type Page} from '@playwright/test';
+import {assertPersistedAudit} from './audit-check';
 import fs from 'node:fs';import {execFileSync} from 'node:child_process';
 const accounts=JSON.parse(fs.readFileSync((process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local')+'/accounts.json','utf8'));
 const fixture=JSON.parse(fs.readFileSync((process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local')+'/browser-fixture.json','utf8'));
@@ -7,8 +8,8 @@ async function api(page:Page,path:string,method='GET',data?:unknown){const token
 async function pick(page:Page,label:string,keyword:string,names:string[],multiple=false){await page.getByRole('button',{name:label,exact:true}).click();const dialog=page.getByRole('dialog',{name:label,exact:true});await dialog.getByRole('textbox',{name:label+'关键词',exact:true}).fill(keyword);await dialog.getByRole('button',{name:'查询',exact:true}).click();for(const name of names)await dialog.locator('.el-table__row').filter({hasText:name}).getByRole('button',{name:multiple?'添加':'选用',exact:true}).click();if(multiple)await dialog.getByRole('button',{name:'确认选择',exact:true}).click();await expect(dialog).not.toBeVisible();}
 test('browser purchase, real local video, discussions, exam grading and targeted refund',async({page,browser},info)=>{
  test.skip(info.project.name!=='student');test.setTimeout(180000);
- const adminContext=await browser.newContext({baseURL:'http://127.0.0.1:23501'}),admin=await adminContext.newPage();
- const teacherContext=await browser.newContext({baseURL:'http://127.0.0.1:23501'}),teacher=await teacherContext.newPage();
+ const adminContext=await browser.newContext({baseURL:process.env.TJ_ADMIN_URL||'http://127.0.0.1:23501'}),admin=await adminContext.newPage();
+ const teacherContext=await browser.newContext({baseURL:process.env.TJ_ADMIN_URL||'http://127.0.0.1:23501'}),teacher=await teacherContext.newPage();
  try{
   await login(admin,'admin','/media');
   const bytes=await admin.evaluate(async()=>{
@@ -22,7 +23,7 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   await admin.locator('article').filter({has:admin.getByRole('heading',{name:'上传视频',exact:true})}).getByRole('spinbutton').fill('2');
   await admin.getByRole('button',{name:'上传并登记',exact:true}).click();await expect(admin.getByText('视频已持久化',{exact:true})).toBeVisible();
   const media=await admin.evaluate(()=>JSON.parse(sessionStorage.getItem('school-operations')||'[]').find((x:any)=>x.label==='登记本地视频').operation.result.id);
-  execFileSync('E:/download/Anaconda/python.exe',['../deploy/acceptance/attach_browser_media.py',String(media)],{stdio:'pipe'});
+  execFileSync(process.env.TJ_PYTHON||'python',[process.env.TJ_MEDIA_FIXTURE_SCRIPT||'../deploy/acceptance/attach_browser_media.py',String(media)],{stdio:'pipe'});
   await admin.goto('/exams');await pick(admin,'选择考试课程',fixture.name,[fixture.name]);await expect(admin.getByRole('combobox',{name:'选择考试小节',exact:true})).toBeEnabled();await admin.locator('.el-select').filter({has:admin.getByRole('combobox',{name:'选择考试小节',exact:true})}).click();await admin.getByRole('option',{name:'Browser chapter / Browser exam',exact:true}).click();await pick(admin,'选择试卷题目',fixture.marker,['Browser objective '+fixture.marker,'Browser subjective '+fixture.marker],true);await pick(admin,'选择评分教师','teacher acceptance',['teacher acceptance'],true);
   await admin.getByRole('button',{name:'发布不可变试卷版本'}).click();await expect(admin.getByText('试卷版本已发布',{exact:true})).toBeVisible();
   await login(page,'student','/courses/'+fixture.course);await page.getByRole('button',{name:'加入购物车',exact:true}).click();await expect(page.getByText('已加入购物车',{exact:true})).toBeVisible();
@@ -47,7 +48,7 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   await page.goto('/exams?courseId='+fixture.course);await page.getByRole('button',{name:'开始 / 继续考试'}).first().click();await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toHaveCount(1);await page.locator('.answer-options .el-checkbox').filter({hasText:'A. A'}).click();await page.locator('.answer-options .el-checkbox').filter({hasText:'B. B'}).click();await page.getByPlaceholder('请写下你的答案',{exact:true}).fill('Explain reliable transactions');
   const draftAttempt=await page.evaluate(()=>sessionStorage.getItem('school-active-exam'));
   await expect.poll(async()=>(await api(page,'/exam-attempts/'+draftAttempt+'/draft')).answers[fixture.subjective],{timeout:15000}).toBe('Explain reliable transactions');
-  const deviceContext=await browser.newContext({baseURL:'http://127.0.0.1:23500'}),device=await deviceContext.newPage();
+  const deviceContext=await browser.newContext({baseURL:process.env.TJ_STUDENT_URL||'http://127.0.0.1:23500'}),device=await deviceContext.newPage();
   try{
    await login(device,'student','/exams?courseId='+fixture.course);await device.getByRole('button',{name:'开始 / 继续考试'}).first().click();await expect(device.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Explain reliable transactions');await expect(device.getByRole('checkbox',{name:'A. A',exact:true})).toBeChecked();
    await device.getByPlaceholder('请写下你的答案',{exact:true}).fill('Other device answer');await expect.poll(async()=>(await api(device,'/exam-attempts/'+draftAttempt+'/draft')).answers[fixture.subjective],{timeout:15000}).toBe('Other device answer');
@@ -62,12 +63,20 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   await page.getByRole('button',{name:'提交全部答案'}).click();await page.getByRole('button',{name:'继续检查',exact:true}).click();await expect(page.getByText('答题中',{exact:true})).toBeVisible();await page.getByRole('button',{name:'提交全部答案'}).click();await page.getByRole('button',{name:'确认提交答卷',exact:true}).click();await expect(page.getByText('等待教师评分',{exact:true})).toBeVisible();
   const attempt=await page.evaluate(()=>sessionStorage.getItem('school-active-exam'));
   const submitToken=await page.evaluate(()=>sessionStorage.getItem('school-token'));const lateDraft=await page.request.put('/api/v2/exam-attempts/'+attempt+'/draft',{headers:{Authorization:'Bearer '+submitToken},data:{version:0,answers:{[fixture.subjective]:'late change'}}});expect(lateDraft.status()).toBe(409);
-  await login(teacher,'teacher','/exams');await teacher.getByRole('button',{name:'刷新待评分列表'}).click();await teacher.locator('.el-table__row').filter({hasText:attempt!}).getByRole('button',{name:'查看答卷'}).click();await teacher.getByRole('spinbutton').fill('10');await teacher.getByPlaceholder('评分反馈').fill('Reviewed browser answer');await teacher.getByRole('button',{name:'提交评分'}).click();await expect(teacher.getByText('已评分 10 · Reviewed browser answer',{exact:true})).toBeVisible();
+  await login(teacher,'teacher','/exams');
+  await teacher.getByPlaceholder('课程编号筛选').fill(fixture.course);await teacher.getByPlaceholder('学生编号筛选').fill(accounts.admin.id);
+  const emptyPending=teacher.waitForResponse(r=>r.url().includes('/teacher/exam-attempts/page?')&&r.url().includes('studentId='+accounts.admin.id));
+  await teacher.getByRole('button',{name:'刷新待评分列表'}).click();expect((await emptyPending).ok()).toBeTruthy();await expect(teacher.locator('.el-table__row')).toHaveCount(0);
+  await teacher.getByPlaceholder('学生编号筛选').fill(accounts.student.id);
+  const ownedPending=teacher.waitForResponse(r=>r.url().includes('/teacher/exam-attempts/page?')&&r.url().includes('courseId='+fixture.course)&&r.url().includes('studentId='+accounts.student.id));
+  await teacher.getByRole('button',{name:'刷新待评分列表'}).click();const pendingResult=await ownedPending;expect(pendingResult.ok()).toBeTruthy();expect((await pendingResult.json()).data.pageNo).toBe(1);
+  await expect(teacher.locator('.el-table__row').filter({hasText:attempt!})).toHaveCount(1);await teacher.locator('.el-table__row').filter({hasText:attempt!}).getByRole('button',{name:'查看答卷'}).click();await teacher.getByRole('spinbutton').fill('10');await teacher.getByPlaceholder('评分反馈').fill('Reviewed browser answer');await teacher.getByRole('button',{name:'提交评分'}).click();await expect(teacher.getByText('已评分 10 · Reviewed browser answer',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'刷新评分状态'}).click();await expect(page.locator('.exam-result')).toContainText('20');await expect(page.locator('.exam-result')).toContainText('已通过');
   await expect.poll(async()=>(await api(page,'/services/learning/learning-records/course/'+fixture.course)).records.filter((r:any)=>r.finished).length,{timeout:30000}).toBe(2);
   await page.goto('/orders');await page.locator('.el-table__row').filter({hasText:orderId}).getByRole('button',{name:'详情'}).click();await page.getByRole('button',{name:'申请退款'}).click();await expect(page.getByRole('dialog',{name:'申请课程退款'})).toBeVisible();await expect(page.getByRole('button',{name:'提交退款申请',exact:true})).toBeDisabled();await page.getByPlaceholder('请说明退款原因').fill('浏览器验收退款，验证学习历史保留');await page.getByRole('button',{name:'提交退款申请',exact:true}).click();await expect(page.getByText('退款申请已提交',{exact:true})).toBeVisible();
   await admin.goto('/refunds');const refund=admin.locator('.el-table__row').filter({hasText:orderId});await refund.getByRole('button',{name:'同意退款'}).click();await admin.getByRole('button',{name:'确定',exact:true}).click();await expect(admin.getByText('同意退款已完成',{exact:true})).toBeVisible();
   await expect.poll(async()=>(await api(page,'/orders/'+orderId)).status,{timeout:60000}).toBe(7);
+  await assertPersistedAudit(admin);
   await page.goto('/courses/'+fixture.course);await page.getByRole('button',{name:/Browser video/}).click();await expect(page.getByRole('alert').filter({hasText:/收费视频|课程|权限|免费/})).toBeVisible();await expect(page.locator('video')).toHaveCount(0);
   await page.goto('/notes');await expect(page.getByText(note,{exact:true})).toBeVisible();
  }finally{await adminContext.close();await teacherContext.close();}

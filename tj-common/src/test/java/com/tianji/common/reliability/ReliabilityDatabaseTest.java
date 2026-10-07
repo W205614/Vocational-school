@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ReliabilityDatabaseTest {
  private JdbcTemplate jdbc;private TransactionTemplate tx;private OutboxStore outbox;private InboxStore inbox;private OperationStore operations;
  @BeforeEach void setup() {
-  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:23316/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
   jdbc=new JdbcTemplate(source);tx=new TransactionTemplate(new DataSourceTransactionManager(source));
   var json=JsonMapper.builder().build();outbox=new OutboxStore(jdbc,json);inbox=new InboxStore(jdbc,tx);operations=new OperationStore(jdbc,json,tx);
   jdbc.update("DELETE FROM reliability_operation_failure");jdbc.update("DELETE FROM reliability_inbox");jdbc.update("DELETE FROM reliability_outbox");jdbc.update("DELETE FROM reliability_operation");
@@ -113,8 +113,8 @@ class ReliabilityDatabaseTest {
   assertEquals(0,value());assertEquals("FAILED",operations.get(view.operationId(),1).status());
  }
  @Test void brokerDuplicateDeliveryAfterConsumerCommitRemainsIdempotent() {
-  var connection=new CachingConnectionFactory("127.0.0.1",23373);
-  connection.setUsername("acceptance");connection.setPassword(System.getenv("ACCEPTANCE_MQ_PASSWORD"));
+  var connection=new CachingConnectionFactory("127.0.0.1",Integer.parseInt(System.getenv().getOrDefault("ACCEPTANCE_MQ_PORT","23373")));
+  connection.setUsername(System.getenv().getOrDefault("ACCEPTANCE_MQ_USERNAME","acceptance"));connection.setPassword(System.getenv("ACCEPTANCE_MQ_PASSWORD"));
   var template=new RabbitTemplate(connection);template.setMessageConverter(new EnvelopeJsonMessageConverter(JsonMapper.builder().build()));
   RabbitMqHelper helper=new MqConfig().rabbitMqHelper(template);
   var admin=new RabbitAdmin(connection);
@@ -134,8 +134,8 @@ class ReliabilityDatabaseTest {
   } finally {admin.deleteQueue(name);admin.deleteExchange(name);helper.destroy();connection.destroy();}
  }
  @Test void failedConsumerCanReplayOriginalIdentityAndRejectStaleVersion() {
-  var connection=new CachingConnectionFactory("127.0.0.1",23373);
-  connection.setUsername("acceptance");connection.setPassword(System.getenv("ACCEPTANCE_MQ_PASSWORD"));
+  var connection=new CachingConnectionFactory("127.0.0.1",Integer.parseInt(System.getenv().getOrDefault("ACCEPTANCE_MQ_PORT","23373")));
+  connection.setUsername(System.getenv().getOrDefault("ACCEPTANCE_MQ_USERNAME","acceptance"));connection.setPassword(System.getenv("ACCEPTANCE_MQ_PASSWORD"));
   connection.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);connection.setPublisherReturns(true);
   var template=new RabbitTemplate(connection);template.setMandatory(true);
   var admin=new RabbitAdmin(connection);String queue="acceptance.replay."+UUID.randomUUID();

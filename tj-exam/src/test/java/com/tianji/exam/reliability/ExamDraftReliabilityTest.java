@@ -19,7 +19,7 @@ class ExamDraftReliabilityTest {
  private JdbcTemplate jdbc;private TransactionTemplate tx;private ExamDraftService drafts;private ExamWorkflowService workflow;
  private long paper,user,question,attempt;
  @BeforeEach void setup(){
-  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:23316/acceptance_exam?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_exam?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
   jdbc=new JdbcTemplate(source);tx=new TransactionTemplate(new DataSourceTransactionManager(source));var json=JsonMapper.builder().build();
   drafts=new ExamDraftService(jdbc,json);workflow=new ExamWorkflowService(jdbc,json,new OutboxStore(jdbc,json));
   paper=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();user=paper+1;question=paper+2;attempt=paper+3;

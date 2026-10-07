@@ -17,6 +17,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class CouponClaimService implements OperationHandler {
+    private static final java.util.concurrent.Semaphore[] CLAIMS=java.util.stream.IntStream.range(0,128).mapToObj(i->new java.util.concurrent.Semaphore(2)).toArray(java.util.concurrent.Semaphore[]::new);
     private final CouponMapper coupons;
     private final UserCouponMapper userCoupons;
     private final JdbcTemplate jdbc;
@@ -34,6 +35,10 @@ public class CouponClaimService implements OperationHandler {
             code=rows.getFirst();couponId=((Number)code.get("exchange_target_id")).longValue();
         }
         if(couponId==null) throw new BadRequestException("优惠券标识不能为空");
+        if(!org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive())throw new IllegalStateException("Coupon claims require their module transaction");
+        var permit=CLAIMS[Math.floorMod(Long.hashCode(couponId),CLAIMS.length)];
+        if(!permit.tryAcquire())throw new ServiceUnavailableException("该优惠券处理繁忙，将自动重试");
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization(){@Override public void afterCompletion(int status){permit.release();}});
         // Serializing on the template row protects both global stock and per-user limit.
         Coupon coupon=coupons.selectOne(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Coupon>().eq("id",couponId).last("FOR UPDATE"));
         LocalDateTime now=LocalDateTime.now();

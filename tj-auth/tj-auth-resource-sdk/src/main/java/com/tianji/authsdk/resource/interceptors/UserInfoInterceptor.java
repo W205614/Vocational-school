@@ -7,7 +7,7 @@ import jakarta.servlet.http.*;
 public class UserInfoInterceptor implements HandlerInterceptor {
     @Override public boolean preHandle(HttpServletRequest request,HttpServletResponse response,Object handler) {
         UserContext.removeUser();
-        if(request.getRequestURI().startsWith("/internal/") || request.getRequestURI().equals("/actuator/prometheus"))com.tianji.common.utils.InternalAuth.requireService();
+        if((request.getPathInfo()==null?request.getRequestURI():request.getPathInfo()).startsWith("/internal/") || (request.getPathInfo()==null?request.getRequestURI():request.getPathInfo()).equals("/actuator/prometheus"))com.tianji.common.utils.InternalAuth.requireService();
         String id=request.getHeader(JwtConstants.USER_HEADER);
         if(id==null) return true;
         com.tianji.common.utils.InternalAuth.requireService();
@@ -15,6 +15,7 @@ public class UserInfoInterceptor implements HandlerInterceptor {
             long user=Long.parseLong(id);
             if(user<=0) throw new NumberFormatException();
             UserContext.setUser(user);
+            UserContext.setSession(request.getHeader("user-session"));
             String role=request.getHeader("user-role");
             if(role!=null) UserContext.setRole(Long.valueOf(role));
             return true;

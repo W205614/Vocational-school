@@ -18,12 +18,14 @@ public class AuthAutoConfiguration {
 
     @Bean
     @ConditionalOnClass(DiscoveryClient.class)
-    public JwtSignerHolder jwtSignerHolder(DiscoveryClient discoveryClient){
-        return new JwtSignerHolder(discoveryClient);
+    public JwtSignerHolder jwtSignerHolder(DiscoveryClient discoveryClient,org.springframework.core.env.Environment env){
+        return new JwtSignerHolder(discoveryClient,env);
     }
 
+    @Bean public com.tianji.authsdk.gateway.util.SessionVerifier sessionVerifier(org.springframework.core.env.Environment env,DiscoveryClient discovery){return new com.tianji.authsdk.gateway.util.SessionVerifier(env,discovery);}
+
     @Bean
-    public AuthUtil authUtil(JwtSignerHolder jwtSignerHolder, StringRedisTemplate stringRedisTemplate){
-        return new AuthUtil(jwtSignerHolder, stringRedisTemplate);
+    public AuthUtil authUtil(JwtSignerHolder jwtSignerHolder, StringRedisTemplate stringRedisTemplate,com.tianji.authsdk.gateway.util.SessionVerifier verifier){
+        return new AuthUtil(jwtSignerHolder, stringRedisTemplate,verifier);
     }
 }

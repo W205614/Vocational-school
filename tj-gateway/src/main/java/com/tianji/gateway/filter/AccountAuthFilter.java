@@ -15,25 +15,31 @@ import static com.tianji.auth.common.constants.JwtConstants.*;
 public class AccountAuthFilter implements GlobalFilter,Ordered {
     private final AuthUtil auth;
     private final AuthProperties properties;
+    private final com.tianji.gateway.config.AccessPolicy policy;
     private final reactor.core.scheduler.Scheduler authorizationScheduler;
+    private final java.util.concurrent.Semaphore requests=new java.util.concurrent.Semaphore(200);
     private final AntPathMatcher matcher=new AntPathMatcher();
-    public AccountAuthFilter(AuthUtil auth,AuthProperties properties,@org.springframework.beans.factory.annotation.Qualifier("authorizationScheduler") reactor.core.scheduler.Scheduler authorizationScheduler) {this.auth=auth;this.properties=properties;this.authorizationScheduler=authorizationScheduler;}
+    public AccountAuthFilter(AuthUtil auth,AuthProperties properties,com.tianji.gateway.config.AccessPolicy policy,@org.springframework.beans.factory.annotation.Qualifier("authorizationScheduler") reactor.core.scheduler.Scheduler authorizationScheduler) {this.auth=auth;this.properties=properties;this.policy=policy;this.authorizationScheduler=authorizationScheduler;}
     @Override public Mono<Void> filter(ServerWebExchange exchange,GatewayFilterChain chain) {
         // Permission-cache Redis calls are blocking; never run them on Netty's event loop.
-        return Mono.defer(()->authorize(exchange,chain)).subscribeOn(authorizationScheduler);
+        return Mono.defer(()->{if(!requests.tryAcquire())return Mono.error(new TooManyRequestsException("服务繁忙，请稍后重试"));return Mono.defer(()->authorize(exchange,chain)).subscribeOn(authorizationScheduler).doFinally(signal->requests.release());});
     }
     private Mono<Void> authorize(ServerWebExchange exchange,GatewayFilterChain chain) {
         // Identity is derived exclusively from the signed token. Strip on every path, including public paths.
         ServerWebExchange sanitized=exchange.mutate().request(b->b.headers(h->{
-            h.remove(USER_HEADER);h.remove("user-role");h.remove("X-User-Id");h.remove("X-Role-Id");h.remove("X-Internal-Token");
+            h.remove("user-session");h.remove("X-Client-IP");h.remove("X-Forwarded-For");h.remove("X-Real-IP");h.remove(USER_HEADER);h.remove("user-role");h.remove("X-User-Id");h.remove("X-Role-Id");h.remove("X-Internal-Token");
+            String internal=System.getenv("TJ_INTERNAL_TOKEN");if(internal==null || internal.length()<32)throw new IllegalStateException("Gateway service identity is not configured");
+            h.set("X-Internal-Token",internal);
+            var peer=exchange.getRequest().getRemoteAddress();h.set("X-Client-IP",peer==null?"unknown":peer.getAddress().getHostAddress());
         })).build();
         String path=sanitized.getRequest().getPath().value();
         if(path.contains("/api/v2/services/pay/pay-orders") || path.contains("/api/v2/services/pay/refund-orders") || path.contains("/api/v2/admin/pay/pay-orders") || path.contains("/api/v2/admin/pay/refund-orders") || path.contains("/internal/") || path.contains("/user-coupons/use") || path.contains("/user-coupons/refund"))
             throw new ForbiddenException("内部接口不对外开放");
         String ant=sanitized.getRequest().getMethod().name()+":"+path;
+        if(path.startsWith("/api/v2/") && !policy.declares(sanitized.getRequest().getMethod().name(),path))throw new ForbiddenException("该接口没有授权声明");
         if(ant.startsWith("GET:/api/v2/services/media/local-content/"))return chain.filter(sanitized);
         if(ant.matches("GET:/api/v2/services/media/course-covers/[0-9a-f]{64}\\.(png|jpg)"))return chain.filter(sanitized);
-        if(ant.equals("POST:/api/v2/auth/accounts/login") || ant.equals("POST:/api/v2/auth/accounts/admin/login") || ant.equals("GET:/api/v2/auth/accounts/refresh"))
+        if(ant.equals("GET:/api/v2/environment") || ant.equals("POST:/api/v2/auth/accounts/login") || ant.equals("POST:/api/v2/auth/accounts/admin/login") || ant.equals("GET:/api/v2/auth/accounts/refresh"))
             return chain.filter(sanitized);
         if(properties.getExcludePath().stream().anyMatch(p->matcher.match(p,ant))) return chain.filter(sanitized);
         String token=sanitized.getRequest().getHeaders().getFirst(AUTHORIZATION_HEADER);
@@ -66,13 +72,13 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
             String prefix="/api/v2/services/"+alias.getKey()+"/";
             if(path.startsWith(prefix)) permissionPath="/"+alias.getValue()+"/"+path.substring(prefix.length());
         }
-        auth.checkAuth(sanitized.getRequest().getMethod().name()+":"+permissionPath,result);
+        auth.checkAuth(sanitized.getRequest().getMethod().name()+":"+permissionPath,result,policy.declares(sanitized.getRequest().getMethod().name(),path));
         if(result.success()) {
             LoginUserDTO user=result.getData();
             if(user.getUserId()==null || user.getRoleId()==null) throw new UnauthorizedException("身份信息不完整");
             sanitized=sanitized.mutate().request(b->b.headers(h->{
                 String internal=System.getenv("TJ_INTERNAL_TOKEN");if(internal==null || internal.length()<32)throw new IllegalStateException("Gateway service identity is not configured");
-                h.set("X-Internal-Token",internal);h.set(USER_HEADER,user.getUserId().toString());h.set("user-role",user.getRoleId().toString());
+                h.set("X-Internal-Token",internal);h.set("user-session",user.getSessionId());h.set(USER_HEADER,user.getUserId().toString());h.set("user-role",user.getRoleId().toString());
             })).build();
         }
         return chain.filter(sanitized);

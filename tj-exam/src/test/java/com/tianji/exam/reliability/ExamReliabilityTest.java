@@ -13,7 +13,7 @@ class ExamReliabilityTest {
  private JdbcTemplate jdbc;private TransactionTemplate tx;private ExamWorkflowService service;private JsonMapper json;
  private long paper,user,question,teacher;
  @BeforeEach void setup(){
-  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:23316/acceptance_exam?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_exam?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
   jdbc=new JdbcTemplate(source);tx=new TransactionTemplate(new DataSourceTransactionManager(source));json=JsonMapper.builder().build();
   service=new ExamWorkflowService(jdbc,json,new OutboxStore(jdbc,json));paper=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();user=paper+1;question=paper+2;teacher=paper+3;
   jdbc.update("INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count) VALUES(?,?,?,1,10,60,1)",paper,paper,paper);

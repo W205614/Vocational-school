@@ -1,0 +1,298 @@
+name: tianji-compact
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ACCEPTANCE_DB_PASSWORD}
+      TZ: Asia/Shanghai
+    command:
+    - --default-time-zone=+08:00
+    - --innodb-buffer-pool-size=256M
+    - --max-connections=160
+    ports:
+    - 127.0.0.1:24316:3306
+    volumes:
+    - compact_mysql:/var/lib/mysql
+    mem_limit: 1g
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -uroot -N -e "SELECT 1"
+      interval: 5s
+      timeout: 3s
+      retries: 60
+  redis:
+    image: redis:7.4-alpine
+    command:
+    - redis-server
+    - --appendonly
+    - 'yes'
+    - --maxmemory
+    - 192mb
+    - --maxmemory-policy
+    - noeviction
+    ports:
+    - 127.0.0.1:24379:6379
+    volumes:
+    - compact_redis:/data
+    mem_limit: 256m
+    healthcheck:
+      test:
+      - CMD
+      - redis-cli
+      - ping
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    environment:
+      RABBITMQ_DEFAULT_USER: tianji
+      RABBITMQ_DEFAULT_PASS: ${ACCEPTANCE_MQ_PASSWORD}
+    ports:
+    - 127.0.0.1:24373:5672
+    volumes:
+    - compact_rabbit:/var/lib/rabbitmq
+    mem_limit: 512m
+    healthcheck:
+      test:
+      - CMD
+      - rabbitmq-diagnostics
+      - -q
+      - ping
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.29
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: 'false'
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+    - 127.0.0.1:24920:9200
+    volumes:
+    - compact_search:/usr/share/elasticsearch/data
+    mem_limit: 1536m
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - curl -fsS http://localhost:9200/_cluster/health
+      interval: 5s
+      timeout: 3s
+      retries: 60
+  app-identity:
+    image: tianji-compact/identity:local
+    restart: unless-stopped
+    env_file:
+    - ./.local/app.env
+    ports:
+    - 127.0.0.1:24001:24001
+    volumes:
+    - ./.local/configs:/run/compact/configs:ro
+    - ./.local/signing.jks:/run/compact/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 1536m
+    environment:
+      APP_PORT: '24001'
+    command:
+    - --spring.config.location=file:/run/compact/configs/identity.yml
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 90s
+      retries: 30
+  app-commerce:
+    image: tianji-compact/commerce:local
+    restart: unless-stopped
+    env_file:
+    - ./.local/app.env
+    ports:
+    - 127.0.0.1:24002:24002
+    volumes:
+    - ./.local/configs:/run/compact/configs:ro
+    - ./.local/signing.jks:/run/compact/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 1536m
+    environment:
+      APP_PORT: '24002'
+    command:
+    - --spring.config.location=file:/run/compact/configs/commerce.yml
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 90s
+      retries: 30
+  app-education:
+    image: tianji-compact/education:local
+    restart: unless-stopped
+    env_file:
+    - ./.local/app.env
+    ports:
+    - 127.0.0.1:24003:24003
+    volumes:
+    - ./.local/configs:/run/compact/configs:ro
+    - ./.local/signing.jks:/run/compact/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 1536m
+    environment:
+      APP_PORT: '24003'
+    command:
+    - --spring.config.location=file:/run/compact/configs/education.yml
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 90s
+      retries: 30
+  app-support:
+    image: tianji-compact/support:local
+    restart: unless-stopped
+    env_file:
+    - ./.local/app.env
+    ports:
+    - 127.0.0.1:24004:24004
+    volumes:
+    - ./.local/configs:/run/compact/configs:ro
+    - ./.local/signing.jks:/run/compact/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 1536m
+    environment:
+      APP_PORT: '24004'
+    command:
+    - --spring.config.location=file:/run/compact/configs/support.yml
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 90s
+      retries: 30
+  app-gateway:
+    image: tianji-compact/gateway:local
+    restart: unless-stopped
+    env_file:
+    - ./.local/app.env
+    ports:
+    - 127.0.0.1:24310:24310
+    volumes:
+    - ./.local/configs:/run/compact/configs:ro
+    - ./.local/signing.jks:/run/compact/signing.jks:ro
+    - ./.local/objects:/run/objects
+    mem_limit: 768m
+    environment:
+      APP_PORT: '24310'
+    command:
+    - --spring.config.location=file:/run/compact/configs/gateway.yml
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - java
+      - -Xms16m
+      - -Xmx32m
+      - -cp
+      - /app/health
+      - HealthProbe
+      interval: 10s
+      timeout: 4s
+      start_period: 90s
+      retries: 30
+  web-student:
+    image: tianji-compact/student:local
+    environment:
+      GW_UPSTREAM: app-gateway:24310
+    ports:
+    - 127.0.0.1:24500:8080
+    mem_limit: 128m
+    depends_on:
+      app-gateway:
+        condition: service_healthy
+  web-admin:
+    image: tianji-compact/admin:local
+    environment:
+      GW_UPSTREAM: app-gateway:24310
+    ports:
+    - 127.0.0.1:24501:8080
+    mem_limit: 128m
+    depends_on:
+      app-gateway:
+        condition: service_healthy
+volumes:
+  compact_mysql: {}
+  compact_redis: {}
+  compact_rabbit: {}
+  compact_search: {}

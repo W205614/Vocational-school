@@ -1,0 +1,119 @@
+{
+  "at": "2026-10-07T08:25:07.828005+00:00",
+  "baseCommit": "e1d4d8ca262b103da7342daa9da3579e8a9e9782",
+  "scope": "local synthetic demonstration; historical source data retained offline",
+  "finalBrowserAfterRetirement": {
+    "status": "PASSED",
+    "passed": 25,
+    "failed": 0,
+    "skipped": 13
+  },
+  "browserBeforeRetirement": {
+    "status": "PASSED",
+    "passed": 25,
+    "failed": 0,
+    "skipped": 13
+  },
+  "retirement": {
+    "status": "PASSED",
+    "removedContainers": 36,
+    "retainedVolumes": 14,
+    "finalContainers": 11,
+    "finalHealthy": 11,
+    "volumeDeletion": false,
+    "imageDeletion": false,
+    "projects": [
+      "tianji-final",
+      "tianji-recovery-072325",
+      "tianji-recovery-20261007072704",
+      "tianji-redis-proof-20261007073306-source",
+      "tianji-redis-proof-20261007073306-target"
+    ],
+    "at": "20261007T081909Z",
+    "backupsVerified": 2
+  },
+  "backups": [
+    {
+      "source": "legacy",
+      "at": "20261007T081829.506503Z",
+      "format": 3,
+      "quiesced": true,
+      "databaseCount": 12,
+      "tableCount": 168,
+      "mediaFiles": 27,
+      "manifestSha256": "2b1eb0ec7ec921bf3a7e129342f4feebd85fc8a3fe890c151bdaf2cae2b12dcf",
+      "integrityVerified": true,
+      "restoreOfThisNewBundleExecuted": false
+    },
+    {
+      "source": "compact",
+      "at": "20261007T081738.320207Z",
+      "format": 3,
+      "quiesced": true,
+      "databaseCount": 12,
+      "tableCount": 182,
+      "mediaFiles": 19,
+      "manifestSha256": "aef4f5eda53b6fe924f202bed538c10a4189217d1e5533694e34471752f13a4f",
+      "integrityVerified": true,
+      "restoreOfThisNewBundleExecuted": false
+    }
+  ],
+  "sameDayImplementationChecks": {
+    "backend": {
+      "status": "PASSED",
+      "tests": 67,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "backendClasses": 25,
+    "backendRerunDuringContainerRetirement": false,
+    "transportTests": 3,
+    "security": {
+      "status": "PASSED",
+      "assertions": 24
+    },
+    "audit": {
+      "status": "PASSED",
+      "checks": [
+        "exam/admin",
+        "exam/teacher",
+        "trade/admin"
+      ]
+    },
+    "redisRecovery": {
+      "status": "PASSED",
+      "checks": 9,
+      "records": 5,
+      "binaryAndTypesVerified": true,
+      "absoluteExpiryVerified": true,
+      "nonemptyTargetRejected": true
+    },
+    "priorIndependentRecovery": {
+      "status": "PASSED",
+      "databases": 12,
+      "tables": 182,
+      "mediaFiles": 13,
+      "brokerBytesRestored": true,
+      "browser": {
+        "status": "PASSED",
+        "passed": 25,
+        "failed": 0,
+        "skipped": 13
+      }
+    }
+  },
+  "frontendTypecheck": "PASSED",
+  "frontendProductionBuild": "PASSED",
+  "policyCoverage": "PASSED",
+  "manualPages": [
+    "student notes query",
+    "admin audit module, actor, outcome and request ID filters"
+  ],
+  "pending": [
+    "formal before/after capacity and memory comparison",
+    "historical source data migration",
+    "different-host recovery"
+  ],
+  "ci": "Verify the GitHub Actions run for the published commit; local results do not establish CI success"
+}

@@ -149,7 +149,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         // 2.修改密码
         User user = new User();
-        user.setId(user.getId());
+        user.setId(oldUser.getId());
         user.setPassword(passwordEncoder.encode(password));
         updateById(user);
     }

@@ -24,13 +24,15 @@ public class AccountController {
 
     @Operation(summary = "登录并获取token")
     @PostMapping(value = "/login")
-    public String loginByPw(@RequestBody LoginFormDTO loginFormDTO) {
+    public String loginByPw(@jakarta.validation.Valid @RequestBody LoginFormDTO loginFormDTO) {
+        com.tianji.common.utils.InternalAuth.requireService();
         return accountService.login(loginFormDTO, false);
     }
 
     @Operation(summary = "管理端登录并获取token")
     @PostMapping(value = "/admin/login")
-    public String adminLoginByPw(@RequestBody LoginFormDTO loginFormDTO) {
+    public String adminLoginByPw(@jakarta.validation.Valid @RequestBody LoginFormDTO loginFormDTO) {
+        com.tianji.common.utils.InternalAuth.requireService();
         return accountService.login(loginFormDTO, true);
     }
 

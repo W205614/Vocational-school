@@ -99,4 +99,6 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles><profile><id>compact</id><properties><spring-boot.repackage.skip>true</spring-boot.repackage.skip></properties></profile></profiles>
 </project>

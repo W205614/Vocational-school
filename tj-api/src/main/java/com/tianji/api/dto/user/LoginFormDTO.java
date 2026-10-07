@@ -12,11 +12,14 @@ public class LoginFormDTO {
     @NotNull
     private Integer type;
     @Schema(description = "用户名", example = "jack")
+    @jakarta.validation.constraints.Size(max=100)
     private String username;
     @Schema(description = "手机号", example = "13800010001")
+    @jakarta.validation.constraints.Size(max=32)
     private String cellPhone;
     @Schema(description = "密码", example = "123", required = true)
     @NotNull
+    @jakarta.validation.constraints.Size(min=1,max=72)
     private String password;
     @Schema(description = "7天免密登录", example = "true")
     private Boolean rememberMe = false;

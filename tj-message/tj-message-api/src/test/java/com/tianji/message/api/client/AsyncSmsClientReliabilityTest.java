@@ -17,7 +17,7 @@ class AsyncSmsClientReliabilityTest {
     private TransactionTemplate tx;
     private AsyncSmsClient client;
     @BeforeEach void setup() {
-        var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:23316/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+        var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
         jdbc=new JdbcTemplate(source);
         var manager=new DataSourceTransactionManager(source);
         tx=new TransactionTemplate(manager);

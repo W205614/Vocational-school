@@ -85,6 +85,7 @@ public class CommonExceptionAdvice {
     }
 
     private Object processResponse(int status, int code, String msg){
+        if(status==429)WebUtils.setResponseHeader("Retry-After","30");
         // 1.标记响应异常已处理（避免重复处理）
         WebUtils.setResponseHeader(Constant.BODY_PROCESSED_MARK_HEADER, "true");
         // 2.如果是网关请求，http状态码修改为200返回，前端基于业务状态码code来判断状态

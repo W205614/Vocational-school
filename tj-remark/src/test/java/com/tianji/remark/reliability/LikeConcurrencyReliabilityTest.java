@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnabledIfEnvironmentVariable(named="ACCEPTANCE_DB_PASSWORD",matches=".+")
 class LikeConcurrencyReliabilityTest {
  @Test void duplicateAndIndependentLikesSerializeWithoutDeadlock() throws Exception {
-  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:23316/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
   var jdbc=new JdbcTemplate(source);
   jdbc.execute("CREATE TABLE IF NOT EXISTS liked_counter(biz_type VARCHAR(32) NOT NULL,biz_id BIGINT NOT NULL,liked_times INT NOT NULL,version BIGINT NOT NULL,PRIMARY KEY(biz_type,biz_id)) ENGINE=InnoDB");
   jdbc.execute("CREATE TABLE IF NOT EXISTS liked_record(user_id BIGINT NOT NULL,biz_type VARCHAR(32) NOT NULL,biz_id BIGINT NOT NULL,PRIMARY KEY(user_id,biz_type,biz_id)) ENGINE=InnoDB");

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnabledIfEnvironmentVariable(named="ACCEPTANCE_DB_PASSWORD",matches=".+")
 class ReliabilityMetricsTest {
  @Test void intentionalDelayIsNotOverdueAndLeaseRecoveryDoesNotHideRealDelay(){
-  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:23316/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
   var jdbc=new JdbcTemplate(source);jdbc.update("DELETE FROM reliability_outbox");
   String id=java.util.UUID.randomUUID().toString();
   jdbc.update("INSERT INTO reliability_outbox(event_id,business_key,exchange_name,routing_key,event_type,payload,delay_ms,status,created_at,next_attempt_at) VALUES(?,?,'test','test','test','{}',300000,'PENDING',NOW(3)-INTERVAL 120 SECOND,NOW(3)+INTERVAL 180 SECOND)",id,id);

@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LearningReliabilityTest {
  private JdbcTemplate jdbc;private InboxStore inbox;private long user;
  @BeforeEach void setup(){
-  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:23316/acceptance_learning?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_learning?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
   jdbc=new JdbcTemplate(source);inbox=new InboxStore(jdbc,new TransactionTemplate(new DataSourceTransactionManager(source)));user=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();
  }
  @Test void concurrentPointsEventsCannotExceedDailyQuotaAndReplayCannotAwardTwice() throws Exception {

@@ -37,6 +37,7 @@ public class UserController {
     @Operation(summary = "新增用户，一般是员工或教师")
     @PostMapping
     public Long saveUser(@Valid @RequestBody UserDTO userDTO){
+        com.tianji.common.utils.UserContext.requireAdmin();
         userDTO.setId(null);
         return userService.saveUser(userDTO);
     }
@@ -44,6 +45,7 @@ public class UserController {
     @Operation(summary = "更新用户信息")
     @PutMapping("/{id}")
     public void updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO){
+        com.tianji.common.utils.UserContext.requireAdmin();
         userDTO.setId(id);
         userService.updateUser(userDTO);
     }
@@ -58,6 +60,7 @@ public class UserController {
     @Operation(summary = "重置密码")
     public void resetPassword(
             @Parameter(description = "要重置的用户的id", example = "1") @PathVariable("id") Long userId) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         userService.resetPassword(userId);
     }
 
@@ -67,6 +70,7 @@ public class UserController {
             @Parameter(description = "要重置的用户的id", example = "1") @PathVariable("id") Long userId,
             @Parameter(description = "状态", example = "1") @PathVariable("status") Integer status
     ) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         User user = new User();
         user.setId(userId);
         user.setStatus(UserStatus.of(status));
@@ -83,6 +87,7 @@ public class UserController {
     @GetMapping("/{id}")
     public UserDTO queryUserById(
             @Parameter(description = "用户id") @PathVariable("id") Long id) {
+        com.tianji.common.utils.InternalAuth.requireService();
         UserDetail userDetail = detailService.queryById(id);
         return BeanUtils.copyBean(userDetail, UserDTO.class, (d, u) -> u.setType(d.getType().getValue()));
     }
@@ -97,6 +102,7 @@ public class UserController {
     @PostMapping("/detail/{isStaff}")
     public LoginUserDTO queryUserDetail(
             @Valid @RequestBody LoginFormDTO loginDTO, @PathVariable("isStaff") boolean isStaff) {
+        com.tianji.common.utils.InternalAuth.requireService();
         return userService.queryUserDetail(loginDTO, isStaff);
     }
 
@@ -110,6 +116,8 @@ public class UserController {
     @GetMapping("/list")
     public List<UserDTO> queryUserByIds(
             @Parameter(description = "用户id的列表") @RequestParam("ids") List<Long> ids) {
+        com.tianji.common.utils.InternalAuth.requireService();
+        if(ids.size()>100)throw new BadRequestException("最多查询100个用户");
         if(CollUtils.isEmpty(ids)){
             return CollUtils.emptyList();
         }
@@ -128,6 +136,7 @@ public class UserController {
     @Hidden
     @GetMapping("/{id}/type")
     public Integer queryUserType(@PathVariable("id") Long id) {
+        com.tianji.common.utils.InternalAuth.requireService();
         User user = userService.getById(id);
         if (user == null) {
             throw new BadRequestException(UserErrorInfo.Msg.USER_ID_NOT_EXISTS);
@@ -138,6 +147,7 @@ public class UserController {
     @Hidden
     @GetMapping("/ids")
     public Long exchangeUserIdWithPhone(@RequestParam("phone") String phone) {
+        com.tianji.common.utils.InternalAuth.requireService();
         User user = userService
                 .lambdaQuery().eq(User::getCellPhone, phone).one();
         if (user == null) {

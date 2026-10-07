@@ -34,6 +34,8 @@ public class OperationStore {
             if(!hash.equals(row.get("request_hash"))) throw new ConflictException("同一幂等键已用于不同请求");
             id=row.get("operation_id").toString();
         }
+        var servletRequest=com.tianji.common.utils.WebUtils.getRequest();
+        if(servletRequest!=null){Object audit=servletRequest.getAttribute(AdminAudit.class.getName());if(audit!=null)jdbc.update("UPDATE admin_audit a JOIN reliability_operation o ON o.operation_id=? SET a.operation_id=o.operation_id,a.result=IF(o.status IN('SUCCEEDED','FAILED'),o.status,a.result),a.finished_at=IF(o.status IN('SUCCEEDED','FAILED'),NOW(3),a.finished_at) WHERE a.id=?",id,audit);}
         return get(id,userId);
     }
     public View get(String id,long userId) {
@@ -60,6 +62,7 @@ public class OperationStore {
                 Object result=handler.execute(work.id(),work.userId(),work.payload());
                 jdbc.update("UPDATE reliability_operation SET status='SUCCEEDED',result=?,lease_token=NULL,error_code=NULL,error_message=NULL WHERE operation_id=? AND lease_token=?",
                         json.writeValueAsString(result),work.id(),token);
+                jdbc.update("UPDATE admin_audit SET result='SUCCEEDED',finished_at=NOW(3) WHERE operation_id=?",work.id());
             });
         } catch(Exception e) {fail(work,token,e);}
     }
@@ -74,6 +77,7 @@ public class OperationStore {
             Object result=handler.call();
             jdbc.update("UPDATE reliability_operation SET status='SUCCEEDED',result=?,lease_token=NULL,error_code=NULL,error_message=NULL WHERE operation_id=? AND status='PENDING' AND lease_token=?",
                     json.writeValueAsString(result),work.id(),token);
+            jdbc.update("UPDATE admin_audit SET result='SUCCEEDED',finished_at=NOW(3) WHERE operation_id=? AND EXISTS(SELECT 1 FROM reliability_operation WHERE operation_id=? AND status='SUCCEEDED')",work.id(),work.id());
         } catch(Exception e) {fail(work,token,e);}
     }
     private void fail(Work work,String token,Exception error){
@@ -85,7 +89,8 @@ public class OperationStore {
         tx.executeWithoutResult(state->{
             if(jdbc.update("UPDATE reliability_operation SET status=?,lease_token=NULL,error_code=?,error_message=?,next_attempt_at=DATE_ADD(CURRENT_TIMESTAMP(3),INTERVAL ? SECOND) WHERE operation_id=? AND status='PENDING' AND lease_token=?",
                 terminal?"FAILED":"PENDING",business?"BUSINESS_FAILED":terminal?"RETRY_EXHAUSTED":"RETRYING",message.substring(0,Math.min(1000,message.length())),Math.min(300,1<<Math.min(work.attempts()+1,8)),work.id(),token)==1)
-                jdbc.update("INSERT INTO reliability_operation_failure(operation_id,last_error) VALUES(?,?) ON DUPLICATE KEY UPDATE last_error=VALUES(last_error),version=version+1",work.id(),detail.substring(0,Math.min(1000,detail.length())));
+                {if(terminal)jdbc.update("UPDATE admin_audit SET result='FAILED',finished_at=NOW(3) WHERE operation_id=?",work.id());
+                jdbc.update("INSERT INTO reliability_operation_failure(operation_id,last_error) VALUES(?,?) ON DUPLICATE KEY UPDATE last_error=VALUES(last_error),version=version+1",work.id(),detail.substring(0,Math.min(1000,detail.length())));}
         });
     }
     public List<Map<String,Object>> failures(){return jdbc.queryForList("SELECT o.operation_id,o.user_id,o.kind,o.status,o.error_code,o.error_message,o.attempts,f.last_error,f.version FROM reliability_operation o JOIN reliability_operation_failure f ON f.operation_id=o.operation_id WHERE o.status='FAILED' ORDER BY f.updated_at DESC LIMIT 100");}

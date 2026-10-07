@@ -39,7 +39,8 @@ public class PointsBoardServiceImpl extends ServiceImpl<PointsBoardMapper,Points
  }
  @Override public void createPointsBoardTableBySeason(Integer season){
   if(season==null || season<1)throw new BadRequestException("赛季无效");
-  jdbc.execute("CREATE TABLE IF NOT EXISTS points_board_"+season+"(id BIGINT PRIMARY KEY,user_id BIGINT NOT NULL UNIQUE,points INT NOT NULL)");
+  Integer ready=jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name=?",Integer.class,"points_board_"+season);
+  if(ready==null || ready!=1)throw new com.tianji.common.exceptions.ServiceUnavailableException("赛季归档表尚未初始化，请由迁移流程创建");
  }
  @Override public List<PointsBoard> queryCurrentBoardList(String key,Integer pageNo,Integer pageSize){
   if(pageNo==null || pageNo<1 || pageSize==null || pageSize<1 || pageSize>1000)throw new BadRequestException("榜单分页无效");

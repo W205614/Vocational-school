@@ -13,16 +13,16 @@ import org.springframework.scheduling.annotation.Scheduled;
 public class JwtSignerHolder {
  @Getter private volatile JWTSigner jwtSigner;
  private final DiscoveryClient discovery;
- public JwtSignerHolder(DiscoveryClient discovery){this.discovery=discovery;}
+ private final org.springframework.core.env.Environment environment;
+ public JwtSignerHolder(DiscoveryClient discovery,org.springframework.core.env.Environment environment){this.discovery=discovery;this.environment=environment;}
  @Scheduled(fixedDelayString="${tj.auth.jwk-retry-ms:10000}",scheduler="jwtTaskScheduler")
  public void refresh(){
   if(jwtSigner!=null)return;
   try{
-   var instances=discovery.getInstances("auth-service");
-   if(instances==null || instances.isEmpty()){log.warn("Authentication key provider is unavailable");return;}
-   var instance=instances.getFirst();
-   String uri=instance.getUri().resolve("/jwks").toString();
-   try(var response=HttpRequest.get(uri).timeout(3000).execute()){
+   String base=environment.getProperty("tj.routes.auth");
+   if(base==null){var instances=discovery.getInstances("auth-service");if(instances==null || instances.isEmpty()){log.warn("Authentication key provider is unavailable");return;}base=instances.getFirst().getUri().toString();}
+   String uri=base.replaceAll("/$","")+"/jwks";
+   try(var response=HttpRequest.get(uri).header("X-Internal-Token",System.getenv("TJ_INTERNAL_TOKEN")).timeout(3000).execute()){
     if(!response.isOk())throw new IllegalStateException("JWK provider HTTP "+response.getStatus());
     var key=KeyUtil.generatePublicKey(AsymmetricAlgorithm.RSA_ECB_PKCS1.getValue(),SecureUtil.decode(response.body()));
     jwtSigner=JWTSignerUtil.createSigner(JwtConstants.JWT_ALGORITHM,key);

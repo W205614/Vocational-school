@@ -20,11 +20,11 @@ import static com.tianji.api.constants.SmsConstants.VERIFY_CODE_PARAM_NAME;
 @EnabledIfEnvironmentVariable(named="ACCEPTANCE_DB_PASSWORD",matches=".+")
 class VerificationCodeReliabilityTest {
     @Test void concurrentRequestsKeepOneCodeAndDurablePayloadsAgree() throws Exception {
-        var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:23316/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+        var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
         var jdbc=new JdbcTemplate(source);jdbc.update("DELETE FROM reliability_outbox");
         var mapper=JsonMapper.builder().build();
         var sms=new AsyncSmsClient(new OutboxStore(jdbc,mapper),new DataSourceTransactionManager(source));
-        var factory=new LettuceConnectionFactory("127.0.0.1",23379);factory.afterPropertiesSet();factory.start();
+        var factory=new LettuceConnectionFactory("127.0.0.1",Integer.parseInt(System.getenv().getOrDefault("ACCEPTANCE_REDIS_PORT","23379")));factory.afterPropertiesSet();factory.start();
         var redis=new StringRedisTemplate(factory);redis.afterPropertiesSet();
         String phone="acceptance-"+UUID.randomUUID(),key=USER_VERIFY_CODE_KEY+phone;
         var pool=Executors.newFixedThreadPool(10);

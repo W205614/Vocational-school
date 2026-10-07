@@ -36,13 +36,14 @@ public class AuthUtil {
     private volatile long refreshedAt;
     public boolean isReady(){return snapshot.version()>=0 && System.nanoTime()-refreshedAt<java.util.concurrent.TimeUnit.SECONDS.toNanos(60);}
 
+    private final SessionVerifier verifier;
     private final AntPathMatcher antPathMatcher = new AntPathMatcher();
     private final JwtSignerHolder jwtSignerHolder;
     private final StringRedisTemplate stringRedisTemplate;
     private final BoundHashOperations<String, String, String> hashOps;
 
-    public AuthUtil(JwtSignerHolder jwtSignerHolder, StringRedisTemplate stringRedisTemplate) {
-        this.jwtSignerHolder = jwtSignerHolder;
+    public AuthUtil(JwtSignerHolder jwtSignerHolder, StringRedisTemplate stringRedisTemplate,SessionVerifier verifier) {
+        this.jwtSignerHolder = jwtSignerHolder;this.verifier=verifier;
         this.stringRedisTemplate = stringRedisTemplate;
         this.hashOps = stringRedisTemplate.boundHashOps(AUTH_PRIVILEGE_KEY);
     }
@@ -83,17 +84,19 @@ public class AuthUtil {
             return R.error(INVALID_TOKEN_CODE, INVALID_TOKEN_PAYLOAD);
         }
 
-        // 6.返回
+        if(!"tianji".equals(jwt.getPayload("iss")) || !"access".equals(jwt.getPayload("tokenType")) || !java.util.Objects.equals(jwt.getPayload("aud"),Long.valueOf(2).equals(userDTO.getRoleId())?"student":"admin"))return R.error(INVALID_TOKEN_CODE,INVALID_TOKEN);
+        verifier.validate(userDTO);
         return R.ok(userDTO);
     }
 
-    public void checkAuth(String antPath, R<LoginUserDTO> r) {
+    public void checkAuth(String antPath, R<LoginUserDTO> r) {checkAuth(antPath,r,false);}
+    public void checkAuth(String antPath, R<LoginUserDTO> r,boolean explicitlyDeclared) {
         Snapshot current=snapshot;
         if(!isReady()) throw new com.tianji.common.exceptions.ServiceUnavailableException("权限配置尚未就绪或已过期");
         String match=current.permissions().keySet().stream()
                 .filter(p->antPathMatcher.match(p,antPath))
                 .min(antPathMatcher.getPatternComparator(antPath)).orElse(null);
-        if(match==null){if(!r.success())throw new UnauthorizedException(r.getCode(),r.getMsg());return;}
+        if(match==null){if(!r.success())throw new UnauthorizedException(r.getCode(),r.getMsg());if(!explicitlyDeclared)throw new ForbiddenException("该接口没有授权规则");return;}
         if(!r.success()) throw new UnauthorizedException(r.getCode(),r.getMsg());
         if(!current.permissions().get(match).contains(r.getData().getRoleId()))
             throw new ForbiddenException(FORBIDDEN);

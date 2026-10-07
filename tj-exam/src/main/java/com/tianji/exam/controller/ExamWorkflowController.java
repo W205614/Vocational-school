@@ -48,6 +48,17 @@ public class ExamWorkflowController {
         return role==1L?jdbc.queryForList("SELECT a.*,p.course_id,p.section_id FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE status='WAIT_GRADING' ORDER BY submitted_at LIMIT 100")
                 :jdbc.queryForList("SELECT a.*,p.course_id,p.section_id FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id JOIN exam_grader g ON g.paper_id=a.paper_id WHERE g.user_id=? AND a.status='WAIT_GRADING' ORDER BY submitted_at LIMIT 100",user);
     }
+    @GetMapping("/teacher/exam-attempts/page") public Map<String,Object> pendingPage(@RequestParam(defaultValue="1") int pageNo,@RequestParam(defaultValue="20") int pageSize,@RequestParam(required=false) Long courseId,@RequestParam(required=false) Long studentId) {
+        long user=UserContext.requireUser();Long role=UserContext.getRole();
+        if(!Set.of(1L,3L).contains(role==null?0L:role))throw new ForbiddenException("需要评分教师权限");
+        if(pageNo<1 || pageNo>10000 || pageSize<1 || pageSize>100)throw new BadRequestException("分页范围无效");
+        String from=" FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE a.status='WAIT_GRADING'";List<Object> parameters=new ArrayList<>();
+        if(role!=1L){from+=" AND EXISTS(SELECT 1 FROM exam_grader g WHERE g.paper_id=a.paper_id AND g.user_id=?)";parameters.add(user);}
+        if(courseId!=null){from+=" AND p.course_id=?";parameters.add(courseId);}
+        if(studentId!=null){from+=" AND a.user_id=?";parameters.add(studentId);}
+        Long total=jdbc.queryForObject("SELECT COUNT(*)"+from,Long.class,parameters.toArray());parameters.add(pageSize);parameters.add((pageNo-1)*pageSize);
+        return Map.of("total",total,"pageNo",pageNo,"pageSize",pageSize,"list",jdbc.queryForList("SELECT a.*,p.course_id,p.section_id"+from+" ORDER BY a.submitted_at,a.id LIMIT ? OFFSET ?",parameters.toArray()));
+    }
     @GetMapping("/teacher/exam-attempts/{id}") public Map<String,Object> grading(@PathVariable long id) {
         long user=UserContext.requireUser();Long role=UserContext.getRole();
         if(!Long.valueOf(1).equals(role) && (!Long.valueOf(3).equals(role) || jdbc.queryForList("SELECT g.user_id FROM exam_grader g JOIN exam_attempt a ON a.paper_id=g.paper_id WHERE a.id=? AND g.user_id=?",id,user).isEmpty())) throw new ForbiddenException("没有评分权限");
