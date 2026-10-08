@@ -1,6 +1,7 @@
 """Archive and remove only unreferenced images proven to belong to this deployment."""
 import datetime
 import hashlib
+import gzip
 import json
 from pathlib import Path
 import subprocess
@@ -20,15 +21,26 @@ def candidates(images, owned, referenced):
 
 
 def verify_archive(path, expected):
-    configs=set()
+    configs=set();layers={}
     with tarfile.open(path, 'r') as archive:
         entries=json.load(archive.extractfile('manifest.json'))
         for entry in entries:
+            if not archive.getmember(entry['Config']).isfile():raise RuntimeError('Invalid image config in archive')
             with archive.extractfile(entry['Config']) as source:
-                configs.add('sha256:'+hashlib.file_digest(source, 'sha256').hexdigest())
-            # Every layer named by the manifest must exist in the complete archive.
-            for layer in entry['Layers']:
+                config=source.read();configs.add('sha256:'+hashlib.sha256(config).hexdigest())
+            roots=json.loads(config).get('rootfs',{})
+            if roots.get('type')!='layers' or len(roots.get('diff_ids',[]))!=len(entry['Layers']):
+                raise RuntimeError('Image root filesystem provenance is unavailable')
+            # diff_ids bind the uncompressed tar bytes, including shared layers.
+            for layer,diff_id in zip(entry['Layers'],roots['diff_ids']):
                 if not archive.getmember(layer).isfile():raise RuntimeError('Incomplete image archive')
+                if layer not in layers:
+                    with archive.extractfile(layer) as source:
+                        compressed=source.read(2)==b'\x1f\x8b';source.seek(0)
+                        if compressed:
+                            with gzip.GzipFile(fileobj=source) as plain:layers[layer]='sha256:'+hashlib.file_digest(plain,'sha256').hexdigest()
+                        else:layers[layer]='sha256:'+hashlib.file_digest(source,'sha256').hexdigest()
+                if layers[layer]!=diff_id:raise RuntimeError('Archived layer content differs from its image root filesystem')
     if configs!=set(expected):raise RuntimeError('Archived images differ from the removal inventory')
     with Path(path).open('rb') as source:return hashlib.file_digest(source, 'sha256').hexdigest()
 
