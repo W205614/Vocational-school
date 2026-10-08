@@ -3,6 +3,20 @@ export interface Field{key:string;label:string;kind?:'number'|'boolean'|'text'|'
 export interface Action{label:string;path:(row:Row)=>string;method:string;body?:(row:Row)=>unknown}
 export interface Resource{title:string;list:string;columns:[string,string][];fields?:Field[];create?:string;update?:(row:Row)=>string;detail?:(row:Row)=>string;remove?:(row:Row)=>string;actions?:Action[]}
 const f=(key:string,label:string,kind:Field['kind']='text',initial?:unknown):Field=>({key,label,kind,initial});
+export interface ResourceSearch{parameter:'name'|'keyword'|'id';label:string;localField?:string;idLabel?:string}
+export const resourceSearch:Record<string,ResourceSearch>={
+ courses:{parameter:'keyword',label:'按课程名称搜索'},
+ media:{parameter:'name',label:'按文件名搜索'},
+ questions:{parameter:'keyword',label:'按题干搜索'},
+ students:{parameter:'name',label:'按学生姓名搜索'},
+ staff:{parameter:'name',label:'按教师或员工姓名搜索'},
+ roles:{parameter:'name',label:'按角色名称搜索',localField:'name'},
+ coupons:{parameter:'name',label:'按优惠券名称搜索'},
+ orders:{parameter:'id',label:'按订单条目 ID 查询',idLabel:'订单条目 ID'},
+ refunds:{parameter:'id',label:'按退款 ID 查询',idLabel:'退款 ID'},
+ templates:{parameter:'keyword',label:'按模板名称搜索'},
+ notices:{parameter:'keyword',label:'按通知任务名称搜索'}
+};
 export const resources:Record<string,Resource>={
  courses:{title:'课程管理',list:'/admin/course/courses/page',columns:[['id','课程 ID'],['name','课程名称'],['price','价格'],['status','状态'],['purchaseEndTime','报名截止']],create:'/admin/course/courses/baseInfo/save',update:()=>'/admin/course/courses/baseInfo/save',detail:r=>'/admin/course/courses/baseInfo/'+r.id+'?see=false',fields:[f('name','课程名称'),f('thirdCateId','三级分类 ID'),f('coverUrl','封面地址'),f('free','免费课程','boolean',false),f('price','价格（分）','number',0),f('purchaseEndTime','购买截止','datetime'),f('validDuration','学习有效期（月，0 永久）','number',0),f('introduce','课程介绍','long'),f('usePeople','适用人群'),f('detail','课程详情','long')],remove:r=>'/admin/course/courses/delete/'+r.id,actions:[{label:'上架',path:()=>'/admin/course/courses/upShelf',method:'POST',body:r=>({id:r.id})},{label:'下架',path:()=>'/admin/course/courses/downShelf',method:'POST',body:r=>({id:r.id})}]},
  media:{title:'媒资管理',list:'/admin/media/medias',columns:[['id','媒资 ID'],['filename','文件名'],['duration','时长'],['useTimes','引用次数'],['creater','创建人']],remove:r=>'/admin/media/medias/'+r.id},
