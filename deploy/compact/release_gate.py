@@ -15,7 +15,7 @@ if expected:
  try:
   live=manifest(LOCAL,COMPOSE,ROOT,expected['snapshotPath'])
   checks['live-build-config-snapshot']=all(live.get(key)==expected.get(key) for key in ('sourceCommit','imageDigests','configFingerprint','baseSnapshotFingerprint'))
-  checks['publication-source-equivalence']=verify_publication(ROOT,expected['sourceCommit'])
+  checks['publication-source-equivalence']=verify_publication(ROOT,expected['sourceCommit'],deployment_manifest=expected)
  except (ValueError,KeyError,TypeError,OSError):pass
 directory=LOCAL/'evidence'/expected['releaseRunId'] if expected else LOCAL/'missing-evidence'
 for name,status in [('security-smoke','PASSED'),('browser-result','PASSED'),('backend-result','PASSED'),('audit-smoke','PASSED'),('redis-recovery-proof','PASSED'),('recovery-acceptance','PASSED')]:

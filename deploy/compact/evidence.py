@@ -42,7 +42,7 @@ def manifest(local, compose, source_root, snapshot):
             'imageDigests': images, 'configFingerprint': configuration,
             'baseSnapshotFingerprint': digest(snapshot), 'snapshotPath':str(Path(snapshot).resolve()), 'createdAt': utcnow()}
 
-def verify_publication(source_root, measured, publication='HEAD'):
+def verify_publication(source_root, measured, publication='HEAD', deployment_manifest=None):
     """A README-only descendant does not rewrite the commit recorded in measurements."""
     base=['git','-C',str(source_root)]
     head=subprocess.check_output(base+['rev-parse',publication],text=True).strip()
@@ -52,7 +52,19 @@ def verify_publication(source_root, measured, publication='HEAD'):
     if any(not path.endswith('.md') and not path.startswith('deploy/compact/reports/') for path in changed):return False
     dirty=subprocess.check_output(base+['diff','--name-only',head],text=True).splitlines()
     untracked=subprocess.check_output(base+['ls-files','--others','--exclude-standard'],text=True).splitlines()
-    return not any(not path.endswith('.md') and path!='.gitignore' for path in dirty) and not any('/src/main/' in path or path.endswith('pom.xml') or path.startswith('frontend/') for path in untracked)
+    allowed={'.gitignore'}
+    # The public Compose template uses buildable image names. Freezing a local
+    # deployment replaces them with exact image IDs. This generated worktree
+    # file is accepted only when the entire live configuration equals the
+    # captured manifest; it may not be changed in the publication commit.
+    if deployment_manifest and deployment_manifest.get('sourceCommit')==measured:
+        home=Path(source_root)/'deploy/compact'
+        from config_equivalence import config_fingerprint
+        try:
+            if config_fingerprint(home)==deployment_manifest.get('configFingerprint'):
+                allowed.add('deploy/compact/compose.yaml')
+        except (OSError,ValueError):pass
+    return not any(not path.endswith('.md') and path not in allowed for path in dirty) and not any('/src/main/' in path or path.endswith('pom.xml') or path.startswith('frontend/') for path in untracked)
 
 BINDINGS = ('schemaVersion', 'releaseRunId', 'sourceCommit', 'imageDigests',
             'configFingerprint', 'baseSnapshotFingerprint')
