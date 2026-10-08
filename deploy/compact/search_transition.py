@@ -112,8 +112,10 @@ def main():
         if apps:run(COMPOSE+['stop','-t','60',*apps],'search-pause-apps')
         sys.path.insert(0,str(ROOT/'deploy/final'));from final_backup import capture,verify
         backup=capture(configure_acceptance(),BASE,quiesced=True);verify(backup);report['backup']=str(backup)
-        (folder/'previous-images.json').write_bytes((LOCAL/'images.json').read_bytes())
-        (folder/'previous-build-source.json').write_bytes((LOCAL/'build-source.json').read_bytes())
+        for name in ('images.json','build-source.json'):
+            previous=LOCAL/name
+            if previous.exists():(folder/('previous-'+name)).write_bytes(previous.read_bytes())
+        report['previousSourceBindingAvailable']=(LOCAL/'build-source.json').exists()
         financial=mysql('SELECT id,status,deleted,pay_time,finish_time FROM tj_trade.`order` ORDER BY id')+'\n'+mysql('SELECT id,order_id,user_id,course_id,status,refund_status,valid_duration,course_expire_time FROM tj_trade.order_detail ORDER BY id')
         report['financialFingerprintBefore']=hashlib.sha256(financial.encode()).hexdigest()
         run(COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','stop_app'],'search-pause-consumers')
@@ -132,18 +134,27 @@ def main():
         rebuild_facts()
         (LOCAL/'images.json').write_text(json.dumps(images,indent=2),encoding='utf8')
         (LOCAL/'build-source.json').write_text(json.dumps(source,indent=2),encoding='utf8')
-        infrastructure=json.loads((LOCAL/'infrastructure-images.json').read_text(encoding='utf8'))
+        infrastructure_path=LOCAL/'infrastructure-images.json'
+        if infrastructure_path.exists():
+            infrastructure=json.loads(infrastructure_path.read_text(encoding='utf8'))
+        else:
+            ids=subprocess.check_output(COMPOSE+['ps','-aq'],text=True).splitlines()
+            infrastructure={item['Config']['Labels']['com.docker.compose.service']:item['Image']
+                for item in json.loads(subprocess.check_output(['docker','inspect',*ids],text=True))
+                if item['Config']['Labels']['com.docker.compose.service'] in ('mysql','redis','rabbitmq','elasticsearch')}
         infrastructure['elasticsearch']=digest
         (LOCAL/'infrastructure-images.json').write_text(json.dumps(infrastructure,indent=2),encoding='utf8')
         # Resume consumers once the engine, schema and authoritative rebuild tasks
         # are in place. Public writers remain stopped until all projections converge.
         run(COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','start_app'],'search-resume-consumers')
-        run(COMPOSE+['up','-d','--wait','--no-deps',*['app-'+group for group in GROUPS]],'search-rebuild-apps')
+        # Commerce workers can settle retained pending payments without a public
+        # writer. Keep them paused while verifying the financial snapshot.
+        run(COMPOSE+['up','-d','--wait','--no-deps','app-identity','app-education','app-support'],'search-rebuild-apps')
         report.update(verify_projection())
         after=mysql('SELECT id,status,deleted,pay_time,finish_time FROM tj_trade.`order` ORDER BY id')+'\n'+mysql('SELECT id,order_id,user_id,course_id,status,refund_status,valid_duration,course_expire_time FROM tj_trade.order_detail ORDER BY id')
         report['financialFingerprintAfter']=hashlib.sha256(after.encode()).hexdigest()
         if report['financialFingerprintBefore']!=report['financialFingerprintAfter']:raise RuntimeError('Financial facts changed during quiesced search transition')
-        run(COMPOSE+['up','-d','--wait','--no-deps','app-gateway','web-student','web-admin'],'search-resume-writers')
+        run(COMPOSE+['up','-d','--wait','--no-deps','app-commerce','app-gateway','web-student','web-admin'],'search-resume-writers')
         report.update(status='PASSED',imageDigest=digest,newVolume=PROJECT+'_'+volume)
     except Exception as error:
         report['failureType']=type(error).__name__
