@@ -21,6 +21,23 @@ test('course discovery has working categories, filters and empty-state recovery'
 test('student can find exams without entering internal IDs',async({page},info)=>{
  test.skip(info.project.name!=='student');await login(page,'student');await page.getByRole('link',{name:'课程考试',exact:true}).click();await expect(page.getByRole('combobox',{name:'选择考试课程',exact:true})).toBeVisible();await expect(page.getByPlaceholder('课程 ID')).toHaveCount(0);await expect(page.getByText('请选择已报名课程查看考试',{exact:true})).toBeVisible();
 });
+
+test('expired enrollment explains exam access and keeps history visible',async({page},info)=>{
+ test.skip(info.project.name!=='student');await login(page,'student');
+ const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
+ await page.goto('/exams?courseId='+fixture.expiredCourse);
+ await expect(page.locator('.enrollment-hint')).toContainText('学习权益已失效');
+ await expect(page.locator('.enrollment-hint')).toContainText('学习记录和已有答卷仍然保留');
+ await expect(page.getByRole('button',{name:'查询试卷',exact:true})).toBeDisabled();
+ await expect(page.locator('.el-alert--error')).toHaveCount(0);
+ await page.getByRole('combobox',{name:'选择考试课程',exact:true}).click();
+ await expect(page.getByRole('option',{name:'Browser expired '+fixture.marker+'（权益已失效）',exact:true})).toHaveAttribute('aria-disabled','true');
+ await page.getByRole('option',{name:'Browser notes '+fixture.marker,exact:true}).click();
+ await expect(page.getByText('这门课程暂未发布试卷',{exact:true})).toBeVisible();
+ await expect(page.locator('.enrollment-hint')).toHaveCount(0);
+ await page.getByRole('link',{name:'返回我的学习 →',exact:true}).click();
+ await expect(page.getByText('Browser expired '+fixture.marker,{exact:true})).toBeVisible();
+});
 test('search highlights readable titles and applies the selected price order',async({page},info)=>{
  test.skip(info.project.name!=='student');await login(page,'student');
  const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
