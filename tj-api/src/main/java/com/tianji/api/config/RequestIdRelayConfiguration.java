@@ -12,8 +12,8 @@ import static com.tianji.common.constants.Constant.*;
 @Configuration
 @EnableFeignClients(basePackages = "com.tianji.api.client")
 public class RequestIdRelayConfiguration {
-    @Bean
-    public feign.Capability upstreamBulkhead(org.springframework.core.env.Environment environment){
+    @Bean(destroyMethod="close")
+    public FeignBulkheadCapability upstreamBulkhead(org.springframework.core.env.Environment environment){
         String ports=environment.getProperty("tj.feign.internal-ports","");
         var internalPorts=java.util.Arrays.stream(ports.split(",")).filter(value->!value.isBlank()).map(String::trim).map(Integer::valueOf).collect(java.util.stream.Collectors.toSet());
         return new FeignBulkheadCapability(environment.getProperty("tj.feign.max-concurrent",Integer.class,32),internalPorts);

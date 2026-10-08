@@ -17,12 +17,26 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
     private final AuthProperties properties;
     private final com.tianji.gateway.config.AccessPolicy policy;
     private final reactor.core.scheduler.Scheduler authorizationScheduler;
-    private final java.util.concurrent.Semaphore requests=new java.util.concurrent.Semaphore(200);
+    private final java.util.concurrent.Semaphore requests=new java.util.concurrent.Semaphore(200,true);
     private final AntPathMatcher matcher=new AntPathMatcher();
     public AccountAuthFilter(AuthUtil auth,AuthProperties properties,com.tianji.gateway.config.AccessPolicy policy,@org.springframework.beans.factory.annotation.Qualifier("authorizationScheduler") reactor.core.scheduler.Scheduler authorizationScheduler) {this.auth=auth;this.properties=properties;this.policy=policy;this.authorizationScheduler=authorizationScheduler;}
     @Override public Mono<Void> filter(ServerWebExchange exchange,GatewayFilterChain chain) {
         // Permission-cache Redis calls are blocking; never run them on Netty's event loop.
-        return Mono.defer(()->{if(!requests.tryAcquire())return Mono.error(new TooManyRequestsException("服务繁忙，请稍后重试"));return Mono.defer(()->authorize(exchange,chain)).subscribeOn(authorizationScheduler).doFinally(signal->requests.release());});
+        // Acquire off Netty. using also disposes an acquisition completed after cancellation,
+        // and eager cleanup releases capacity before downstream observes completion.
+        return Mono.using(this::admit,permit->Mono.defer(()->authorize(exchange,chain)),Admission::close,true)
+                .subscribeOn(authorizationScheduler);
+    }
+    private Admission admit() {
+        try {
+            if(!requests.tryAcquire(1500,java.util.concurrent.TimeUnit.MILLISECONDS))
+                throw new TooManyRequestsException("服务繁忙，请稍后重试");
+            return new Admission();
+        }catch(InterruptedException error){Thread.currentThread().interrupt();throw new TooManyRequestsException("请求等待已取消");}
+    }
+    private final class Admission {
+        private final java.util.concurrent.atomic.AtomicBoolean closed=new java.util.concurrent.atomic.AtomicBoolean();
+        private void close(){if(closed.compareAndSet(false,true))requests.release();}
     }
     private Mono<Void> authorize(ServerWebExchange exchange,GatewayFilterChain chain) {
         // Identity is derived exclusively from the signed token. Strip on every path, including public paths.

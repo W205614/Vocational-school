@@ -5,7 +5,7 @@ import reactor.core.scheduler.*;
 @Configuration(proxyBeanMethods=false)
 public class AuthorizationExecutorConfiguration {
  @Bean public ThreadPoolTaskExecutor authorizationExecutor(){
-  var pool=new ThreadPoolTaskExecutor();pool.setCorePoolSize(8);pool.setMaxPoolSize(8);pool.setQueueCapacity(100);
+  var pool=new ThreadPoolTaskExecutor();pool.setCorePoolSize(8);pool.setMaxPoolSize(8);pool.setQueueCapacity(200);
   pool.setThreadNamePrefix("gateway-auth-");pool.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.AbortPolicy());
   pool.setWaitForTasksToCompleteOnShutdown(true);pool.setAwaitTerminationSeconds(30);return pool;
  }
