@@ -205,6 +205,7 @@ GET:/api/v2/auth/accounts/refresh
 GET:/api/v2/auth/accounts/sessions
 GET:/api/v2/environment
 GET:/api/v2/exam-attempts/{id}
+GET:/api/v2/exam-attempts/page
 GET:/api/v2/exam-attempts/{id}/draft
 GET:/api/v2/exam-papers
 GET:/api/v2/favorites

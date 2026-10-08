@@ -42,9 +42,12 @@ def main():
   mysql(f"INSERT INTO course_catalogue(id,name,course_id,type,parent_catalogue_id,trailer,media_duration,c_index,dep_id,creater,updater) VALUES({i},'{name}',{expired_course},{kind},{parent},0,2,{1 if kind<3 else 2},0,{admin},{admin})",'tj_course')
  # Explicit expired learning history must remain visible without offering a new exam.
  mysql(f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections,latest_learn_time) VALUES({course+31},{accounts['student']['id']},{expired_course},NOW()-INTERVAL 1 DAY,3,0,NOW()-INTERVAL 2 DAY)",'tj_learning')
+ # An unsubmitted historical draft proves read-only discovery after expiry.
+ expired_paper,expired_attempt,expired_question=course+35,course+36,course+37
+ mysql(f"INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count) VALUES({expired_paper},{expired_course},{course+34},1,10,60,2);INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score) VALUES({expired_paper},{expired_question},1,'Expired retained answer',5,10);INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id) VALUES({expired_attempt},{expired_paper},{accounts['student']['id']},{course+31});INSERT INTO exam_draft(attempt_id,answers,version) VALUES({expired_attempt},'{{\"{expired_question}\":\"Historical draft before expiry\"}}',1)",'tj_exam')
  for assigned_course in [free_course,expired_course]:
   mysql(f"INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES({assigned_course},{assigned_course},{teacher},1,1,0,NOW(),NOW(),{admin},{admin},0)",'tj_course')
- fixture=dict(marker=marker,expiredCourse=str(expired_course),freeCourse=str(free_course),notesCourse=str(notes_course),notesLesson=str(notes_lesson),course=str(course),chapter=str(chapter),video=str(video),exam=str(exam),objective=str(objective),subjective=str(subjective),name='Browser course '+marker)
+ fixture=dict(marker=marker,expiredCourse=str(expired_course),expiredAttempt=str(expired_attempt),expiredQuestion=str(expired_question),freeCourse=str(free_course),notesCourse=str(notes_course),notesLesson=str(notes_lesson),course=str(course),chapter=str(chapter),video=str(video),exam=str(exam),objective=str(objective),subjective=str(subjective),name='Browser course '+marker)
  (LOCAL/'browser-fixture.json').write_text(json.dumps(fixture,indent=2))
  print('Fresh isolated browser fixtures created')
 if __name__=='__main__':main()

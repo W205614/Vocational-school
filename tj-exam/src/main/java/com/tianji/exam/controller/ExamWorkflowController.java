@@ -39,6 +39,18 @@ public class ExamWorkflowController {
         return command(key,new Command("START",id,null,lesson,null,null,null,null,null,null));
     }
     @GetMapping("/exam-attempts/{id}") public Map<String,Object> attempt(@PathVariable long id) {return service.view(id,UserContext.requireUser(),false);}
+    @GetMapping("/exam-attempts/page") public Map<String,Object> history(@RequestParam(defaultValue="1") int pageNo,@RequestParam(defaultValue="20") int pageSize,@RequestParam(required=false) Long courseId) {
+        long user=UserContext.requireUser();
+        if(pageNo<1 || pageNo>10000 || pageSize<1 || pageSize>100 || courseId!=null && courseId<=0)throw new BadRequestException("分页或课程参数无效");
+        // Retained attempts belong to the student even after a refund or expiry.
+        // Listing history never grants permission to start or submit an exam.
+        String from=" FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE a.user_id=?";
+        List<Object> parameters=new ArrayList<>();parameters.add(user);
+        if(courseId!=null){from+=" AND p.course_id=?";parameters.add(courseId);}
+        Long total=jdbc.queryForObject("SELECT COUNT(*)"+from,Long.class,parameters.toArray());parameters.add(pageSize);parameters.add((pageNo-1)*pageSize);
+        var list=jdbc.queryForList("SELECT a.id,a.paper_id,a.status,a.score,a.passed,a.created_at,a.submitted_at,a.graded_at,p.course_id,p.section_id,p.version AS paper_version,p.total_score"+from+" ORDER BY a.created_at DESC,a.id DESC LIMIT ? OFFSET ?",parameters.toArray());
+        return Map.of("total",total,"pageNo",pageNo,"pageSize",pageSize,"list",list);
+    }
     @PostMapping("/exam-attempts/{id}/submit") public ResponseEntity<OperationStore.View> submit(@PathVariable long id,@RequestBody Command form,@RequestHeader("Idempotency-Key") String key) {
         return command(key,new Command("SUBMIT",null,id,null,form.answers(),null,null,form.version(),null,null));
     }

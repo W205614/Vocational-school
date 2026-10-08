@@ -13,6 +13,7 @@ import java.util.*;
 public class ExamDraftService {
     private final JdbcTemplate jdbc;
     private final JsonMapper json;
+    private final ExamWorkflowService workflow;
     public record Save(Long version, Map<Long,String> answers) {}
     public record View(long version, Map<String,String> answers, String status) {}
 
@@ -22,6 +23,9 @@ public class ExamDraftService {
     }
 
     @Transactional public View save(long id, long user, Save request) {
+        // Validate the durable owner before taking the attempt lock for a write.
+        // Reading retained history remains independent of current entitlement.
+        workflow.requireDraftWrite(id,user);
         var attempt=ownedAttempt(id,user);
         if(!"IN_PROGRESS".equals(attempt.get("status"))) throw new ConflictException("答卷已提交，不能修改草稿");
         if(request==null || request.version()==null || request.version()<0 || request.answers()==null || request.answers().size()>100)
@@ -52,7 +56,9 @@ public class ExamDraftService {
     }
     @SuppressWarnings("unchecked")
     private View readLocked(long id,String status) {
-        var rows=jdbc.queryForList("SELECT answers,version FROM exam_draft WHERE attempt_id=?",id);
+        // Entitlement validation can establish an earlier REPEATABLE READ
+        // snapshot. After waiting for the attempt lock, read the latest revision.
+        var rows=jdbc.queryForList("SELECT answers,version FROM exam_draft WHERE attempt_id=? FOR UPDATE",id);
         if(rows.isEmpty()) return new View(0,Map.of(),status);
         var row=rows.getFirst();
         return new View(((Number)row.get("version")).longValue(),json.readValue(row.get("answers").toString(),Map.class),status);

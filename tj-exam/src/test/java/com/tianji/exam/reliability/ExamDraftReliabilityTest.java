@@ -18,18 +18,25 @@ import static org.junit.jupiter.api.Assertions.*;
 class ExamDraftReliabilityTest {
  private JdbcTemplate jdbc;private TransactionTemplate tx;private ExamDraftService drafts;private ExamWorkflowService workflow;
  private long paper,user,question,attempt;
+ private com.tianji.api.client.learning.LearningClient learning;
  @BeforeEach void setup(){
   var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_exam?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
   jdbc=new JdbcTemplate(source);tx=new TransactionTemplate(new DataSourceTransactionManager(source));var json=JsonMapper.builder().build();
   paper=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();user=paper+1;question=paper+2;attempt=paper+3;
-  var learning=org.mockito.Mockito.mock(com.tianji.api.client.learning.LearningClient.class);org.mockito.Mockito.when(learning.isLessonValid(paper)).thenReturn(paper);
-  drafts=new ExamDraftService(jdbc,json);workflow=new ExamWorkflowService(jdbc,json,new OutboxStore(jdbc,json),learning);
+  learning=org.mockito.Mockito.mock(com.tianji.api.client.learning.LearningClient.class);org.mockito.Mockito.when(learning.isLessonValid(paper)).thenReturn(paper);
+  workflow=new ExamWorkflowService(jdbc,json,new OutboxStore(jdbc,json),learning);drafts=new ExamDraftService(jdbc,json,workflow);
   jdbc.update("INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count) VALUES(?,?,?,1,10,60,1)",paper,paper,paper);
   jdbc.update("INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,answer) VALUES(?,?,1,'objective',2,10,'1,2')",paper,question);
   jdbc.update("INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id) VALUES(?,?,?,?)",attempt,paper,user,paper);
  }
  private ExamDraftService.View save(long version,String answer){return tx.execute(s->drafts.save(attempt,user,new ExamDraftService.Save(version,Map.of(question,answer))));}
  private Object submit(long version){return tx.execute(s->workflow.execute("test",user,JsonMapper.builder().build().writeValueAsString(new ExamWorkflowService.Command("SUBMIT",null,attempt,null,Map.of(question,"1,2"),null,null,version,null,null))));}
+ @Test void revokedEntitlementKeepsDraftReadableButRejectsFurtherWrites(){
+  var retained=save(0,"1,2");org.mockito.Mockito.when(learning.isLessonValid(paper)).thenReturn(null);
+  assertEquals(retained,tx.execute(s->drafts.read(attempt,user)));
+  assertThrows(ForbiddenException.class,()->save(1,"3"));
+  assertEquals(retained,tx.execute(s->drafts.read(attempt,user)));assertEquals("IN_PROGRESS",jdbc.queryForObject("SELECT status FROM exam_attempt WHERE id=?",String.class,attempt));
+ }
  @Test void competingDraftsNeverOverwriteEachOther() throws Exception {
   var accepted=new AtomicInteger();var rejected=new AtomicInteger();
   try(var pool=Executors.newFixedThreadPool(10)){
@@ -41,7 +48,7 @@ class ExamDraftReliabilityTest {
  }
  @Test void retryAndNewServiceRestoreExactlyTheSameRevision(){
   var first=save(0,"1,2");var retry=save(0,"1,2");assertEquals(first,retry);
-  var restarted=new ExamDraftService(jdbc,JsonMapper.builder().build());
+  var restarted=new ExamDraftService(jdbc,JsonMapper.builder().build(),workflow);
   assertEquals(first,tx.execute(s->restarted.read(attempt,user)));
   assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM exam_draft WHERE attempt_id=?",Integer.class,attempt));
  }

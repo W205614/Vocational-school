@@ -23,6 +23,36 @@ class ExamReliabilityTest {
  }
  private Map<String,Object> execute(long actor,Command command){return tx.execute(s->(Map<String,Object>)service.execute(UUID.randomUUID().toString(),actor,json.writeValueAsString(command)));}
  private long start(){var view=execute(user,new Command("START",paper,null,paper,null,null,null,null,null,null));return ((Number)view.get("id")).longValue();}
+ private com.tianji.exam.controller.ExamWorkflowController controller(){return new com.tianji.exam.controller.ExamWorkflowController(service,null,null,learning,jdbc,null);}
+ @Test void historyIsOwnerScopedPagedAndReadableAfterEntitlementRevocation(){
+  long otherPaper=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();
+  jdbc.update("INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count) VALUES(?,?,?,1,10,60,1)",otherPaper,otherPaper,otherPaper);
+  List<Long> mine=new ArrayList<>();
+  for(int i=0;i<3;i++){long id=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();mine.add(id);jdbc.update("INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id,status,score,passed,created_at) VALUES(?,?,?,?,'FINISHED',8,1,'2026-01-01 10:00:00')",id,paper,user,paper);}
+  long foreign=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId(),other=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();
+  jdbc.update("INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id,status,score,passed,created_at) VALUES(?,?,?,?,'FINISHED',8,1,'2026-01-02 10:00:00')",foreign,paper,user+99,paper);
+  jdbc.update("INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id,status) VALUES(?,?,?,?,'FINISHED')",other,otherPaper,user,otherPaper);
+  jdbc.update("INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,answer,analysis) VALUES(?,?,1,'retained objective',2,10,'1,2','private reference')",paper,question);
+  jdbc.update("INSERT INTO exam_answer(attempt_id,question_id,response,score) VALUES(?,?,?,8)",mine.getLast(),question,"2,1");
+  org.mockito.Mockito.reset(learning);org.mockito.Mockito.when(learning.isLessonValid(paper)).thenReturn(null);
+  com.tianji.common.utils.UserContext.setUser(user);
+  try{
+   var first=controller().history(1,2,paper);assertEquals(3L,first.get("total"));assertEquals(1,first.get("pageNo"));
+   var rows=(List<Map<String,Object>>)first.get("list");assertEquals(List.of(mine.get(2),mine.get(1)),rows.stream().map(r->r.get("id")).toList());
+   for(var row:rows){assertFalse(row.containsKey("user_id"));assertFalse(row.containsKey("answers"));assertFalse(row.containsKey("answer"));assertFalse(row.containsKey("analysis"));}
+   assertEquals(mine.getFirst(),((List<Map<String,Object>>)controller().history(2,2,paper).get("list")).getFirst().get("id"));
+   assertTrue(((List<?>)controller().history(3,2,paper).get("list")).isEmpty());assertEquals(4L,controller().history(1,20,null).get("total"));assertEquals(1L,controller().history(1,20,otherPaper).get("total"));
+   var detail=controller().attempt(mine.getLast());assertTrue(json.writeValueAsString(detail).contains("2,1"));assertFalse(json.writeValueAsString(detail).contains("private reference"));
+   assertThrows(BadRequestException.class,()->controller().attempt(foreign));org.mockito.Mockito.verifyNoInteractions(learning);
+   assertThrows(ForbiddenException.class,this::start);
+  }finally{com.tianji.common.utils.UserContext.removeUser();}
+ }
+ @Test void historyRejectsAnonymousAndUnboundedOrInvalidQueries(){
+  com.tianji.common.utils.UserContext.removeUser();assertThrows(UnauthorizedException.class,()->controller().history(1,20,null));
+  com.tianji.common.utils.UserContext.setUser(user);
+  try{for(int[] range:List.of(new int[]{0,20},new int[]{10001,20},new int[]{1,0},new int[]{1,101}))assertThrows(BadRequestException.class,()->controller().history(range[0],range[1],null));assertThrows(BadRequestException.class,()->controller().history(1,20,0L));assertThrows(BadRequestException.class,()->controller().history(1,20,-1L));assertEquals(0L,controller().history(1,20,paper+999).get("total"));}
+  finally{com.tianji.common.utils.UserContext.removeUser();}
+ }
  @Test void workerUsesDurableOwnerAndRestoresIdentityAfterFailedValidation() {
   var oldUser=user+100;var oldSession="previous-request";
   com.tianji.common.utils.UserContext.setUser(oldUser);com.tianji.common.utils.UserContext.setRole(1L);

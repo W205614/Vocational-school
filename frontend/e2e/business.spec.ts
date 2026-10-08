@@ -5,7 +5,7 @@ const accounts=JSON.parse(fs.readFileSync((process.env.TJ_UI_RUNTIME_HOME||'../d
 const fixture=JSON.parse(fs.readFileSync((process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local')+'/browser-fixture.json','utf8'));
 async function login(page:Page,role:string,path:string){await page.goto(path);await page.locator('input[autocomplete="username"]').fill(accounts[role].username);await page.locator('input[autocomplete="current-password"]').fill(accounts[role].password);await page.getByRole('button',{name:role==='student'?'登录':'登录管理端',exact:true}).click();await expect(page.locator('.sidebar')).toBeVisible();}
 async function api(page:Page,path:string,method='GET',data?:unknown){const token=await page.evaluate(()=>sessionStorage.getItem('school-token'));const r=await page.request.fetch('/api/v2'+path,{method,data,headers:{Authorization:'Bearer '+token,'Idempotency-Key':crypto.randomUUID()}});const body=await r.json();expect(r.ok(),JSON.stringify(body)).toBeTruthy();expect(body.code).toBe(200);return body.data;}
-async function pick(page:Page,label:string,keyword:string,names:string[],multiple=false){await page.getByRole('button',{name:label,exact:true}).click();const dialog=page.getByRole('dialog',{name:label,exact:true});await dialog.getByRole('textbox',{name:label+'关键词',exact:true}).fill(keyword);await dialog.getByRole('button',{name:'查询',exact:true}).click();for(const name of names)await dialog.locator('.el-table__row').filter({hasText:name}).getByRole('button',{name:multiple?'添加':'选用',exact:true}).click();if(multiple)await dialog.getByRole('button',{name:'确认选择',exact:true}).click();await expect(dialog).not.toBeVisible();}
+async function pick(page:Page,label:string,keyword:string,names:string[],multiple=false){await page.getByRole('button',{name:label,exact:true}).click();const dialog=page.getByRole('dialog',{name:label,exact:true});await dialog.getByRole('textbox',{name:label+'关键词',exact:true}).fill(keyword);const result=page.waitForResponse(response=>{const params=new URL(response.url()).searchParams;return params.get('keyword')===keyword || params.get('name')===keyword;});await dialog.getByRole('button',{name:'查询',exact:true}).click();expect((await result).ok()).toBeTruthy();await expect(dialog.locator('.el-loading-mask:visible')).toHaveCount(0);for(const name of names)await expect(dialog.locator('.el-table__row').filter({hasText:name})).toBeVisible();for(const name of names)await dialog.locator('.el-table__row').filter({hasText:name}).getByRole('button',{name:multiple?'添加':'选用',exact:true}).click();if(multiple)await dialog.getByRole('button',{name:'确认选择',exact:true}).click();await expect(dialog).not.toBeVisible();}
 test('browser purchase, real local video, discussions, exam grading and targeted refund',async({page,browser},info)=>{
  test.skip(info.project.name!=='student');test.setTimeout(180000);
  const adminContext=await browser.newContext({baseURL:process.env.TJ_ADMIN_URL||'http://127.0.0.1:23501'}),admin=await adminContext.newPage();
@@ -89,6 +89,19 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   const refundedBytes=await page.request.get(retainedPlayUrl!,{headers:{Range:'bytes=0-31'}});expect(refundedBytes.status()).toBe(403);
   await assertPersistedAudit(admin);
   await page.goto('/courses/'+fixture.course);await expect(page.getByText('学习权益已失效',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:/Browser video/})).toBeDisabled();await expect(page.getByRole('link',{name:'查看考试记录 →',exact:true})).toBeVisible();await expect(page.locator('video')).toHaveCount(0);
+  // A fresh device has no active-attempt cache. Refunded students still need
+  // to discover and read their own graded history through the server list.
+  const historyContext=await browser.newContext({baseURL:process.env.TJ_STUDENT_URL||'http://127.0.0.1:23500'}),historyPage=await historyContext.newPage();
+  try{
+   await login(historyPage,'student','/exams?courseId='+fixture.course);
+   expect(await historyPage.evaluate(()=>sessionStorage.getItem('school-active-exam'))).toBeNull();
+   const history=historyPage.getByRole('region',{name:'我的考试记录',exact:true});
+   const record=history.locator('.el-table__row').filter({hasText:attempt!});await expect(record).toHaveCount(1);
+   await record.getByRole('button',{name:'查看答卷',exact:true}).click();await expect(historyPage.locator('.exam-result')).toContainText('20');await expect(historyPage.locator('.exam-result')).toContainText('已通过');
+   await expect(historyPage.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Explain reliable transactions');await expect(historyPage.getByPlaceholder('请写下你的答案',{exact:true})).toBeDisabled();await expect(historyPage.getByRole('button',{name:'提交全部答案',exact:true})).toHaveCount(0);
+   const list=await api(historyPage,'/exam-attempts/page?courseId='+fixture.course+'&pageNo=1&pageSize=20');expect(Number(list.total)).toBe(1);expect(list.list[0].id).toBe(attempt);expect(list.list[0]).not.toHaveProperty('answers');expect(list.list[0]).not.toHaveProperty('user_id');
+   await historyPage.setViewportSize({width:390,height:844});expect(await historyPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await historyPage.screenshot({path:(process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local')+'/ux-screenshots/exam-history-390.png',fullPage:true});
+  }finally{await historyContext.close();}
   await page.goto('/notes');await expect(page.getByText(note,{exact:true})).toBeVisible();
  }finally{await adminContext.close();await teacherContext.close();}
 });

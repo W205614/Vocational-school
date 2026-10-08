@@ -11,6 +11,18 @@
     "version": "v1.0"
   },
   "paths": {
+    "/api/v2/exam-attempts/page": {
+      "get": {
+        "summary": "分页查询本人考试记录，权益失效后仍可读取历史",
+        "operationId": "myExamHistory",
+        "parameters": [
+          {"name": "pageNo", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 10000, "default": 1}},
+          {"name": "pageSize", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}},
+          {"name": "courseId", "in": "query", "schema": {"type": "string", "pattern": "^[1-9][0-9]*$"}}
+        ],
+        "responses": {"200": {"description": "仅本人记录元数据，不包含答案、标准答案或其他学生信息"}, "400": {"description": "分页或课程参数无效"}, "401": {"description": "尚未登录"}}
+      }
+    },
     "/api/v2/services/exam/questions/{id}": {
       "get": {
         "tags": [

@@ -3,14 +3,14 @@ import {get,write,ApiError} from '../../../../packages/shared/src/client';
 import type {Row} from '../../../../packages/shared/src/ui';
 
 type Draft={version:string;answers:Record<string,string>;status:string};
-export function useExamDraft(attempt:Ref<Row|undefined>,responses:Ref<Record<string,string>>) {
+export function useExamDraft(attempt:Ref<Row|undefined>,responses:Ref<Record<string,string>>,readOnly:Readonly<Ref<boolean>>=ref(false)) {
  const state=ref(''),conflict=ref(false),version=ref('0'),ready=ref(false),backup=ref<Record<string,string>>({});
  let generation=0,current='',ack='{}',restoring=false,timer:ReturnType<typeof setTimeout>|undefined,inflight:Promise<boolean>|undefined;
  const key=(id:string)=>'school-exam-draft-'+id;
  const json=()=>JSON.stringify(responses.value,Object.keys(responses.value).sort());
  function persist(){if(current){sessionStorage.setItem(key(current),JSON.stringify(responses.value));sessionStorage.setItem(key(current)+'-meta',JSON.stringify({version:version.value,dirty:json()!==ack}));}}
  function schedule(){if(timer)clearTimeout(timer);timer=setTimeout(()=>{void sync();},650);}
- watch(responses,()=>{if(restoring || !current || attempt.value?.status!=='IN_PROGRESS')return;persist();if(!conflict.value){state.value='草稿待同步';schedule();}},{deep:true,flush:'sync'});
+ watch(responses,()=>{if(restoring || !current || attempt.value?.status!=='IN_PROGRESS' || readOnly.value)return;persist();if(!conflict.value){state.value='草稿待同步';schedule();}},{deep:true,flush:'sync'});
  async function restore(value:Row){
   generation++;if(timer)clearTimeout(timer);current='';conflict.value=false;inflight=undefined;ready.value=false;backup.value={};
   if(value.status!=='IN_PROGRESS'){state.value='';ready.value=true;return;}
@@ -25,11 +25,12 @@ export function useExamDraft(attempt:Ref<Row|undefined>,responses:Ref<Record<str
   const locallyChanged=!!local && (meta?.dirty || !meta),same=local && JSON.stringify(local,Object.keys(local).sort())===ack;
   responses.value=locallyChanged && !same?local!:remote.answers;restoring=false;
   if(locallyChanged && !same && remote.version!==(meta?.version??'0')){conflict.value=true;version.value=meta?.version??'0';state.value='其他页面已更新草稿，本机未同步答案已保留';}
-  else {state.value=json()===ack?'草稿已同步，可在其他设备继续':'本机草稿待同步';if(json()!==ack)schedule();}
+  else {state.value=readOnly.value?'历史草稿仅供查看':json()===ack?'草稿已同步，可在其他设备继续':'本机草稿待同步';if(json()!==ack && !readOnly.value)schedule();}
   persist();ready.value=true;
  }
  async function sync():Promise<boolean>{
   if(timer)clearTimeout(timer);
+  if(readOnly.value)return false;
   if(inflight)return inflight;
   if(conflict.value || !ready.value)return false;
   if(!current || attempt.value?.status!=='IN_PROGRESS')return true;

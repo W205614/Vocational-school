@@ -134,6 +134,13 @@ public class ExamWorkflowService implements OperationHandler {
             if(oldSession!=null)com.tianji.common.utils.UserContext.setSession(oldSession);if(oldDepth>0)com.tianji.common.utils.UserContext.setCallDepth(oldDepth);
         }
     }
+    public void requireDraftWrite(long id,long user) {
+        var rows=jdbc.queryForList("SELECT paper_id,lesson_id,status FROM exam_attempt WHERE id=? AND user_id=?",id,user);
+        if(rows.isEmpty())throw new BadRequestException("考试记录不存在");
+        var attempt=rows.getFirst();
+        if(!"IN_PROGRESS".equals(attempt.get("status")))throw new ConflictException("答卷已提交，不能修改草稿");
+        requireEntitlement(user,paper(((Number)attempt.get("paper_id")).longValue()),((Number)attempt.get("lesson_id")).longValue());
+    }
     public Map<String,Object> paper(long id) {
         var rows=jdbc.queryForList("SELECT * FROM exam_paper WHERE id=?",id);
         if(rows.isEmpty()) throw new BadRequestException("试卷不存在");return rows.getFirst();

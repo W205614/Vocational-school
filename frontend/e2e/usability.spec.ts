@@ -27,6 +27,8 @@ test('expired enrollment explains exam access and keeps history visible',async({
  const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
  await page.goto('/exams?courseId='+fixture.expiredCourse);
  await expect(page.locator('.enrollment-hint')).toContainText('学习权益已失效');
+  const history=page.getByRole('region',{name:'我的考试记录',exact:true});await history.locator('.el-table__row').filter({hasText:fixture.expiredAttempt}).getByRole('button',{name:'查看答卷',exact:true}).click();await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Historical draft before expiry');await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'提交全部答案',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'同步草稿',exact:true})).toHaveCount(0);
+  const token=await page.evaluate(()=>sessionStorage.getItem('school-token'));const save=await page.request.put('/api/v2/exam-attempts/'+fixture.expiredAttempt+'/draft',{headers:{Authorization:'Bearer '+token},data:{version:1,answers:{[fixture.expiredQuestion]:'unauthorized edit'}}});expect(save.status()).toBe(403);const retained=await page.request.get('/api/v2/exam-attempts/'+fixture.expiredAttempt+'/draft',{headers:{Authorization:'Bearer '+token}});expect((await retained.json()).data.answers[fixture.expiredQuestion]).toBe('Historical draft before expiry');
  await expect(page.locator('.enrollment-hint')).toContainText('学习记录和已有答卷仍然保留');
  await expect(page.getByRole('button',{name:'查询试卷',exact:true})).toBeDisabled();
  await expect(page.locator('.el-alert--error')).toHaveCount(0);
