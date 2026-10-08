@@ -10,7 +10,7 @@ for resource in ['container','volume']:
 os.environ.update(TJ_COMPACT_HOME=str(home),TJ_COMPACT_PROJECT=args.project,TJ_COMPACT_PORT_OFFSET=str(args.offset))
 from setup import prepare,initialize,COMPOSE,LOCAL,configure_acceptance,ROOT,SOURCE,run,mysql,PORTS
 sys.path.insert(0,str(SOURCE.parent/'final'))
-from final_backup import verify,digest
+from final_backup import verify,digest,table_checksums
 from redis_snapshot import transfer
 backup=args.backup.resolve();manifest=verify(backup)
 if not manifest.get('quiesced') or not manifest.get('broker'):raise RuntimeError('Full recovery requires a quiescent bundle with broker bytes')
@@ -58,6 +58,10 @@ for qualified in expected:
  queries.append("SELECT '"+qualified+"',COUNT(*) FROM `"+db+"`.`"+table+"`")
 actual={row.split('\t')[0]:int(row.split('\t')[1]) for row in mysql(' UNION ALL '.join(queries)).splitlines()}
 if actual!=expected:raise RuntimeError('Restored record counts differ from the recovery bundle')
+checksum_path=backup/'table-checksums.json'
+if not checksum_path.exists():raise RuntimeError('Content-verifiable recovery requires a new quiescent backup bundle')
+if table_checksums(mysql,expected)!=json.loads(checksum_path.read_text(encoding='utf8')):
+ raise RuntimeError('Restored table contents differ from the recovery bundle')
 for name,sha in manifest['mediaFiles'].items():
  if digest(LOCAL/'objects'/name)!=sha:raise RuntimeError('Restored media hash mismatch')
 # Verify immutable images before boot, including browser assets.
@@ -65,7 +69,7 @@ images=json.loads((LOCAL/'images.json').read_text(encoding='utf8'))
 for details in images.values():
  current=subprocess.check_output(['docker','image','inspect',details['imageId'],'--format','{{.Id}}']).decode().strip()
  if current!=details['imageId']:raise RuntimeError('Recorded image is unavailable; load the verified rollback archive before boot')
-result={'status':'DATA_VERIFIED','tableCount':len(expected),'mediaFileCount':len(manifest['mediaFiles']),'redisRecords':len(json.loads((backup/'redis.json').read_text())['records']),'brokerBytesRestored':True,'backup':str(backup)}
+result={'status':'DATA_VERIFIED','tableCount':len(expected),'tableContentChecksumsMatched':True,'mediaFileCount':len(manifest['mediaFiles']),'redisRecords':len(json.loads((backup/'redis.json').read_text())['records']),'brokerBytesRestored':True,'backup':str(backup)}
 (LOCAL/'recovery-result.json').write_text(json.dumps(result,indent=2),encoding='utf8')
 run(COMPOSE+['up','-d','--wait'],'up-recovery')
 # Search is a rebuildable projection; reset its completion markers only in this restored clone.

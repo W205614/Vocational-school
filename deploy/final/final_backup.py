@@ -1,6 +1,6 @@
 """Immutable verified recovery bundles, including actual media bytes."""
 from pathlib import Path
-import argparse, datetime, hashlib, json, os, subprocess, tempfile, zipfile
+import argparse, datetime, hashlib, json, os, re, subprocess, tempfile, zipfile
 from contextlib import contextmanager
 from runtime import configure
 BASE=Path(__file__).resolve().parent
@@ -8,6 +8,21 @@ LOCAL=BASE/'.local'
 
 def digest(path):
  with path.open('rb') as source:return hashlib.file_digest(source,'sha256').hexdigest()
+
+def table_checksums(mysql,tables):
+ """Compare row contents only on the same frozen MySQL image and table format."""
+ if not tables:raise RuntimeError('A nonempty table inventory is required')
+ qualified=[]
+ for name in sorted(tables):
+  if not re.fullmatch(r'[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+',name):raise RuntimeError('Invalid checksum table inventory')
+  database,table=name.split('.');qualified.append('`'+database+'`.`'+table+'`')
+ checks={}
+ for row in mysql('CHECKSUM TABLE '+','.join(qualified)+' EXTENDED').splitlines():
+  name,checksum=row.split('\t')
+  if not checksum.isdigit():raise RuntimeError('Table content checksum unavailable')
+  checks[name]=int(checksum)
+ if set(checks)!=set(tables):raise RuntimeError('Incomplete table content checksums')
+ return checks
 
 def verify(directory):
  manifest=json.loads((directory/'manifest.json').read_text(encoding='utf8'))
@@ -78,6 +93,8 @@ def capture(runtime=None,source_base=None,quiesced=False):
   db,table=row.split('\t');queries.append("SELECT '"+db+'.'+table+"',COUNT(*) FROM `"+db+"`.`"+table+"`")
  counts={row.split('\t')[0]:int(row.split('\t')[1]) for row in p.mysql(' UNION ALL '.join(queries)).splitlines()}
  (directory/'table-counts.json').write_text(json.dumps(counts,indent=2),encoding='utf8')
+ if quiesced:
+  (directory/'table-checksums.json').write_text(json.dumps(table_checksums(p.mysql,counts),indent=2),encoding='utf8')
  broker=None
  if quiesced:
   node=subprocess.check_output(p.COMPOSE+['exec','-T','rabbitmq','hostname']).decode().strip()
@@ -88,8 +105,8 @@ def capture(runtime=None,source_base=None,quiesced=False):
    if result.returncode:raise RuntimeError('Broker bytes capture failed')
    broker={'hostname':node,'file':'rabbitmq.tar.gz'}
   finally:subprocess.run(p.COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','start_app'],check=True,stdout=subprocess.DEVNULL)
- files=['business.sql','media.zip','private-config.zip','redis.json','table-counts.json','runtime-images.json']+(['rabbitmq.tar.gz'] if broker else [])
- manifest={'format':3,'quiesced':quiesced,'broker':broker,'queueRecovery':'broker-bytes' if broker else 'NOT_CAPTURED','at':stamp,'databaseCount':len(p.DATABASES),'files':{name:digest(directory/name) for name in files},'mediaFiles':media}
+ files=['business.sql','media.zip','private-config.zip','redis.json','table-counts.json','runtime-images.json']+(['rabbitmq.tar.gz','table-checksums.json'] if broker else [])
+ manifest={'format':4,'quiesced':quiesced,'tableContentChecksumsCaptured':quiesced,'broker':broker,'queueRecovery':'broker-bytes' if broker else 'NOT_CAPTURED','at':stamp,'databaseCount':len(p.DATABASES),'files':{name:digest(directory/name) for name in files},'mediaFiles':media}
  (directory/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf8');verify(directory)
  completed=base/stamp;directory.rename(completed)
  print('Verified recovery bundle: '+str(completed),flush=True);return completed
