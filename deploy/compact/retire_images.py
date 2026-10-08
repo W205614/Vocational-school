@@ -111,10 +111,19 @@ def main():
     for folder in (LOCAL/'retirement').iterdir():
         path=folder/'containers-private.json'
         if path.exists():owned.update(item['Image'] for item in json.loads(path.read_text(encoding='utf8')))
-    for name in ('build-source.json','images.json','standalone-images.json'):
+    for name in ('build-source.json','images.json','standalone-images.json','runtime-images.json'):
         for path in LOCAL.rglob(name):
             value=json.loads(path.read_text(encoding='utf8'))
             if name=='build-source.json':owned.update(value.get('imageDigests',{}).values())
+            elif name=='runtime-images.json':
+                # Updating the final Compose project replaces its old containers.
+                # Their immutable image ownership remains in the captured backup,
+                # even when later builds have moved all application tags.
+                if (path.parent/'manifest.json').exists():
+                    __import__('sys').path.insert(0,str(ROOT/'deploy/final'))
+                    from final_backup import verify
+                    verify(path.parent)
+                    owned.update(image for image in value.values() if isinstance(image,str) and re.fullmatch(r'sha256:[0-9a-f]{64}',image))
             else:owned.update(item['imageId'] for item in value.values() if isinstance(item,dict) and 'imageId' in item)
     def referenced():
         ids=output(['docker','ps','-aq']).splitlines()
