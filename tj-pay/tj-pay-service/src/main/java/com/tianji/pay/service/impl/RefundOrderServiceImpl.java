@@ -122,6 +122,7 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
             refundOrder.setPayOrderNo(payOrder.getPayOrderNo());
             refundOrder.setTotalAmount(payOrder.getAmount());
             refundOrder.setPayChannelCode(payOrder.getPayChannelCode());
+            refundOrder.setStatus(0);
             save(refundOrder);
             return refundOrder;
         }

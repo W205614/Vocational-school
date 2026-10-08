@@ -188,6 +188,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                         .userId(userId)
                         .courseIds(cIds)
                         .detailIds(Map.of(courseId,detail.getId()))
+                        .validDurations(Map.of(courseId,detail.getValidDuration()==null?0:detail.getValidDuration()))
                         .finishTime(order.getFinishTime())
                         .build()
         );
@@ -236,6 +237,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         detail.setCoverUrl(courseInfo.getCoverUrl());
         detail.setName(courseInfo.getName());
         detail.setValidDuration(courseInfo.getValidDuration());
+        if(order.getFinishTime()!=null) detail.setCourseExpireTime(courseInfo.getValidDuration()==null || courseInfo.getValidDuration()<=0?null:order.getFinishTime().plusMonths(courseInfo.getValidDuration()));
         detail.setDiscountAmount(discountValue);
         detail.setRealPayAmount(courseInfo.getPrice() - detail.getDiscountAmount());
         return detail;
@@ -297,24 +299,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     }
 
     @Override
-    public void deleteOrder(Long id) {
-        // 1.获取登录用户
-        Long userId = UserContext.getUser();
-        // 2.查询订单
-        Order order = getById(id);
-        if (order == null) {
-            return;
-        }
-        // 3.判断订单所属用户与当前登录用户是否一致
-        if(!Objects.equals(userId, order.getUserId())){
-            // 不一致，说明不是当前用户的订单，结束
-            throw new BadRequestException("不能删除他人订单");
-        }
-        // 4.删除订单
-        boolean success = removeById(id);
-        if (!success) {
-            throw new DbException(OPERATE_FAILED);
-        }
+    @Transactional public void deleteOrder(Long id) {
+        long user=UserContext.requireUser();
+        var rows=jdbc.queryForList("SELECT id,user_id,status,deleted FROM `order` WHERE id=? FOR UPDATE",id);
+        if(rows.isEmpty()) return;
+        var order=rows.getFirst();
+        if(((Number)order.get("user_id")).longValue()!=user) throw new com.tianji.common.exceptions.ForbiddenException("不能删除他人订单");
+        if(((Number)order.get("deleted")).intValue()==1) return;
+        if(((Number)order.get("status")).intValue()!=OrderStatus.CLOSED.getValue()) throw new com.tianji.common.exceptions.ConflictException("只能删除已关闭订单");
+        if(jdbc.update("UPDATE `order` SET deleted=1 WHERE id=? AND status=3 AND deleted=0",id)!=1) throw new com.tianji.common.exceptions.ConflictException("订单状态已发生变化");
     }
 
     @Override
@@ -407,12 +400,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if(payResult==null || payResult.getStatus()!=PayResultDTO.SUCCESS || payResult.getPayOrderNo()==null || payResult.getBizOrderId()==null || payResult.getSuccessTime()==null || payResult.getPayChannel()==null)
             throw new BadRequestException("无效的支付成功事实");
         Long id=payResult.getBizOrderId();
+        Order order=baseMapper.selectRetainedForUpdate(id);
         jdbc.update("INSERT IGNORE INTO payment_fact(pay_order_no,order_id,pay_channel,paid_at) VALUES(?,?,?,?)",
                 payResult.getPayOrderNo(),id,payResult.getPayChannel(),payResult.getSuccessTime());
         var fact=jdbc.queryForMap("SELECT order_id FROM payment_fact WHERE pay_order_no=?",payResult.getPayOrderNo());
         if(!Objects.equals(((Number)fact.get("order_id")).longValue(),id))
             throw new BadRequestException("支付流水关联订单冲突");
-        Order order=baseMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Order>().eq("id",id).last("FOR UPDATE"));
         if(order==null || !OrderStatus.NO_PAY.equalsValue(order.getStatus())) {
             if(order!=null && Objects.equals(order.getPayOrderNo(),payResult.getPayOrderNo())) return;
             jdbc.update("INSERT IGNORE INTO payment_conflict(order_id,pay_order_no,reason,status) VALUES(?,?,?,'OPEN')",
@@ -427,6 +420,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         detailService.markDetailSuccessByOrderId(id,payResult.getPayChannel(),payResult.getSuccessTime());
         List<Long> courseIds=detailService.queryCourseIdsByOrderId(id);
         outbox.enqueue("order:"+id+":paid",MqConstants.Exchange.ORDER_EXCHANGE,MqConstants.Key.ORDER_PAY_KEY,
-                OrderBasicDTO.builder().orderId(id).userId(order.getUserId()).courseIds(courseIds).detailIds(detailService.queryByOrderId(id).stream().collect(Collectors.toMap(OrderDetail::getCourseId,OrderDetail::getId))).finishTime(payResult.getSuccessTime()).build());
+                OrderBasicDTO.builder().orderId(id).userId(order.getUserId()).courseIds(courseIds).detailIds(detailService.queryByOrderId(id).stream().collect(Collectors.toMap(OrderDetail::getCourseId,OrderDetail::getId))).validDurations(detailService.queryByOrderId(id).stream().collect(Collectors.toMap(OrderDetail::getCourseId,d->d.getValidDuration()==null?0:d.getValidDuration()))).finishTime(payResult.getSuccessTime()).build());
     }
 }
