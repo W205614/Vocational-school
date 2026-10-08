@@ -30,7 +30,7 @@ test('search highlights readable titles and applies the selected price order',as
  const course=page.locator('.course-tile').filter({has:page.locator('a[href="/courses/'+fixture.course+'"]')});
  await expect(course).toHaveCount(1);await expect(course.locator('h3 mark')).toHaveText(fixture.marker);
  await expect(course.locator('h3')).toHaveText(fixture.name);await expect(course.locator('.cover-link')).toHaveAttribute('aria-label','查看课程：'+fixture.name);
- await page.getByRole('combobox',{name:'课程排序',exact:true}).click();
+ await page.locator('.el-select').filter({has:page.getByRole('combobox',{name:'课程排序',exact:true})}).click();
  const sorted=page.waitForResponse(r=>r.url().includes('/services/search/courses/portal?')&&r.url().includes('sortBy=price'));
  await page.getByRole('option',{name:'价格由低到高',exact:true}).click();const result=await sorted;
  expect(new URL(result.url()).searchParams.get('isAsc')).toBe('true');

@@ -78,6 +78,12 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   await page.goto('/orders');await page.locator('.el-table__row').filter({hasText:orderId}).getByRole('button',{name:'详情'}).click();await page.getByRole('button',{name:'申请退款'}).click();await expect(page.getByRole('dialog',{name:'申请课程退款'})).toBeVisible();await expect(page.getByRole('button',{name:'提交退款申请',exact:true})).toBeDisabled();await page.getByPlaceholder('请说明退款原因').fill('浏览器验收退款，验证学习历史保留');await page.getByRole('button',{name:'提交退款申请',exact:true}).click();await expect(page.getByText('退款申请已提交',{exact:true})).toBeVisible();
   await admin.goto('/refunds');const refund=admin.locator('.el-table__row').filter({hasText:orderId});await refund.getByRole('button',{name:'同意退款'}).click();await admin.getByRole('button',{name:'确定',exact:true}).click();await expect(admin.getByText('同意退款已完成',{exact:true})).toBeVisible();
   await expect.poll(async()=>(await api(page,'/orders/'+orderId)).status,{timeout:60000}).toBe(7);
+  // Financial completion precedes consumption of the entitlement event. Confirm
+  // that the authoritative playback check has observed revocation within 3s.
+  await expect.poll(async()=>{
+   const token=await page.evaluate(()=>sessionStorage.getItem('school-token'));
+   return (await page.request.get('/api/v2/services/media/medias/signature/play?sectionId='+fixture.video,{headers:{Authorization:'Bearer '+token}})).status();
+  },{timeout:3000,intervals:[100,200,300]}).toBe(403);
   // A URL obtained before refund must be checked again when fetching new bytes.
   // This does not claim that already downloaded video data can be revoked.
   const refundedBytes=await page.request.get(retainedPlayUrl!,{headers:{Range:'bytes=0-31'}});expect(refundedBytes.status()).toBe(403);
