@@ -37,7 +37,7 @@ def main():
  expired_values=','.join(expired_substitutions.get(c,'`'+c+'`') for c in columns)
  mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+expired_values+' FROM course WHERE id=1','tj_course')
  # Explicit expired learning history must remain visible without offering a new exam.
- mysql(f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections) VALUES({course+31},{accounts['student']['id']},{expired_course},NOW()-INTERVAL 1 DAY,3,0)",'tj_learning')
+ mysql(f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections,latest_learn_time) VALUES({course+31},{accounts['student']['id']},{expired_course},NOW()-INTERVAL 1 DAY,3,0,NOW()-INTERVAL 2 DAY)",'tj_learning')
  for assigned_course in [free_course,expired_course]:
   mysql(f"INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES({assigned_course},{assigned_course},{teacher},1,1,0,NOW(),NOW(),{admin},{admin},0)",'tj_course')
  fixture=dict(marker=marker,expiredCourse=str(expired_course),freeCourse=str(free_course),notesCourse=str(notes_course),notesLesson=str(notes_lesson),course=str(course),chapter=str(chapter),video=str(video),exam=str(exam),objective=str(objective),subjective=str(subjective),name='Browser course '+marker)

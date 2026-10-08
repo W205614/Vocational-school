@@ -29,9 +29,17 @@ public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper,
     private final PlatformTransactionManager manager;
     private final LearningEntitlementService entitlements;
     @Override public LearningLessonDTO queryLearningRecordByCourse(Long courseId) {
-        LearningLesson lesson=lessonService.queryByUserIdAndCourseId(UserContext.requireUser(),courseId);
+        long user=UserContext.requireUser();
+        LearningLesson lesson=lessonService.queryByUserIdAndCourseId(user,courseId);
         if(lesson==null) return null;
         LearningLessonDTO dto=new LearningLessonDTO();dto.setId(lesson.getId());dto.setLatestSectionId(lesson.getLatestSectionId());
+        // Retained progress is history; only current order-detail rights authorize
+        // further learning. Report the same expiry facts as the learning list.
+        var right=entitlements.summaries(user,List.of(courseId)).get(courseId);
+        dto.setStatus(right==null?3:lesson.getStatus()==com.tianji.learning.enums.LessonStatus.EXPIRED
+                ?right.lastActiveStatus():lesson.getStatus().getValue());
+        dto.setExpireTime(right==null?null:right.expiresAt());
+        dto.setLearnedSections(lesson.getLearnedSections());
         dto.setRecords(BeanUtils.copyList(lambdaQuery().eq(LearningRecord::getLessonId,lesson.getId()).list(),LearningRecordDTO.class));
         return dto;
     }
