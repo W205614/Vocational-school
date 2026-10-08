@@ -33,10 +33,12 @@ test('expired enrollment explains exam access and keeps history visible',async({
  await expect(page.getByRole('button',{name:'查询试卷',exact:true})).toBeDisabled();
  await expect(page.locator('.el-alert--error')).toHaveCount(0);
  await page.getByRole('combobox',{name:'选择考试课程',exact:true}).click();
- await expect(page.getByRole('option',{name:'Browser expired '+fixture.marker+'（权益已失效）',exact:true})).toHaveAttribute('aria-disabled','true');
+ await expect(page.getByRole('option',{name:'Browser expired '+fixture.marker+'（权益已失效）',exact:true})).not.toHaveAttribute('aria-disabled','true');
  await page.getByRole('option',{name:'Browser notes '+fixture.marker,exact:true}).click();
  await expect(page.getByText('这门课程暂未发布试卷',{exact:true})).toBeVisible();
  await expect(page.locator('.enrollment-hint')).toHaveCount(0);
+ await page.getByRole('combobox',{name:'选择考试课程',exact:true}).click();await page.getByRole('option',{name:'Browser expired '+fixture.marker+'（权益已失效）',exact:true}).click();await expect(page.locator('.enrollment-hint')).toContainText('学习权益已失效');await expect(page.getByRole('button',{name:'开始 / 继续考试',exact:true})).toHaveCount(0);await expect(history.locator('.el-table__row').filter({hasText:fixture.expiredAttempt})).toHaveCount(1);
+ const oldAttempt=await page.request.get('/api/v2/exam-attempts/'+fixture.expiredAttempt,{headers:{Authorization:'Bearer '+token}});const paper=(await oldAttempt.json()).data.paper_id;const start=await page.request.post('/api/v2/exam-papers/'+paper+'/attempts',{headers:{Authorization:'Bearer '+token,'Idempotency-Key':crypto.randomUUID()}});expect(start.status()).toBe(400);
  await page.getByRole('link',{name:'返回我的学习 →',exact:true}).click();
  await expect(page.getByText('Browser expired '+fixture.marker,{exact:true})).toBeVisible();
 });
