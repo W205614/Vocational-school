@@ -43,6 +43,12 @@ def prepare():
   if alias in {'data','gateway'}:database=None
   c=yaml.safe_load((ROOT/module/'src/main/resources/application.yml').read_text(encoding='utf8'));s=c['spring'];c['server']={'port':PORTS.get(alias,0),'shutdown':'graceful'}
   s['profiles']={'active':'local-simulator'};s['config']={'import':[]};s['main']={'allow-bean-definition-overriding':False}
+  # Fixed-delay tasks keep one pending invocation per registered job. Two bounded
+  # scheduler threads let durable progress flushing coexist with command/outbox
+  # polling, instead of serializing every task behind one busy database batch.
+  task=s.setdefault('task',{})
+  task.setdefault('scheduling',{}).update({'pool':{'size':tuning['workers']},'thread-name-prefix':alias+'-schedule-'})
+  task.setdefault('execution',{}).update({'pool':{'core-size':tuning['workers'],'max-size':4,'queue-capacity':100}})
   s['cloud']['sentinel']={'enabled':False};s['cloud']['nacos']={'config':{'enabled':False,'import-check':{'enabled':False}},'discovery':{'enabled':False}}
   module_targets={a:('http://'+('127.0.0.1' if owners.get(alias)==g else 'app-'+g)+':'+str(internal_ports[g])+'/_modules/'+a) for a,g in owners.items()}
   s['cloud']['discovery']={'client':{'simple':{'instances':{a+'-service':[{'uri':url}] for a,url in module_targets.items()}}}}
@@ -62,14 +68,15 @@ def prepare():
   else:s.pop('datasource',None);s['autoconfigure']={'exclude':['org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration']}
   tj=c.setdefault('tj',{});tj['xxljob']={'enabled':False};tj.setdefault('swagger',{})['enable']=False
   tj['feign']={'max-concurrent':32,'internal-ports':','.join(str(port) for port in internal_ports.values())}
-  tj['reliability']={'enabled':database is not None,'operation-interval-ms':tuning['interval'],'dispatch-interval-ms':tuning['interval'],'operation-core':tuning['workers'],'operation-max':4,'outbox-core':1,'outbox-max':2}
+  tj['reliability']={'enabled':database is not None,'operation-interval-ms':tuning['interval'],'dispatch-interval-ms':tuning['interval'],'operation-core':tuning['workers'],'operation-max':4,'outbox-core':tuning['workers'],'outbox-max':2}
+  if alias=='trade':tj.setdefault('trade',{}).update({'creation-interval-ms':tuning['interval'],'financial-interval-ms':tuning['interval']})
   resource=tj.setdefault('auth',{}).setdefault('resource',{});resource['enable']=True;resource.setdefault('excludeLoginPaths',[]).extend(['/actuator/health/**','/readyz'])
   if alias=='auth':c['encrypt']={'key-store':{'alias':'compact','location':'file:/run/compact/signing.jks','password':env['ACCEPTANCE_INTERNAL_TOKEN'],'secret':env['ACCEPTANCE_INTERNAL_TOKEN']}};resource['includeLoginPaths']=['/menus/me','/accounts/logout','/accounts/sessions/**']
   if alias=='media':tj['platform']={'file':'LOCAL','media':'LOCAL'};tj['local-storage']={'enabled':True,'directory':'/run/objects'};tj['tencent']['vod']['enable']=False;tj['tencent']['cos']['enable']=False;resource['excludeLoginPaths'].extend(['/local-content/**','/course-covers/*']);s['servlet']={'multipart':{'max-file-size':'200MB','max-request-size':'201MB'}}
   if alias=='search':s['elasticsearch']={'uris':'http://elasticsearch:9200'};tj['interests']={'top-number':10}
   if alias=='message':tj.setdefault('sms',{})['simulated']=True
   if alias=='pay':tj['pay']['simulated']=True;tj['pay']['notifyHost']='http://app-gateway:'+str(PORTS['gateway'])+'/api/v2';resource['excludeLoginPaths'].extend(['/pay-orders/**','/refund-orders/**','/pay-channels/list','/notify/**'])
-  if alias=='learning':tj['learning']={'progress-interval-ms':1000}
+  if alias=='learning':tj['learning']={'progress-interval-ms':tuning['interval'],'points-interval-ms':tuning['interval']}
   if alias=='gateway':
    s['main']['web-application-type']='reactive';s['cloud']['gateway']['server']['webflux']['routes']=[];tj['routes']=targets;tj['simulators']={'enabled':True,'url':targets['pay'],'storage':True,'video':True,'sms':True};tj['reliability']={'enabled':False};resource['enable']=False
   c['springdoc']={'api-docs':{'enabled':False},'swagger-ui':{'enabled':False}}
