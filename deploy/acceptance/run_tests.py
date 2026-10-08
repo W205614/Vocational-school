@@ -8,6 +8,7 @@ def main():
  for line in (Path(os.environ.get('TJ_ENV_FILE',str(BASE/'.env')))).read_text().splitlines():
   if '=' in line: key,value=line.split('=',1);env[key]=value
  if 'JAVA_HOME' not in env:env['JAVA_HOME']='E:/Program Files/jdk'
+ env['TJ_INTERNAL_TOKEN']=env['ACCEPTANCE_INTERNAL_TOKEN']
  env.setdefault('ACCEPTANCE_ES_URL','http://127.0.0.1:23920')
  env.setdefault('ACCEPTANCE_AUTH_DB_URL','jdbc:mysql://127.0.0.1:'+env.get('ACCEPTANCE_DB_PORT','23316')+'/acceptance_auth?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true')
  mysql("CREATE DATABASE IF NOT EXISTS acceptance_auth")

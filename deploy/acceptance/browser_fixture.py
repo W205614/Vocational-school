@@ -25,6 +25,8 @@ def main():
  notes_values=','.join(notes_substitutions.get(c,'`'+c+'`') for c in columns)
  mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+notes_values+' FROM course WHERE id=1','tj_course')
  mysql(f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections) VALUES({notes_lesson},{accounts['student']['id']},{notes_course},NOW()+INTERVAL 1 YEAR,0,0)",'tj_learning')
+ # Explicit synthetic rights, isolated from all real financial provenance.
+ mysql(f"INSERT INTO learning_entitlement(order_detail_id,order_id,user_id,course_id,active,expires_at) VALUES({notes_lesson},{notes_lesson},{accounts['student']['id']},{notes_course},1,NOW()+INTERVAL 1 YEAR)",'tj_learning')
  # A current free course verifies enrollment without rewriting expired legacy courses.
  free_course=course+20
  free_substitutions={**substitutions,'id':str(free_course),'name':"'Browser free "+marker+"'",'free':'1','price':'0','section_num':'1'}

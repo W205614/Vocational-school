@@ -12,5 +12,5 @@ runpy.run_path(str(ACC/'initialize_test_schemas.py'), run_name='__main__')
 sys.argv=[str(ACC/'run_tests.py'), '--modules', 'all', '--tests',
           'LearningEntitlementRegressionTest,OrderDeletionRegressionTest,OrderDeletionDatabaseTest,'
           'RefundInitialStateTest,ExamReliabilityTest,ExamDraftReliabilityTest,LearningReliabilityTest,'
-          'FeignBulkheadTest,CallDepthPropagationTest,UserInfoInterceptorDepthTest,InternalEntitlementControllerTest']
+          'FeignBulkheadTest,CallDepthPropagationTest,UserInfoInterceptorDepthTest,InternalEntitlementControllerTest,GatewayAdmissionTest,LocalMediaPlaybackTest']
 runpy.run_path(str(ACC/'run_tests.py'), run_name='__main__')

@@ -6,6 +6,7 @@ def main():
  parser=argparse.ArgumentParser();parser.add_argument('--schema-only',action='store_true');args=parser.parse_args()
  fields={k:{'type':'long'} for k in ['categoryIdLv1','categoryIdLv2','categoryIdLv3','teacher','sections','sold','price','score','salesVersion','metadataVersion']}
  fields.update(available={'type':'boolean'},id={'type':'keyword'},name={'type':'text','analyzer':'standard'},free={'type':'boolean'},type={'type':'integer'},publishTime={'type':'date','format':'strict_date_optional_time||yyyy-MM-dd HH:mm:ss'},coverUrl={'type':'keyword'})
+ fields['updateTime']={'type':'date','format':'strict_date_optional_time||yyyy-MM-dd HH:mm:ss'}
  response=requests.put(ES+'/course',json={'settings':{'number_of_shards':1,'number_of_replicas':0},'mappings':{'properties':fields}},timeout=10)
  if response.status_code!=200 and 'resource_already_exists_exception' not in response.text:response.raise_for_status()
  if args.schema_only:
