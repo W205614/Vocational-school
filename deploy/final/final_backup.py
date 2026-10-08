@@ -45,10 +45,11 @@ def capture(runtime=None,source_base=None,quiesced=False):
   result=subprocess.run(p.COMPOSE+['exec','-T','mysql','sh','-c','MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump -uroot --single-transaction --skip-lock-tables --no-tablespaces --set-gtid-purged=OFF --routines --triggers --databases '+' '.join(p.DATABASES)],stdout=output,stderr=subprocess.PIPE)
  if result.returncode or sql.stat().st_size<10000:raise RuntimeError('Backup failed; incomplete bundle retained')
  with zipfile.ZipFile(directory/'private-config.zip','w',compression=zipfile.ZIP_DEFLATED) as archive:
-  for path,name in [(source/'.env','.env'),(local/'signing.jks','signing.jks'),(local/'app.env','app.env'),(local/'database-accounts.json','database-accounts.json'),(local/'accounts.json','accounts.json'),(local/'browser-fixture.json','browser-fixture.json'),(local/'images.json','images.json'),(local/'load-accounts.json','load-accounts.json')]:
+  for path,name in [(source/'.env','.env'),(local/'signing.jks','signing.jks'),(local/'app.env','app.env'),(local/'database-accounts.json','database-accounts.json'),(local/'accounts.json','accounts.json'),(local/'browser-fixture.json','browser-fixture.json'),(local/'images.json','images.json'),(local/'load-accounts.json','load-accounts.json'),(local/'build-source.json','build-source.json'),(local/'infrastructure-images.json','infrastructure-images.json')]:
    if path.exists():archive.write(path,name)
   for path in sorted((local/'configs').iterdir()):
    if path.is_file() and path.suffix in {'.yml','.security'}:archive.write(path,'configs/'+path.name)
+  if (source/'compose.yaml').exists():archive.write(source/'compose.yaml','compose.yaml')
  media={}
  with zipfile.ZipFile(directory/'media.zip','w',compression=zipfile.ZIP_STORED) as archive:
   for path in sorted((local/'objects').rglob('*')):

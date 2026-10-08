@@ -4,7 +4,12 @@ import json
 from pathlib import Path
 from setup import LOCAL
 from evidence import save_report, validate, digest
-from perf_protocol import check_configuration, memory_reduction
+from perf_protocol import check_configuration, memory_reduction, schedule
+
+def baseline_complete(report):
+    if report.get('protocol')!='perf-3h-v1':return False
+    runs=report.get('runs',[])
+    return [(r.get('users'),r.get('requestedSeconds'),r.get('repeat')) for r in runs]==schedule('perf-3h-v1') and all(r.get('status')=='COMPLETED' and r.get('elapsedSeconds',0)>=r.get('requestedSeconds',1) and r.get('contaminated') is False for r in runs)
 
 def compare(standalone, compact):
     failures = check_configuration(standalone) + check_configuration(compact)
@@ -49,8 +54,13 @@ def main():
         value['failures'].extend(name + ': ' + error for error in errors)
         if name in ('standalone', 'compact') and report.get('status') != 'PASSED':
             value['failures'].append(name + ': raw measurement failed')
-        if name.startswith('baseline_') and len(report.get('runs', [])) != 6:
+        if name.startswith('baseline_') and not baseline_complete(report):
             value['failures'].append(name + ': baseline schedule incomplete')
+        if name.startswith('baseline_') and report.get('evidence',{}).get('sourceCommit')!=expected.get('baselineSourceCommit'):
+            value['failures'].append(name+': baseline source mismatch')
+    for field in ('protocol','fixtureFingerprint','workload','workloadFingerprint'):
+        if any(report.get(field)!=reports['compact'].get(field) for report in reports.values()):value['failures'].append('four-configuration mismatch: '+field)
+    if any(report.get('evidence',{}).get('baseSnapshotFingerprint')!=expected.get('baseSnapshotFingerprint') for report in reports.values()):value['failures'].append('four-configuration snapshot mismatch')
     value['rawReportHashes'] = {name: digest(getattr(args, name)) for name in reports}
     if value['failures']: value['status'] = 'FAILED'
     # The final compact report must be the current release's exact tested build and data.

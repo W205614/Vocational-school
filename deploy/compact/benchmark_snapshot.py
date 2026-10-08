@@ -37,6 +37,12 @@ def restore(path):
     applications = [name for name in services if name.startswith(('app-', 'web-'))]
     run(COMPOSE + ['stop', '-t', '60', *applications], 'benchmark-stop')
     run(COMPOSE + ['exec', '-T', 'mysql', 'sh', '-c', 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot'], 'benchmark-restore', input=path.read_bytes())
+    runtime = json.loads((LOCAL / 'benchmark-runtime.json').read_text(encoding='utf8'))
+    if runtime.get('applyMigrations'):
+        from setup import configure_acceptance
+        configure_acceptance()
+        import migrate
+        migrate.main()
     run(COMPOSE + ['exec', '-T', 'redis', 'redis-cli', 'FLUSHALL'], 'benchmark-redis-reset')
     queues = json.loads(subprocess.check_output(COMPOSE + ['exec', '-T', 'rabbitmq', 'rabbitmqctl', 'list_queues', '-q', '--formatter', 'json', 'name'], text=True))
     for queue in queues:

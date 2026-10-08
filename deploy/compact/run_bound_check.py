@@ -4,8 +4,8 @@ import json
 import subprocess
 import sys
 import time
-from setup import LOCAL
-from evidence import save_report, utcnow
+from setup import LOCAL,ROOT,COMPOSE
+from evidence import save_report, utcnow, manifest
 
 def main():
     parser = argparse.ArgumentParser()
@@ -17,7 +17,12 @@ def main():
     result = {'status': 'FAILED'}
     code = 1
     try:
+        expected=json.loads((LOCAL/'release-run.json').read_text(encoding='utf8'))
+        live=manifest(LOCAL,COMPOSE,ROOT,expected['snapshotPath'])
+        if any(live.get(key)!=expected.get(key) for key in ('sourceCommit','imageDigests','configFingerprint','baseSnapshotFingerprint')):raise RuntimeError('Deployment changed since the evidence batch started')
         code = subprocess.run(args.command).returncode
+        after=manifest(LOCAL,COMPOSE,ROOT,expected['snapshotPath'])
+        if any(after.get(key)!=expected.get(key) for key in ('sourceCommit','imageDigests','configFingerprint','baseSnapshotFingerprint')):raise RuntimeError('Deployment changed while the check was running')
         if path.exists() and path.stat().st_mtime_ns >= started_ns:
             result = json.loads(path.read_text(encoding='utf8'))
         if code != 0: result['status'] = 'FAILED'

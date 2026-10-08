@@ -13,6 +13,7 @@ class Telemetry:
         self.samples = []; self.errors = []; self.stop = threading.Event()
         self.thread = threading.Thread(target=self.collect, daemon=True)
         self.initial_background = None
+        self.host_cpus = int(subprocess.check_output(['docker', 'info', '--format', '{{.NCPU}}'], text=True).strip())
 
     def sample(self):
         ids = subprocess.check_output(self.compose + ['ps', '-q'], text=True).splitlines()
@@ -56,6 +57,9 @@ class Telemetry:
             # Continuing growth is insufficient evidence, not a memory saving.
             if median(tail[-third:]) <= median(tail[:third]) * 1.05:
                 rss = median(tail)
-        heavy_background = sum(sample.get('backgroundCpuPercent', 0) > 100 for sample in self.samples) >= 3
+        # docker CPU percentages use one core as 100%; a single busy core on a
+        # 12-core host is not evidence that half of the machine was unavailable.
+        heavy_background = sum(sample.get('backgroundCpuPercent', 0) > self.host_cpus * 50 for sample in self.samples) >= 3
         return {'samples': self.samples, 'telemetryErrors': self.errors, 'javaRssMedianBytes': rss,
+                'hostCpus': self.host_cpus, 'backgroundCpuInvalidThresholdPercent': self.host_cpus * 50,
                 'contaminated': heavy_background or any(sample['backgroundChanged'] for sample in self.samples)}

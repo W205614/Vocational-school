@@ -20,12 +20,23 @@ with zipfile.ZipFile(backup/'private-config.zip') as archive:
   if name.startswith('/') or '..' in Path(name).parts or '\\' in name:raise RuntimeError('Unsafe private config archive')
  archive.extractall(LOCAL/'recovered-config')
  private=LOCAL/'recovered-config'
- for name in ['signing.jks','database-accounts.json','accounts.json','browser-fixture.json','load-accounts.json','images.json']:
+ for name in ['signing.jks','database-accounts.json','accounts.json','browser-fixture.json','load-accounts.json','images.json','build-source.json','infrastructure-images.json']:
   if (private/name).exists():__import__('shutil').copyfile(private/name,LOCAL/name)
  __import__('shutil').copyfile(private/'.env',home/'.env')
 prepare()
 import yaml
 compose=yaml.safe_load((home/'compose.yaml').read_text(encoding='utf8'));compose['services']['rabbitmq']['hostname']=manifest['broker']['hostname'];compose['services']['rabbitmq']['volumes']=[{'type':'volume','source':'compact_rabbit','target':'/var/lib/rabbitmq','volume':{'nocopy':True}}];(home/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
+if (private/'compose.yaml').exists():
+ recorded=yaml.safe_load((private/'compose.yaml').read_text(encoding='utf8'))
+ for name,service in recorded['services'].items():
+  if name not in compose['services']:raise RuntimeError('Recovery topology differs from the recorded deployment')
+  image=subprocess.check_output(['docker','image','inspect',service['image'],'--format','{{.Id}}']).decode().strip()
+  compose['services'][name]['image']=image
+ # Restore the recorded major version into the clone's newly allocated volume only.
+ source_volume=next(v.split(':')[0] for v in recorded['services']['elasticsearch']['volumes'] if isinstance(v,str))
+ compose['volumes'].setdefault(source_volume,{})
+ compose['services']['elasticsearch']['volumes']=[source_volume+':/usr/share/elasticsearch/data']
+ (home/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
 run(COMPOSE+['create','rabbitmq'],'create-broker')
 container=subprocess.check_output(COMPOSE+['ps','-aq','rabbitmq']).decode().strip();mounts=json.loads(subprocess.check_output(['docker','inspect',container]))[0]['Mounts'];volume=next(m['Name'] for m in mounts if m['Destination']=='/var/lib/rabbitmq')
 if not volume.startswith(args.project+'_'):raise RuntimeError('Recovery volume escaped its isolated project')

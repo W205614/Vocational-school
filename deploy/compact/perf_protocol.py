@@ -72,6 +72,8 @@ def check_configuration(report):
     if actual != expected:
         failures.append('schedule mismatch')
     for run in runs:
+        if any(value for key,value in run.get('warmup',{}).get('counts',{}).items() if not key.endswith(':ok')):
+            failures.append('warm-up correctness failed')
         if run.get('elapsedSeconds', 0) < run.get('requestedSeconds', 1):
             failures.append('measurement shortened')
         if run.get('users') == 200:
@@ -79,6 +81,8 @@ def check_configuration(report):
         elif run.get('status') != 'COMPLETED' or any(
                 value for key, value in run.get('counts', {}).items() if not key.endswith(':ok')):
             failures.append('low concurrency correctness failed')
+        if run.get('users')!=200 and (run.get('contaminated') or run.get('invariants') is not True):
+            failures.append('low concurrency invariants or environment failed')
     return failures
 
 def memory_reduction(standalone, compact):

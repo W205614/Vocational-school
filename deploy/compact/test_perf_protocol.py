@@ -6,7 +6,7 @@ class PerformanceContractTest(unittest.TestCase):
     def report(self):
         return {'protocol': 'perf-3h-v1', 'runs': [
             {'users': users, 'requestedSeconds': seconds, 'repeat': repeat,
-             'elapsedSeconds': seconds, 'status': 'COMPLETED', 'invariants': True,
+             'elapsedSeconds': seconds, 'status': 'COMPLETED', 'invariants': True, 'contaminated': False,
              'profiles': allocation(users), 'workflowCounts': {name:120 for name in allocation(users)},
              'counts': {'query/search:ok': 120, 'async/notes:ok': 120},
              'latencyMs': {**{'query/'+name+':ok': {'count':120,'p95':490} for name in QUERY_KINDS},

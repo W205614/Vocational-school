@@ -161,7 +161,7 @@ def main():
                     end = time.monotonic() + args.warm_seconds
                     list(pool.map(lambda actor: worker(actor, end, True), actors))
                     if any(value for name, value in warm.counts.items() if not name.endswith(':ok')):
-                        raise RuntimeError('Warm-up correctness failed')
+                        print(f'Warm-up correctness FAILED: {users} users; all outcomes retained, sampling continues',flush=True)
                     for actor in actors: actor.stats = stats; actor.cycle = 0
                     telemetry = Telemetry(COMPOSE, runtime, env['ACCEPTANCE_INTERNAL_TOKEN']); telemetry.start()
                     measure_started = time.monotonic(); sample_started = utcnow(); end = measure_started + seconds
@@ -173,6 +173,7 @@ def main():
                 run = {'users': users, 'repeat': repeat, 'requestedSeconds': seconds, 'elapsedSeconds': measured - measure_started,
                        'sampleStartedAt': sample_started, 'sampleFinishedAt': utcnow(),
                        'status': 'COMPLETED', 'profiles': profiles, 'queuesDrained': drained, 'invariants': drained and observer.invariants(), **stats.result(), **measurements}
+                run['warmup']=warm.result()
                 # A worker cannot silently omit a profile while the allocation still looks correct.
                 if any(run['workflowCounts'].get(profile, 0) == 0 for profile in profiles): run['invariants'] = False
                 report['runs'].append(run)

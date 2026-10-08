@@ -32,10 +32,27 @@ def manifest(local, compose, source_root, snapshot):
         images[service] = info['Image']
     compose_file = Path(compose[compose.index('-f') + 1])
     configuration = hashlib.sha256((tree_digest(Path(local) / 'configs') + digest(compose_file)).encode()).hexdigest()
+    build_path=Path(local)/'build-source.json'
+    if not build_path.exists():raise ValueError('Frozen image/source manifest is required')
+    build=json.loads(build_path.read_text(encoding='utf8'))
+    actual={name:image for name,image in images.items() if name.startswith(('app-','web-'))}
+    if actual!=build.get('imageDigests'):raise ValueError('Running application images differ from the frozen source manifest')
     return {'schemaVersion': 1, 'releaseRunId': uuid.uuid4().hex,
-            'sourceCommit': subprocess.check_output(['git', '-C', str(source_root), 'rev-parse', 'HEAD'], text=True).strip(),
+            'sourceCommit': build['sourceCommit'],
             'imageDigests': images, 'configFingerprint': configuration,
-            'baseSnapshotFingerprint': digest(snapshot), 'createdAt': utcnow()}
+            'baseSnapshotFingerprint': digest(snapshot), 'snapshotPath':str(Path(snapshot).resolve()), 'createdAt': utcnow()}
+
+def verify_publication(source_root, measured, publication='HEAD'):
+    """A README-only descendant does not rewrite the commit recorded in measurements."""
+    base=['git','-C',str(source_root)]
+    head=subprocess.check_output(base+['rev-parse',publication],text=True).strip()
+    if subprocess.run(base+['merge-base','--is-ancestor',measured,head],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode:
+        return False
+    changed=subprocess.check_output(base+['diff','--name-only',measured,head],text=True).splitlines()
+    if any(not path.endswith('.md') and not path.startswith('deploy/compact/reports/') for path in changed):return False
+    dirty=subprocess.check_output(base+['diff','--name-only',head],text=True).splitlines()
+    untracked=subprocess.check_output(base+['ls-files','--others','--exclude-standard'],text=True).splitlines()
+    return not any(not path.endswith('.md') and path!='.gitignore' for path in dirty) and not any('/src/main/' in path or path.endswith('pom.xml') or path.startswith('frontend/') for path in untracked)
 
 BINDINGS = ('schemaVersion', 'releaseRunId', 'sourceCommit', 'imageDigests',
             'configFingerprint', 'baseSnapshotFingerprint')
@@ -76,9 +93,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('action', choices=['start'])
     parser.add_argument('--snapshot', required=True, type=Path)
+    parser.add_argument('--audit-batch', type=Path)
     args = parser.parse_args()
     from setup import LOCAL, COMPOSE, ROOT
     value = manifest(LOCAL, COMPOSE, ROOT, args.snapshot)
+    if args.audit_batch:
+        batch=json.loads(args.audit_batch.read_text(encoding='utf8'));value['releaseRunId']=batch['releaseRunId']
+        value['baselineSourceCommit']=batch['sourceCommit']
     (LOCAL / 'release-run.json').write_text(json.dumps(value, indent=2), encoding='utf8')
     print('New bound evidence batch: ' + value['releaseRunId'])
 
