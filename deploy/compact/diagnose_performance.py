@@ -39,6 +39,7 @@ def main():
             (BASE/'compose.yaml').write_text(yaml.safe_dump(original,sort_keys=False),encoding='utf8')
             benchmark_snapshot.restore(args.snapshot)
             mysql('TRUNCATE TABLE performance_schema.events_statements_summary_by_digest')
+            before_locks={name:int(value) for name,value in (line.split('\t') for line in mysql("SHOW GLOBAL STATUS LIKE 'Innodb_row_lock_%'").splitlines())}
             label='diagnostic-'+candidate.replace(':','-')
             result=subprocess.run([sys.executable,str(ROOT/'deploy/compact/mixed_load.py'),'--protocol','smoke',
                                    '--snapshot',str(args.snapshot),'--source-commit',source,'--label',label,
@@ -46,9 +47,13 @@ def main():
             pointer=json.loads((LOCAL/('performance-'+label+'.json')).read_text(encoding='utf8'))
             report=json.loads(Path(pointer['path']).read_text(encoding='utf8'))
             sql=mysql("SELECT SCHEMA_NAME,DIGEST_TEXT,COUNT_STAR,ROUND(AVG_TIMER_WAIT/1000000000,3),ROUND(SUM_LOCK_TIME/1000000000,3),SUM_ROWS_EXAMINED FROM performance_schema.events_statements_summary_by_digest WHERE SCHEMA_NAME LIKE 'tj\\_%' ORDER BY SUM_TIMER_WAIT DESC LIMIT 20")
+            after_locks={name:int(value) for name,value in (line.split('\t') for line in mysql("SHOW GLOBAL STATUS LIKE 'Innodb_row_lock_%'").splitlines())}
             item={'candidate':candidate,'parameters':values,'processExit':result.returncode,'rawReport':pointer['path'],
                   'sqlTimingScope':'Login, one-minute query warm-up and two-minute mixed workload; picoseconds converted to milliseconds.',
                   'slowSqlSummary':sql.splitlines(),'currentLockWaits':int(mysql('SELECT COUNT(*) FROM performance_schema.data_lock_waits')),
+                  'rowLockWaitsDuringDiagnostic':after_locks['Innodb_row_lock_waits']-before_locks['Innodb_row_lock_waits'],
+                  'rowLockWaitMillisecondsDuringDiagnostic':after_locks['Innodb_row_lock_time']-before_locks['Innodb_row_lock_time'],
+                  'rowLockLifetimeMaxMilliseconds':after_locks['Innodb_row_lock_time_max'],
                   'rawStatus':report['status']}
             if report['runs']:
                 run=report['runs'][0]
