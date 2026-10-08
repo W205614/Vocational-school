@@ -33,9 +33,17 @@ def restore(path):
     metadata = json.loads(Path(str(path) + '.json').read_text(encoding='utf8'))
     if hashlib.sha256(path.read_bytes()).hexdigest() != metadata['sha256']:
         raise RuntimeError('Snapshot fingerprint changed')
+    databases = sorted({value[3] for alias, value in MODULES.items() if value[3] and alias != 'data'})
+    if metadata.get('databases') != databases:
+        raise RuntimeError('Snapshot business-schema inventory differs from this owned clone')
     services = json.loads(subprocess.check_output(COMPOSE + ['config', '--format', 'json'], text=True))['services']
     applications = [name for name in services if name.startswith(('app-', 'web-'))]
     run(COMPOSE + ['stop', '-t', '60', *applications], 'benchmark-stop')
+    # mysqldump drops tables it contains, but cannot remove tables introduced by
+    # later migrations. Reset only the complete, checked business-schema inventory
+    # in this disposable clone, otherwise repeated rounds retain new lock rows.
+    reset=';'.join('DROP DATABASE IF EXISTS `'+database+'`' for database in databases)+';'
+    run(COMPOSE + ['exec', '-T', 'mysql', 'sh', '-c', 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot'], 'benchmark-reset-schemas', input=reset.encode())
     run(COMPOSE + ['exec', '-T', 'mysql', 'sh', '-c', 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot'], 'benchmark-restore', input=path.read_bytes())
     runtime = json.loads((LOCAL / 'benchmark-runtime.json').read_text(encoding='utf8'))
     if runtime.get('applyMigrations'):
