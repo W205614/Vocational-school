@@ -16,9 +16,11 @@ def output(arguments):
 
 
 def candidates(images, owned, referenced):
+    prefixes=('tianji-compact/', 'tianji-opt/', 'tianji-final/', 'tianji-acceptance/')
+    infrastructure=('mysql:', 'redis:', 'rabbitmq:', 'docker.elastic.co/elasticsearch/elasticsearch:')
     return {item['Id'] for item in images if item['Id'] not in referenced and
-            (item['Id'] in owned or any(tag.startswith(('tianji-compact/', 'tianji-opt/', 'tianji-final/', 'tianji-acceptance/'))
-                                       for tag in item.get('RepoTags') or []))}
+            all(tag.startswith(prefixes+infrastructure) for tag in item.get('RepoTags') or []) and
+            (item['Id'] in owned or any(tag.startswith(prefixes) for tag in item.get('RepoTags') or []))}
 
 
 def verify_descriptor_graph(archive, expected, configs, platforms):

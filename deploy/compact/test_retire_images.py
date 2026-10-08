@@ -18,6 +18,12 @@ class ImageRetirementTest(unittest.TestCase):
                 {'Id':'dangling','RepoTags':[]}]
         self.assertEqual({'old','dangling'},candidates(images,{'shared','dangling'}, {'final','shared'}))
 
+    def test_foreign_tags_protect_an_owned_or_project_tagged_image(self):
+        images=[{'Id':'mixed','RepoTags':['tianji-opt/old:baseline','another-project:local']},
+                {'Id':'retagged','RepoTags':['another-project:backup']},
+                {'Id':'engine','RepoTags':['docker.elastic.co/elasticsearch/elasticsearch:7.17.29']}]
+        self.assertEqual({'engine'},candidates(images,{'mixed','retagged','engine'},set()))
+
     def test_missing_layers_and_wrong_image_ids_cannot_authorize_removal(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'images.tar';layer=b'layer'
