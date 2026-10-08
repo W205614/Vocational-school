@@ -145,12 +145,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             courseDTO.setTeacher(0L);
         }
 
-        // 4.统计课程销量
-        Map<Long, Integer> peoNumOfCourseMap = tradeClient.countEnrollNumOfCourse(CollUtils.singletonList(id));
-        if (CollUtils.isNotEmpty(peoNumOfCourseMap)) {
-            courseDTO.setSold(peoNumOfCourseMap.getOrDefault(id, 0));
-        }
-        //5.返回数据
+        // 销量由搜索侧独立的绝对计数投影发布。元信息重建不依赖交易服务，
+        // 以便升级时暂停财务处理，同时保留课程与教师信息的查询能力。
         return courseDTO;
 
     }
