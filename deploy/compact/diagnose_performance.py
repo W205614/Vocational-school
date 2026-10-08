@@ -16,6 +16,8 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--snapshot',required=True,type=Path)
     parser.add_argument('--candidates',nargs='+',default=['4:1:750','4:2:250'])
+    parser.add_argument('--seconds',type=int,choices=[120,600],default=120)
+    parser.add_argument('--warm-seconds',type=int,choices=[60,300],default=60)
     args=parser.parse_args()
     import benchmark_snapshot
     benchmark_snapshot.guard()
@@ -43,7 +45,7 @@ def main():
             label='diagnostic-'+candidate.replace(':','-')
             result=subprocess.run([sys.executable,str(ROOT/'deploy/compact/mixed_load.py'),'--protocol','smoke',
                                    '--snapshot',str(args.snapshot),'--source-commit',source,'--label',label,
-                                   '--users','200','--seconds','120','--warm-seconds','60','--skip-reset'])
+                                   '--users','200','--seconds',str(args.seconds),'--warm-seconds',str(args.warm_seconds),'--skip-reset'])
             pointer=json.loads((LOCAL/('performance-'+label+'.json')).read_text(encoding='utf8'))
             report=json.loads(Path(pointer['path']).read_text(encoding='utf8'))
             sql=mysql("SELECT SCHEMA_NAME,DIGEST_TEXT,COUNT_STAR,ROUND(AVG_TIMER_WAIT/1000000000,3),ROUND(SUM_LOCK_TIME/1000000000,3),SUM_ROWS_EXAMINED FROM performance_schema.events_statements_summary_by_digest WHERE SCHEMA_NAME LIKE 'tj\\_%' OR (SCHEMA_NAME IS NULL AND DIGEST_TEXT LIKE '%tj\\_%') ORDER BY SUM_TIMER_WAIT DESC LIMIT 20")
@@ -52,7 +54,8 @@ def main():
             item={'candidate':candidate,'parameters':values,'schedulerThreads':actual['spring']['task']['scheduling']['pool']['size'],
                   'outboxThreads':actual['tj']['reliability']['outbox-core'],'progressIntervalMs':actual['tj']['learning']['progress-interval-ms'],
                   'processExit':result.returncode,'rawReport':pointer['path'],
-                  'sqlTimingScope':'Login, one-minute query warm-up and two-minute mixed workload; picoseconds converted to milliseconds.',
+                  'warmupSeconds':args.warm_seconds,'sampleSeconds':args.seconds,
+                  'sqlTimingScope':'Login, query warm-up and mixed workload; picoseconds converted to milliseconds.',
                   'slowSqlSummary':sql.splitlines(),'currentLockWaits':int(mysql('SELECT COUNT(*) FROM performance_schema.data_lock_waits')),
                   'rowLockWaitsDuringDiagnostic':after_locks['Innodb_row_lock_waits']-before_locks['Innodb_row_lock_waits'],
                   'rowLockWaitMillisecondsDuringDiagnostic':after_locks['Innodb_row_lock_time']-before_locks['Innodb_row_lock_time'],
