@@ -14,6 +14,17 @@ check(s.get(BASE+'/api/v2/services/user/users/list?ids=0',timeout=10).status_cod
 check(s.get(BASE+'/api/v2/admin/dashboard',headers={'user-info':admin,'user-role':'1'},timeout=10).status_code==403,'forged identity cannot escalate role')
 check(s.post(BASE+'/api/v2/services/user/unconfigured-action',timeout=10).status_code==403,'unknown permission defaults to deny')
 check(s.get(BASE+'/api/v2/services/user/users/me',timeout=10).status_code==200,'known student API works')
+# Exercise real host HTTP dispatch with mixed callers and forged forwarded headers.
+import concurrent.futures
+teacher=login('teacher')
+roles=[('student',s),('admin',a),('teacher',teacher)]
+def profile(index):
+ role,client=roles[index%len(roles)]
+ headers={'Authorization':client.headers['Authorization'],'user-info':admin,'user-role':'1','X-User-Id':admin,'X-TJ-Call-Depth':'4'}
+ response=requests.get(BASE+'/api/v2/services/user/users/me',headers=headers,timeout=10)
+ return response.status_code==200 and str(response.json().get('data',{}).get('id'))==str(accounts[role]['id'])
+with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+ check(all(pool.map(profile,range(60))),'60 real concurrent HTTP requests keep caller identities isolated')
 # User profile changes are authoritative via DB triggers. Old signed tokens must fail within ten seconds.
 for label,statement,restore in [('disable',f'UPDATE tj_user.user SET status=0 WHERE id={uid}',f'UPDATE tj_user.user SET status=1 WHERE id={uid}'),('password',f'UPDATE tj_user.user SET password=CONCAT(password,"x") WHERE id={uid}',None),('role',f'UPDATE tj_user.user_detail SET role_id=1 WHERE id={uid}',f'UPDATE tj_user.user_detail SET role_id=2 WHERE id={uid}')]:
  s=login();old=mysql(f'SELECT password FROM tj_user.user WHERE id={uid}') if label=='password' else None

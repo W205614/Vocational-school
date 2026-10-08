@@ -27,7 +27,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
     private Mono<Void> authorize(ServerWebExchange exchange,GatewayFilterChain chain) {
         // Identity is derived exclusively from the signed token. Strip on every path, including public paths.
         ServerWebExchange sanitized=exchange.mutate().request(b->b.headers(h->{
-            h.remove("user-session");h.remove("X-Client-IP");h.remove("X-Forwarded-For");h.remove("X-Real-IP");h.remove(USER_HEADER);h.remove("user-role");h.remove("X-User-Id");h.remove("X-Role-Id");h.remove("X-Internal-Token");
+            h.remove("user-session");h.remove("X-Client-IP");h.remove("X-Forwarded-For");h.remove("X-Real-IP");h.remove(USER_HEADER);h.remove("user-role");h.remove("X-User-Id");h.remove("X-Role-Id");h.remove("X-Internal-Token");h.remove("X-TJ-Call-Depth");
             String internal=System.getenv("TJ_INTERNAL_TOKEN");if(internal==null || internal.length()<32)throw new IllegalStateException("Gateway service identity is not configured");
             h.set("X-Internal-Token",internal);
             var peer=exchange.getRequest().getRemoteAddress();h.set("X-Client-IP",peer==null?"unknown":peer.getAddress().getHostAddress());

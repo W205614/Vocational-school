@@ -34,20 +34,24 @@ def prepare():
  key=LOCAL/'signing.jks'
  if not key.exists():run([shutil.which('keytool') or 'keytool','-genkeypair','-alias','compact','-keyalg','RSA','-keysize','2048','-validity','365','-dname','CN=Tianji Local Compact','-storetype','JKS','-keystore',str(key),'-storepass',env['ACCEPTANCE_INTERNAL_TOKEN'],'-keypass',env['ACCEPTANCE_INTERNAL_TOKEN']],'keytool')
  targets={a:'http://app-'+g+':'+str(PORTS[g])+'/_modules/'+a for g,aliases in GROUPS.items() for a in aliases}
+ owners={a:g for g,aliases in GROUPS.items() for a in aliases}
+ internal_ports={g:PORTS[g]+1000 for g in GROUPS}
  excludes=[line.strip() for source in ROOT.glob('tj-*/**/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports') for line in source.read_text(encoding='utf8').splitlines() if line.strip()]+['com.tianji.authsdk.resource.config.ResourceInterceptorConfiguration','com.tianji.authsdk.resource.config.FeignRelayUserAutoConfiguration','org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration','org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration','org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration','com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration']
  for alias,(module,_,_,database) in MODULES.items():
   if alias in {'data','gateway'}:database=None
   c=yaml.safe_load((ROOT/module/'src/main/resources/application.yml').read_text(encoding='utf8'));s=c['spring'];c['server']={'port':PORTS.get(alias,0),'shutdown':'graceful'}
   s['profiles']={'active':'local-simulator'};s['config']={'import':[]};s['main']={'allow-bean-definition-overriding':False}
   s['cloud']['sentinel']={'enabled':False};s['cloud']['nacos']={'config':{'enabled':False,'import-check':{'enabled':False}},'discovery':{'enabled':False}}
-  s['cloud']['discovery']={'client':{'simple':{'instances':{a+'-service':[{'uri':url}] for a,url in targets.items()}}}}
+  module_targets={a:('http://'+('127.0.0.1' if owners.get(alias)==g else 'app-'+g)+':'+str(internal_ports[g])+'/_modules/'+a) for a,g in owners.items()}
+  s['cloud']['discovery']={'client':{'simple':{'instances':{a+'-service':[{'uri':url}] for a,url in module_targets.items()}}}}
   clients=s['cloud'].setdefault('openfeign',{}).setdefault('client',{}).setdefault('config',{})
-  for a,url in targets.items():clients[a]=clients[a+'-service']={'url':url,'connectTimeout':1500,'readTimeout':5000,'loggerLevel':'none'}
+  s['cloud']['openfeign']['httpclient']={'connection-timeout':1500,'max-connections':128,'max-connections-per-route':64,'hc5':{'connection-request-timeout':1500,'connection-request-timeout-unit':'milliseconds','socket-timeout':5,'socket-timeout-unit':'seconds'}}
+  for a,url in module_targets.items():clients[a]=clients[a+'-service']={'url':url,'connectTimeout':1500,'readTimeout':5000,'loggerLevel':'none'}
   for source in ROOT.glob('tj-*/**/src/main/java/**/*Client.java'):
    for declaration in re.findall(r'@FeignClient\(([^)]*)\)',source.read_text(encoding='utf8')):
     named=re.search(r'(?:value|name)\s*=\s*"([^"]+)"',declaration);positional=re.match(r'\s*"([^"]+)"',declaration);service=(named or positional)
     if not service:continue
-    target=targets.get(service.group(1).removesuffix('-service'))
+    target=module_targets.get(service.group(1).removesuffix('-service'))
     context=re.search(r'contextId\s*=\s*"([^"]+)"',declaration)
     if target and context:clients[context.group(1)]={'url':target,'connectTimeout':1500,'readTimeout':5000,'loggerLevel':'none'}
   s['data']={'redis':{'host':'redis','port':6379,'timeout':'2s'}}
@@ -55,6 +59,7 @@ def prepare():
   if database:s['datasource']={'url':'jdbc:mysql://mysql:3306/'+database+'?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true','username':'app_'+alias,'password':dbkeys[alias],'driver-class-name':'com.mysql.cj.jdbc.Driver','hikari':{'maximum-pool-size':4,'minimum-idle':0,'idle-timeout':60000,'connection-timeout':3000,'pool-name':alias+'-db'}}
   else:s.pop('datasource',None);s['autoconfigure']={'exclude':['org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration']}
   tj=c.setdefault('tj',{});tj['xxljob']={'enabled':False};tj.setdefault('swagger',{})['enable']=False
+  tj['feign']={'max-concurrent':32,'internal-ports':','.join(str(port) for port in internal_ports.values())}
   tj['reliability']={'enabled':database is not None,'operation-interval-ms':750,'dispatch-interval-ms':750,'operation-core':1,'operation-max':4,'outbox-core':1,'outbox-max':2}
   resource=tj.setdefault('auth',{}).setdefault('resource',{});resource['enable']=True;resource.setdefault('excludeLoginPaths',[]).extend(['/actuator/health/**','/readyz'])
   if alias=='auth':c['encrypt']={'key-store':{'alias':'compact','location':'file:/run/compact/signing.jks','password':env['ACCEPTANCE_INTERNAL_TOKEN'],'secret':env['ACCEPTANCE_INTERNAL_TOKEN']}};resource['includeLoginPaths']=['/menus/me','/accounts/logout','/accounts/sessions/**']
@@ -72,6 +77,7 @@ def prepare():
   (configs/(alias+'.yml')).write_text(yaml.safe_dump(c,allow_unicode=True,sort_keys=False),encoding='utf8')
  for group in GROUPS:
   c={'server':{'port':PORTS[group],'shutdown':'graceful','tomcat':{'threads':{'max':80,'min-spare':4},'accept-count':50,'max-connections':2000}},'spring':{'application':{'name':group+'-app'},'autoconfigure':{'exclude':excludes},'main':{'allow-bean-definition-overriding':False},'cloud':{'sentinel':{'enabled':False},'nacos':{'config':{'enabled':False,'import-check':{'enabled':False}},'discovery':{'enabled':False}}}},'tj':{'compact':{'config-directory':'/run/compact/configs'},'reliability':{'enabled':False}},'management':{'endpoints':{'web':{'exposure':{'include':'health,info,prometheus'}}},'endpoint':{'health':{'probes':{'enabled':True},'group':{'readiness':{'include':'readinessState,modules','additional-path':'server:/readyz'}}}}}}
+  c['tj']['compact']['internal-port']=internal_ports[group]
   (configs/(group+'.yml')).write_text(yaml.safe_dump(c,sort_keys=False),encoding='utf8')
  infrastructure={'mysql':{'image':'mysql:8.4','environment':{'MYSQL_ROOT_PASSWORD':'${ACCEPTANCE_DB_PASSWORD}','TZ':'Asia/Shanghai'},'command':['--default-time-zone=+08:00','--innodb-buffer-pool-size=256M','--max-connections=160'],'ports':['127.0.0.1:'+str(24316+OFFSET)+':3306'],'volumes':['compact_mysql:/var/lib/mysql'],'mem_limit':'1g','healthcheck':{'test':['CMD-SHELL','MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -uroot -N -e "SELECT 1"'],'interval':'5s','timeout':'3s','retries':60}},'redis':{'image':'redis:7.4-alpine','command':['redis-server','--appendonly','yes','--maxmemory','192mb','--maxmemory-policy','noeviction'],'ports':['127.0.0.1:'+str(24379+OFFSET)+':6379'],'volumes':['compact_redis:/data'],'mem_limit':'256m','healthcheck':{'test':['CMD','redis-cli','ping'],'interval':'5s','timeout':'3s','retries':30}},'rabbitmq':{'image':'rabbitmq:4.1-management','environment':{'RABBITMQ_DEFAULT_USER':'tianji','RABBITMQ_DEFAULT_PASS':'${ACCEPTANCE_MQ_PASSWORD}'},'ports':['127.0.0.1:'+str(24373+OFFSET)+':5672'],'volumes':['compact_rabbit:/var/lib/rabbitmq'],'mem_limit':'512m','healthcheck':{'test':['CMD','rabbitmq-diagnostics','-q','ping'],'interval':'5s','timeout':'5s','retries':30}},'elasticsearch':{'image':'docker.elastic.co/elasticsearch/elasticsearch:7.17.29','environment':{'discovery.type':'single-node','xpack.security.enabled':'false','ES_JAVA_OPTS':'-Xms512m -Xmx512m'},'ports':['127.0.0.1:'+str(24920+OFFSET)+':9200'],'volumes':['compact_search:/usr/share/elasticsearch/data'],'mem_limit':'1536m','healthcheck':{'test':['CMD-SHELL','curl -fsS http://localhost:9200/_cluster/health'],'interval':'5s','timeout':'3s','retries':60}}}
  services=dict(infrastructure)
@@ -120,12 +126,18 @@ def build(package=True,group=None):
  app_gid=os.getgid() if hasattr(os,'getgid') and os.getgid()!=0 else 10001
  mvn=shutil.which('mvn') or 'mvn'
  # Profile switches must rebuild plain dependency jars, never reuse standalone BOOT-INF jars.
- if package:run([mvn,'-B','-Pcompact','-DskipTests','clean','package'],'maven')
+ from build_provenance import clean_commit,packaged,require_package,digest
+ commit=clean_commit(ROOT)
+ if package:
+  run([mvn,'-B','-Pcompact','-DskipTests','clean','package'],'maven')
+  packaged(ROOT,LOCAL,commit,'compact',{g:ROOT/('tj-gateway/target/tj-gateway.jar' if g=='gateway' else 'tj-compact/'+g+'/target/tj-'+g+'-app.jar') for g in list(GROUPS)+['gateway']})
+ journal=require_package(LOCAL,commit,'compact')
  from check_packaging import verify
  manifest=json.loads((LOCAL/'images.json').read_text(encoding='utf8')) if (LOCAL/'images.json').exists() else {}
  selected=[group] if group else list(GROUPS)+['gateway']
  for group in selected:
   jar=ROOT/('tj-gateway/target/tj-gateway.jar' if group=='gateway' else 'tj-compact/'+group+'/target/tj-'+group+'-app.jar')
+  if digest(jar)!=journal['jars'].get(group):raise RuntimeError('Packaged artifact changed after source binding')
   if group!='gateway':verify(jar,GROUPS[group])
   folder=LOCAL/'images'/group;folder.mkdir(parents=True,exist_ok=True);shutil.copyfile(jar,folder/'app.jar')
   run([shutil.which('javac') or 'javac','-d',str(folder),str(ACC/'docker/HealthProbe.java')],'health-compile')
@@ -141,6 +153,7 @@ def build(package=True,group=None):
    shutil.copyfile(ACC/'docker/nginx.conf.template',folder/'nginx.conf.template');shutil.copyfile(ACC/'docker/Dockerfile.web',folder/'Dockerfile');run(['docker','build','--pull=false','-t','tianji-compact/'+app+':local',str(folder)],'image-'+app)
    manifest[app]={'image':'tianji-compact/'+app+':local','imageId':subprocess.check_output(['docker','image','inspect','tianji-compact/'+app+':local','--format','{{.Id}}']).decode().strip()}
  (LOCAL/'images.json').write_text(json.dumps(manifest,indent=2),encoding='utf8')
+ if clean_commit(ROOT)!=commit:raise RuntimeError('Production source changed while building images')
 def up(group=None):run(COMPOSE+['up','-d','--wait']+(['app-'+group] if group else []),'up-'+str(group))
 def main():
  parser=argparse.ArgumentParser();parser.add_argument('action',choices=['prepare','init','build','up','migrate']);parser.add_argument('--skip-package',action='store_true');parser.add_argument('--clone',type=Path);parser.add_argument('--group',choices=list(GROUPS)+['gateway']);args=parser.parse_args()

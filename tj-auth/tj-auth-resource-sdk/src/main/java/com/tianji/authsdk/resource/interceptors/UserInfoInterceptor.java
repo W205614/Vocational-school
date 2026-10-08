@@ -9,9 +9,11 @@ public class UserInfoInterceptor implements HandlerInterceptor {
         UserContext.removeUser();
         if((request.getPathInfo()==null?request.getRequestURI():request.getPathInfo()).startsWith("/internal/") || (request.getPathInfo()==null?request.getRequestURI():request.getPathInfo()).equals("/actuator/prometheus"))com.tianji.common.utils.InternalAuth.requireService();
         String id=request.getHeader(JwtConstants.USER_HEADER);
-        if(id==null) return true;
-        com.tianji.common.utils.InternalAuth.requireService();
         try {
+            String depth=request.getHeader("X-TJ-Call-Depth");
+            if(depth!=null){com.tianji.common.utils.InternalAuth.requireService();int level=Integer.parseInt(depth);if(level<1 || level>4)throw new NumberFormatException();UserContext.setCallDepth(level);}
+            if(id==null) return true;
+            com.tianji.common.utils.InternalAuth.requireService();
             long user=Long.parseLong(id);
             if(user<=0) throw new NumberFormatException();
             UserContext.setUser(user);

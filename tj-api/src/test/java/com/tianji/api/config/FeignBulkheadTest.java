@@ -18,7 +18,7 @@ class FeignBulkheadTest {
    var first=pool.submit(()->client.execute(request("stalled"),new Request.Options()));var second=pool.submit(()->client.execute(request("stalled"),new Request.Options()));
    try {
     assertTrue(entered.await(3,TimeUnit.SECONDS));
-    assertEquals(429,assertThrows(FeignException.TooManyRequests.class,()->client.execute(request("stalled"),new Request.Options())).status());
+    assertEquals(429,assertThrows(FeignException.TooManyRequests.class,()->client.execute(request("stalled"),new Request.Options(50,TimeUnit.MILLISECONDS,50,TimeUnit.MILLISECONDS,true))).status());
     assertEquals(200,client.execute(request("healthy"),new Request.Options()).status());
    }finally{release.countDown();}
    first.get(5,TimeUnit.SECONDS);second.get(5,TimeUnit.SECONDS);
@@ -30,5 +30,18 @@ class FeignBulkheadTest {
   for(int i=0;i<10;i++)assertThrows(IOException.class,()->failure.execute(request("service"),new Request.Options()));
   Client success=capability.enrich((Client)(request,options)->Response.builder().request(request).status(200).headers(Map.of()).build());
   assertDoesNotThrow(()->success.execute(request("service"),new Request.Options()));
+ }
+ @Test void admissionRemainsBoundedUntilBodyCloseAndClosingTwiceDoesNotCreatePermits() throws Exception {
+  Client client=new FeignBulkheadCapability(1).enrich((Client)(request,options)->Response.builder().request(request).status(200).headers(Map.of()).body("pending",StandardCharsets.UTF_8).build());
+  var shortWait=new Request.Options(20,TimeUnit.MILLISECONDS,100,TimeUnit.MILLISECONDS,true);
+  var first=client.execute(request("service"),shortWait);
+  try {
+   assertThrows(FeignException.TooManyRequests.class,()->client.execute(request("service"),shortWait));
+   first.body().asInputStream().close();first.close();
+   try(var second=client.execute(request("service"),shortWait)){
+    assertThrows(FeignException.TooManyRequests.class,()->client.execute(request("service"),shortWait));
+   }
+   try(var third=client.execute(request("service"),shortWait)){assertEquals(200,third.status());}
+  }finally{first.close();}
  }
 }
