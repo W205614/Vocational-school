@@ -4,7 +4,10 @@ from setup import LOCAL,ROOT,COMPOSE
 from evidence import validate,digest,manifest,verify_publication
 from pathlib import Path
 from performance_acceptance import compare,validate_raw,baseline_complete,pair_binding_errors
-parser=argparse.ArgumentParser();parser.add_argument('--historical',action='store_true');parser.add_argument('--benchmark-home',type=Path);args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--historical',action='store_true');parser.add_argument('--benchmark-home',type=Path)
+parser.add_argument('--scope',choices=('full','functional'),default='full',help='Functional delivery records performance as deferred; full retains perf-3h-v1 requirements')
+args=parser.parse_args()
+if args.scope=='functional' and args.benchmark_home:parser.error('--benchmark-home requires --scope full')
 checks={}
 manifest_path=LOCAL/'release-run.json'
 expected=json.loads(manifest_path.read_text(encoding='utf8')) if manifest_path.exists() else None
@@ -18,7 +21,9 @@ if expected:
   checks['publication-source-equivalence']=verify_publication(ROOT,expected['sourceCommit'],deployment_manifest=expected)
  except (ValueError,KeyError,TypeError,OSError):pass
 directory=LOCAL/'evidence'/expected['releaseRunId'] if expected else LOCAL/'missing-evidence'
-for name,status in [('security-smoke','PASSED'),('browser-result','PASSED'),('backend-result','PASSED'),('audit-smoke','PASSED'),('redis-recovery-proof','PASSED'),('recovery-acceptance','PASSED')]:
+required=['security-smoke','browser-result','backend-result','audit-smoke','redis-recovery-proof','recovery-acceptance']
+if args.scope=='functional':required+=['search-rollback-acceptance','history-preservation']
+for name in required:
  path=directory/(name+'.json')
  try: checks[name]=expected is not None and path.exists() and validate(json.loads(path.read_text(encoding='utf8')),expected)
  except (ValueError,KeyError,TypeError):checks[name]=False
@@ -34,7 +39,7 @@ if args.benchmark_home and expected:
   performance=benchmark/'.local/evidence'/performance_expected['releaseRunId']/'performance-acceptance.json'
   checks['performance-deployment-equivalence']=performance_expected['releaseRunId']==expected['releaseRunId'] and performance_expected['sourceCommit']==expected['sourceCommit'] and performance_expected['imageDigests']==expected['imageDigests'] and config_fingerprint(benchmark)==performance_expected['configFingerprint'] and equivalent(benchmark,LOCAL.parent)
  except (ValueError,KeyError,TypeError,OSError):checks['performance-deployment-equivalence']=False
-if performance.exists():
+if args.scope=='full' and performance.exists():
  try:
   p=json.loads(performance.read_text(encoding='utf8'))
   checks['formal-performance']=validate(p,performance_expected) and p.get('protocol')=='perf-3h-v1' and p.get('completedRunsPerConfiguration')==6 and p.get('javaMemoryReduction',0)>=.2 and not p.get('failures')
@@ -50,8 +55,12 @@ if performance.exists():
    checks['formal-performance']=checks['formal-performance'] and all(report.get('evidence',{}).get('baseSnapshotFingerprint')==performance_expected.get('baseSnapshotFingerprint') for report in raw.values())
    checks['formal-performance']=checks['formal-performance'] and all(all(report.get(key)==raw['compact'].get(key) for key in ('protocol','fixtureFingerprint','workload','workloadFingerprint')) for report in raw.values())
  except (ValueError,KeyError,TypeError,OSError):checks['formal-performance']=False
+deferred=[]
+if args.scope=='functional':
+ checks.pop('formal-performance');checks.pop('performance-deployment-equivalence')
+ deferred=['perf-3h-v1 formal sampling','latency thresholds','20 percent Java RSS reduction']
 if args.historical:
  parity=directory/'historical-parity.json';checks['historical-data-parity']=expected is not None and parity.exists() and validate(json.loads(parity.read_text(encoding='utf8')),expected)
 from evidence import save_report
-if expected:save_report(LOCAL,'release-gate',{'status':'PASSED' if all(checks.values()) else 'FAILED','checks':checks,'benchmarkHome':str(args.benchmark_home) if args.benchmark_home else None,'publicationCommit':__import__('subprocess').check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip()})
+if expected:save_report(LOCAL,'release-gate',{'status':'PASSED' if all(checks.values()) else 'FAILED','acceptanceScope':args.scope,'checks':checks,'deferredChecks':deferred,'performanceValidation':'DEFERRED' if deferred else 'REQUIRED','benchmarkHome':str(args.benchmark_home) if args.benchmark_home else None,'publicationCommit':__import__('subprocess').check_output(['git','-C',str(ROOT),'rev-parse','HEAD'],text=True).strip()})
 print(json.dumps(checks,indent=2));raise SystemExit(0 if all(checks.values()) else 1)

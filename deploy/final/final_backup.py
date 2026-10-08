@@ -47,7 +47,7 @@ def quiesce(p):
   if apps:subprocess.run(p.COMPOSE+['stop','-t','60',*apps],check=True,stdout=subprocess.DEVNULL)
   yield
  finally:
-  if apps:subprocess.run(p.COMPOSE+['start',*apps],check=True,stdout=subprocess.DEVNULL)
+  if apps:subprocess.run(p.COMPOSE+['start','--wait','--wait-timeout','180',*apps],check=True,stdout=subprocess.DEVNULL)
 
 def capture(runtime=None,source_base=None,quiesced=False):
  p=runtime or configure()
