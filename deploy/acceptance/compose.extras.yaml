@@ -1,13 +1,13 @@
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.29
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
     profiles: [search]
     environment:
       discovery.type: single-node
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports: ["127.0.0.1:23920:9200"]
-    volumes: [acceptance_search:/usr/share/elasticsearch/data]
+    volumes: [acceptance_search_v9:/usr/share/elasticsearch/data]
     mem_limit: 1g
     healthcheck:
       test: ["CMD-SHELL","curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=2s'"]
@@ -37,5 +37,6 @@ services:
       - acceptance_grafana:/var/lib/grafana
 volumes:
   acceptance_search:
+  acceptance_search_v9:
   acceptance_prometheus:
   acceptance_grafana:

@@ -34,6 +34,8 @@ public class CourseSearchDTO {
     private Boolean free;
     @Schema(description = "发布时间")
     private LocalDateTime publishTime;
+    @Schema(description = "课程更新时间")
+    private LocalDateTime updateTime;
     @Schema(description = "章节数")
     private Integer sections;
     @Schema(description = "课程时长")

@@ -6,14 +6,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.elasticsearch.client.*;
-import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.script.*;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import com.tianji.search.repository.impl.CourseRepositoryImpl;
 import java.util.*;
 import static com.tianji.search.repository.CourseRepository.INDEX_NAME;
 @Component @RequiredArgsConstructor @Slf4j
 public class SalesProjectionWorker {
- private final JdbcTemplate jdbc;private final RestHighLevelClient es;
+ private final JdbcTemplate jdbc;private final ElasticsearchClient es;
  private final ThreadPoolTaskExecutor salesProjectionExecutor;
  @Configuration static class Pool {
   @Bean ThreadPoolTaskExecutor salesProjectionExecutor() {
@@ -32,8 +31,8 @@ public class SalesProjectionWorker {
  }
  private void send(Map<String,Object> row,String token) {
   try {
-   var script=new Script(ScriptType.INLINE,"painless","if (ctx._source.salesVersion == null || ctx._source.salesVersion <= params.version) {ctx._source.sold=params.sold;ctx._source.salesVersion=params.version;} else {ctx.op='noop';}",Map.of("version",row.get("version"),"sold",row.get("sold")));
-   es.update(new UpdateRequest(INDEX_NAME,row.get("course_id").toString()).script(script).retryOnConflict(3),RequestOptions.DEFAULT);
+   var script=CourseRepositoryImpl.script("if (ctx._source.salesVersion == null || ctx._source.salesVersion <= params.version) {ctx._source.sold=params.sold;ctx._source.salesVersion=params.version;} else {ctx.op='noop';}",Map.of("version",row.get("version"),"sold",row.get("sold")));
+   es.update(u->u.index(INDEX_NAME).id(row.get("course_id").toString()).script(script).retryOnConflict(3),Map.class);
    jdbc.update("UPDATE course_sales_projection SET processed_version=GREATEST(processed_version,?),lease_token=NULL,lease_until=NULL,attempts=0,next_attempt_at=NOW(3),last_error=NULL WHERE course_id=? AND lease_token=?",row.get("version"),row.get("course_id"),token);
   }catch(Exception e){
    jdbc.update("UPDATE course_sales_projection SET attempts=attempts+1,status=?,last_error=? WHERE course_id=? AND lease_token=? AND version=?",((Number)row.get("attempts")).intValue()+1>=10?"DEAD":"PENDING",e.getClass().getSimpleName(),row.get("course_id"),token,row.get("version"));

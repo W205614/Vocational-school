@@ -36,6 +36,7 @@ public class Course {
     /** 课程封面 */
     private String coverUrl;
     private LocalDateTime publishTime;
+    private LocalDateTime updateTime;
 
     @JsonIgnore
     public List<Long> getCategoryIds(){
