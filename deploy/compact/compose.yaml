@@ -64,7 +64,7 @@ services:
       timeout: 5s
       retries: 30
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.29
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
     environment:
       discovery.type: single-node
       xpack.security.enabled: 'false'
@@ -72,7 +72,7 @@ services:
     ports:
     - 127.0.0.1:24920:9200
     volumes:
-    - compact_search:/usr/share/elasticsearch/data
+    - compact_search_v9:/usr/share/elasticsearch/data
     mem_limit: 1536m
     healthcheck:
       test:
@@ -119,6 +119,8 @@ services:
       timeout: 4s
       start_period: 90s
       retries: 30
+    sysctls:
+      net.ipv4.ip_local_reserved_ports: 24001,25001,25002,25003,25004
   app-commerce:
     image: tianji-compact/commerce:local
     restart: unless-stopped
@@ -157,6 +159,8 @@ services:
       timeout: 4s
       start_period: 90s
       retries: 30
+    sysctls:
+      net.ipv4.ip_local_reserved_ports: 24002,25002,25003,25004,25005
   app-education:
     image: tianji-compact/education:local
     restart: unless-stopped
@@ -195,6 +199,8 @@ services:
       timeout: 4s
       start_period: 90s
       retries: 30
+    sysctls:
+      net.ipv4.ip_local_reserved_ports: 24003,25003,25004,25005,25006
   app-support:
     image: tianji-compact/support:local
     restart: unless-stopped
@@ -233,6 +239,8 @@ services:
       timeout: 4s
       start_period: 90s
       retries: 30
+    sysctls:
+      net.ipv4.ip_local_reserved_ports: 24004,25004,25005,25006,25007
   app-gateway:
     image: tianji-compact/gateway:local
     restart: unless-stopped
@@ -271,6 +279,8 @@ services:
       timeout: 4s
       start_period: 90s
       retries: 30
+    sysctls:
+      net.ipv4.ip_local_reserved_ports: '24310'
   web-student:
     image: tianji-compact/student:local
     environment:
@@ -296,3 +306,4 @@ volumes:
   compact_redis: {}
   compact_rabbit: {}
   compact_search: {}
+  compact_search_v9: {}
