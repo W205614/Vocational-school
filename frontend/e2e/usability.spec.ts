@@ -72,6 +72,12 @@ test('dashboard quick actions and real-data details remain usable',async({page},
 test('free enrollment survives refresh and expired enrollment is explained upfront',async({page},info)=>{
  test.skip(info.project.name!=='student');await login(page,'student');
  const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));await page.goto('/courses/'+fixture.expiredCourse);await expect(page.getByRole('button',{name:'报名已结束',exact:true})).toBeDisabled();
+ await expect(page.getByText('学习权益已失效',{exact:true})).toBeVisible();
+ await expect(page.getByText('学习进度、私人笔记和已有答卷仍保留。重新报名后可继续学习。',{exact:true})).toBeVisible();
+ await expect(page.locator('.lesson-item').filter({hasText:'Browser video'})).toBeDisabled();
+ await expect(page.getByRole('link',{name:'参加考试 →',exact:true})).toHaveCount(0);
+ await page.getByRole('link',{name:'查看考试记录 →',exact:true}).click();
+ await expect(page.locator('.enrollment-hint')).toContainText('学习权益已失效');
  await page.goto('/courses/'+fixture.freeCourse);await page.getByRole('button',{name:'免费报名',exact:true}).click();
  await expect(page.getByText(/报名成功/).first()).toBeVisible();await expect.poll(async()=>{const r=await page.request.get('/api/v2/services/learning/learning-records/course/'+fixture.freeCourse,{headers:{Authorization:'Bearer '+await page.evaluate(()=>sessionStorage.getItem('school-token'))}});return (await r.json()).data?.id;},{timeout:15000}).toBeTruthy();
  await page.reload();await expect(page.getByRole('button',{name:'继续学习',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'免费报名',exact:true})).toHaveCount(0);

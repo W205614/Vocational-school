@@ -88,7 +88,7 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   // This does not claim that already downloaded video data can be revoked.
   const refundedBytes=await page.request.get(retainedPlayUrl!,{headers:{Range:'bytes=0-31'}});expect(refundedBytes.status()).toBe(403);
   await assertPersistedAudit(admin);
-  await page.goto('/courses/'+fixture.course);await page.getByRole('button',{name:/Browser video/}).click();await expect(page.getByRole('alert').filter({hasText:/收费视频|课程|权限|免费/})).toBeVisible();await expect(page.locator('video')).toHaveCount(0);
+  await page.goto('/courses/'+fixture.course);await expect(page.getByText('学习权益已失效',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:/Browser video/})).toBeDisabled();await expect(page.getByRole('link',{name:'查看考试记录 →',exact:true})).toBeVisible();await expect(page.locator('video')).toHaveCount(0);
   await page.goto('/notes');await expect(page.getByText(note,{exact:true})).toBeVisible();
  }finally{await adminContext.close();await teacherContext.close();}
 });

@@ -36,6 +36,10 @@ def main():
  expired_substitutions={**substitutions,'id':str(expired_course),'name':"'Browser expired "+marker+"'",'purchase_start_time':'NOW()-INTERVAL 1 MONTH','purchase_end_time':'NOW()-INTERVAL 1 DAY'}
  expired_values=','.join(expired_substitutions.get(c,'`'+c+'`') for c in columns)
  mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+expired_values+' FROM course WHERE id=1','tj_course')
+ # Retain a real catalogue on the expired course to exercise unavailable video
+ # controls, rather than accidentally passing against an empty course outline.
+ for i,name,kind,parent in [(course+32,'Browser chapter',1,0),(course+33,'Browser video',2,course+32),(course+34,'Browser exam',3,course+32)]:
+  mysql(f"INSERT INTO course_catalogue(id,name,course_id,type,parent_catalogue_id,trailer,media_duration,c_index,dep_id,creater,updater) VALUES({i},'{name}',{expired_course},{kind},{parent},0,2,{1 if kind<3 else 2},0,{admin},{admin})",'tj_course')
  # Explicit expired learning history must remain visible without offering a new exam.
  mysql(f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections,latest_learn_time) VALUES({course+31},{accounts['student']['id']},{expired_course},NOW()-INTERVAL 1 DAY,3,0,NOW()-INTERVAL 2 DAY)",'tj_learning')
  for assigned_course in [free_course,expired_course]:
