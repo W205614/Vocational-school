@@ -34,10 +34,9 @@ def main():
     try:
         for candidate,values in plans:
             os.environ.update(values);prepare()
-            compose=yaml.safe_load((BASE/'compose.yaml').read_text(encoding='utf8'))
-            # Tuning never changes any frozen application or infrastructure image.
-            for name,service in original['services'].items():compose['services'][name]['image']=service['image']
-            (BASE/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
+            # Only module tuning changes: preserve frozen images, ports, resource
+            # limits and the existing owned volumes, including a migrated index.
+            (BASE/'compose.yaml').write_text(yaml.safe_dump(original,sort_keys=False),encoding='utf8')
             benchmark_snapshot.restore(args.snapshot)
             mysql('TRUNCATE TABLE performance_schema.events_statements_summary_by_digest')
             label='diagnostic-'+candidate.replace(':','-')
