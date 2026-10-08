@@ -11,8 +11,9 @@ def baseline_complete(report):
     runs=report.get('runs',[])
     return [(r.get('users'),r.get('requestedSeconds'),r.get('repeat')) for r in runs]==schedule('perf-3h-v1') and all(r.get('status')=='COMPLETED' and r.get('elapsedSeconds',0)>=r.get('requestedSeconds',1) and r.get('contaminated') is False for r in runs)
 
-def compare(standalone, compact):
-    failures = check_configuration(standalone) + check_configuration(compact)
+def pair_binding_errors(standalone, compact):
+    """Check comparability independently of whether the baseline meets latency targets."""
+    failures = []
     left = standalone.get('evidence', {}); right = compact.get('evidence', {})
     for field in ('sourceCommit', 'baseSnapshotFingerprint'):
         if not left.get(field) or left[field] != right.get(field): failures.append('pair mismatch: ' + field)
@@ -21,6 +22,13 @@ def compare(standalone, compact):
     for service in ('mysql', 'redis', 'rabbitmq', 'elasticsearch'):
         if not left.get('imageDigests', {}).get(service) or left['imageDigests'][service] != right.get('imageDigests', {}).get(service):
             failures.append('infrastructure image mismatch: ' + service)
+    if standalone.get('mode')!='standalone' or compact.get('mode')!='compact':
+        failures.append('comparison topology mismatch')
+    return failures
+
+def compare(standalone, compact):
+    failures = check_configuration(standalone) + check_configuration(compact) + pair_binding_errors(standalone, compact)
+    right = compact.get('evidence', {})
     reduction = None
     try:
         reduction = memory_reduction(standalone, compact)
@@ -47,6 +55,7 @@ def main():
     reports = {name: json.loads(getattr(args, name).read_text(encoding='utf8')) for name in ('standalone', 'compact', 'baseline_standalone', 'baseline_compact')}
     value = compare(reports['standalone'], reports['compact'])
     value['baseline'] = compare(reports['baseline_standalone'], reports['baseline_compact'])
+    value['failures'].extend('baseline: '+error for error in pair_binding_errors(reports['baseline_standalone'],reports['baseline_compact']))
     value['rawReports'] = {name: str(getattr(args, name)) for name in reports}
     expected = json.loads((LOCAL / 'release-run.json').read_text(encoding='utf8'))
     for name, report in reports.items():

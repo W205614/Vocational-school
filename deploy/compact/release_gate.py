@@ -3,7 +3,7 @@ import argparse,json
 from setup import LOCAL,ROOT,COMPOSE
 from evidence import validate,digest,manifest,verify_publication
 from pathlib import Path
-from performance_acceptance import compare,validate_raw,baseline_complete
+from performance_acceptance import compare,validate_raw,baseline_complete,pair_binding_errors
 parser=argparse.ArgumentParser();parser.add_argument('--historical',action='store_true');parser.add_argument('--benchmark-home',type=Path);args=parser.parse_args()
 checks={}
 manifest_path=LOCAL/'release-run.json'
@@ -45,6 +45,7 @@ if performance.exists():
    checks['formal-performance']=checks['formal-performance'] and digest(p['rawReports'][name])==p.get('rawReportHashes',{}).get(name) and not validate_raw(report,performance_expected)
   if set(raw)==required:checks['formal-performance']=checks['formal-performance'] and compare(raw['standalone'],raw['compact'])['status']=='PASSED' and all(baseline_complete(raw[name]) for name in required)
   if set(raw)==required:
+   checks['formal-performance']=checks['formal-performance'] and not pair_binding_errors(raw['baseline_standalone'],raw['baseline_compact'])
    checks['formal-performance']=checks['formal-performance'] and all(raw[name].get('evidence',{}).get('sourceCommit')==performance_expected.get('baselineSourceCommit') for name in ('baseline_standalone','baseline_compact'))
    checks['formal-performance']=checks['formal-performance'] and all(report.get('evidence',{}).get('baseSnapshotFingerprint')==performance_expected.get('baseSnapshotFingerprint') for report in raw.values())
    checks['formal-performance']=checks['formal-performance'] and all(all(report.get(key)==raw['compact'].get(key) for key in ('protocol','fixtureFingerprint','workload','workloadFingerprint')) for report in raw.values())

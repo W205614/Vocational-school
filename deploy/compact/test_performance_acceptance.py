@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 import unittest
 from evidence import bind,utcnow,verify_publication
-from performance_acceptance import compare,validate_raw,baseline_complete
+from performance_acceptance import compare,validate_raw,baseline_complete,pair_binding_errors
 import test_perf_protocol
 
 class BoundPerformanceTest(unittest.TestCase):
@@ -21,12 +21,22 @@ class BoundPerformanceTest(unittest.TestCase):
   changed=copy.deepcopy(value);changed['runs'][1]['contaminated']=True;self.assertFalse(baseline_complete(changed))
  def test_failed_latency_and_mismatched_environment_cannot_be_handwritten_passes(self):
   standalone=self.report();compact=copy.deepcopy(standalone)
+  standalone['mode']='standalone';compact['mode']='compact'
   for run in compact['runs']:run['javaRssMedianBytes']=700
   self.assertEqual('PASSED',compare(standalone,compact)['status'])
   compact['runs'][-1]['latencyMs']['async/notes:ok']['p95']=3001
   self.assertEqual('FAILED',compare(standalone,compact)['status'])
   compact=copy.deepcopy(standalone);compact['evidence']['sourceCommit']='another-build'
   self.assertEqual('FAILED',compare(standalone,compact)['status'])
+ def test_failed_baseline_latency_does_not_allow_mixed_infrastructure_or_topologies(self):
+  standalone=self.report();compact=copy.deepcopy(standalone)
+  standalone['mode']='standalone';compact['mode']='compact'
+  compact['runs'][-1]['latencyMs']['async/refund:ok']['p95']=36000
+  self.assertFalse(pair_binding_errors(standalone,compact))
+  compact['evidence']['imageDigests']['redis']='mixed-version'
+  self.assertTrue(pair_binding_errors(standalone,compact))
+  compact['evidence']['imageDigests']['redis']='r';compact['mode']='standalone'
+  self.assertTrue(pair_binding_errors(standalone,compact))
  def test_readme_commit_preserves_measured_source_but_code_change_is_rejected(self):
   with tempfile.TemporaryDirectory() as directory:
    root=Path(directory)
