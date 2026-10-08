@@ -21,6 +21,33 @@ test('course discovery has working categories, filters and empty-state recovery'
 test('student can find exams without entering internal IDs',async({page},info)=>{
  test.skip(info.project.name!=='student');await login(page,'student');await page.getByRole('link',{name:'课程考试',exact:true}).click();await expect(page.getByRole('combobox',{name:'选择考试课程',exact:true})).toBeVisible();await expect(page.getByPlaceholder('课程 ID')).toHaveCount(0);await expect(page.getByText('请选择已报名课程查看考试',{exact:true})).toBeVisible();
 });
+test('search highlights readable titles and applies the selected price order',async({page},info)=>{
+ test.skip(info.project.name!=='student');await login(page,'student');
+ const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
+ await page.getByRole('textbox',{name:'搜索课程',exact:true}).fill(fixture.marker);
+ const searched=page.waitForResponse(r=>r.url().includes('/services/search/courses/portal?')&&r.url().includes('keyword='+fixture.marker));
+ await page.getByRole('button',{name:'搜索',exact:true}).click();expect((await searched).ok()).toBeTruthy();
+ const course=page.locator('.course-tile').filter({has:page.locator('a[href="/courses/'+fixture.course+'"]')});
+ await expect(course).toHaveCount(1);await expect(course.locator('h3 mark')).toHaveText(fixture.marker);
+ await expect(course.locator('h3')).toHaveText(fixture.name);await expect(course.locator('.cover-link')).toHaveAttribute('aria-label','查看课程：'+fixture.name);
+ await page.getByRole('combobox',{name:'课程排序',exact:true}).click();
+ const sorted=page.waitForResponse(r=>r.url().includes('/services/search/courses/portal?')&&r.url().includes('sortBy=price'));
+ await page.getByRole('option',{name:'价格由低到高',exact:true}).click();const result=await sorted;
+ expect(new URL(result.url()).searchParams.get('isAsc')).toBe('true');
+ const data=(await result.json()).data.list;expect(data.length).toBeGreaterThan(1);
+ expect(data.map((row:any)=>Number(row.price))).toEqual(data.map((row:any)=>Number(row.price)).sort((a:number,b:number)=>a-b));
+});
+test('private note filters use enrolled course names',async({page},info)=>{
+ test.skip(info.project.name!=='student');await login(page,'student');await page.goto('/notes');
+ const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
+ await expect(page.getByPlaceholder('课程 ID')).toHaveCount(0);
+ await page.getByRole('combobox',{name:'筛选笔记课程',exact:true}).click();
+ const filtered=page.waitForResponse(r=>r.url().includes('/notes?')&&r.url().includes('courseId='+fixture.notesCourse));
+ await page.getByRole('option',{name:'Browser notes '+fixture.marker,exact:true}).click();
+ expect((await filtered).ok()).toBeTruthy();
+ await expect(page.locator('.el-select').filter({has:page.getByRole('combobox',{name:'筛选笔记课程',exact:true})})).toContainText('Browser notes '+fixture.marker);
+ await expect(page.getByRole('alert')).toHaveCount(0);
+});
 test('dashboard quick actions and real-data details remain usable',async({page},info)=>{
  test.skip(info.project.name!=='admin');await login(page,'admin');await expect(page.locator('.metric-card')).toHaveCount(5);await page.getByRole('button',{name:'查看明细',exact:true}).click();await expect(page.locator('.el-table')).toBeVisible();await page.locator('.quick-action-grid').getByRole('link',{name:'退款审核',exact:true}).click();await expect(page.getByRole('heading',{name:'退款审核',exact:true})).toBeVisible();
 });

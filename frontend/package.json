@@ -10,7 +10,8 @@
     "build": "npm run build --workspaces --if-present",
     "test": "playwright test",
     "test:e2e": "playwright test",
-    "typecheck": "vue-tsc --noEmit -p tsconfig.json"
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "test:unit": "vitest run packages/shared/src/highlight.test.ts"
   },
   "dependencies": {
     "element-plus": "2.14.7",
