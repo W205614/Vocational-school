@@ -6,7 +6,7 @@ import yaml
 
 
 def translated(value,old_offset,new_offset,path=()):
-    bases=(24001,24002,24003,24004,24310,24316,24379,24373,24920,24500,24501,25001,25002,25003,25004)
+    bases=(24001,24002,24003,24004,24310,24316,24379,24373,24920,24500,24501,25001,25002,25003,25004,25005,25006,25007)
     ports={port+old_offset:port+new_offset for port in bases}
     if isinstance(value,dict):return {key:translated(child,old_offset,new_offset,path+(key,)) for key,child in value.items()}
     if isinstance(value,list):return [translated(child,old_offset,new_offset,path) for child in value]
@@ -14,7 +14,7 @@ def translated(value,old_offset,new_offset,path=()):
     if isinstance(value,str):
         if path[-1:] in [('password',),('secret',)]:return value
         if path[-1:] == ('APP_PORT',):return str(ports.get(int(value),int(value)))
-        if path[-1:] == ('internal-ports',):return ','.join(str(ports.get(int(port),int(port))) for port in value.split(','))
+        if path[-1:] in [('internal-ports',),('net.ipv4.ip_local_reserved_ports',)]:return ','.join(str(ports.get(int(port),int(port))) for port in value.split(','))
         return re.sub(r'(?<=:)(\d{4,5})(?=[/:]|$)',lambda match:str(ports.get(int(match.group()),int(match.group()))),value)
     return value
 

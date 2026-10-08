@@ -23,6 +23,8 @@ class RecordedRecoveryTest(unittest.TestCase):
             self.assertEqual('tianji-recovery-test',restored['name']);self.assertEqual('recorded-node',restored['services']['rabbitmq']['hostname'])
 
     def test_nested_connector_ports_translate_but_shared_volumes_and_mounts_are_rejected(self):
+        reservation={'sysctls':{'net.ipv4.ip_local_reserved_ports':'24004,25004,25005,25006,25007'}}
+        self.assertEqual('38004,39004,39005,39006,39007',translated(reservation,0,14000)['sysctls']['net.ipv4.ip_local_reserved_ports'])
         value={'tj':{'compact':{'internal-port':28001},'feign':{'internal-ports':'28001,28002,28003,28004','url':'http://127.0.0.1:28001/_modules/user'}}}
         self.assertEqual('26001,26002,26003,26004',translated(value,3000,1000)['tj']['feign']['internal-ports'])
         with tempfile.TemporaryDirectory() as directory:
