@@ -6,7 +6,9 @@ import subprocess
 import sys
 from setup import ROOT
 from performance_acceptance import baseline_complete
+from measurement_power import awake_during_measurement
 
+@awake_during_measurement
 def main():
     base=ROOT/'deploy/compact/.local/optimization';source=base/'pre-compact';target=base/'pre-standalone'
     baseline=json.loads((base/'baseline/manifest.json').read_text(encoding='utf8'))

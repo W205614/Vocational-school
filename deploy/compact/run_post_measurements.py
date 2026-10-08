@@ -10,8 +10,10 @@ from evidence import digest
 from mixed_load import workload_fingerprint
 from performance_acceptance import baseline_complete
 from perf_protocol import schedule
+from measurement_power import awake_during_measurement
 
 
+@awake_during_measurement
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--compact-home',required=True,type=Path)
