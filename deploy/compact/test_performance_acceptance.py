@@ -19,6 +19,7 @@ class BoundPerformanceTest(unittest.TestCase):
   changed=copy.deepcopy(value);changed['evidence']['imageDigests']={**changed['evidence']['imageDigests'],'mysql':'different'};self.assertTrue(validate_raw(changed,value['manifest']))
   changed=copy.deepcopy(value);changed['runs'][3]['repeat']=2;self.assertFalse(baseline_complete(changed))
   changed=copy.deepcopy(value);changed['runs'][1]['contaminated']=True;self.assertFalse(baseline_complete(changed))
+  changed=copy.deepcopy(value);changed['failureType']='RuntimeError';self.assertFalse(baseline_complete(changed))
  def test_failed_latency_and_mismatched_environment_cannot_be_handwritten_passes(self):
   standalone=self.report();compact=copy.deepcopy(standalone)
   standalone['mode']='standalone';compact['mode']='compact'

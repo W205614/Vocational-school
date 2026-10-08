@@ -7,6 +7,7 @@ from evidence import save_report, validate, digest
 from perf_protocol import check_configuration, memory_reduction, schedule
 
 def baseline_complete(report):
+    if report.get('failureType'):return False
     if report.get('protocol')!='perf-3h-v1':return False
     runs=report.get('runs',[])
     return [(r.get('users'),r.get('requestedSeconds'),r.get('repeat')) for r in runs]==schedule('perf-3h-v1') and all(r.get('status')=='COMPLETED' and r.get('elapsedSeconds',0)>=r.get('requestedSeconds',1) and r.get('contaminated') is False for r in runs)

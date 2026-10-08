@@ -12,6 +12,7 @@ import threading
 import time
 import sys
 import traceback
+import yaml
 # Optional project-local dependency installation avoids changing the host Conda environment.
 sys.path.insert(0, str(Path(__file__).resolve().parent / '.local/python-deps'))
 import pymysql
@@ -20,6 +21,7 @@ from evidence import manifest, bind, utcnow
 from perf_protocol import allocation, schedule, check_configuration
 from load_workflows import Actor
 from load_telemetry import Telemetry
+from tuning_profile import OBSERVER_CONNECTIONS, CONTROL_CONNECTIONS, MYSQL_CONNECTION_LIMIT
 
 def workload_fingerprint():
     source = Path(__file__).resolve().parent
@@ -46,19 +48,35 @@ class Stats:
                               for name, histogram in self.histograms.items()}}
 
 class Observer:
-    def __init__(self, password):
+    def __init__(self, password, connections=OBSERVER_CONNECTIONS):
+        if connections not in (4,16): raise ValueError('Only bounded observation pools are permitted')
+        configured=sum(int(yaml.safe_load(path.read_text(encoding='utf8')).get('spring',{}).get('datasource',{}).get('hikari',{}).get('maximum-pool-size',0))
+                       for path in (LOCAL/'configs').glob('*.yml'))
+        if configured+connections+CONTROL_CONNECTIONS>MYSQL_CONNECTION_LIMIT:
+            raise ValueError('Application, observation and control connections exceed the database limit')
+        self.connections=connections;self.timings=Stats()
         self.pool = queue.Queue()
-        for _ in range(4):
+        for _ in range(connections):
             self.pool.put(pymysql.connect(host='127.0.0.1', port=24316 + OFFSET, user='root', password=password,
                                           autocommit=True, charset='utf8mb4', read_timeout=10))
     def scalar(self, sql, values=()):
-        connection = self.pool.get(timeout=10)
+        queued=time.monotonic()
+        try: connection = self.pool.get(timeout=10)
+        except queue.Empty:
+            self.timings.add('connection-wait',time.monotonic()-queued,'system');raise
+        self.timings.add('connection-wait',time.monotonic()-queued,'ok')
+        started=time.monotonic();outcome='system'
         try:
-            connection.ping(reconnect=True)
+            # One read is the liveness check. Keep the first failed read in the
+            # workload outcomes; reconnect a known closed socket on its next use.
+            if not connection.open: connection.connect()
             with connection.cursor() as cursor:
                 cursor.execute(sql, values or None); row = cursor.fetchone()
+                outcome='ok'
                 return row[0] if row else None
-        finally: self.pool.put(connection)
+        finally:
+            self.timings.add('execute-and-fetch',time.monotonic()-started,outcome)
+            self.pool.put(connection)
     def close(self):
         while not self.pool.empty(): self.pool.get().close()
     def drain(self):
@@ -120,7 +138,7 @@ def main():
     report = {'protocol': args.protocol, 'label': args.label, 'mode': runtime['mode'], 'status': 'FAILED', 'runs': [],
               'workloadFingerprint': workload_fingerprint(),
               'fixtureFingerprint': hashlib.sha256((LOCAL / 'load-fixture.json').read_bytes()).hexdigest(),
-              'workload': {'seed': fixture['seed'], 'thinkSeconds': .25, 'profiles': allocation(200)},
+              'workload': {'seed': fixture['seed'], 'thinkSeconds': .25, 'profiles': allocation(200), 'observerConnections': OBSERVER_CONNECTIONS},
               'scope': 'Short-cycle capacity comparison; not a long-duration leak or backlog proof'}
     started = utcnow(); expected = None
     try:
@@ -155,28 +173,36 @@ def main():
                     if profile in ('exam', 'trade'):
                         actor.login('teacher' if profile == 'exam' else 'admin'); time.sleep(1.1)
                     actors.append(actor)
+                    if (index+1)%50==0 or index+1==users:print(f'Prepared {index+1}/{users} business users and their role sessions',flush=True)
                 warm = Stats()
                 for actor in actors: actor.stats = warm
                 with concurrent.futures.ThreadPoolExecutor(max_workers=users) as pool:
+                    print(f'Query warm-up: {users} users for {args.warm_seconds} seconds',flush=True)
                     end = time.monotonic() + args.warm_seconds
                     list(pool.map(lambda actor: worker(actor, end, True), actors))
                     if any(value for name, value in warm.counts.items() if not name.endswith(':ok')):
                         print(f'Warm-up correctness FAILED: {users} users; all outcomes retained, sampling continues',flush=True)
                     for actor in actors: actor.stats = stats; actor.cycle = 0
                     telemetry = Telemetry(COMPOSE, runtime, env['ACCEPTANCE_INTERNAL_TOKEN']); telemetry.start()
+                    print(f'Sampling {args.label}: {users} users, repeat {repeat}, {seconds} seconds',flush=True)
                     measure_started = time.monotonic(); sample_started = utcnow(); end = measure_started + seconds
                     futures = [pool.submit(worker, actor, end) for actor in actors]
                     for future in futures: future.result()
                     measured = time.monotonic()
                     measurements = telemetry.finish(end, users)
+                observer_timings=observer.timings.result()
                 drained = observer.drain()
                 run = {'users': users, 'repeat': repeat, 'requestedSeconds': seconds, 'elapsedSeconds': measured - measure_started,
                        'sampleStartedAt': sample_started, 'sampleFinishedAt': utcnow(),
                        'status': 'COMPLETED', 'profiles': profiles, 'queuesDrained': drained, 'invariants': drained and observer.invariants(), **stats.result(), **measurements}
-                run['warmup']=warm.result()
+                run['warmup']=warm.result();run['observer']={'connections':observer.connections,**observer_timings}
+                report['runs'].append(run)
+                current=manifest(LOCAL,COMPOSE,ROOT,args.snapshot)
+                if workload_fingerprint()!=report['workloadFingerprint'] or any(current[key]!=expected[key] for key in ('sourceCommit','imageDigests','configFingerprint','baseSnapshotFingerprint')):
+                    run['status']='INVALID'
+                    raise RuntimeError('Workload or deployment binding changed during sampling')
                 # A worker cannot silently omit a profile while the allocation still looks correct.
                 if any(run['workflowCounts'].get(profile, 0) == 0 for profile in profiles): run['invariants'] = False
-                report['runs'].append(run)
                 (output / 'results.json').write_text(json.dumps(report, indent=2), encoding='utf8')
                 print(f"Measured {args.label}: {users} users, repeat {repeat}, outcomes={dict(stats.counts)}", flush=True)
             finally:
