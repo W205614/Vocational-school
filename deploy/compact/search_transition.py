@@ -93,6 +93,14 @@ def main():
     for details in images.values():
         actual=subprocess.check_output(['docker','image','inspect',details['imageId'],'--format','{{.Id}}'],text=True).strip()
         if actual!=details['imageId']:raise RuntimeError('Recorded application image is unavailable')
+    version='9.5.5' if args.major==9 else '7.17.29'
+    tag='docker.elastic.co/elasticsearch/elasticsearch:'+version
+    available=subprocess.run(['docker','image','inspect',tag,'--format','{{.Id}}'],capture_output=True,text=True)
+    if available.returncode:
+        run(['docker','pull',tag],'search-pull-'+str(args.major))
+        digest=subprocess.check_output(['docker','image','inspect',tag,'--format','{{.Id}}'],text=True).strip()
+    else:
+        digest=available.stdout.strip()
     old_compose=(BASE/'compose.yaml').read_bytes()
     running=subprocess.check_output(COMPOSE+['ps','--status','running','--services'],text=True).splitlines()
     apps=[name for name in running if name.startswith(('app-','web-'))]
@@ -109,9 +117,6 @@ def main():
         financial=mysql('SELECT id,status,deleted,pay_time,finish_time FROM tj_trade.`order` ORDER BY id')+'\n'+mysql('SELECT id,order_id,user_id,course_id,status,refund_status,valid_duration,course_expire_time FROM tj_trade.order_detail ORDER BY id')
         report['financialFingerprintBefore']=hashlib.sha256(financial.encode()).hexdigest()
         run(COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','stop_app'],'search-pause-consumers')
-        tag='docker.elastic.co/elasticsearch/elasticsearch:'+('9.5.5' if args.major==9 else '7.17.29')
-        run(['docker','pull',tag],'search-pull-'+str(args.major))
-        digest=subprocess.check_output(['docker','image','inspect',tag,'--format','{{.Id}}'],text=True).strip()
         volume='compact_search_v'+str(args.major)
         owned=subprocess.check_output(['docker','volume','ls','-q','--filter','name=^'+PROJECT+'_'+volume+'$'],text=True).strip()
         if owned:volume+='_'+uuid.uuid4().hex[:12]
@@ -120,10 +125,16 @@ def main():
         for name,image in expected.items():compose['services'][name]['image']=image
         (BASE/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
         run(COMPOSE+['up','-d','--wait','--no-deps','elasticsearch'],'search-new-volume')
+        engine=requests.get('http://127.0.0.1:'+str(24920+OFFSET),timeout=10)
+        engine.raise_for_status()
+        if engine.json()['version']['number']!=version:raise RuntimeError('Search engine version mismatch')
         run([sys.executable,str(ROOT/'deploy/compact/prepare_search.py')],'search-fresh-mapping')
         rebuild_facts()
         (LOCAL/'images.json').write_text(json.dumps(images,indent=2),encoding='utf8')
         (LOCAL/'build-source.json').write_text(json.dumps(source,indent=2),encoding='utf8')
+        infrastructure=json.loads((LOCAL/'infrastructure-images.json').read_text(encoding='utf8'))
+        infrastructure['elasticsearch']=digest
+        (LOCAL/'infrastructure-images.json').write_text(json.dumps(infrastructure,indent=2),encoding='utf8')
         # Resume consumers once the engine, schema and authoritative rebuild tasks
         # are in place. Public writers remain stopped until all projections converge.
         run(COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','start_app'],'search-resume-consumers')
