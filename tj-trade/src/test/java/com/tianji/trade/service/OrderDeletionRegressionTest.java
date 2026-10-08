@@ -36,6 +36,10 @@ class OrderDeletionRegressionTest {
  void everyNonClosedStateIsRejected(int status) {
   UserContext.setUser(7L);assertThrows(ConflictException.class,()->service(status,0,7L).deleteOrder(11L));
  }
+ @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(ints={1,2,4,5,6,7})
+ void legacyLogicalDeletionCannotBypassFinancialStateValidation(int status) {
+  UserContext.setUser(7L);assertThrows(ConflictException.class,()->service(status,1,7L).deleteOrder(11L));
+ }
  @Test void closedOrderAndRepeatedDeleteAreIdempotent() {
   UserContext.setUser(7L);assertDoesNotThrow(()->service(3,0,7L).deleteOrder(11L));assertDoesNotThrow(()->service(3,1,7L).deleteOrder(11L));
  }

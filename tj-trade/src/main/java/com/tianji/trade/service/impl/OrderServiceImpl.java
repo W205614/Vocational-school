@@ -305,8 +305,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if(rows.isEmpty()) return;
         var order=rows.getFirst();
         if(((Number)order.get("user_id")).longValue()!=user) throw new com.tianji.common.exceptions.ForbiddenException("不能删除他人订单");
-        if(((Number)order.get("deleted")).intValue()==1) return;
         if(((Number)order.get("status")).intValue()!=OrderStatus.CLOSED.getValue()) throw new com.tianji.common.exceptions.ConflictException("只能删除已关闭订单");
+        if(((Number)order.get("deleted")).intValue()==1) return;
         if(jdbc.update("UPDATE `order` SET deleted=1 WHERE id=? AND status=3 AND deleted=0",id)!=1) throw new com.tianji.common.exceptions.ConflictException("订单状态已发生变化");
     }
 
