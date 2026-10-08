@@ -7,6 +7,17 @@ import shutil
 import subprocess
 import yaml
 
+def standalone_configuration(config, source):
+    # Generated host settings must not discard the application's own bean-cycle
+    # policy or require health contributors absent from its standalone classpath.
+    original=yaml.safe_load(source)
+    main=original.get('spring',{}).get('main',{})
+    config['spring']['main']={**main,**config['spring'].get('main',{})}
+    readiness=original.get('management',{}).get('endpoint',{}).get('health',{}).get('group',{}).get('readiness',{})
+    if 'include' not in readiness:raise RuntimeError('Standalone source must declare its required readiness contributors')
+    config['management']['endpoint']['health']['group']['readiness']['include']=readiness['include']
+    return config
+
 def bind_source(compose, ref, verify_worktree=True):
     from setup import LOCAL, ROOT
     commit = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', ref], text=True).strip()
@@ -62,6 +73,9 @@ def standalone(ref='HEAD'):
             for host in ('app-'+owner,'127.0.0.1'):
                 value=value.replace('http://'+host+':'+str(PORTS[owner]+1000)+'/_modules/'+member,target)
         config = yaml.safe_load(value)
+        module=MODULES[alias][0]
+        original=subprocess.check_output(['git','-C',str(ROOT),'show',commit+':'+module+'/src/main/resources/application.yml'],text=True,encoding='utf8')
+        config=standalone_configuration(config,original)
         config.setdefault('tj',{}).setdefault('feign',{}).pop('internal-ports',None)
         config['server']['port'] = PORTS['gateway'] if alias == 'gateway' else ports[alias]
         config['server']['tomcat'] = {'threads': {'max': 80, 'min-spare': 4}, 'accept-count': 50, 'max-connections': 2000}
@@ -70,7 +84,7 @@ def standalone(ref='HEAD'):
     compact_images = json.loads((LOCAL / 'images.json').read_text(encoding='utf8'))
     for web in ('student', 'admin'): services['web-' + web]['image'] = compact_images[web]['imageId']
     for group in GROUPS:
-        del services['app-' + group]
+        services.pop('app-' + group,None)
     template = services['app-gateway']
     for alias in aliases:
         service = json.loads(json.dumps(template))

@@ -80,10 +80,15 @@ def validate(data, expected):
 
 def save_report(local, name, data, started=None):
     local = Path(local)
+    if not __import__('re').fullmatch(r'[a-z][a-z0-9-]{0,63}',name):raise ValueError('Invalid evidence check name')
     expected = json.loads((local / 'release-run.json').read_text(encoding='utf8'))
     report = bind(data, expected, started)
     directory = local / 'evidence' / expected['releaseRunId']
     directory.mkdir(parents=True, exist_ok=True)
+    attempt=directory/'attempts'/name
+    attempt.mkdir(parents=True,exist_ok=True)
+    report['attemptId']=uuid.uuid4().hex
+    (attempt/(report['attemptId']+'.json')).write_text(json.dumps(report,indent=2),encoding='utf8')
     temporary = directory / (name + '.json.tmp')
     temporary.write_text(json.dumps(report, indent=2), encoding='utf8')
     temporary.replace(directory / (name + '.json'))
