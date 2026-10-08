@@ -2,6 +2,7 @@ package com.tianji.media.storage.local;
 import com.tianji.media.storage.*;import com.tianji.media.domain.po.Media;import java.util.*;import java.io.*;
 public final class LocalMediaStorage implements IMediaStorage {
  private final LocalObjectStore store;public LocalMediaStorage(LocalObjectStore store){this.store=store;}
+ public String getCoursePlaySignature(String id,long user,long course){return store.signedCourseUrl(id,user,course);}
  @Override public String getUploadSignature(){throw new com.tianji.common.exceptions.BadRequestException("本地环境请使用本地视频上传接口");}
  @Override public String getPlaySignature(String id,Long user,Integer preview){
   if(preview!=null)throw new com.tianji.common.exceptions.BadRequestException("本地模拟器不支持限时试看，请先报名课程");

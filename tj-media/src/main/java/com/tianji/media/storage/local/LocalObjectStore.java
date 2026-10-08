@@ -47,10 +47,24 @@ public final class LocalObjectStore {
  }
  public Media metadata(String id){try{return json.readValue(Files.readString(path(id+".json"),StandardCharsets.UTF_8),Media.class);}catch(IOException e){throw new IllegalStateException("Local object metadata missing",e);}}
  public String signedUrl(String key){long expiry=System.currentTimeMillis()/1000+600;return "/api/v2/services/media/local-content/"+key+"?expires="+expiry+"&signature="+signature(key,expiry);}
- private String signature(String key,long expiry){try{Mac mac=Mac.getInstance("HmacSHA256");mac.init(new SecretKeySpec(secret,"HmacSHA256"));return HexFormat.of().formatHex(mac.doFinal((key+":"+expiry).getBytes(StandardCharsets.UTF_8)));}catch(GeneralSecurityException e){throw new IllegalStateException(e);}}
+ public String signedCourseUrl(String key,long user,long course){
+  path(key);if(user<=0 || course<=0)throw new IllegalArgumentException("Invalid playback entitlement identity");
+  long expiry=System.currentTimeMillis()/1000+600;
+  return "/api/v2/services/media/local-content/"+key+"?expires="+expiry+"&owner="+user+"&course="+course+"&signature="+courseSignature(key,expiry,user,course);
+ }
+ private String signature(String key,long expiry){return sign("v2:preview:"+key+":"+expiry);}
+ private String courseSignature(String key,long expiry,long user,long course){return sign("v2:course:"+key+":"+expiry+":"+user+":"+course);}
+ private String sign(String value){try{Mac mac=Mac.getInstance("HmacSHA256");mac.init(new SecretKeySpec(secret,"HmacSHA256"));return HexFormat.of().formatHex(mac.doFinal(value.getBytes(StandardCharsets.UTF_8)));}catch(GeneralSecurityException e){throw new IllegalStateException(e);}}
  public Resource readSigned(String key,long expiry,String signature){
+  return readSigned(key,expiry,signature,signature(key,expiry));
+ }
+ public Resource readSignedCourse(String key,long expiry,String signature,long user,long course){
+  if(user<=0 || course<=0)throw new com.tianji.common.exceptions.ForbiddenException("播放地址身份无效");
+  return readSigned(key,expiry,signature,courseSignature(key,expiry,user,course));
+ }
+ private Resource readSigned(String key,long expiry,String signature,String expected){
   long now=System.currentTimeMillis()/1000;
-  if(expiry<now || expiry>now+601 || signature==null || !MessageDigest.isEqual(signature(key,expiry).getBytes(StandardCharsets.UTF_8),signature.getBytes(StandardCharsets.UTF_8)))throw new com.tianji.common.exceptions.ForbiddenException("播放地址签名已过期或无效");
+  if(expiry<now || expiry>now+601 || signature==null || !MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),signature.getBytes(StandardCharsets.UTF_8)))throw new com.tianji.common.exceptions.ForbiddenException("播放地址签名已过期或无效");
   Resource resource=new FileSystemResource(path(key));if(!resource.exists())throw new com.tianji.common.exceptions.BadRequestException("文件不存在");return resource;
  }
  public InputStream download(String key){try{return Files.newInputStream(path(key));}catch(IOException e){throw new IllegalStateException(e);}}

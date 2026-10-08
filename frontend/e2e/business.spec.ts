@@ -38,6 +38,8 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   await expect.poll(async()=>(await api(page,'/services/learning/learning-records/course/'+fixture.course))?.id,{timeout:30000}).toBeTruthy();
   await page.goto('/courses/'+fixture.course);await expect(page.getByRole('heading',{name:fixture.name,exact:true})).toBeVisible();await page.getByRole('button',{name:/Browser video/}).click();
   const video=page.locator('video');await expect(video).toBeVisible();await video.evaluate(async(element:HTMLVideoElement)=>{element.muted=true;await element.play();});
+  const retainedPlayUrl=await video.getAttribute('src');expect(retainedPlayUrl).toBeTruthy();
+  const initialBytes=await page.request.get(retainedPlayUrl!,{headers:{Range:'bytes=0-31'}});expect([200,206]).toContain(initialBytes.status());
   await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.ended),{timeout:15000}).toBe(true);
   await expect.poll(async()=>(await api(page,'/services/learning/learning-records/course/'+fixture.course)).records?.find((r:any)=>r.sectionId===fixture.video)?.finished,{timeout:15000}).toBe(true);
   const note='Video note '+fixture.marker;await page.getByPlaceholder('记录私人笔记').fill(note);await page.getByRole('button',{name:'保存笔记',exact:true}).click();await expect(page.getByText('笔记已保存',{exact:true})).toBeVisible();
@@ -76,6 +78,9 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   await page.goto('/orders');await page.locator('.el-table__row').filter({hasText:orderId}).getByRole('button',{name:'详情'}).click();await page.getByRole('button',{name:'申请退款'}).click();await expect(page.getByRole('dialog',{name:'申请课程退款'})).toBeVisible();await expect(page.getByRole('button',{name:'提交退款申请',exact:true})).toBeDisabled();await page.getByPlaceholder('请说明退款原因').fill('浏览器验收退款，验证学习历史保留');await page.getByRole('button',{name:'提交退款申请',exact:true}).click();await expect(page.getByText('退款申请已提交',{exact:true})).toBeVisible();
   await admin.goto('/refunds');const refund=admin.locator('.el-table__row').filter({hasText:orderId});await refund.getByRole('button',{name:'同意退款'}).click();await admin.getByRole('button',{name:'确定',exact:true}).click();await expect(admin.getByText('同意退款已完成',{exact:true})).toBeVisible();
   await expect.poll(async()=>(await api(page,'/orders/'+orderId)).status,{timeout:60000}).toBe(7);
+  // A URL obtained before refund must be checked again when fetching new bytes.
+  // This does not claim that already downloaded video data can be revoked.
+  const refundedBytes=await page.request.get(retainedPlayUrl!,{headers:{Range:'bytes=0-31'}});expect(refundedBytes.status()).toBe(403);
   await assertPersistedAudit(admin);
   await page.goto('/courses/'+fixture.course);await page.getByRole('button',{name:/Browser video/}).click();await expect(page.getByRole('alert').filter({hasText:/收费视频|课程|权限|免费/})).toBeVisible();await expect(page.locator('video')).toHaveCount(0);
   await page.goto('/notes');await expect(page.getByText(note,{exact:true})).toBeVisible();

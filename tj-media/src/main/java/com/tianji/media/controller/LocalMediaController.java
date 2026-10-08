@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;import org.springframework.web.bind.annota
 @RestController @RequiredArgsConstructor @ConditionalOnProperty(name="tj.local-storage.enabled",havingValue="true")
 public class LocalMediaController {
  private final LocalObjectStore store;private final OperationStore operations;private final com.tianji.media.storage.local.LocalCourseCoverStore covers;
+ private final com.tianji.api.client.learning.LearningClient learning;
  @PostMapping("/api/v2/admin/course-cover-upload") public Map<String,String> uploadCover(@RequestParam MultipartFile file)throws java.io.IOException{
   UserContext.requireAdmin();try(var input=file.getInputStream()){return Map.of("path",covers.upload(input,file.getSize()));}
  }
@@ -17,8 +18,22 @@ public class LocalMediaController {
    return ResponseEntity.accepted().body(operations.submit(UserContext.requireUser(),"LOCAL_MEDIA_CREATE",key,Map.of("fileId",media.getFileId(),"filename",name,"duration",duration)));
   }
  }
- @GetMapping("/local-content/{key}") public ResponseEntity<Resource> content(@PathVariable String key,@RequestParam long expires,@RequestParam String signature){
-  Resource resource=store.readSigned(key,expires,signature);MediaType type=key.endsWith(".webm")?MediaType.parseMediaType("video/webm"):key.endsWith(".mp4")?MediaType.parseMediaType("video/mp4"):MediaType.APPLICATION_OCTET_STREAM;
+ @GetMapping("/local-content/{key}") public ResponseEntity<Resource> content(@PathVariable String key,@RequestParam long expires,@RequestParam String signature,@RequestParam(required=false) Long owner,@RequestParam(required=false) Long course){
+  Resource resource;
+  if(owner==null && course==null)resource=store.readSigned(key,expires,signature);
+  else {
+   if(owner==null || course==null)throw new com.tianji.common.exceptions.ForbiddenException("课程播放地址不完整");
+   // Authenticate the ticket before deriving identity or making the internal call.
+   resource=store.readSignedCourse(key,expires,signature,owner,course);
+   Long user=UserContext.getUser(),role=UserContext.getRole();String session=UserContext.getSession();int depth=UserContext.getCallDepth();
+   try {
+    UserContext.setUser(owner);UserContext.setRole(2L);UserContext.setSession(null);
+    if(learning.isLessonValid(course)==null)throw new com.tianji.common.exceptions.ForbiddenException("课程权益已失效，请重新报名后播放");
+   }finally {
+    UserContext.removeUser();if(user!=null)UserContext.setUser(user);if(role!=null)UserContext.setRole(role);if(session!=null)UserContext.setSession(session);UserContext.setCallDepth(depth);
+   }
+  }
+  MediaType type=key.endsWith(".webm")?MediaType.parseMediaType("video/webm"):key.endsWith(".mp4")?MediaType.parseMediaType("video/mp4"):MediaType.APPLICATION_OCTET_STREAM;
   return ResponseEntity.ok().contentType(type).cacheControl(CacheControl.noStore()).body(resource);
  }
 }

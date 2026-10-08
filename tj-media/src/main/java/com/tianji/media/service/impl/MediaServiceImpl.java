@@ -80,7 +80,9 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
             Media media = getById(sectionInfo.getMediaId());
             AssertUtils.isNotNull(media, MEDIA_NOT_EXISTS);
             // 1）获取签名
-            String signature =  mediaStorage.getPlaySignature(media.getFileId(), UserContext.getUser(), null);
+            String signature = mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage local
+                    ?local.getCoursePlaySignature(media.getFileId(),UserContext.requireUser(),courseId)
+                    :mediaStorage.getPlaySignature(media.getFileId(), UserContext.getUser(), null);
             // 2）返回
             VideoPlayVO vo = new VideoPlayVO();
             vo.setSignature(signature);
