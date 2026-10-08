@@ -45,6 +45,13 @@ def main():
     infrastructure = json.loads((LOCAL / 'infrastructure-images.json').read_text(encoding='utf8'))
     for name, image in infrastructure.items():
         if not args.current_configuration or name!='elasticsearch': compose['services'][name]['image'] = image
+    if not args.current_configuration and args.search_major is None:
+        mounts=source_compose['services']['elasticsearch']['volumes']
+        if mounts not in (['compact_search:/usr/share/elasticsearch/data'],['compact_search_v9:/usr/share/elasticsearch/data']):
+            raise RuntimeError('Use --search-major for a source with a migrated search volume')
+        # Keep a frozen 7.x source on its independently owned 7.x volume, even
+        # though a newly prepared current checkout defaults to a fresh 9.x volume.
+        compose['services']['elasticsearch']['volumes']=mounts
     if args.search_major==7:
         import subprocess
         compose['services']['elasticsearch']['image']=subprocess.check_output(['docker','image','inspect','docker.elastic.co/elasticsearch/elasticsearch:7.17.29','--format','{{.Id}}'],text=True).strip()
