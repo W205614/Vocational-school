@@ -29,6 +29,8 @@ def secrets_config():
  if not accounts.exists():accounts.write_text(json.dumps({a:secrets.token_hex(24) for a in MODULES if MODULES[a][3] and a!='data'},indent=2),encoding='utf8')
  return env,{a:pw for a,pw in json.loads(accounts.read_text(encoding='utf8')).items() if a!='data'}
 def prepare():
+ from tuning_profile import profile
+ tuning=profile(sum(database is not None and alias not in {'data','gateway'} for alias,(_,_,_,database) in MODULES.items()))
  env,dbkeys=secrets_config();configs=LOCAL/'configs';configs.mkdir(exist_ok=True);(LOCAL/'objects').mkdir(exist_ok=True)
  (LOCAL/'app.env').write_text('TJ_INTERNAL_TOKEN='+env['ACCEPTANCE_INTERNAL_TOKEN']+'\n',encoding='utf8')
  key=LOCAL/'signing.jks'
@@ -56,11 +58,11 @@ def prepare():
     if target and context:clients[context.group(1)]={'url':target,'connectTimeout':1500,'readTimeout':5000,'loggerLevel':'none'}
   s['data']={'redis':{'host':'redis','port':6379,'timeout':'2s'}}
   s['rabbitmq']={'host':'rabbitmq','port':5672,'username':'tianji','password':env['ACCEPTANCE_MQ_PASSWORD'],'publisher-confirm-type':'correlated','publisher-returns':True,'listener':{'simple':{'retry':{'enabled':True,'max-attempts':3,'initial-interval':'500ms'},'default-requeue-rejected':False,'concurrency':1,'max-concurrency':2,'prefetch':10}}}
-  if database:s['datasource']={'url':'jdbc:mysql://mysql:3306/'+database+'?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true','username':'app_'+alias,'password':dbkeys[alias],'driver-class-name':'com.mysql.cj.jdbc.Driver','hikari':{'maximum-pool-size':4,'minimum-idle':0,'idle-timeout':60000,'connection-timeout':3000,'pool-name':alias+'-db'}}
+  if database:s['datasource']={'url':'jdbc:mysql://mysql:3306/'+database+'?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true','username':'app_'+alias,'password':dbkeys[alias],'driver-class-name':'com.mysql.cj.jdbc.Driver','hikari':{'maximum-pool-size':tuning['pool'],'minimum-idle':0,'idle-timeout':60000,'connection-timeout':3000,'pool-name':alias+'-db'}}
   else:s.pop('datasource',None);s['autoconfigure']={'exclude':['org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration']}
   tj=c.setdefault('tj',{});tj['xxljob']={'enabled':False};tj.setdefault('swagger',{})['enable']=False
   tj['feign']={'max-concurrent':32,'internal-ports':','.join(str(port) for port in internal_ports.values())}
-  tj['reliability']={'enabled':database is not None,'operation-interval-ms':750,'dispatch-interval-ms':750,'operation-core':1,'operation-max':4,'outbox-core':1,'outbox-max':2}
+  tj['reliability']={'enabled':database is not None,'operation-interval-ms':tuning['interval'],'dispatch-interval-ms':tuning['interval'],'operation-core':tuning['workers'],'operation-max':4,'outbox-core':1,'outbox-max':2}
   resource=tj.setdefault('auth',{}).setdefault('resource',{});resource['enable']=True;resource.setdefault('excludeLoginPaths',[]).extend(['/actuator/health/**','/readyz'])
   if alias=='auth':c['encrypt']={'key-store':{'alias':'compact','location':'file:/run/compact/signing.jks','password':env['ACCEPTANCE_INTERNAL_TOKEN'],'secret':env['ACCEPTANCE_INTERNAL_TOKEN']}};resource['includeLoginPaths']=['/menus/me','/accounts/logout','/accounts/sessions/**']
   if alias=='media':tj['platform']={'file':'LOCAL','media':'LOCAL'};tj['local-storage']={'enabled':True,'directory':'/run/objects'};tj['tencent']['vod']['enable']=False;tj['tencent']['cos']['enable']=False;resource['excludeLoginPaths'].extend(['/local-content/**','/course-covers/*']);s['servlet']={'multipart':{'max-file-size':'200MB','max-request-size':'201MB'}}
@@ -86,7 +88,8 @@ def prepare():
  for app,port in [('student',24500+OFFSET),('admin',24501+OFFSET)]:services['web-'+app]={'image':'tianji-compact/'+app+':local','environment':{'GW_UPSTREAM':'app-gateway:'+str(PORTS['gateway'])},'ports':['127.0.0.1:'+str(port)+':8080'],'mem_limit':'128m','depends_on':{'app-gateway':{'condition':'service_healthy'}}}
  (BASE/'compose.yaml').write_text(yaml.safe_dump({'name':PROJECT,'services':services,'volumes':{n:{} for n in ['compact_mysql','compact_redis','compact_rabbit','compact_search']}},sort_keys=False),encoding='utf8')
  print('Independent compact configuration generated; secrets kept in ignored files',flush=True)
-def initialize(clone=None):
+def initialize(clone=None,migrate_schema=True):
+ if not migrate_schema and clone is None:raise RuntimeError('Skipping migration requires a complete recovery bundle')
  run(COMPOSE+['up','-d','--wait','mysql','redis','rabbitmq','elasticsearch'],'infra')
  occupied=mysql("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name LIKE 'tj\\_%'")!='0'
  state=LOCAL/'init-state.json'
@@ -104,7 +107,8 @@ def initialize(clone=None):
   mysql((SOURCE/'schema.sql').read_text(encoding='utf8'));mysql((SOURCE/'catalog.sql').read_text(encoding='utf8'))
  state.write_text(json.dumps({'phase':'SCHEMA','clone':str(clone) if clone else None}),encoding='utf8')
  configure_acceptance()
- import migrate;migrate.main()
+ if migrate_schema:
+  import migrate;migrate.main()
  env,passwords=secrets_config()
  sql=''
  for a,pw in passwords.items():

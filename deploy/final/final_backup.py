@@ -44,7 +44,19 @@ def capture(runtime=None,source_base=None,quiesced=False):
  with sql.open('wb') as output:
   result=subprocess.run(p.COMPOSE+['exec','-T','mysql','sh','-c','MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump -uroot --single-transaction --skip-lock-tables --no-tablespaces --set-gtid-purged=OFF --routines --triggers --databases '+' '.join(p.DATABASES)],stdout=output,stderr=subprocess.PIPE)
  if result.returncode or sql.stat().st_size<10000:raise RuntimeError('Backup failed; incomplete bundle retained')
+ container_ids=subprocess.check_output(p.COMPOSE+['ps','-aq']).decode().splitlines()
+ runtime_images={}
+ for container in json.loads(subprocess.check_output(['docker','inspect',*container_ids])) if container_ids else []:
+  service=container['Config']['Labels']['com.docker.compose.service']
+  if service in runtime_images:raise RuntimeError('Ambiguous runtime image inventory')
+  runtime_images[service]=container['Image']
+ if (local/'build-source.json').exists():
+  recorded=json.loads((local/'build-source.json').read_text(encoding='utf8')).get('imageDigests',{})
+  actual={name:image for name,image in runtime_images.items() if name.startswith(('app-','web-'))}
+  if actual and actual!=recorded:raise RuntimeError('Runtime images differ from the recorded backup source')
+ (directory/'runtime-images.json').write_text(json.dumps(runtime_images,indent=2),encoding='utf8')
  with zipfile.ZipFile(directory/'private-config.zip','w',compression=zipfile.ZIP_DEFLATED) as archive:
+  archive.write(directory/'runtime-images.json','runtime-images.json')
   for path,name in [(source/'.env','.env'),(local/'signing.jks','signing.jks'),(local/'app.env','app.env'),(local/'database-accounts.json','database-accounts.json'),(local/'accounts.json','accounts.json'),(local/'browser-fixture.json','browser-fixture.json'),(local/'images.json','images.json'),(local/'load-accounts.json','load-accounts.json'),(local/'build-source.json','build-source.json'),(local/'infrastructure-images.json','infrastructure-images.json')]:
    if path.exists():archive.write(path,name)
   for path in sorted((local/'configs').iterdir()):
@@ -76,7 +88,7 @@ def capture(runtime=None,source_base=None,quiesced=False):
    if result.returncode:raise RuntimeError('Broker bytes capture failed')
    broker={'hostname':node,'file':'rabbitmq.tar.gz'}
   finally:subprocess.run(p.COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','start_app'],check=True,stdout=subprocess.DEVNULL)
- files=['business.sql','media.zip','private-config.zip','redis.json','table-counts.json']+(['rabbitmq.tar.gz'] if broker else [])
+ files=['business.sql','media.zip','private-config.zip','redis.json','table-counts.json','runtime-images.json']+(['rabbitmq.tar.gz'] if broker else [])
  manifest={'format':3,'quiesced':quiesced,'broker':broker,'queueRecovery':'broker-bytes' if broker else 'NOT_CAPTURED','at':stamp,'databaseCount':len(p.DATABASES),'files':{name:digest(directory/name) for name in files},'mediaFiles':media}
  (directory/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf8');verify(directory)
  completed=base/stamp;directory.rename(completed)

@@ -25,23 +25,30 @@ with zipfile.ZipFile(backup/'private-config.zip') as archive:
  __import__('shutil').copyfile(private/'.env',home/'.env')
 prepare()
 import yaml
-compose=yaml.safe_load((home/'compose.yaml').read_text(encoding='utf8'));compose['services']['rabbitmq']['hostname']=manifest['broker']['hostname'];compose['services']['rabbitmq']['volumes']=[{'type':'volume','source':'compact_rabbit','target':'/var/lib/rabbitmq','volume':{'nocopy':True}}];(home/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
-if (private/'compose.yaml').exists():
- recorded=yaml.safe_load((private/'compose.yaml').read_text(encoding='utf8'))
- for name,service in recorded['services'].items():
-  if name not in compose['services']:raise RuntimeError('Recovery topology differs from the recorded deployment')
-  image=subprocess.check_output(['docker','image','inspect',service['image'],'--format','{{.Id}}']).decode().strip()
-  compose['services'][name]['image']=image
- # Restore the recorded major version into the clone's newly allocated volume only.
- source_volume=next(v.split(':')[0] for v in recorded['services']['elasticsearch']['volumes'] if isinstance(v,str))
- compose['volumes'].setdefault(source_volume,{})
- compose['services']['elasticsearch']['volumes']=[source_volume+':/usr/share/elasticsearch/data']
- (home/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
+if not (private/'compose.yaml').exists() or not (private/'build-source.json').exists():
+ raise RuntimeError('Legacy bundle lacks immutable Compose/source metadata; recover it using its original source checkout')
+recorded=yaml.safe_load((private/'compose.yaml').read_text(encoding='utf8'))
+generated=yaml.safe_load((home/'compose.yaml').read_text(encoding='utf8'))
+if set(recorded['services'])!=set(generated['services']):raise RuntimeError('Recovery topology differs from the recorded deployment')
+frozen={}
+if (private/'infrastructure-images.json').exists():frozen.update(json.loads((private/'infrastructure-images.json').read_text(encoding='utf8')))
+source=json.loads((private/'build-source.json').read_text(encoding='utf8'));frozen.update(source['imageDigests'])
+if (private/'runtime-images.json').exists():
+ actual=json.loads((private/'runtime-images.json').read_text(encoding='utf8'))
+ if any(actual.get(name)!=image for name,image in source['imageDigests'].items()):raise RuntimeError('Recovery source and captured runtime images differ')
+ frozen.update(actual)
+for image in frozen.values():
+ if not re.fullmatch(r'sha256:[0-9a-f]{64}',image):raise RuntimeError('Recovery requires immutable image IDs')
+ if subprocess.check_output(['docker','image','inspect',image,'--format','{{.Id}}']).decode().strip()!=image:
+  raise RuntimeError('Load the verified rollback image archive before restoring this bundle')
+from recovery_configuration import recorded_configuration
+compose=recorded_configuration(recorded,private/'configs',home,args.project,args.offset,frozen,manifest['broker']['hostname'])
+(home/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
 run(COMPOSE+['create','rabbitmq'],'create-broker')
 container=subprocess.check_output(COMPOSE+['ps','-aq','rabbitmq']).decode().strip();mounts=json.loads(subprocess.check_output(['docker','inspect',container]))[0]['Mounts'];volume=next(m['Name'] for m in mounts if m['Destination']=='/var/lib/rabbitmq')
 if not volume.startswith(args.project+'_'):raise RuntimeError('Recovery volume escaped its isolated project')
 run(['docker','run','--rm','-i','--entrypoint','sh','-v',volume+':/restore','mysql:8.4','-c','test -z "$(ls -A /restore)" && tar -xzf - -C /restore'],'restore-broker',input=(backup/'rabbitmq.tar.gz').read_bytes())
-initialize(backup)
+initialize(backup,migrate_schema=False)
 p=configure_acceptance();transfer(p,backup/'redis.json',restore=True)
 expected=json.loads((backup/'table-counts.json').read_text(encoding='utf8'))
 queries=[]
@@ -56,8 +63,8 @@ for name,sha in manifest['mediaFiles'].items():
 # Verify immutable images before boot, including browser assets.
 images=json.loads((LOCAL/'images.json').read_text(encoding='utf8'))
 for details in images.values():
- current=subprocess.check_output(['docker','image','inspect',details['image'],'--format','{{.Id}}']).decode().strip()
- if current!=details['imageId']:raise RuntimeError('Image tag drift; restore the recorded image before boot')
+ current=subprocess.check_output(['docker','image','inspect',details['imageId'],'--format','{{.Id}}']).decode().strip()
+ if current!=details['imageId']:raise RuntimeError('Recorded image is unavailable; load the verified rollback archive before boot')
 result={'status':'DATA_VERIFIED','tableCount':len(expected),'mediaFileCount':len(manifest['mediaFiles']),'redisRecords':len(json.loads((backup/'redis.json').read_text())['records']),'brokerBytesRestored':True,'backup':str(backup)}
 (LOCAL/'recovery-result.json').write_text(json.dumps(result,indent=2),encoding='utf8')
 run(COMPOSE+['up','-d','--wait'],'up-recovery')
