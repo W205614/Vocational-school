@@ -10,6 +10,7 @@ from measurement_power import awake_during_measurement
 from evidence import digest,tree_digest
 from mixed_load import workload_fingerprint
 from performance_acceptance import validate_raw
+from benchmark_lifecycle import retire
 
 def reusable_report(home,mode,commit,batch,snapshot):
     pointer=home/('.local/performance-pre-'+mode+'.json')
@@ -43,7 +44,7 @@ def main():
         previous=reusable_report(home,mode,commit,batch,snapshot)
         if previous:
             reports[mode]=previous
-            subprocess.run(['docker','compose','-p','tianji-opt-pre-'+mode,'-f',str(home/'compose.yaml'),'--env-file',str(home/'.env'),'stop','-t','60'],check=True)
+            retire(home,'tianji-opt-pre-'+mode)
             print('Reused complete bound baseline schedule: '+mode,flush=True)
             continue
         environment={**os.environ,'TJ_COMPACT_HOME':str(home),'TJ_COMPACT_PROJECT':'tianji-opt-pre-'+mode,'TJ_COMPACT_PORT_OFFSET':str(offset)}
@@ -52,15 +53,19 @@ def main():
             if result.returncode:raise RuntimeError('Baseline initialization failed: '+name)
         if mode=='standalone':
             if not (home/'.local/init-state.json').exists():run('benchmark_clone.py','--from-home',str(source))
-            run('benchmark_deployment.py','standalone','--tag',commit)
-        subprocess.run(['docker','compose','-p','tianji-opt-pre-'+mode,'-f',str(home/'compose.yaml'),'--env-file',str(home/'.env'),'up','-d','--wait','mysql','redis','rabbitmq','elasticsearch'],check=True)
-        result=subprocess.run([sys.executable,str(script/'mixed_load.py'),'--protocol','perf-3h-v1','--snapshot',str(base/'baseline/data-v2.sql'),'--source-commit',commit,'--label','pre-'+mode,'--batch-manifest',str(base/'audit-run.json')],env=environment)
+            runtime_path=home/'.local/benchmark-runtime.json'
+            if not runtime_path.exists() or json.loads(runtime_path.read_text(encoding='utf8')).get('mode')!='standalone':
+                run('benchmark_deployment.py','standalone','--tag',commit)
+        try:
+            subprocess.run(['docker','compose','-p','tianji-opt-pre-'+mode,'-f',str(home/'compose.yaml'),'--env-file',str(home/'.env'),'up','-d','--wait','mysql','redis','rabbitmq','elasticsearch'],check=True)
+            result=subprocess.run([sys.executable,str(script/'mixed_load.py'),'--protocol','perf-3h-v1','--snapshot',str(base/'baseline/data-v2.sql'),'--source-commit',commit,'--label','pre-'+mode,'--batch-manifest',str(base/'audit-run.json')],env=environment)
+        finally:
+            retire(home,'tianji-opt-pre-'+mode)
         pointer=json.loads((home/('.local/performance-pre-'+mode+'.json')).read_text(encoding='utf8'))
         report=json.loads(Path(pointer['path']).read_text(encoding='utf8'))
         if not baseline_complete(report):
             raise RuntimeError('Baseline schedule incomplete or contaminated; failed evidence retained')
         reports[mode]={'path':pointer['path'],'processExit':result.returncode,'status':report['status']}
-        subprocess.run(['docker','compose','-p','tianji-opt-pre-'+mode,'-f',str(home/'compose.yaml'),'--env-file',str(home/'.env'),'stop','-t','60'],check=True)
     (base/'baseline-completed.json').write_text(json.dumps(reports,indent=2),encoding='utf8')
     print('Both baseline schedules completed; failed performance targets remain in their raw reports',flush=True)
 

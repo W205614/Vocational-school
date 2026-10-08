@@ -11,6 +11,7 @@ from mixed_load import workload_fingerprint
 from performance_acceptance import baseline_complete
 from perf_protocol import schedule
 from measurement_power import awake_during_measurement
+from benchmark_lifecycle import retire
 
 
 @awake_during_measurement
@@ -53,21 +54,28 @@ def main():
     reports={}
     for mode,home,offset,project,compose,commit in targets:
         environment={**os.environ,'TJ_COMPACT_HOME':str(home),'TJ_COMPACT_PROJECT':project,'TJ_COMPACT_PORT_OFFSET':str(offset)}
-        subprocess.run(compose+['up','-d','--wait','mysql','redis','rabbitmq','elasticsearch'],check=True)
-        result=subprocess.run([sys.executable,str(script/'mixed_load.py'),'--protocol','perf-3h-v1','--snapshot',str(snapshot),
-                               '--source-commit',commit,'--label','post-'+mode,'--batch-manifest',str(base/'audit-run.json')],env=environment)
-        pointer=json.loads((home/('.local/performance-post-'+mode+'.json')).read_text(encoding='utf8'))
-        report=json.loads(Path(pointer['path']).read_text(encoding='utf8'))
-        if [(r['users'],r['requestedSeconds'],r['repeat']) for r in report['runs']]!=schedule('perf-3h-v1'):
-            raise RuntimeError('Post-fix schedule incomplete; partial failed evidence retained')
-        reports[mode]={'path':pointer['path'],'processExit':result.returncode,'status':report['status']}
-        if mode=='standalone':subprocess.run(compose+['stop','-t','60'],check=True)
+        completed=False
+        try:
+            subprocess.run(compose+['up','-d','--wait','mysql','redis','rabbitmq','elasticsearch'],check=True)
+            result=subprocess.run([sys.executable,str(script/'mixed_load.py'),'--protocol','perf-3h-v1','--snapshot',str(snapshot),
+                                   '--source-commit',commit,'--label','post-'+mode,'--batch-manifest',str(base/'audit-run.json')],env=environment)
+            pointer=json.loads((home/('.local/performance-post-'+mode+'.json')).read_text(encoding='utf8'))
+            report=json.loads(Path(pointer['path']).read_text(encoding='utf8'))
+            if [(r['users'],r['requestedSeconds'],r['repeat']) for r in report['runs']]!=schedule('perf-3h-v1'):
+                raise RuntimeError('Post-fix schedule incomplete; partial failed evidence retained')
+            reports[mode]={'path':pointer['path'],'processExit':result.returncode,'status':report['status']}
+            completed=True
+        finally:
+            if mode=='standalone' or not completed:retire(home,project)
     (base/'post-completed.json').write_text(json.dumps(reports,indent=2),encoding='utf8')
     compact=targets[-1];environment={**os.environ,'TJ_COMPACT_HOME':str(compact[1]),'TJ_COMPACT_PROJECT':compact[3],'TJ_COMPACT_PORT_OFFSET':str(compact[2])}
-    subprocess.run([sys.executable,str(script/'evidence.py'),'start','--snapshot',str(snapshot),'--audit-batch',str(base/'audit-run.json')],env=environment,check=True)
-    result=subprocess.run([sys.executable,str(script/'performance_acceptance.py'),'--standalone',reports['standalone']['path'],
-                           '--compact',reports['compact']['path'],'--baseline-standalone',baseline['standalone']['path'],
-                           '--baseline-compact',baseline['compact']['path']],env=environment)
+    try:
+        subprocess.run([sys.executable,str(script/'evidence.py'),'start','--snapshot',str(snapshot),'--audit-batch',str(base/'audit-run.json')],env=environment,check=True)
+        result=subprocess.run([sys.executable,str(script/'performance_acceptance.py'),'--standalone',reports['standalone']['path'],
+                               '--compact',reports['compact']['path'],'--baseline-standalone',baseline['standalone']['path'],
+                               '--baseline-compact',baseline['compact']['path']],env=environment)
+    finally:
+        retire(compact[1],compact[3])
     return result.returncode
 
 

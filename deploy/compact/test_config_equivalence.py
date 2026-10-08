@@ -24,5 +24,14 @@ class ConfigurationPromotionTest(unittest.TestCase):
    (right/'.local/configs/extra.security').unlink()
    path=right/'compose.yaml';config=yaml.safe_load(path.read_text());config['services']['app-gateway']['image']='sha256:different';path.write_text(yaml.safe_dump(config))
    self.assertFalse(equivalent(left,right))
+ def test_listener_reservation_policy_must_match_after_port_normalization(self):
+  from http_ports import listener_sysctls
+  with tempfile.TemporaryDirectory() as base:
+   left=self.home(Path(base)/'left',14000,'a');right=self.home(Path(base)/'right',0,'b')
+   for home,offset in ((left,14000),(right,0)):
+    path=home/'compose.yaml';config=yaml.safe_load(path.read_text());config['services']['app-gateway']['sysctls']=listener_sysctls(24004+offset,25004+offset);path.write_text(yaml.safe_dump(config))
+   self.assertTrue(equivalent(left,right))
+   path=right/'compose.yaml';config=yaml.safe_load(path.read_text());config['services']['app-gateway']['sysctls']=listener_sysctls(24004,25003);path.write_text(yaml.safe_dump(config))
+   self.assertFalse(equivalent(left,right))
 
 if __name__=='__main__':unittest.main()

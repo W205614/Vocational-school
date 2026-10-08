@@ -94,6 +94,8 @@ def prepare():
  infrastructure['elasticsearch']['volumes']=['compact_search_v9:/usr/share/elasticsearch/data']
  for group in list(GROUPS)+['gateway']:
   services['app-'+group]={'image':'tianji-compact/'+group+':local','restart':'unless-stopped','env_file':['./.local/app.env'],'ports':['127.0.0.1:'+str(PORTS[group])+':'+str(PORTS[group])],'volumes':['./.local/configs:/run/compact/configs:ro','./.local/signing.jks:/run/compact/signing.jks:ro','./.local/objects:/run/objects'],'mem_limit':'1536m' if group!='gateway' else '768m','environment':{'APP_PORT':str(PORTS[group])},'command':['--spring.config.location=file:/run/compact/configs/'+group+'.yml'],'depends_on':{i:{'condition':'service_healthy'} for i in infrastructure},'healthcheck':{'test':['CMD','java','-Xms16m','-Xmx32m','-cp','/app/health','HealthProbe'],'interval':'10s','timeout':'4s','start_period':'90s','retries':30}}
+  from http_ports import listener_sysctls
+  services['app-'+group]['sysctls']=listener_sysctls(PORTS[group],internal_ports.get(group))
  for app,port in [('student',24500+OFFSET),('admin',24501+OFFSET)]:services['web-'+app]={'image':'tianji-compact/'+app+':local','environment':{'GW_UPSTREAM':'app-gateway:'+str(PORTS['gateway'])},'ports':['127.0.0.1:'+str(port)+':8080'],'mem_limit':'128m','depends_on':{'app-gateway':{'condition':'service_healthy'}}}
  (BASE/'compose.yaml').write_text(yaml.safe_dump({'name':PROJECT,'services':services,'volumes':{n:{} for n in ['compact_mysql','compact_redis','compact_rabbit','compact_search','compact_search_v9']}},sort_keys=False),encoding='utf8')
  print('Independent compact configuration generated; secrets kept in ignored files',flush=True)

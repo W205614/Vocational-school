@@ -14,14 +14,14 @@ def config_fingerprint(home):
 def normalized(home):
     home=Path(home);compose=yaml.safe_load((home/'compose.yaml').read_text(encoding='utf8'))
     offset=int(compose['services']['app-gateway']['environment']['APP_PORT'])-24310
-    ports={number+offset:number for number in (24001,24002,24003,24004,24310,25001,25002,25003,25004,24316,24379,24373,24920,24500,24501)}
+    ports={number+offset:number for number in (24001,24002,24003,24004,24310,25001,25002,25003,25004,25005,25006,25007,24316,24379,24373,24920,24500,24501)}
     def value(item,path=()):
         if path in PRIVATE:return '<local-credential>'
         if isinstance(item,dict):return {key:value(child,path+(key,)) for key,child in item.items()}
         if isinstance(item,list):return [value(child,path) for child in item]
         if isinstance(item,int) and path[-1:] in [('port',),('internal-port',)]:return ports.get(item,item)
         if isinstance(item,str):
-            if path[-1:]==('internal-ports',):return ','.join(str(ports.get(int(port),int(port))) for port in item.split(','))
+            if path[-1:] in [('internal-ports',),('net.ipv4.ip_local_reserved_ports',)]:return ','.join(str(ports.get(int(port),int(port))) for port in item.split(','))
             return re.sub(r'(?<=:)(\d{4,5})(?=[/:]|$)',lambda match:str(ports.get(int(match.group()),int(match.group()))),item)
         return item
     configs={path.name:value(yaml.safe_load(path.read_text(encoding='utf8'))) for path in sorted((home/'.local/configs').glob('*.yml'))}

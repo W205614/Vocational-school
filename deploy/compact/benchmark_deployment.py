@@ -95,11 +95,15 @@ def standalone(ref='HEAD'):
                        volumes=['./.local/configs/' + alias + '.yml:/run/acceptance/application.yml:ro',
                                 './.local/signing.jks:/run/compact/signing.jks:ro', './.local/objects:/run/objects'])
         services['app-' + alias] = service
+        from http_ports import listener_sysctls
+        service['sysctls'] = listener_sysctls(ports[alias])
     template['image'] = images['gateway']['imageId']
     template['command'] = ['--spring.config.location=file:/run/acceptance/application.yml']
     template['volumes'] = ['./.local/configs/gateway.yml:/run/acceptance/application.yml:ro',
                            './.local/signing.jks:/run/compact/signing.jks:ro', './.local/objects:/run/objects']
     template['cpus'] = 2
+    from http_ports import listener_sysctls
+    template['sysctls'] = listener_sysctls(PORTS['gateway'])
     (BASE / 'compose.yaml').write_text(yaml.safe_dump(compose, sort_keys=False), encoding='utf8')
     runtime = {'mode': 'standalone', 'metrics': {alias: targets[alias].replace('app-' + alias, '127.0.0.1') + '/actuator/prometheus' for alias in aliases},
                'javaServices': ['app-' + alias for alias in aliases] + ['app-gateway']}
