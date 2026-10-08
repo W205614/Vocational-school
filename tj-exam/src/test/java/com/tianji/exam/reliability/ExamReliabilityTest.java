@@ -12,14 +12,45 @@ import static org.junit.jupiter.api.Assertions.*;
 class ExamReliabilityTest {
  private JdbcTemplate jdbc;private TransactionTemplate tx;private ExamWorkflowService service;private JsonMapper json;
  private long paper,user,question,teacher;
+ private com.tianji.api.client.learning.LearningClient learning;
  @BeforeEach void setup(){
   var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_exam?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
   jdbc=new JdbcTemplate(source);tx=new TransactionTemplate(new DataSourceTransactionManager(source));json=JsonMapper.builder().build();
-  service=new ExamWorkflowService(jdbc,json,new OutboxStore(jdbc,json));paper=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();user=paper+1;question=paper+2;teacher=paper+3;
+  learning=org.mockito.Mockito.mock(com.tianji.api.client.learning.LearningClient.class);
+  service=new ExamWorkflowService(jdbc,json,new OutboxStore(jdbc,json),learning);paper=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();user=paper+1;question=paper+2;teacher=paper+3;
+  org.mockito.Mockito.when(learning.isLessonValid(paper)).thenReturn(paper);
   jdbc.update("INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count) VALUES(?,?,?,1,10,60,1)",paper,paper,paper);
  }
  private Map<String,Object> execute(long actor,Command command){return tx.execute(s->(Map<String,Object>)service.execute(UUID.randomUUID().toString(),actor,json.writeValueAsString(command)));}
  private long start(){var view=execute(user,new Command("START",paper,null,paper,null,null,null,null,null,null));return ((Number)view.get("id")).longValue();}
+ @Test void workerUsesDurableOwnerAndRestoresIdentityAfterFailedValidation() {
+  var oldUser=user+100;var oldSession="previous-request";
+  com.tianji.common.utils.UserContext.setUser(oldUser);com.tianji.common.utils.UserContext.setRole(1L);
+  com.tianji.common.utils.UserContext.setSession(oldSession);com.tianji.common.utils.UserContext.setCallDepth(3);
+  try {
+   org.mockito.Mockito.when(learning.isLessonValid(paper)).thenAnswer(call->{
+    assertEquals(user,com.tianji.common.utils.UserContext.getUser());
+    assertEquals(2L,com.tianji.common.utils.UserContext.getRole());
+    assertNull(com.tianji.common.utils.UserContext.getSession());
+    assertEquals(0,com.tianji.common.utils.UserContext.getCallDepth());
+    throw new com.tianji.common.exceptions.ForbiddenException("revoked");
+   });
+   assertThrows(ForbiddenException.class,this::start);
+   assertEquals(oldUser,com.tianji.common.utils.UserContext.getUser());
+   assertEquals(1L,com.tianji.common.utils.UserContext.getRole());
+   assertEquals(oldSession,com.tianji.common.utils.UserContext.getSession());
+   assertEquals(3,com.tianji.common.utils.UserContext.getCallDepth());
+   assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM exam_attempt WHERE paper_id=?",Integer.class,paper));
+  } finally {com.tianji.common.utils.UserContext.removeUser();}
+ }
+ @Test void queuedStartAndSubmissionRecheckRevokedEntitlement() {
+  org.mockito.Mockito.when(learning.isLessonValid(paper)).thenReturn(null);
+  assertThrows(ForbiddenException.class,this::start);assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM exam_attempt WHERE paper_id=?",Integer.class,paper));
+  org.mockito.Mockito.when(learning.isLessonValid(paper)).thenReturn(paper);long attempt=start();
+  org.mockito.Mockito.when(learning.isLessonValid(paper)).thenReturn(null);
+  assertThrows(ForbiddenException.class,()->execute(user,new Command("SUBMIT",null,attempt,null,Map.of(),null,null,null,null,null)));
+  assertEquals("IN_PROGRESS",jdbc.queryForObject("SELECT status FROM exam_attempt WHERE id=?",String.class,attempt));
+ }
  @Test void concurrentStartsReturnOneActiveAttempt() throws Exception{
   jdbc.update("INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,answer) VALUES(?,?,1,'objective',2,10,'1,2')",paper,question);
   Set<Long> attempts=ConcurrentHashMap.newKeySet();try(var pool=Executors.newFixedThreadPool(20)){List<Future<?>> work=new ArrayList<>();for(int i=0;i<100;i++)work.add(pool.submit(()->attempts.add(start())));for(var task:work)task.get(30,TimeUnit.SECONDS);}

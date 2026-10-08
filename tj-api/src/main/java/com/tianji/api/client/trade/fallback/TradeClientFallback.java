@@ -16,6 +16,9 @@ public class TradeClientFallback implements FallbackFactory<TradeClient> {
     public TradeClient create(Throwable cause) {
         log.error("查询交易服务异常", cause);
         return new TradeClient() {
+            @Override public List<com.tianji.api.dto.trade.OrderEntitlementDTO> orderEntitlements(Long orderId) {
+                throw new com.tianji.common.exceptions.ServiceUnavailableException("订单明细权益事实暂不可用");
+            }
 
             @Override
             public Map<Long, Integer> countEnrollNumOfCourse(List<Long> courseIdList) {

@@ -28,4 +28,6 @@ public class OrderBasicDTO {
      */
     private LocalDateTime finishTime;
     private java.util.Map<Long,Long> detailIds;
+    /** Purchased validity, not the course's current catalogue setting; zero means permanent. */
+    private java.util.Map<Long,Integer> validDurations;
 }

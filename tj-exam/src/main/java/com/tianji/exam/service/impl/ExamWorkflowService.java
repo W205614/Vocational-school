@@ -11,6 +11,7 @@ import java.util.*;
 @Service @RequiredArgsConstructor
 public class ExamWorkflowService implements OperationHandler {
     private final JdbcTemplate jdbc;private final JsonMapper json;private final OutboxStore outbox;
+    private final com.tianji.api.client.learning.LearningClient learning;
     public record Publish(long courseId,long sectionId,List<Long> questionIds,Integer passPercent,List<Long> graders,Integer sectionCount) {}
     public record Command(String action,Long paperId,Long attemptId,Long lessonId,Map<Long,String> answers,Long questionId,Integer score,Long version,String feedback,Long actorRole) {}
     @Override public String kind() {return "EXAM_COMMAND";}
@@ -48,6 +49,7 @@ public class ExamWorkflowService implements OperationHandler {
     }
     private Map<String,Object> start(long user,Command cmd) {
         if(cmd.lessonId()==null || cmd.paperId()==null) throw new BadRequestException("试卷和课表不能为空");
+        requireEntitlement(user,paper(cmd.paperId()),cmd.lessonId());
         // The paper row serializes start/retake against all existing attempts.
         var papers=jdbc.queryForList("SELECT id FROM exam_paper WHERE id=? FOR UPDATE",cmd.paperId());
         if(papers.isEmpty()) throw new BadRequestException("试卷不存在");
@@ -61,6 +63,9 @@ public class ExamWorkflowService implements OperationHandler {
         return view(id,user,false);
     }
     private Map<String,Object> submit(long user,Command cmd) {
+        var candidates=jdbc.queryForList("SELECT paper_id,lesson_id FROM exam_attempt WHERE id=? AND user_id=?",cmd.attemptId(),user);
+        if(candidates.isEmpty())throw new BadRequestException("考试记录不存在");
+        var candidate=candidates.getFirst();requireEntitlement(user,paper(((Number)candidate.get("paper_id")).longValue()),((Number)candidate.get("lesson_id")).longValue());
         var attempt=lockAttempt(cmd.attemptId());
         if(((Number)attempt.get("user_id")).longValue()!=user) throw new BadRequestException("考试记录不存在");
         if(!"IN_PROGRESS".equals(attempt.get("status"))) return view(cmd.attemptId(),user,false);
@@ -112,6 +117,22 @@ public class ExamWorkflowService implements OperationHandler {
         if(id==null) throw new BadRequestException("考试标识不能为空");
         var rows=jdbc.queryForList("SELECT * FROM exam_attempt WHERE id=? FOR UPDATE",id);
         if(rows.isEmpty()) throw new BadRequestException("考试记录不存在");return rows.getFirst();
+    }
+    private void requireEntitlement(long user,Map<String,Object> paper,long lesson) {
+        // The durable operation owner, rather than the worker thread's last caller,
+        // is the only identity allowed to validate this student's enrollment.
+        var oldUser=com.tianji.common.utils.UserContext.getUser();var oldRole=com.tianji.common.utils.UserContext.getRole();
+        var oldSession=com.tianji.common.utils.UserContext.getSession();int oldDepth=com.tianji.common.utils.UserContext.getCallDepth();
+        try {
+            com.tianji.common.utils.UserContext.setUser(user);com.tianji.common.utils.UserContext.setRole(2L);
+            com.tianji.common.utils.UserContext.setSession(null);com.tianji.common.utils.UserContext.setCallDepth(0);
+            Long current=learning.isLessonValid(((Number)paper.get("course_id")).longValue());
+            if(current==null || current.longValue()!=lesson)throw new ForbiddenException("课程权益已失效，无法继续考试");
+        } finally {
+            com.tianji.common.utils.UserContext.removeUser();
+            if(oldUser!=null)com.tianji.common.utils.UserContext.setUser(oldUser);if(oldRole!=null)com.tianji.common.utils.UserContext.setRole(oldRole);
+            if(oldSession!=null)com.tianji.common.utils.UserContext.setSession(oldSession);if(oldDepth>0)com.tianji.common.utils.UserContext.setCallDepth(oldDepth);
+        }
     }
     public Map<String,Object> paper(long id) {
         var rows=jdbc.queryForList("SELECT * FROM exam_paper WHERE id=?",id);

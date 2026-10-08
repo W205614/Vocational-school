@@ -33,7 +33,8 @@ class LearningReliabilityTest {
  @Test void repeatedExamCompletionCanIncrementLessonOnlyOnceEvenWithDifferentEventIds() throws Exception {
   long lesson=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId(),section=lesson+1,course=lesson+2;
   jdbc.update("INSERT INTO learning_lesson(id,user_id,course_id,status,learned_sections) VALUES(?,?,?,0,0)",lesson,user,course);
-  var listener=new ExamPassedListener(jdbc,inbox);var event=new ExamPassedListener.Passed(lesson+3,user,lesson,course,section,1);
+  jdbc.update("INSERT INTO learning_entitlement(order_detail_id,order_id,user_id,course_id,active) VALUES(?,?,?,?,1)",lesson+10,lesson+11,user,course);
+  var listener=new ExamPassedListener(jdbc,inbox,new com.tianji.learning.service.impl.LearningEntitlementService(jdbc));var event=new ExamPassedListener.Passed(lesson+3,user,lesson,course,section,1);
   try(var pool=Executors.newFixedThreadPool(20)){
    var work=new ArrayList<Future<?>>();for(int i=0;i<100;i++){String id=UUID.randomUUID().toString();work.add(pool.submit(()->{var properties=new MessageProperties();properties.setMessageId(id);listener.passed(event,new Message(new byte[0],properties));}));}
    for(var task:work)task.get(30,TimeUnit.SECONDS);
@@ -44,7 +45,8 @@ class LearningReliabilityTest {
  }
  @Test void expiredLessonCannotBeCompletedByDelayedExamEvent(){
   long lesson=com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();jdbc.update("INSERT INTO learning_lesson(id,user_id,course_id,status,learned_sections,expire_time) VALUES(?,?,?,0,0,NOW()-INTERVAL 1 DAY)",lesson,user,lesson);
-  var properties=new MessageProperties();properties.setMessageId(UUID.randomUUID().toString());new ExamPassedListener(jdbc,inbox).passed(new ExamPassedListener.Passed(lesson,user,lesson,lesson,lesson,1),new Message(new byte[0],properties));
+  jdbc.update("INSERT INTO learning_entitlement(order_detail_id,order_id,user_id,course_id,active,expires_at) VALUES(?,?,?,?,1,NOW()-INTERVAL 1 DAY)",lesson+10,lesson+11,user,lesson);
+  var properties=new MessageProperties();properties.setMessageId(UUID.randomUUID().toString());new ExamPassedListener(jdbc,inbox,new com.tianji.learning.service.impl.LearningEntitlementService(jdbc)).passed(new ExamPassedListener.Passed(lesson,user,lesson,lesson,lesson,1),new Message(new byte[0],properties));
   assertEquals(0,jdbc.queryForObject("SELECT learned_sections FROM learning_lesson WHERE id=?",Integer.class,lesson));
  }
 }

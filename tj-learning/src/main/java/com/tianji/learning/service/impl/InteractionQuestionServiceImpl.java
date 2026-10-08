@@ -57,13 +57,13 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
     private final CatalogueClient catalogueClient;
     private final CategoryCache categoryCache;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final LearningEntitlementService entitlements;
 
     @Override
-    public void saveQuestion(QuestionFormDTO questionDTO) {
+    @Transactional public void saveQuestion(QuestionFormDTO questionDTO) {
         // 1. 获取当前登录的用户id
         Long userId = UserContext.requireUser();
-        if(jdbc.queryForObject("SELECT COUNT(*) FROM learning_lesson WHERE user_id=? AND course_id=? AND status<>3 AND (expire_time IS NULL OR expire_time>NOW())",Integer.class,userId,questionDTO.getCourseId())!=1)
-            throw new com.tianji.common.exceptions.ForbiddenException("需要有效课程权益才能提问");
+        entitlements.require(userId,questionDTO.getCourseId());
         // 2. 数据封装
         InteractionQuestion question = BeanUtils.copyBean(questionDTO, InteractionQuestion.class);
         question.setUserId(userId);

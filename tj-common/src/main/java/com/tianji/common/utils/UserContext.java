@@ -1,6 +1,9 @@
 package com.tianji.common.utils;
 
 public class UserContext {
+    private static final ThreadLocal<Integer> CALL_DEPTH = new ThreadLocal<>();
+    public static int getCallDepth(){Integer depth=CALL_DEPTH.get();return depth==null?0:depth;}
+    public static void setCallDepth(int depth){if(depth<0 || depth>4)throw new IllegalArgumentException("Invalid internal call depth");CALL_DEPTH.set(depth);}
     private static final ThreadLocal<String> SESSION = new ThreadLocal<>();
     public static void setSession(String id){SESSION.set(id);}
     public static String getSession(){return SESSION.get();}
@@ -41,5 +44,6 @@ public class UserContext {
         TL.remove();
         ROLE.remove();
         SESSION.remove();
+        CALL_DEPTH.remove();
     }
 }

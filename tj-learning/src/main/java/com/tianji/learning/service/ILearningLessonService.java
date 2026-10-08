@@ -20,8 +20,6 @@ import java.util.List;
  */
 public interface ILearningLessonService extends IService<LearningLesson> {
 
-    void addUserLessons(Long userId, List<Long> courseIds);
-
     PageDTO<LearningLessonVO> queryMyLessons(PageQuery query);
 
     LearningLessonVO queryMyCurrentLesson();

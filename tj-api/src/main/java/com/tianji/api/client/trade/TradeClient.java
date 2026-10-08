@@ -12,6 +12,8 @@ import java.util.Map;
 
 @FeignClient(value = "trade-service", fallbackFactory = TradeClientFallback.class)
 public interface TradeClient {
+    @GetMapping("/internal/learning-entitlements/{orderId}")
+    List<com.tianji.api.dto.trade.OrderEntitlementDTO> orderEntitlements(@PathVariable("orderId") Long orderId);
     /**
      * 统计指定课程的报名人数
      * @param courseIdList 课程id集合

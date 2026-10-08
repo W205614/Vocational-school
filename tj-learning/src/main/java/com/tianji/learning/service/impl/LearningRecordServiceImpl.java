@@ -27,6 +27,7 @@ public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper,
     private final LearningRecordDelayTaskHandler taskHandler;
     private final JdbcTemplate jdbc;
     private final PlatformTransactionManager manager;
+    private final LearningEntitlementService entitlements;
     @Override public LearningLessonDTO queryLearningRecordByCourse(Long courseId) {
         LearningLesson lesson=lessonService.queryByUserIdAndCourseId(UserContext.requireUser(),courseId);
         if(lesson==null) return null;
@@ -46,7 +47,8 @@ public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper,
         Integer duration=section.getMediaDuration(),moment=form.getMoment();
         if(duration==null || duration<=0 || moment==null || moment<0 || moment>duration) throw new BadRequestException("播放进度或视频时长无效");
         new TransactionTemplate(manager).executeWithoutResult(tx -> {
-            var locked=jdbc.queryForList("SELECT * FROM learning_lesson WHERE id=? AND user_id=? AND status<>3 AND (expire_time IS NULL OR expire_time>NOW()) FOR UPDATE",lesson.getId(),user);
+            if(entitlements.require(user,lesson.getCourseId())!=lesson.getId()) throw new BadRequestException("课表权益来源不一致");
+            var locked=jdbc.queryForList("SELECT * FROM learning_lesson WHERE id=? AND user_id=? FOR UPDATE",lesson.getId(),user);
             if(locked.isEmpty()) throw new BadRequestException("课程权益已失效");
             var rows=jdbc.queryForList("SELECT id,finished FROM learning_record WHERE lesson_id=? AND section_id=?",lesson.getId(),form.getSectionId());
             long recordId;

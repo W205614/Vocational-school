@@ -109,6 +109,15 @@ CREATE TABLE `test_counter` (
 CREATE DATABASE /*!32312 IF NOT EXISTS*/ `acceptance_learning` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 
 USE `acceptance_learning`;
+CREATE TABLE IF NOT EXISTS learning_entitlement (
+ order_detail_id BIGINT PRIMARY KEY,order_id BIGINT NOT NULL,user_id BIGINT NOT NULL,course_id BIGINT NOT NULL,
+ active TINYINT NOT NULL,expires_at DATETIME(3),created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+ KEY idx_entitlement_user_course(user_id,course_id,active,expires_at),KEY idx_entitlement_order(order_id)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS learning_entitlement_guard (
+ user_id BIGINT NOT NULL,course_id BIGINT NOT NULL,last_active_status TINYINT NOT NULL DEFAULT 0,
+ PRIMARY KEY(user_id,course_id)
+) ENGINE=InnoDB;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `learning_lesson` (

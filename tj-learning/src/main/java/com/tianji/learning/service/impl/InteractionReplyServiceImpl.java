@@ -47,6 +47,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
     private final UserClient userClient;
     private final RemarkClient remarkClient;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final LearningEntitlementService entitlements;
 
     @Override
     @Transactional
@@ -56,8 +57,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
         InteractionQuestion question=questionMapper.selectById(dto.getQuestionId());
         if(question==null || Boolean.TRUE.equals(question.getHidden()))throw new BadRequestException("问题不存在");
         boolean staff=Set.of(1L,3L).contains(UserContext.getRole());
-        if(!staff && jdbc.queryForObject("SELECT COUNT(*) FROM learning_lesson WHERE user_id=? AND course_id=? AND status<>3 AND (expire_time IS NULL OR expire_time>NOW())",Integer.class,userId,question.getCourseId())!=1)
-            throw new com.tianji.common.exceptions.ForbiddenException("需要有效课程权益才能回答");
+        if(!staff) entitlements.require(userId,question.getCourseId());
         if(dto.getAnswerId()!=null){var parent=getById(dto.getAnswerId());
             if(parent==null || !Objects.equals(parent.getQuestionId(),question.getId()) || parent.getAnswerId()!=null)throw new BadRequestException("评论所属回答无效");}
         if(dto.getTargetReplyId()!=null){var target=getById(dto.getTargetReplyId());

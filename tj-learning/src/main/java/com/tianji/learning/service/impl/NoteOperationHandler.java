@@ -10,13 +10,14 @@ import java.util.*;
 @Service @RequiredArgsConstructor
 public class NoteOperationHandler implements OperationHandler {
     private final JdbcTemplate jdbc; private final JsonMapper json;
+    private final LearningEntitlementService entitlements;
     public record Mutation(String action,Long id,Long courseId,Long sectionId,Integer moment,String content,Long version) {}
     @Override public String kind() {return "NOTE_WRITE";}
     @Override public Object execute(String operation,long user,String payload) {
         Mutation form=json.readValue(payload,Mutation.class);
         if("CREATE".equals(form.action())) {
             validate(form);
-            if(jdbc.queryForList("SELECT id FROM learning_lesson WHERE user_id=? AND course_id=? AND status<>3 AND (expire_time IS NULL OR expire_time>CURRENT_TIMESTAMP(3))",user,form.courseId()).isEmpty()) throw new BadRequestException("无课程学习权限");
+            entitlements.require(user,form.courseId());
             long id=IdWorker.getId();
             jdbc.update("INSERT INTO course_note(id,user_id,course_id,section_id,moment,content) VALUES(?,?,?,?,?,?)",id,user,form.courseId(),form.sectionId(),form.moment(),form.content());
             return jdbc.queryForMap("SELECT * FROM course_note WHERE id=?",id);

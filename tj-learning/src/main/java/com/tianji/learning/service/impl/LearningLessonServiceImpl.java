@@ -58,36 +58,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
     private final LearningRecordMapper recordMapper;
 
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
-
-    @Override
-    @Transactional
-    public void addUserLessons(Long userId, List<Long> courseIds) {
-        // 1.查询课程有效期
-        List<CourseSimpleInfoDTO> cInfoList = courseClient.getSimpleInfoList(courseIds);
-        if (CollUtils.isEmpty(cInfoList)) {
-            // 课程不存在，无法添加
-            log.error("课程信息不存在，无法添加到课表");
-            return;
-        }
-        // 2.循环遍历，处理LearningLesson数据
-        List<LearningLesson> list = new ArrayList<>(cInfoList.size());
-        for (CourseSimpleInfoDTO cInfo : cInfoList) {
-            LearningLesson lesson = new LearningLesson();
-            // 2.1.获取过期时间
-            Integer validDuration = cInfo.getValidDuration();
-            if (validDuration != null && validDuration > 0) {
-                LocalDateTime now = LocalDateTime.now();
-                lesson.setCreateTime(now);
-                lesson.setExpireTime(now.plusMonths(validDuration));
-            }
-            // 2.2.填充userId和courseId
-            lesson.setUserId(userId);
-            lesson.setCourseId(cInfo.getId());
-            list.add(lesson);
-        }
-        // 3.批量新增
-        saveBatch(list);
-    }
+    private final LearningEntitlementService entitlements;
 
     @Override
     public PageDTO<LearningLessonVO> queryMyLessons(PageQuery query) {
@@ -104,6 +75,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         }
         // 3.查询课程信息
         Map<Long, CourseSimpleInfoDTO> cMap = queryCourseSimpleInfoList(records);
+        var rights=entitlements.summaries(userId,records.stream().map(LearningLesson::getCourseId).toList());
 
         // 4.封装VO返回
         List<LearningLessonVO> list = new ArrayList<>(records.size());
@@ -113,9 +85,10 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
             LearningLessonVO vo = BeanUtils.copyBean(r, LearningLessonVO.class);
             // 4.3.获取课程信息，填充到vo
             CourseSimpleInfoDTO cInfo = cMap.get(r.getCourseId());
-            vo.setCourseName(cInfo.getName());
-            vo.setCourseCoverUrl(cInfo.getCoverUrl());
-            vo.setSections(cInfo.getSectionNum());
+            vo.setCourseName(cInfo==null?"课程已下架":cInfo.getName());
+            vo.setCourseCoverUrl(cInfo==null?null:cInfo.getCoverUrl());
+            vo.setSections(cInfo==null?0:cInfo.getSectionNum());
+            displayRight(vo,rights.get(r.getCourseId()));
             list.add(vo);
         }
         return PageDTO.of(page, list);
@@ -128,7 +101,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         List<CourseSimpleInfoDTO> cInfoList = courseClient.getSimpleInfoList(cIds);
         if (CollUtils.isEmpty(cInfoList)) {
             // 课程不存在，无法添加
-            throw new BadRequestException("课程信息不存在！");
+            return Map.of();
         }
         // 3.3.把课程集合处理成Map，key是courseId，值是course本身
         Map<Long, CourseSimpleInfoDTO> cMap = cInfoList.stream()
@@ -146,6 +119,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         LearningLesson lesson = lambdaQuery()
                 .eq(LearningLesson::getUserId, userId)
                 .eq(LearningLesson::getStatus, LessonStatus.LEARNING.getValue())  //(1, "学习中")
+                .apply("EXISTS (SELECT 1 FROM learning_entitlement e WHERE e.user_id=learning_lesson.user_id AND e.course_id=learning_lesson.course_id AND e.active=1 AND (e.expires_at IS NULL OR e.expires_at>NOW(3)))")
                 .orderByAsc(LearningLesson::getLatestLearnTime)
                 .last("limit 1")
                 .one();
@@ -157,7 +131,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         // 4.查询课程信息
         CourseFullInfoDTO cInfo = courseClient.getCourseInfoById(lesson.getCourseId(), false, false);
         if (cInfo == null) {
-            throw new BadRequestException("课程不存在");
+            return null;
         }
         vo.setCourseName(cInfo.getName());
         vo.setCourseCoverUrl(cInfo.getCoverUrl());
@@ -183,50 +157,13 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
     // 退款成功，要取消用户报名的课程
     @Override
     public void removeUserLessons(OrderBasicDTO order) {
-        // 1.查询课表并删除指定课程
-        // 1.1参数校验
-        if (order.getUserId() == null) {
-            throw new IllegalArgumentException("用户ID不能为空");
-        }
-        if (CollUtil.isEmpty(order.getCourseIds())) {
-            log.warn("订单中无课程，无需删除学习记录。订单ID: {}", order.getOrderId());
-            return;
-        }
-
-        // 1.2遍历所有课程ID，逐个删除
-        for (Long courseId : order.getCourseIds()) {
-            boolean removed = lambdaUpdate()
-                    .eq(LearningLesson::getUserId, order.getUserId())
-                    .eq(LearningLesson::getCourseId, courseId)
-                    .remove(); // 执行删除
-
-            if (!removed) {
-                log.warn("用户ID={}，课程ID={} 的学习记录不存在，跳过删除", order.getUserId(), courseId);
-            }
-        }
+        entitlements.revoke(order);
     }
 
     // 校验当前用户是否可以学习当前课程
     @Override
     public Long isLessonValid(Long courseId) {
-        // 0.获取当前用户信息
-        Long userId = UserContext.getUser();
-        // 1.用户课表中是否有该课程
-        LearningLesson lesson = lambdaQuery()
-                .eq(LearningLesson::getUserId, userId)
-                .eq(LearningLesson::getCourseId, courseId)
-                .one();
-        if (lesson == null) {
-            return null;
-        }
-        // 2.课程状态是否是有效的状态（未过期） 如果小于当前时间就是过期
-        LocalDateTime now = LocalDateTime.now();
-        if (LessonStatus.EXPIRED == lesson.getStatus() || lesson.getExpireTime() != null && !now.isBefore(lesson.getExpireTime())) {
-            // 课程已过期
-            return null;
-        }
-        // 3.返回学习记录ID，表示可以学习
-        return lesson.getId();
+        return entitlements.available(UserContext.requireUser(),courseId);
     }
 
     // 查询用户课表中指定课程状态
@@ -245,8 +182,14 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         }
         // 2.2封装lesson为LearningLessonVO
         LearningLessonVO vo = BeanUtils.copyBean(lesson, LearningLessonVO.class);
-
+        displayRight(vo,entitlements.summaries(userId,List.of(courseId)).get(courseId));
         return vo;
+    }
+
+    private void displayRight(LearningLessonVO view,LearningEntitlementService.Summary right) {
+        if(right==null){view.setStatus(LessonStatus.EXPIRED);view.setExpireTime(null);return;}
+        view.setExpireTime(right.expiresAt());
+        if(view.getStatus()==LessonStatus.EXPIRED)view.setStatus(LessonStatus.of(right.lastActiveStatus()));
     }
 
     // 统计课程学习人数
@@ -276,9 +219,10 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
     }
 
     @Override
-    public void createLearningPlans(Long courseId, Integer freq) {
+    @Transactional public void createLearningPlans(Long courseId, Integer freq) {
         // 1. 获取当前登录的用户
         Long userId = UserContext.getUser();
+        entitlements.require(userId,courseId);
         // 2. 查询课表中的指定课程有关的数据
         LearningLesson lesson = queryByUserIdAndCourseId(userId, courseId);
         AssertUtils.isNotNull(lesson, "课程信息不存在");
