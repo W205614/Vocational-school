@@ -34,7 +34,12 @@ class LocalModuleTransportTest {
  private void handle(HttpExchange exchange)throws IOException {
   try {
    String path=exchange.getRequestURI().getPath(),body;
-   if(path.endsWith("/slow-body")){exchange.sendResponseHeaders(200,4);Thread.sleep(250);exchange.getResponseBody().write("done".getBytes(StandardCharsets.UTF_8));return;}
+   if(path.endsWith("/slow-body")){
+    exchange.sendResponseHeaders(200,4);
+    exchange.getResponseBody().write('d');exchange.getResponseBody().flush();
+    if(!release.await(10,TimeUnit.SECONDS))throw new IOException("Stalled-body test did not release its server");
+    exchange.getResponseBody().write("one".getBytes(StandardCharsets.UTF_8));return;
+   }
    if(path.endsWith("/blocked")){arrived.countDown();release.await(3,TimeUnit.SECONDS);body="done";}
    else if(path.endsWith("/slow")){Thread.sleep(250);body="done";}
    else if(path.endsWith("/commit")) {
@@ -66,8 +71,14 @@ class LocalModuleTransportTest {
  @Test void configuredReadDeadlineBoundsBlockedHttp(){assertThrows(IOException.class,()->client.execute(request("user","slow",Map.of(),null),options(50)));}
  @Test void readDeadlineAlsoBoundsAStalledBodyAndClosingItReleasesAdmission()throws Exception {
   client=limited(1);
-  try(var response=client.execute(request("user","slow-body",Map.of(),null),options(50))){assertThrows(IOException.class,()->response.body().asInputStream().readAllBytes());}
-  assertEquals("recovered",read(client.execute(request("user","echo",Map.of(),"recovered".getBytes(StandardCharsets.UTF_8)),options(1000))));
+  // Deliver a byte before blocking so the timeout necessarily occurs in body
+  // decoding, after headers and admission have been obtained. The latch keeps
+  // the body blocked independently of CI scheduling and pool initialization.
+  try(var response=client.execute(request("user","slow-body",Map.of(),null),options(1500))){
+   var body=response.body().asInputStream();assertEquals('d',body.read());
+   assertThrows(IOException.class,body::readAllBytes);
+  }finally{release.countDown();}
+  assertEquals("recovered",read(client.execute(request("user","echo",Map.of(),"recovered".getBytes(StandardCharsets.UTF_8)),options(1500))));
  }
  @Test void timedOutCommitRetriedWithOriginalKeyIsWrittenOnce()throws Exception {
   var request=request("user","commit",Map.of("Idempotency-Key",List.of("original-key")),new byte[0]);
