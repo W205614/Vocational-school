@@ -94,6 +94,7 @@ jobs:
             deploy/compact/.local/security-smoke.json
             deploy/compact/.local/audit-smoke.json
             deploy/compact/.local/redis-recovery-proof.json
+            deploy/compact/.local/transport-result.json
             deploy/compact/.local/ci-diagnostics.json
       - name: Stop isolated CI processes; retain data for failure diagnostics
         if: always()

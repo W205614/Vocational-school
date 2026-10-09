@@ -25,7 +25,7 @@ if ids:
         'health':state.get('Health',{}).get('Status'),'logTail':redact(logs.stdout.decode('utf8',errors='replace'))}
   report['containers'].append(item)
   print(service,item['status'],'health='+str(item['health']),'oom='+str(item['oomKilled']))
-for name in ['up-None.log','browser.log','maven.log']:
+for name in ['up-None.log','browser.log','maven.log','transport-tests.log']:
  path=LOCAL/name
  if path.exists():report['privateLogExcerpts'][name]=redact(path.read_text(encoding='utf8',errors='replace')[-20000:])
 (LOCAL/'ci-diagnostics.json').write_text(json.dumps(report,indent=2),encoding='utf8')
