@@ -20,7 +20,7 @@ async function load(){
 }
 async function choose(){staged.value=[...values.value];open.value=true;page.value=1;await load();}
 function commit(ids:string[]){emit('update:modelValue',props.multiple?ids:ids[0]||'');emit('change',ids.map(id=>cache.value[id]||{id}));}
-function pick(row:Row){const id=String(row.id);if(!props.multiple){commit([id]);open.value=false;return;}if(staged.value.includes(id))staged.value=staged.value.filter(x=>x!==id);else if(staged.value.length<props.limit)staged.value.push(id);}
+function pick(row:Row){if(busy.value||error.value)return;const id=String(row.id);if(!rows.value.some(current=>String(current.id)===id))return;if(!props.multiple){commit([id]);open.value=false;return;}if(staged.value.includes(id))staged.value=staged.value.filter(x=>x!==id);else if(staged.value.length<props.limit)staged.value.push(id);}
 function remove(id:string){commit(values.value.filter(x=>x!==id));}
 </script>
 <template><div class="entity-picker">
@@ -31,8 +31,8 @@ function remove(id:string){commit(values.value.filter(x=>x!==id));}
    <el-select v-if="kind==='courses' && courseStatuses.length>1" v-model="status" aria-label="筛选课程状态" style="width:140px" @change="page=1;load()"><el-option v-for="s in courseStatuses" :key="s" :value="s" :label="({1:'待上架',2:'已上架',3:'已下架',4:'已完结'} as Record<number,string>)[s]"/></el-select>
    <el-button @click="page=1;load()" :disabled="busy">查询</el-button></div>
   <el-alert v-if="error" :title="error" type="error" :closable="false"/>
-  <el-table :data="rows" v-loading="busy"><el-table-column label="名称" min-width="190"><template #default="{row}">{{name(row)}}</template></el-table-column><el-table-column label="说明" min-width="130"><template #default="{row}">{{detail(row)}}</template></el-table-column><el-table-column label="选择" width="100"><template #default="{row}"><el-button :type="staged.includes(String(row.id))?'primary':'default'" :disabled="multiple && !staged.includes(String(row.id)) && staged.length>=limit" @click="pick(row)">{{multiple?(staged.includes(String(row.id))?'已选':'添加'):'选用'}}</el-button></template></el-table-column></el-table>
-  <el-pagination v-model:current-page="page" :total="total" :page-size="20" layout="total,prev,pager,next" @current-change="load"/>
-  <template #footer><span v-if="multiple" class="muted">已选 {{staged.length}} 项 · 跨页选择会保留</span><el-button @click="open=false">取消</el-button><el-button v-if="multiple" type="primary" @click="commit(staged);open=false">确认选择</el-button></template>
+  <el-table :data="rows" row-key="id" v-loading="busy"><el-table-column label="名称" min-width="190"><template #default="{row}">{{name(row)}}</template></el-table-column><el-table-column label="说明" min-width="130"><template #default="{row}">{{detail(row)}}</template></el-table-column><el-table-column label="选择" width="100"><template #default="{row}"><el-button :type="staged.includes(String(row.id))?'primary':'default'" :disabled="busy || !!error || (multiple && !staged.includes(String(row.id)) && staged.length>=limit)" @click="pick(row)">{{multiple?(staged.includes(String(row.id))?'已选':'添加'):'选用'}}</el-button></template></el-table-column></el-table>
+  <el-pagination v-model:current-page="page" :total="total" :page-size="20" :disabled="busy" layout="total,prev,pager,next" @current-change="load"/>
+  <template #footer><span v-if="multiple" class="muted">已选 {{staged.length}} 项 · 跨页选择会保留</span><el-button @click="open=false">取消</el-button><el-button v-if="multiple" type="primary" :disabled="busy || !!error" @click="commit(staged);open=false">确认选择</el-button></template>
  </el-dialog>
 </div></template>

@@ -1,7 +1,21 @@
-import {test,expect,type Page} from '@playwright/test';import fs from 'node:fs';
+import {test,expect,type Page,type Route} from '@playwright/test';import fs from 'node:fs';
 const home=process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local',accounts=JSON.parse(fs.readFileSync(home+'/accounts.json','utf8')),fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
 async function api(page:Page,path:string,body?:unknown){const token=await page.evaluate(()=>sessionStorage.getItem('school-token'));const result=await page.request.fetch('/api/v2'+path,{method:body===undefined?'GET':'POST',data:body,headers:{Authorization:'Bearer '+token,'Idempotency-Key':crypto.randomUUID()}});expect(result.ok()).toBeTruthy();const value=await result.json();expect(value.code).toBe(200);return value.data;}
-async function pick(page:Page,label:string,keyword:string,names:string[],multiple=false){await page.getByRole('button',{name:label,exact:true}).click();const dialog=page.getByRole('dialog',{name:label,exact:true});await dialog.getByRole('textbox',{name:label+'关键词',exact:true}).fill(keyword);await dialog.getByRole('button',{name:'查询',exact:true}).click();for(const name of names)await dialog.locator('.el-table__row').filter({hasText:name}).getByRole('button',{name:multiple?'添加':'选用',exact:true}).click();if(multiple)await dialog.getByRole('button',{name:'确认选择',exact:true}).click();await expect(dialog).not.toBeVisible();}
+async function pick(page:Page,label:string,keyword:string,names:string[],multiple=false){
+ await page.getByRole('button',{name:label,exact:true}).click();const dialog=page.getByRole('dialog',{name:label,exact:true}),query=dialog.getByRole('button',{name:'查询',exact:true});
+ await expect(query).toBeEnabled();await dialog.getByRole('textbox',{name:label+'关键词',exact:true}).fill(keyword);
+ if(label==='选择关联题目'){
+  // Hold a real backend response: selections must remain unavailable while rows change.
+  let fetched!:()=>void,release!:()=>void;const started=new Promise<void>(resolve=>fetched=resolve),held=new Promise<void>(resolve=>release=resolve),pattern='**/api/v2/admin/exam/questions/page?**';
+  const handler=async(route:Route)=>{const response=await route.fetch();fetched();await held;await route.fulfill({response});};
+  await page.route(pattern,handler);const response=page.waitForResponse(r=>r.url().includes('/admin/exam/questions/page?')&&new URL(r.url()).searchParams.get('keyword')===keyword);
+  try{await query.click();await started;await expect(dialog.getByRole('button',{name:'确认选择',exact:true})).toBeDisabled();await expect(dialog.locator('.el-table__row').filter({hasText:names[0]}).getByRole('button',{name:'添加',exact:true})).toBeDisabled();}
+  finally{release();expect((await response).ok()).toBeTruthy();await page.unroute(pattern,handler);}
+ }else{const response=page.waitForResponse(r=>r.url().includes('/admin/user/teachers/page?')&&new URL(r.url()).searchParams.get('name')===keyword);await query.click();expect((await response).ok()).toBeTruthy();}
+ await expect(query).toBeEnabled();
+ for(const name of names){const row=dialog.locator('.el-table__row').filter({hasText:name});await row.getByRole('button',{name:multiple?'添加':'选用',exact:true}).click();if(multiple)await expect(row.getByRole('button',{name:'已选',exact:true})).toBeVisible();}
+ if(multiple)await dialog.getByRole('button',{name:'确认选择',exact:true}).click();await expect(dialog).not.toBeVisible();
+}
 async function option(page:Page,label:string,value:string){const box=page.getByRole('combobox',{name:label,exact:true});await expect(box).toBeEnabled();await page.locator('.el-select').filter({has:box}).click();await page.getByRole('option',{name:value,exact:true}).click();}
 test('managed draft keeps closed enrollment and persists cover, syllabus, media, questions and teachers',async({page},info)=>{
  test.skip(info.project.name!=='admin');test.setTimeout(120000);
