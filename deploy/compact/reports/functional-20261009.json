@@ -1,0 +1,339 @@
+{
+  "schemaVersion": 1,
+  "status": "PASSED",
+  "generatedAt": "2026-10-09T04:00:34.141505+00:00",
+  "acceptanceScope": "functional",
+  "performanceValidation": "DEFERRED",
+  "deferredChecks": [
+    "perf-3h-v1 formal sampling",
+    "latency thresholds",
+    "20 percent Java RSS reduction"
+  ],
+  "runtimeSourceCommit": "1bcfc0556732b54d9eda1f4532da2eff5c25e2aa",
+  "legacySearchSourceCommit": "6fc702598e5ba19dff82c83a3ab906f6a5a77517",
+  "publicationRule": "Documentation/report-only descendant of runtime source; gate checks equivalence",
+  "evidence": {
+    "releaseRunId": "d2e8b4c0d0594dcb8fe1d74b6a4fe9b5",
+    "sourceCommit": "1bcfc0556732b54d9eda1f4532da2eff5c25e2aa",
+    "imageDigests": {
+      "app-commerce": "sha256:1db09bf466207cb10841f82bc775f032dc6a75cfb9db640d0d4784867778cfa1",
+      "app-education": "sha256:dd0f5479ce65df515bc74cd4cc5a9d0f4878643b10a1586a6111e66f98ce5923",
+      "app-gateway": "sha256:4664131580caab4cd5b3388fd0d7434ebecd3540a644b33dbe2364b79ac77085",
+      "app-identity": "sha256:d4037cb58af0df50cf0673b699776ea3bef12f33eb1d6ddb59666436f6b7767e",
+      "app-support": "sha256:e0746a0aed604d4c60e66ce1bf5737952bd07aa2f8b0a3cbb4def3f4b3bebbfa",
+      "elasticsearch": "sha256:13b4a40bb095774f5fda635e45fd5677cc6a26565e42b24997b0c72b88e75984",
+      "mysql": "sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb",
+      "rabbitmq": "sha256:19c5ee40801d36eaa46020c9e2ff802c4ef7e74839a00b0f8bd43f935f845778",
+      "redis": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+      "web-admin": "sha256:8fe969eb57a2fca0ac5fb9ddaa1f84c207ec8bf9f4290139e2c66a1f563172d9",
+      "web-student": "sha256:7be8cfdff64218d1f2133d7ae27d9ad30fbb684b6286c86e22b0dfb8f92b9b27"
+    },
+    "configFingerprint": "f5c8ae11308a88f9a198c9d59283f6258732280f780473bdb3ab720f36a1a4cd",
+    "baseSnapshotFingerprint": "d668c9d9df3a340c1b899be8435add80fd7a1de499adb064ecd9a621e7e63f95",
+    "createdAt": "2026-10-09T02:37:28.376783+00:00"
+  },
+  "checks": {
+    "backend-result": {
+      "status": "PASSED",
+      "startedAt": "2026-10-09T02:37:41.880805+00:00",
+      "finishedAt": "2026-10-09T02:43:02.817002+00:00",
+      "privateReportSha256": "9bcf5b298b97c6af722147c794b843e057f7ecad07cd8fdc19fcfa7b5b92acfd"
+    },
+    "browser-result": {
+      "status": "PASSED",
+      "startedAt": "2026-10-09T02:43:03.120389+00:00",
+      "finishedAt": "2026-10-09T02:45:30.157739+00:00",
+      "privateReportSha256": "523d4e4396ba3cac82940a83b653950917f918927c4f8ac9046ffc62cff7ab07"
+    },
+    "security-smoke": {
+      "status": "PASSED",
+      "startedAt": "2026-10-09T02:52:35.509097+00:00",
+      "finishedAt": "2026-10-09T02:53:12.222579+00:00",
+      "privateReportSha256": "6cb7558efb41ab873b33569741d1d86315ac11634818c004b0ba6c498fb15a4e"
+    },
+    "audit-smoke": {
+      "status": "PASSED",
+      "startedAt": "2026-10-09T02:53:44.606746+00:00",
+      "finishedAt": "2026-10-09T02:53:53.834357+00:00",
+      "privateReportSha256": "0a38b0d9a2283ac6e84649e8ed68da8e43eff78cb9edd907ec077a5f2a942192"
+    },
+    "redis-recovery-proof": {
+      "status": "PASSED",
+      "startedAt": "2026-10-09T02:53:54.124488+00:00",
+      "finishedAt": "2026-10-09T02:54:15.471041+00:00",
+      "privateReportSha256": "9ef0a8d158aebd231d10a964334a1b51cb687d4438dfce2d26f4521b689afd52"
+    },
+    "recovery-acceptance": {
+      "status": "PASSED",
+      "startedAt": "2026-10-09T02:54:18.324244+00:00",
+      "finishedAt": "2026-10-09T03:00:42.036097+00:00",
+      "privateReportSha256": "e94164263cc2ba8d497b18777f2ed9e3ae50ca14a3a464724188d484a00db0f4"
+    },
+    "search-rollback-acceptance": {
+      "status": "PASSED",
+      "startedAt": "2026-10-09T03:22:58.060124+00:00",
+      "finishedAt": "2026-10-09T03:23:23.932525+00:00",
+      "privateReportSha256": "4102b3e457dff58ff7265f45bd04dccadad4283fb5a4a017b56ff1fd9c947062"
+    },
+    "history-preservation": {
+      "status": "PASSED",
+      "startedAt": "2026-10-09T03:22:58.060124+00:00",
+      "finishedAt": "2026-10-09T03:23:23.947723+00:00",
+      "privateReportSha256": "818ac764e9851313d05bdbdd3c9dde13c0cd1fd292f5521ebf04e3ead01f1a26"
+    }
+  },
+  "backend": {
+    "tests": 134,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "transport": {
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "browser": {
+    "status": "PASSED",
+    "passed": 31,
+    "failed": 0,
+    "skipped": 19
+  },
+  "frontend": {
+    "typecheck": "PASSED",
+    "productionBuild": "PASSED",
+    "unitTests": 3
+  },
+  "deploymentTools": {
+    "tests": 29,
+    "status": "PASSED",
+    "privateLogSha256": "5518c8ef9d8ce718446cea40305ee8a70c3412215dd89f7dfc679cc196bfd8b8"
+  },
+  "apiPolicy": {
+    "status": "PASSED",
+    "privateLogSha256": "ab8b3ee2e903dd6173868b581ef12c04ef2e03e281d9bd719f2c01bc8419fee5"
+  },
+  "security": {
+    "assertions": 26,
+    "status": "PASSED"
+  },
+  "audit": {
+    "areas": [
+      "exam/admin",
+      "exam/teacher",
+      "trade/admin"
+    ],
+    "status": "PASSED"
+  },
+  "redis": {
+    "status": "PASSED",
+    "checks": 9,
+    "binaryAndTypesVerified": true,
+    "absoluteExpiryVerified": true,
+    "nonemptyTargetRejected": true
+  },
+  "recovery": {
+    "status": "PASSED",
+    "tableCount": 183,
+    "tableContentChecksumsMatched": true,
+    "mediaFileCount": 43,
+    "redisRecords": 1,
+    "brokerBytesRestored": true,
+    "browser": {
+      "status": "PASSED",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 19
+    }
+  },
+  "searchRollback": {
+    "status": "PASSED",
+    "currentMySQL": true,
+    "oldBusinessBackupRestored": false,
+    "phases": [
+      {
+        "name": "search9-initial",
+        "browser": {
+          "status": "PASSED",
+          "passed": 31,
+          "failed": 0,
+          "skipped": 19
+        },
+        "historyBeforeBusiness": {
+          "status": "PASSED",
+          "originalIdentities": 1348,
+          "tables": 18,
+          "missing": {},
+          "scope": "Financial, learning and exam identity preservation; not equality of mutable states"
+        },
+        "historyAfterBusiness": {
+          "status": "PASSED",
+          "originalIdentities": 1348,
+          "tables": 18,
+          "missing": {},
+          "scope": "Financial, learning and exam identity preservation; not equality of mutable states"
+        },
+        "financialFactsUnchanged": true
+      },
+      {
+        "name": "search7-rollback",
+        "browser": {
+          "status": "PASSED",
+          "passed": 31,
+          "failed": 0,
+          "skipped": 19
+        },
+        "historyBeforeBusiness": {
+          "status": "PASSED",
+          "originalIdentities": 1379,
+          "tables": 18,
+          "missing": {},
+          "scope": "Financial, learning and exam identity preservation; not equality of mutable states"
+        },
+        "historyAfterBusiness": {
+          "status": "PASSED",
+          "originalIdentities": 1379,
+          "tables": 18,
+          "missing": {},
+          "scope": "Financial, learning and exam identity preservation; not equality of mutable states"
+        },
+        "financialFactsUnchanged": true
+      },
+      {
+        "name": "search9-return",
+        "browser": {
+          "status": "PASSED",
+          "passed": 31,
+          "failed": 0,
+          "skipped": 19
+        },
+        "historyBeforeBusiness": {
+          "status": "PASSED",
+          "originalIdentities": 1410,
+          "tables": 18,
+          "missing": {},
+          "scope": "Financial, learning and exam identity preservation; not equality of mutable states"
+        },
+        "historyAfterBusiness": {
+          "status": "PASSED",
+          "originalIdentities": 1410,
+          "tables": 18,
+          "missing": {},
+          "scope": "Financial, learning and exam identity preservation; not equality of mutable states"
+        },
+        "financialFactsUnchanged": true
+      }
+    ]
+  },
+  "preservation": {
+    "tables": 18,
+    "originalIdentities": 1080,
+    "originalMediaFiles": 21,
+    "scope": "Preservation of pre-existing financial, learning and exam primary keys; not equality of mutable statuses; original media byte hashes unchanged"
+  },
+  "nativeBrowser": {
+    "status": "PASSED",
+    "scope": "Native admin dashboard and order query show immutable course snapshot and learner separately; question picker query preserves both exact selected rows; fresh student session reads refunded-course history with score, answers and feedback, disabled answer controls; actual 390px student, admin and teacher layouts without page overflow; teacher has course/student filters and no administrator navigation",
+    "at": "2026-10-09T02:41:06.953Z",
+    "teacherViewportWidth": 390,
+    "screenshots": [
+      {
+        "file": "1bcfc05-admin-dashboard-desktop.png",
+        "sha256": "5c733e805d586186a67471589fe326c56d6aa31c3d3dab1760c0fc76bac37200"
+      },
+      {
+        "file": "1bcfc05-admin-order-course-desktop.png",
+        "sha256": "57f68a0c2ee27e6ff579e77da4b4741e2a29be612f08da8a94c000df2d5b0751"
+      },
+      {
+        "file": "1bcfc05-admin-order-course-mobile.png",
+        "sha256": "931a15ea222f4ebe8d5853d9c5128f3cf90455f6226ea8c140ef6b8051abf072"
+      },
+      {
+        "file": "1bcfc05-admin-picker-desktop.png",
+        "sha256": "3c187e99e5b790f4e1c808692fff4a36cfd88310bb42d0d8a74cfd1654dc7595"
+      },
+      {
+        "file": "1bcfc05-history-fresh-desktop.png",
+        "sha256": "42377fe94dfc0fc778e4f5f4031c9a7c15dbe1f5125c981c6dc1c0b575a8b35e"
+      },
+      {
+        "file": "1bcfc05-history-fresh-mobile.png",
+        "sha256": "70be63fcfc31167cf1277762a98d1f06303b0f648673692dd79adf1db12e8908"
+      },
+      {
+        "file": "1bcfc05-teacher-mobile.png",
+        "sha256": "9274c4a65c357f4eefbdbc73c5660adf1ac2f3db90b7e48c839949af0f3e9139"
+      }
+    ]
+  },
+  "containers": {
+    "status": "PASSED",
+    "removedContainers": 102,
+    "retainedVolumes": 168,
+    "finalContainers": 11,
+    "finalHealthy": 11,
+    "otherProjectContainersUnchanged": 35,
+    "volumeDeletion": false,
+    "imageDeletion": false,
+    "scope": "Original 102-container cleanup plus verified retirement of subsequent temporary proof containers",
+    "at": "2026-10-09T03:35:23.876734+00:00"
+  },
+  "images": {
+    "status": "PASSED",
+    "removedImages": 148,
+    "removedRedundantTags": 3,
+    "archives": [
+      {
+        "file": "rollback-images.tar",
+        "localDirectory": "images-20261009T032343Z",
+        "bytes": 14196288000,
+        "sha256": "4ad964f56d4ae691648237b3d18c9c555deddf422ef77110e19798ceb21d99a9",
+        "removedImages": 147,
+        "verifiedPlatforms": [
+          "linux/amd64"
+        ]
+      },
+      {
+        "file": "rollback-search7.tar",
+        "localDirectory": "search7-image-20261009T033455Z",
+        "bytes": 387001856,
+        "sha256": "47502d756cd979ff5b6b478c50392194e88af191e1cd0298c8997e7817846350",
+        "removedImages": 1,
+        "verifiedPlatforms": [
+          "linux/amd64"
+        ]
+      }
+    ],
+    "volumeDeletion": false,
+    "otherProjectContainersChanged": false
+  },
+  "boundaries": [
+    "Local mock payment and SMS",
+    "Single-host recovery and current-data search rollback",
+    "Synthetic final environment; original offline business history was not migrated",
+    "No completed post-fix perf-3h-v1 capacity, latency or RSS acceptance",
+    "Private configs, accounts, keys, SQL, media and raw diagnostic logs remain local"
+  ],
+  "legacyCompatibility": {
+    "patch": "search7-compat-6fc7025.patch",
+    "patchSha256": "fac75c5073d2f24948f5be9a8866b227820f001e996f01d7606e4db07b396bfa",
+    "baseCommit": "1bcfc0556732b54d9eda1f4532da2eff5c25e2aa",
+    "verifiedLegacyCommit": "6fc702598e5ba19dff82c83a3ab906f6a5a77517",
+    "nativeTests": 2,
+    "status": "PASSED"
+  },
+  "postCleanupBrowser": {
+    "status": "PASSED",
+    "sourceCommit": "1bcfc0556732b54d9eda1f4532da2eff5c25e2aa",
+    "at": "2026-10-09T03:43:53.092Z",
+    "viewportWidth": 390,
+    "scripts": [
+      "/assets/index-qd_j1sLZ.js"
+    ],
+    "screenshot": "1bcfc05-teacher-after-cleanup.png",
+    "screenshotSha256": "9274c4a65c357f4eefbdbc73c5660adf1ac2f3db90b7e48c839949af0f3e9139",
+    "privateReportSha256": "9bf16a7e114125b4954d836719150dc9f03ba5f46cfb49db0b2421c25fd5fb42"
+  }
+}

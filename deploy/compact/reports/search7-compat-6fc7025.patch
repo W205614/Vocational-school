@@ -1,0 +1,786 @@
+diff --git a/pom.xml b/pom.xml
+index eb27e97..ea6020a 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -59 +59 @@
+-        <elasticsearch-java.version>9.5.0</elasticsearch-java.version>
++        <elasticsearch.version>7.17.29</elasticsearch.version>
+@@ -84 +84,4 @@
+-                <groupId>co.elastic.clients</groupId><artifactId>elasticsearch-java</artifactId><version>${elasticsearch-java.version}</version>
++                <groupId>org.elasticsearch.client</groupId><artifactId>elasticsearch-rest-high-level-client</artifactId><version>7.17.29</version>
++            </dependency>
++            <dependency><groupId>org.elasticsearch</groupId><artifactId>elasticsearch</artifactId><version>7.17.29</version></dependency>
++            <dependency><groupId>org.elasticsearch.client</groupId><artifactId>elasticsearch-rest-client</artifactId><version>7.17.29</version>
+diff --git a/tj-search/pom.xml b/tj-search/pom.xml
+index 6842d92..50deea4 100644
+--- a/tj-search/pom.xml
++++ b/tj-search/pom.xml
+@@ -65,2 +65,2 @@
+-            <groupId>co.elastic.clients</groupId>
+-            <artifactId>elasticsearch-java</artifactId>
++            <groupId>org.elasticsearch.client</groupId>
++            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+@@ -108 +108 @@
+-</project>
++</project>
+\ No newline at end of file
+diff --git a/tj-search/src/main/java/com/tianji/search/config/SearchConnectionConfiguration.java b/tj-search/src/main/java/com/tianji/search/config/SearchConnectionConfiguration.java
+index b313098..b8210fd 100644
+--- a/tj-search/src/main/java/com/tianji/search/config/SearchConnectionConfiguration.java
++++ b/tj-search/src/main/java/com/tianji/search/config/SearchConnectionConfiguration.java
+@@ -4,6 +4,2 @@ import org.springframework.beans.factory.annotation.Value;
+-import org.apache.hc.core5.util.Timeout;
+-import co.elastic.clients.transport.rest5_client.Rest5ClientTransport;
+-import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+-import co.elastic.clients.elasticsearch.ElasticsearchClient;
+-import co.elastic.clients.transport.rest5_client.low_level.Rest5Client;
+-import java.net.URI;
++import org.apache.http.HttpHost;
++import org.elasticsearch.client.*;
+@@ -11 +6,0 @@ import java.util.Arrays;
+-
+@@ -14,6 +9,4 @@ public class SearchConnectionConfiguration {
+- @Bean(destroyMethod="close") public Rest5ClientTransport searchTransport(@Value("${spring.elasticsearch.uris}") String uris) {
+-  var hosts=Arrays.stream(uris.split(",")).map(String::trim).map(URI::create).toArray(URI[]::new);
+-  var client=Rest5Client.builder(hosts)
+-   .setConnectionConfigCallback(c->c.setConnectTimeout(Timeout.ofMilliseconds(1500)).setSocketTimeout(Timeout.ofMilliseconds(5000)))
+-   .setRequestConfigCallback(c->c.setConnectionRequestTimeout(Timeout.ofMilliseconds(1000)).setResponseTimeout(Timeout.ofMilliseconds(5000))).build();
+-  return new Rest5ClientTransport(client,new JacksonJsonpMapper());
++ @Bean(destroyMethod="close") public RestHighLevelClient restHighLevelClient(@Value("${spring.elasticsearch.uris}") String uris){
++  var hosts=Arrays.stream(uris.split(",")).map(String::trim).map(HttpHost::create).toArray(HttpHost[]::new);
++  var client=RestClient.builder(hosts).setRequestConfigCallback(builder->builder.setConnectTimeout(1500).setSocketTimeout(5000).setConnectionRequestTimeout(1000));
++  return new RestHighLevelClient(client);
+@@ -21 +13,0 @@ public class SearchConnectionConfiguration {
+- @Bean public ElasticsearchClient elasticsearchClient(Rest5ClientTransport transport){return new ElasticsearchClient(transport);}
+diff --git a/tj-search/src/main/java/com/tianji/search/mq/SalesProjectionWorker.java b/tj-search/src/main/java/com/tianji/search/mq/SalesProjectionWorker.java
+index 42566c0..9027eb7 100644
+--- a/tj-search/src/main/java/com/tianji/search/mq/SalesProjectionWorker.java
++++ b/tj-search/src/main/java/com/tianji/search/mq/SalesProjectionWorker.java
+@@ -9,2 +9,3 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+-import co.elastic.clients.elasticsearch.ElasticsearchClient;
+-import com.tianji.search.repository.impl.CourseRepositoryImpl;
++import org.elasticsearch.client.*;
++import org.elasticsearch.action.update.UpdateRequest;
++import org.elasticsearch.script.*;
+@@ -15 +16 @@ public class SalesProjectionWorker {
+- private final JdbcTemplate jdbc;private final ElasticsearchClient es;
++ private final JdbcTemplate jdbc;private final RestHighLevelClient es;
+@@ -34,2 +35,2 @@ public class SalesProjectionWorker {
+-   var script=CourseRepositoryImpl.script("if (ctx._source.salesVersion == null || ctx._source.salesVersion <= params.version) {ctx._source.sold=params.sold;ctx._source.salesVersion=params.version;} else {ctx.op='noop';}",Map.of("version",row.get("version"),"sold",row.get("sold")));
+-   es.update(u->u.index(INDEX_NAME).id(row.get("course_id").toString()).script(script).retryOnConflict(3),Map.class);
++   var script=new Script(ScriptType.INLINE,"painless","if (ctx._source.salesVersion == null || ctx._source.salesVersion <= params.version) {ctx._source.sold=params.sold;ctx._source.salesVersion=params.version;} else {ctx.op='noop';}",Map.of("version",row.get("version"),"sold",row.get("sold")));
++   es.update(new UpdateRequest(INDEX_NAME,row.get("course_id").toString()).script(script).retryOnConflict(3),RequestOptions.DEFAULT);
+diff --git a/tj-search/src/main/java/com/tianji/search/repository/impl/CourseRepositoryImpl.java b/tj-search/src/main/java/com/tianji/search/repository/impl/CourseRepositoryImpl.java
+index 6c91721..df6689b 100644
+--- a/tj-search/src/main/java/com/tianji/search/repository/impl/CourseRepositoryImpl.java
++++ b/tj-search/src/main/java/com/tianji/search/repository/impl/CourseRepositoryImpl.java
+@@ -2,5 +2 @@ package com.tianji.search.repository.impl;
+-import co.elastic.clients.elasticsearch.ElasticsearchClient;
+-import co.elastic.clients.elasticsearch.core.*;
+-import co.elastic.clients.elasticsearch.core.bulk.*;
+-import co.elastic.clients.elasticsearch._types.Script;
+-import co.elastic.clients.json.JsonData;
++
+@@ -10,0 +7,16 @@ import com.tianji.common.utils.JsonUtils;
++import com.tianji.common.utils.StringUtils;
++import lombok.extern.slf4j.Slf4j;
++import org.elasticsearch.action.bulk.BulkItemResponse;
++import org.elasticsearch.action.bulk.BulkRequest;
++import org.elasticsearch.action.bulk.BulkResponse;
++import org.elasticsearch.action.delete.DeleteRequest;
++import org.elasticsearch.action.get.GetRequest;
++import org.elasticsearch.action.get.GetResponse;
++import org.elasticsearch.action.index.IndexRequest;
++import org.elasticsearch.action.update.UpdateRequest;
++import org.elasticsearch.client.RequestOptions;
++import org.elasticsearch.client.RestHighLevelClient;
++import org.elasticsearch.xcontent.XContentType;
++import org.elasticsearch.rest.RestStatus;
++import org.elasticsearch.script.Script;
++import org.elasticsearch.script.ScriptType;
+@@ -12 +24,7 @@ import org.springframework.stereotype.Component;
+-import java.util.*;
++
++import java.io.IOException;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Optional;
++
+@@ -14,0 +33 @@ import static com.tianji.search.constants.SearchErrorInfo.*;
++@Slf4j
+@@ -17,58 +36,165 @@ public class CourseRepositoryImpl implements CourseRepository {
+- private final ElasticsearchClient es;
+- public CourseRepositoryImpl(ElasticsearchClient es){this.es=es;}
+- private Map<String,Object> metadata(long id,Course course) {
+-  Map<String,Object> value=course==null?new HashMap<>():JsonUtils.toBean(JsonUtils.toJsonStr(course),Map.class);
+-  value.remove("sold");value.remove("salesVersion");
+-  if(course!=null && course.getPublishTime()!=null)value.put("publishTime",course.getPublishTime().toString());
+-  if(course!=null && course.getUpdateTime()!=null)value.put("updateTime",course.getUpdateTime().toString());
+-  value.put("id",Long.toString(id));value.put("available",course!=null);return value;
+- }
+- public static Script script(String source,Map<String,Object> parameters) {
+-  Map<String,JsonData> values=new HashMap<>();parameters.forEach((key,value)->values.put(key,JsonData.of(value)));
+-  return Script.of(s->s.lang("painless").source(v->v.scriptString(source)).params(values));
+- }
+- private Script metadataScript(long id,Course course,Long version) {
+-  String mutation="for(entry in params.metadata.entrySet()){ctx._source[entry.getKey()]=entry.getValue();} if(ctx._source.sold==null)ctx._source.sold=0;";
+-  if(version==null)return script(mutation,Map.of("metadata",metadata(id,course)));
+-  return script("if(ctx._source.metadataVersion==null || ctx._source.metadataVersion<=params.version){"+mutation+"ctx._source.metadataVersion=params.version;}else{ctx.op='noop';}",Map.of("metadata",metadata(id,course),"version",version));
+- }
+- private void metadataUpdate(long id,Course course,Long version) {
+-  try{es.update(u->u.index(INDEX_NAME).id(Long.toString(id)).script(metadataScript(id,course,version)).scriptedUpsert(true).upsert(Map.of()).retryOnConflict(3),Map.class);}
+-  catch(Exception error){throw new CommonException(SAVE_COURSE_ERROR,error);}
+- }
+- @Override public void projectMetadata(long id,Course course,long version){metadataUpdate(id,course,version);}
+- @Override public void save(Course course){metadataUpdate(course.getId(),course,null);}
+- @Override public void deleteById(Long id){try{es.delete(d->d.index(INDEX_NAME).id(id.toString()));}catch(Exception error){throw new CommonException(SAVE_COURSE_ERROR,error);}}
+- @Override public Optional<Course> findById(Long id) {
+-  try{var result=es.get(g->g.index(INDEX_NAME).id(id.toString()),Map.class);return result.found() && result.source()!=null?Optional.of(JsonUtils.toBean(JsonUtils.toJsonStr(result.source()),Course.class)):Optional.empty();}
+-  catch(Exception error){throw new CommonException(QUERY_COURSE_ERROR,error);}
+- }
+- @Override public void updateById(Long id,Object... sources) {
+-  if(sources.length%2!=0)throw new IllegalArgumentException("Field/value pairs required");
+-  Map<String,Object> document=new HashMap<>();for(int i=0;i<sources.length;i+=2)document.put(sources[i].toString(),sources[i+1]);
+-  try{es.update(u->u.index(INDEX_NAME).id(id.toString()).doc(document).retryOnConflict(3),Map.class);}
+-  catch(Exception error){throw new CommonException(UPDATE_COURSE_STATUS_ERROR,error);}
+- }
+- @Override public void increment(Long id,String field,int amount) {
+-  if(!Set.of("sold","sections","duration").contains(field))throw new IllegalArgumentException("Unsupported increment field");
+-  try{es.update(u->u.index(INDEX_NAME).id(id.toString()).script(script("ctx._source[params.field]+=params.count",Map.of("field",field,"count",amount))).retryOnConflict(3),Map.class);}
+-  catch(Exception error){throw new CommonException(UPDATE_COURSE_STATUS_ERROR,error);}
+- }
+- @Override public void incrementSold(List<Long> ids,int amount) {
+-  var script=script("if(ctx._source.sold==null)ctx._source.sold=0;ctx._source.sold+=params.count;",Map.of(INCREMENT_SOLD_SCRIPT_PARAM,amount));
+-  var operations=ids.stream().map(id->BulkOperation.of(o->o.update(u->u.index(INDEX_NAME).id(id.toString()).retryOnConflict(3).action(a->a.script(script))))).toList();
+-  bulk(operations,UPDATE_COURSE_STATUS_ERROR);
+- }
+- @Override public void saveAll(List<Course> courses) {
+-  var operations=courses.stream().map(course->BulkOperation.of(o->o.update(u->u.index(INDEX_NAME).id(course.getId().toString()).retryOnConflict(3).action(a->a.script(metadataScript(course.getId(),course,null)).scriptedUpsert(true).upsert(Map.of()))))).toList();
+-  bulk(operations,SAVE_COURSE_ERROR);
+- }
+- @Override public void deleteByIds(List<Long> ids){bulk(ids.stream().map(id->BulkOperation.of(o->o.delete(d->d.index(INDEX_NAME).id(id.toString())))).toList(),SAVE_COURSE_ERROR);}
+- private void bulk(List<BulkOperation> operations,String errorMessage) {
+-  if(operations.isEmpty())return;
+-  try {
+-   var response=es.bulk(b->b.operations(operations));
+-   var failed=response.items().stream().filter(item->item.error()!=null || item.status()>=400).map(item->item.id()+":"+(item.error()==null?item.status():item.error().reason())).toList();
+-   if(response.errors() || !failed.isEmpty())throw new CommonException("Elasticsearch bulk partially failed: "+failed);
+-  }catch(Exception error){throw new CommonException(errorMessage,error);}
+- }
++
++    private final RestHighLevelClient restHighLevelClient;
++
++    public CourseRepositoryImpl(RestHighLevelClient restHighLevelClient) {
++        this.restHighLevelClient = restHighLevelClient;
++    }
++
++    @Override
++    public void projectMetadata(long courseId,Course course,long version) {
++        Map<String,Object> metadata=course==null?new HashMap<>():JsonUtils.toBean(JsonUtils.toJsonStr(course),Map.class);
++        metadata.remove("sold");metadata.remove("salesVersion");
++        if(course!=null && course.getPublishTime()!=null) metadata.put("publishTime",course.getPublishTime().toString());
++        if(course!=null && course.getUpdateTime()!=null) metadata.put("updateTime",course.getUpdateTime().toString());
++        metadata.put("id",Long.toString(courseId));metadata.put("available",course!=null);
++        String source="if(ctx._source.metadataVersion==null || ctx._source.metadataVersion<=params.version) {for(entry in params.metadata.entrySet()){ctx._source[entry.getKey()]=entry.getValue();} ctx._source.metadataVersion=params.version; if(ctx._source.sold==null)ctx._source.sold=0;} else {ctx.op='noop';}";
++        try {restHighLevelClient.update(new UpdateRequest(INDEX_NAME,Long.toString(courseId)).script(new Script(ScriptType.INLINE,"painless",source,Map.of("version",version,"metadata",metadata))).scriptedUpsert(true).upsert(Map.of()).retryOnConflict(3),RequestOptions.DEFAULT);}
++        catch(Exception error){throw new CommonException(SAVE_COURSE_ERROR,error);}
++    }
++
++    @Override
++    public void save(Course course) {
++        UpdateRequest request = metadataUpdate(course);
++        try {
++            restHighLevelClient.update(request, RequestOptions.DEFAULT);
++        } catch (Exception e) {
++            throw new CommonException(SAVE_COURSE_ERROR, e);
++        }
++    }
++
++    @Override
++    public void deleteById(Long courseId) {
++        try {
++            restHighLevelClient.delete(new DeleteRequest(INDEX_NAME, courseId.toString()), RequestOptions.DEFAULT);
++        } catch (Exception e) {
++            throw new CommonException(SAVE_COURSE_ERROR, e);
++        }
++    }
++
++    @Override
++    public Optional<Course> findById(Long courseId) {
++        GetResponse response = null;
++        try {
++            response = restHighLevelClient.get(new GetRequest(INDEX_NAME, courseId.toString()), RequestOptions.DEFAULT);
++        } catch (IOException e) {
++            throw new CommonException(QUERY_COURSE_ERROR, e);
++        }
++        String source = response.getSourceAsString();
++        if (StringUtils.isBlank(source)) {
++            return Optional.empty();
++        }
++        return Optional.of(JsonUtils.toBean(source, Course.class));
++    }
++
++    @Override
++    public void updateById(Long courseId, Object... sources) {
++        // 1.创建Request
++        UpdateRequest request = new UpdateRequest(INDEX_NAME, courseId.toString());
++        // 2.更新字段
++        request.doc(sources);
++        // 3.发送请求
++        try {
++            restHighLevelClient.update(request, RequestOptions.DEFAULT);
++        } catch (Exception e) {
++            throw new CommonException(UPDATE_COURSE_STATUS_ERROR, e);
++        }
++    }
++
++    @Override
++    public void increment(Long courseId, String field, int amount) {
++        // 1.创建Request
++        UpdateRequest request = new UpdateRequest(INDEX_NAME, courseId.toString());
++        // 2.更新字段
++        String code = "ctx._source." + field + " += params.count";
++        Map<String, Object> params = new HashMap<>();
++        params.put("count", amount);
++        request.script(new Script(ScriptType.INLINE, Script.DEFAULT_SCRIPT_LANG, code, params));
++        // 3.发送请求
++        try {
++            restHighLevelClient.update(request, RequestOptions.DEFAULT);
++        } catch (Exception e) {
++            throw new CommonException(UPDATE_COURSE_STATUS_ERROR, e);
++        }
++    }
++
++    @Override
++    public void incrementSold(List<Long> courseIds, int amount) {
++        // 1.bulk请求
++        BulkRequest bulkRequest = new BulkRequest(INDEX_NAME);
++
++        for (Long courseId : courseIds) {
++            // 2.创建Request
++            UpdateRequest request = new UpdateRequest(INDEX_NAME, courseId.toString());
++            // 3.更新字段
++            Map<String, Object> params = new HashMap<>();
++            params.put(INCREMENT_SOLD_SCRIPT_PARAM, amount);
++            request.script(new Script(ScriptType.STORED, null, INCREMENT_SOLD_SCRIPT_ID, params));
++            bulkRequest.add(request);
++        }
++
++        // 4.发送请求
++        try {
++            checkBulk(restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT));
++        } catch (Exception e) {
++            throw new CommonException(UPDATE_COURSE_STATUS_ERROR, e);
++        }
++    }
++
++    @Override
++    public void saveAll(List<Course> list) {
++        // 1.创建BulkRequest
++        BulkRequest request = new BulkRequest(INDEX_NAME);
++        // 2.添加参数
++        for (Course course : list) {
++            request.add(metadataUpdate(course));
++        }
++        // 3.批处理
++        try {
++            BulkResponse bulkResponse = restHighLevelClient.bulk(request, RequestOptions.DEFAULT);
++            checkBulk(bulkResponse);
++            for (BulkItemResponse itemResponse : bulkResponse.getItems()) {
++                if (itemResponse.status().compareTo(RestStatus.BAD_REQUEST) >= 0) {
++                    log.error("批处理失败，id:{}, 原因:{}", itemResponse.getId(), itemResponse.getFailureMessage());
++                }
++            }
++        } catch (IOException e) {
++            throw new CommonException(SAVE_COURSE_ERROR, e);
++        }
++    }
++
++    @Override
++    public void deleteByIds(List<Long> courseIds) {
++        // 1.创建BulkRequest
++        BulkRequest request = new BulkRequest(INDEX_NAME);
++        // 2.添加参数
++        for (Long courseId : courseIds) {
++            request.add(new DeleteRequest(INDEX_NAME, courseId.toString()));
++        }
++        // 3.批处理
++        try {
++            BulkResponse bulkResponse = restHighLevelClient.bulk(request, RequestOptions.DEFAULT);
++            checkBulk(bulkResponse);
++            for (BulkItemResponse itemResponse : bulkResponse.getItems()) {
++                if (itemResponse.status().compareTo(RestStatus.BAD_REQUEST) >= 0) {
++                    log.error("批处理失败，id:{}, 原因:{}", itemResponse.getId(), itemResponse.getFailureMessage());
++                }
++            }
++        } catch (IOException e) {
++            throw new CommonException(SAVE_COURSE_ERROR, e);
++        }
++    }
++
++    private UpdateRequest metadataUpdate(Course course){
++        Map<String,Object> metadata=JsonUtils.toBean(JsonUtils.toJsonStr(course),Map.class);
++        metadata.remove("sold");metadata.remove("salesVersion");
++        if(course.getPublishTime()!=null) metadata.put("publishTime",course.getPublishTime().toString());
++        if(course.getUpdateTime()!=null) metadata.put("updateTime",course.getUpdateTime().toString());
++        metadata.put("available",true);
++        String source="for (entry in params.metadata.entrySet()) {ctx._source[entry.getKey()]=entry.getValue();} if(ctx._source.sold==null)ctx._source.sold=0;";
++        return new UpdateRequest(INDEX_NAME,course.getId().toString())
++            .script(new Script(ScriptType.INLINE,"painless",source,Map.of("metadata",metadata)))
++            .scriptedUpsert(true).upsert(Map.of()).retryOnConflict(3);
++    }
++    private void checkBulk(BulkResponse response) {
++        if(response.hasFailures()) throw new CommonException("Elasticsearch bulk partially failed: "+response.buildFailureMessage());
++    }
+diff --git a/tj-search/src/main/java/com/tianji/search/service/impl/SearchServiceImpl.java b/tj-search/src/main/java/com/tianji/search/service/impl/SearchServiceImpl.java
+index 5acc718..4329564 100644
+--- a/tj-search/src/main/java/com/tianji/search/service/impl/SearchServiceImpl.java
++++ b/tj-search/src/main/java/com/tianji/search/service/impl/SearchServiceImpl.java
+@@ -2,3 +2,2 @@ package com.tianji.search.service.impl;
+-import co.elastic.clients.elasticsearch.ElasticsearchClient;
+-import co.elastic.clients.elasticsearch.core.SearchRequest;
+-import co.elastic.clients.elasticsearch.core.SearchResponse;
++
++import com.tianji.api.cache.CategoryCache;
+@@ -6,0 +6 @@ import com.tianji.api.dto.user.UserDTO;
++import com.tianji.common.constants.ErrorInfo;
+@@ -16 +16,15 @@ import com.tianji.search.repository.CourseRepository;
+-import com.tianji.search.service.*;
++import com.tianji.search.service.IInterestsService;
++import com.tianji.search.service.ISearchService;
++import org.apache.commons.lang3.StringUtils;
++import org.elasticsearch.action.search.SearchRequest;
++import org.elasticsearch.action.search.SearchResponse;
++import org.elasticsearch.client.RequestOptions;
++import org.elasticsearch.client.RestHighLevelClient;
++import org.elasticsearch.index.query.BoolQueryBuilder;
++import org.elasticsearch.index.query.QueryBuilders;
++import org.elasticsearch.index.query.RangeQueryBuilder;
++import org.elasticsearch.search.SearchHit;
++import org.elasticsearch.search.SearchHits;
++import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
++import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
++import org.elasticsearch.search.sort.SortOrder;
+@@ -19 +33,3 @@ import org.springframework.stereotype.Service;
+-import java.io.StringReader;
++
++import java.io.IOException;
++import java.time.LocalDateTime;
+@@ -22,0 +39,2 @@ import java.util.stream.Collectors;
++import static com.tianji.search.repository.CourseRepository.PUBLISH_TIME;
++
+@@ -25,65 +43,281 @@ public class SearchServiceImpl implements ISearchService {
+- @Autowired private ElasticsearchClient restClient;
+- @Autowired private IInterestsService interestsService;
+- @Autowired private UserClient userClient;
+- @Autowired private InterestsProperties interestsProperties;
+- private static Map<String,Object> term(String field,Object value){return Map.of("term",Map.of(field,value));}
+- private SearchResponse<Map> search(Map<String,Object> body) {
+-  try{return restClient.search(SearchRequest.of(b->b.index(CourseRepository.INDEX_NAME).withJson(new StringReader(JsonUtils.toJsonStr(body)))),Map.class);}
+-  catch(Exception error){throw new CommonException(SearchErrorInfo.QUERY_COURSE_ERROR,error);}
+- }
+- private Map<String,Object> available(List<Map<String,Object>> filters,Object must) {
+-  var clauses=new ArrayList<Map<String,Object>>();clauses.add(term("available",true));clauses.addAll(filters);
+-  Map<String,Object> bool=new LinkedHashMap<>();bool.put("filter",clauses);if(must!=null)bool.put("must",must);
+-  return Map.of("bool",bool);
+- }
+- @Override public List<CourseVO> queryCourseByCateId(Long id){return top(List.of(id),null,CourseRepository.PUBLISH_TIME,false,10);}
+- @Override public List<CourseVO> queryBestTopN(){return recommend(false,CourseRepository.SOLD);}
+- @Override public List<CourseVO> queryNewTopN(){return recommend(false,CourseRepository.PUBLISH_TIME);}
+- @Override public List<CourseVO> queryFreeTopN(){return recommend(true,CourseRepository.SOLD);}
+- private List<CourseVO> recommend(boolean free,String sort) {
+-  var categories=UserContext.getUser()==null?null:interestsService.queryMyInterestsIds();
+-  return top(categories,free,sort,false,interestsProperties.getTopNumber());
+- }
+- private List<CourseVO> top(List<Long> categories,Boolean free,String sort,boolean ascending,int count) {
+-  var filters=new ArrayList<Map<String,Object>>();if(free!=null)filters.add(term(CourseRepository.FREE,free));
+-  if(categories!=null && !categories.isEmpty())filters.add(Map.of("terms",Map.of(CourseRepository.CATEGORY_ID_LV2,categories)));
+-  var response=search(Map.of("query",available(filters,null),"size",count,"sort",List.of(Map.of(sort,ascending?"asc":"desc"))));
+-  var courses=response.hits().hits().stream().filter(hit->hit.source()!=null).map(hit->JsonUtils.toBean(JsonUtils.toJsonStr(hit.source()),Course.class)).toList();
+-  return withTeachers(courses);
+- }
+- private List<CourseVO> withTeachers(List<Course> courses) {
+-  if(courses.isEmpty())return List.of();
+-  Set<Long> ids=courses.stream().map(Course::getTeacher).filter(Objects::nonNull).filter(id->id!=0).collect(Collectors.toSet());
+-  Map<Long,String> names=ids.isEmpty()?Map.of():userClient.queryUserByIds(ids).stream().collect(Collectors.toMap(UserDTO::getId,UserDTO::getName,(a,b)->a));
+-  var result=new ArrayList<CourseVO>();for(var course:courses){var view=BeanUtils.toBean(course,CourseVO.class);view.setTeacher(course.getTeacher()==null?"未知":names.getOrDefault(course.getTeacher(),"未知"));result.add(view);}return result;
+- }
+- @Override public PageDTO<CourseVO> queryCoursesForPortal(CoursePageQuery query) {
+-  query.validate();query.validateSort(Set.of("price","sold","publishTime"));
+-  var filters=new ArrayList<Map<String,Object>>();
+-  if(query.getCategoryIdLv1()!=null)filters.add(term(CourseRepository.CATEGORY_ID_LV1,query.getCategoryIdLv1()));
+-  if(query.getCategoryIdLv2()!=null)filters.add(term(CourseRepository.CATEGORY_ID_LV2,query.getCategoryIdLv2()));
+-  if(query.getCategoryIdLv3()!=null)filters.add(term(CourseRepository.CATEGORY_ID_LV3,query.getCategoryIdLv3()));
+-  if(query.getFree()!=null)filters.add(term(CourseRepository.FREE,query.getFree()));
+-  if(query.getType()!=null)filters.add(term(CourseRepository.TYPE,query.getType()));
+-  if(query.getBeginTime()!=null || query.getEndTime()!=null) {
+-   Map<String,Object> range=new HashMap<>();if(query.getBeginTime()!=null)range.put("gte",query.getBeginTime().toString());if(query.getEndTime()!=null)range.put("lte",query.getEndTime().toString());
+-   filters.add(Map.of("range",Map.of(CourseRepository.UPDATE_TIME,range)));
+-  }
+-  Object must=query.getKeyword()==null || query.getKeyword().isBlank()?Map.of("match_all",Map.of()):Map.of("match_phrase",Map.of(CourseRepository.DEFAULT_QUERY_NAME,query.getKeyword()));
+-  Map<String,Object> body=new LinkedHashMap<>();body.put("query",available(filters,must));body.put("from",query.from());body.put("size",query.getPageSize());body.put("track_total_hits",true);
+-  body.put("highlight",Map.of("encoder","html","fields",Map.of(CourseRepository.DEFAULT_QUERY_NAME,Map.of())));
+-  body.put("_source",Map.of("excludes",CourseVO.EXCLUDE_FIELDS));
+-  if(query.getSortBy()!=null && !query.getSortBy().isBlank())body.put("sort",List.of(Map.of(query.getSortBy(),query.getIsAsc()?"asc":"desc")));
+-  var response=search(body);long total=response.hits().total()==null?0:response.hits().total().value();
+-  var courses=new ArrayList<Course>();
+-  for(var hit:response.hits().hits()) {
+-   if(hit.source()==null)continue;
+-   var course=JsonUtils.toBean(JsonUtils.toJsonStr(hit.source()),Course.class);
+-   var highlight=hit.highlight().get(CourseRepository.DEFAULT_QUERY_NAME);if(highlight!=null && !highlight.isEmpty())course.setName(String.join("",highlight));courses.add(course);
+-  }
+-  return new PageDTO<>(total,(total+query.getPageSize()-1)/query.getPageSize(),withTeachers(courses));
+- }
+- @Override public List<Long> queryCoursesIdByName(String keyword) {
+-  var response=search(Map.of("query",available(List.of(),Map.of("match_phrase",Map.of(CourseRepository.DEFAULT_QUERY_NAME,keyword))),"_source",List.of("id")));
+-  return response.hits().hits().stream().map(hit->Long.valueOf(hit.id())).toList();
+- }
++
++    @Autowired
++    private RestHighLevelClient restClient;
++
++    @Autowired
++    private IInterestsService interestsService;
++
++    @Autowired
++    private UserClient userClient;
++
++    @Autowired
++    private CategoryCache categoryCache;
++
++    @Autowired
++    private InterestsProperties interestsProperties;
++
++    @Override
++    public List<CourseVO> queryCourseByCateId(Long cateLv2Id) {
++        return queryTopNByCategoryIdLv2sAndFree(
++                CollUtils.singletonList(cateLv2Id), null, PUBLISH_TIME, false, 10);
++    }
++
++    @Override
++    public List<CourseVO> queryBestTopN() {
++        // 1.获取当前用户
++        return queryTopNCourseOnMarketByFree(false, CourseRepository.SOLD);
++    }
++
++    @Override
++    public List<CourseVO> queryNewTopN() {
++        return queryTopNCourseOnMarketByFree(false, PUBLISH_TIME);
++    }
++
++    @Override
++    public List<CourseVO> queryFreeTopN() {
++        return queryTopNCourseOnMarketByFree(true, CourseRepository.SOLD);
++    }
++
++    private List<CourseVO> queryTopNCourseOnMarketByFree(boolean isFree, String sortBy) {
++        // 1.获取当前用户
++        Long id = UserContext.getUser();
++        // 2.查询课程
++        List<CourseVO> courses = null;
++        if (id == null) {
++            // 3.未登录，直接查询报名人数最多的
++            courses = queryTopNByCategoryIdLv2sAndFree(
++                    null, isFree, sortBy, false, interestsProperties.getTopNumber());
++        } else {
++            // 4.已登录，根据兴趣爱好查询
++            List<Long> categoryIds = interestsService.queryMyInterestsIds();
++            if (CollUtils.isEmpty(categoryIds)) {
++                // 4.1.没有兴趣爱好，直接查询报名人数最多的
++                courses = queryTopNByCategoryIdLv2sAndFree(
++                        null, isFree, sortBy, false, interestsProperties.getTopNumber());
++            } else {
++                // 4.2.有爱好.查询爱好课程中报名人数最多的
++                courses = queryTopNByCategoryIdLv2sAndFree(
++                        categoryIds, isFree, sortBy, false, interestsProperties.getTopNumber());
++            }
++        }
++        return courses;
++    }
++
++    private List<CourseVO> queryTopNByCategoryIdLv2sAndFree(
++            List<Long> categoryIds, Boolean isFree, String sortBy, boolean isASC, int n) {
++        // 1.准备Request
++        SearchRequest request = new SearchRequest(CourseRepository.INDEX_NAME);
++        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("available",true));
++        // 1.1.是否免费
++        if(isFree != null) {
++            queryBuilder.filter(QueryBuilders.termQuery(CourseRepository.FREE, isFree));
++        }
++        // 1.2.分类id
++        if (categoryIds != null) {
++            if (categoryIds.size() == 1) {
++                queryBuilder.filter(QueryBuilders.termQuery(CourseRepository.CATEGORY_ID_LV2, categoryIds.get(0)));
++            } else {
++                queryBuilder.filter(QueryBuilders.termsQuery(CourseRepository.CATEGORY_ID_LV2, categoryIds));
++            }
++        }
++        request.source().query(queryBuilder);
++        // 1.3.TopN
++        request.source().size(n).sort(sortBy, isASC ? SortOrder.ASC : SortOrder.DESC);
++        // 2.发送请求
++        SearchResponse response = null;
++        try {
++            response = restClient.search(request, RequestOptions.DEFAULT);
++        } catch (IOException e) {
++            throw new CommonException(SearchErrorInfo.QUERY_COURSE_ERROR, e);
++        }
++        // 3.解析
++        SearchHits searchHits = response.getHits();
++        SearchHit[] hits = searchHits.getHits();
++        if (hits == null || hits.length == 0) {
++            return CollUtils.emptyList();
++        }
++        List<CourseVO> courses = new ArrayList<>(hits.length);
++        Set<Long> teacherIds = new HashSet<>(hits.length);
++        for (SearchHit hit : hits) {
++            // 3.1.数据转换
++            CourseVO vo = JsonUtils.toBean(hit.getSourceAsString(), CourseVO.class);
++            // 3.2.获取分类id
++            teacherIds.add(Long.valueOf(vo.getTeacher()));
++            // 3.3.保存
++            courses.add(vo);
++        }
++        teacherIds.remove(0L);
++        if (teacherIds.size() == 0) {
++            return courses;
++        }
++        // 4.查询教师
++        List<UserDTO> teachers = userClient.queryUserByIds(teacherIds);
++        AssertUtils.isNotEmpty(teachers, SearchErrorInfo.TEACHER_NOT_EXISTS);
++        Map<String, String> tMap = teachers.stream()
++                .collect(Collectors.toMap(t -> t.getId().toString(), UserDTO::getName));
++        for (CourseVO c : courses) {
++            c.setTeacher(tMap.getOrDefault(c.getTeacher(), "匿名"));
++        }
++        return courses;
++    }
++
++    @Override
++    public PageDTO<CourseVO> queryCoursesForPortal(CoursePageQuery query) {
++        // 1.搜索数据
++        SearchResponse response = searchForResponse(query, CourseVO.EXCLUDE_FIELDS);
++        // 2.解析响应
++        PageDTO<Course> result = handleSearchResponse(response, query.getPageSize());
++        // 3.处理VO
++        List<Course> list = result.getList();
++        if (CollUtils.isEmpty(list)) {
++            return PageDTO.empty(result.getTotal(), result.getPages());
++        }
++        // 3.1.查询教师信息
++        List<Long> teacherIds = list.stream().map(Course::getTeacher).collect(Collectors.toList());
++        List<UserDTO> teachers = userClient.queryUserByIds(teacherIds);
++        AssertUtils.isNotEmpty(teachers, SearchErrorInfo.TEACHER_NOT_EXISTS);
++        Map<Long, String> teacherMap = teachers.stream()
++                .collect(Collectors.toMap(UserDTO::getId, UserDTO::getName));
++        // 3.2.转换VO
++        List<CourseVO> vos = new ArrayList<>(list.size());
++        for (Course c : list) {
++            CourseVO vo = BeanUtils.toBean(c, CourseVO.class);
++            vo.setTeacher(teacherMap.getOrDefault(c.getTeacher(), "未知"));
++            vos.add(vo);
++        }
++        return new PageDTO<>(result.getTotal(), result.getPages(), vos);
++    }
++
++    @Override
++    public List<Long> queryCoursesIdByName(String keyword) {
++        // 1.创建Request
++        SearchRequest request = new SearchRequest(CourseRepository.INDEX_NAME);
++        // 2.构建DSL
++        request.source()
++                .query(QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("available",true)).must(QueryBuilders.matchPhraseQuery(CourseRepository.DEFAULT_QUERY_NAME, keyword)))
++                .fetchSource(new String[]{"id"}, null);
++        // 3.查询
++        SearchResponse response;
++        try {
++            response = restClient.search(request, RequestOptions.DEFAULT);
++        } catch (IOException e) {
++            throw new CommonException(SearchErrorInfo.QUERY_COURSE_ERROR, e);
++        }
++        // 4.解析
++        SearchHits searchHits = response.getHits();
++        // 4.1.获取hits
++        SearchHit[] hits = searchHits.getHits();
++        if (hits.length == 0) {
++            return CollUtils.emptyList();
++        }
++        // 4.2.获取id
++        return Arrays.stream(hits)
++                .map(SearchHit::getId)
++                .map(Long::valueOf)
++                .collect(Collectors.toList());
++    }
++
++
++    private SearchResponse searchForResponse(CoursePageQuery query, String[] excludeFields) {
++        // 1.创建Request
++        SearchRequest request = new SearchRequest(CourseRepository.INDEX_NAME);
++        // 2.构建DSL
++        // 2.1.构建query
++        buildBasicQuery(request, query);
++        // 2.2.排序
++        query.validate();
++        query.validateSort(java.util.Set.of("price","sold","publishTime"));
++        String sortBy = query.getSortBy();
++        if (StringUtils.isNotBlank(sortBy)) {
++            request.source().sort(sortBy, query.getIsAsc() ? SortOrder.ASC : SortOrder.DESC);
++        }
++        // 2.3.分页
++        request.source().from(query.from()).size(query.getPageSize()).trackTotalHits(true);
++        // 2.4.高亮
++        request.source().highlighter(new HighlightBuilder().field(CourseRepository.DEFAULT_QUERY_NAME).encoder("html"));
++        // 2.5.source处理
++        request.source().fetchSource(null, excludeFields);
++        // 3.发送请求
++        SearchResponse response = null;
++        try {
++            response = restClient.search(request, RequestOptions.DEFAULT);
++        } catch (IOException e) {
++            throw new CommonException(ErrorInfo.Msg.SERVER_INTER_ERROR, e);
++        }
++        return response;
++    }
++
++    private void buildBasicQuery(SearchRequest request, CoursePageQuery query) {
++        // 1.准备bool查询
++        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery().filter(QueryBuilders.termQuery("available",true));
++        // 2.关键字搜索
++        String keyword = query.getKeyword();
++        if (StringUtils.isBlank(keyword)) {
++            queryBuilder.must(QueryBuilders.matchAllQuery());
++        } else {
++            queryBuilder.must(QueryBuilders.matchPhraseQuery(CourseRepository.DEFAULT_QUERY_NAME, keyword));
++        }
++        // 3.其它条件
++        if (query.getCategoryIdLv1() != null) {
++            queryBuilder.filter(QueryBuilders.termQuery(CourseRepository.CATEGORY_ID_LV1, query.getCategoryIdLv1()));
++        }
++        if (query.getCategoryIdLv2() != null) {
++            queryBuilder.filter(QueryBuilders.termQuery(CourseRepository.CATEGORY_ID_LV2, query.getCategoryIdLv2()));
++        }
++        if (query.getCategoryIdLv3() != null) {
++            queryBuilder.filter(QueryBuilders.termQuery(CourseRepository.CATEGORY_ID_LV3, query.getCategoryIdLv3()));
++        }
++        if (query.getFree() != null) {
++            queryBuilder.filter(QueryBuilders.termQuery(CourseRepository.FREE, query.getFree()));
++        }
++        if (query.getType() != null) {
++            queryBuilder.filter(QueryBuilders.termQuery(CourseRepository.TYPE, query.getType()));
++        }
++        LocalDateTime beginTime = query.getBeginTime();
++        LocalDateTime endTime = query.getEndTime();
++        if(beginTime != null || endTime != null) {
++            RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(CourseRepository.UPDATE_TIME);
++            if (beginTime != null) {
++                rangeQuery.gte(beginTime);
++            }
++            if (endTime != null) {
++                rangeQuery.lte(endTime);
++            }
++            queryBuilder.filter(rangeQuery);
++        }
++        // 4.写入request
++        request.source().query(queryBuilder);
++    }
++
++    private PageDTO<Course> handleSearchResponse(SearchResponse response, int pageSize) {
++        SearchHits searchHits = response.getHits();
++        // 1.总条数
++        long total = searchHits.getTotalHits().value;
++        // 2.总页数
++        long totalPages = (total + pageSize - 1) / pageSize;
++        // 3.获取命中的数据
++        SearchHit[] hits = searchHits.getHits();
++        if (hits.length <= 0) {
++            return new PageDTO<>(total, totalPages, CollUtils.emptyList());
++        }
++        // 4.遍历
++        List<Course> list = new ArrayList<>(hits.length);
++        for (SearchHit hit : hits) {
++            // 5.获取某一条source
++            String jsonSource = hit.getSourceAsString();
++            // 6.反序列化
++            Course course = JsonUtils.toBean(jsonSource, Course.class);
++            // 7.处理高亮
++            Map<String, HighlightField> highlightFields = hit.getHighlightFields();
++            if (CollUtils.isNotEmpty(highlightFields)) {
++                // 7.1.获取高亮结果
++                HighlightField field = highlightFields.get(CourseRepository.DEFAULT_QUERY_NAME);
++                Object[] fragments = field.getFragments();
++                String value = StringUtils.join(fragments);
++                // 7.2.覆盖非高亮结果
++                course.setName(value);
++            }
++            list.add(course);
++        }
++        return new PageDTO<>(total, totalPages, list);
++    }
+diff --git a/tj-search/src/test/java/com/tianji/search/reliability/CourseRepositoryBulkTest.java b/tj-search/src/test/java/com/tianji/search/reliability/CourseRepositoryBulkTest.java
+index 911214d..acccecf 100644
+--- a/tj-search/src/test/java/com/tianji/search/reliability/CourseRepositoryBulkTest.java
++++ b/tj-search/src/test/java/com/tianji/search/reliability/CourseRepositoryBulkTest.java
+@@ -4 +3,0 @@ import com.tianji.search.domain.po.Course;
+-import com.tianji.search.config.SearchConnectionConfiguration;
+@@ -6 +4,0 @@ import com.tianji.common.exceptions.CommonException;
+-import co.elastic.clients.elasticsearch.ElasticsearchClient;
+@@ -9 +7,5 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+-import java.util.*;
++import org.apache.http.HttpHost;
++import org.elasticsearch.client.*;
++import org.elasticsearch.action.get.GetRequest;
++import org.elasticsearch.action.delete.DeleteRequest;
++import java.util.List;
+@@ -13,3 +15,3 @@ class CourseRepositoryBulkTest {
+- @Test void partialBulkFailureRetryAndOutOfOrderVersionsPreserveSales()throws Exception {
+-  try(var transport=new SearchConnectionConfiguration().searchTransport(System.getenv("ACCEPTANCE_ES_URL"))) {
+-   var client=new ElasticsearchClient(transport);var repository=new CourseRepositoryImpl(client);
++ @Test void httpSuccessWithOneFailedBulkItemIsRejectedAndRepairedRetryKeepsSales() throws Exception {
++  try(var client=new RestHighLevelClient(RestClient.builder(HttpHost.create(System.getenv("ACCEPTANCE_ES_URL"))))) {
++   var repository=new CourseRepositoryImpl(client);
+@@ -20,2 +22,4 @@ class CourseRepositoryBulkTest {
+-    assertThrows(CommonException.class,()->repository.saveAll(List.of(good,bad)));assertTrue(repository.findById(id).isPresent());assertEquals(0,repository.findById(id).orElseThrow().getSold());
+-    repository.updateById(id,"sold",17,"salesVersion",2);
++    assertThrows(CommonException.class,()->repository.saveAll(List.of(good,bad)));
++    var existing=client.get(new GetRequest("course",Long.toString(id)),RequestOptions.DEFAULT);
++    assertTrue(existing.isExists());
++    assertEquals(0,((Number)existing.getSourceAsMap().get("sold")).intValue());
+@@ -23,12 +27,9 @@ class CourseRepositoryBulkTest {
+-    assertTrue(repository.findById(id+1).isPresent());assertEquals(17,repository.findById(id).orElseThrow().getSold());
+-    repository.projectMetadata(id,good,2);repository.projectMetadata(id,null,3);repository.projectMetadata(id,good,2);
+-    assertEquals(false,client.get(g->g.index("course").id(Long.toString(id)),Map.class).source().get("available"));
+-    repository.projectMetadata(id,good,4);assertEquals(true,client.get(g->g.index("course").id(Long.toString(id)),Map.class).source().get("available"));
+-    repository.incrementSold(List.of(id,id+1),2);
+-    assertEquals(19,repository.findById(id).orElseThrow().getSold());assertEquals(2,repository.findById(id+1).orElseThrow().getSold());
+-    repository.increment(id,"sold",-2);assertEquals(17,repository.findById(id).orElseThrow().getSold());
+-    String sales="if(ctx._source.salesVersion==null || ctx._source.salesVersion<=params.version){ctx._source.sold=params.sold;ctx._source.salesVersion=params.version;}else{ctx.op='noop';}";
+-    client.update(u->u.index("course").id(Long.toString(id)).script(CourseRepositoryImpl.script(sales,Map.of("version",3,"sold",19))),Map.class);
+-    client.update(u->u.index("course").id(Long.toString(id)).script(CourseRepositoryImpl.script(sales,Map.of("version",2,"sold",99))),Map.class);
+-    assertEquals(19,repository.findById(id).orElseThrow().getSold());
+-   }finally{repository.deleteByIds(List.of(id,id+1));}
++    assertTrue(client.get(new GetRequest("course",Long.toString(id+1)),RequestOptions.DEFAULT).isExists());
++    assertEquals(0,((Number)client.get(new GetRequest("course",Long.toString(id)),RequestOptions.DEFAULT).getSourceAsMap().get("sold")).intValue());
++    repository.projectMetadata(id,good,2);
++    repository.projectMetadata(id,null,3);
++    repository.projectMetadata(id,good,2);
++    assertEquals(false,client.get(new GetRequest("course",Long.toString(id)),RequestOptions.DEFAULT).getSourceAsMap().get("available"));
++    repository.projectMetadata(id,good,4);
++    assertEquals(true,client.get(new GetRequest("course",Long.toString(id)),RequestOptions.DEFAULT).getSourceAsMap().get("available"));
++   } finally {client.delete(new DeleteRequest("course",Long.toString(id)),RequestOptions.DEFAULT);client.delete(new DeleteRequest("course",Long.toString(id+1)),RequestOptions.DEFAULT);}
+diff --git a/tj-search/src/test/java/com/tianji/search/reliability/SearchCompatibilityTest.java b/tj-search/src/test/java/com/tianji/search/reliability/SearchCompatibilityTest.java
+index 8f3008e..56e8869 100644
+--- a/tj-search/src/test/java/com/tianji/search/reliability/SearchCompatibilityTest.java
++++ b/tj-search/src/test/java/com/tianji/search/reliability/SearchCompatibilityTest.java
+@@ -2 +2,2 @@ package com.tianji.search.reliability;
+-import co.elastic.clients.elasticsearch.ElasticsearchClient;
++import org.elasticsearch.client.RequestOptions;
++import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+@@ -23,2 +24,2 @@ class SearchCompatibilityTest {
+-  try(var transport=new SearchConnectionConfiguration().searchTransport(System.getenv("ACCEPTANCE_ES_URL"))) {
+-   var client=new ElasticsearchClient(transport);var repository=new CourseRepositoryImpl(client);var service=new SearchServiceImpl();
++  try(var client=new SearchConnectionConfiguration().restHighLevelClient(System.getenv("ACCEPTANCE_ES_URL"))) {
++   var repository=new CourseRepositoryImpl(client);var service=new SearchServiceImpl();
+@@ -39 +40 @@ class SearchCompatibilityTest {
+-    repository.projectMetadata(id+3,null,1);client.indices().refresh(r->r.index("course"));
++    repository.projectMetadata(id+3,null,1);client.indices().refresh(new RefreshRequest("course"),RequestOptions.DEFAULT);
