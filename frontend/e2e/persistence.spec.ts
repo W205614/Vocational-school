@@ -18,6 +18,41 @@ test('student favorites and access errors remain correct after refresh',async({p
  const token=await page.evaluate(()=>sessionStorage.getItem('school-token'));const forbidden=await page.request.get('/api/v2/admin/payment-conflicts',{headers:{Authorization:'Bearer '+token,'user-info':accounts.admin.id,'user-role':'1'}});expect(forbidden.status()).toBe(403);
  await api(page,'DELETE','/favorites/1');await api(page,'DELETE','/favorites/1');await page.reload();await expect(page.getByText('暂无记录',{exact:true})).toBeVisible();
 });
+test('claimed coupons appear in the default own list and survive refresh',async({page,browser},info)=>{
+ test.skip(info.project.name!=='student');
+ const adminContext=await browser.newContext({baseURL:process.env.TJ_ADMIN_URL||'http://127.0.0.1:23501'}),admin=await adminContext.newPage();
+ const name='Coupon '+crypto.randomUUID().slice(0,8);let coupon:string|undefined;
+ try{
+  await login(admin,'admin','/coupons');
+  await api(admin,'POST','/admin/promotion/coupons',{name,specific:false,discountType:3,thresholdAmount:0,discountValue:10,maxDiscountAmount:10,totalNum:2,userLimit:1,obtainWay:1},crypto.randomUUID());
+  const created=await api(admin,'GET','/admin/promotion/coupons/page?name='+encodeURIComponent(name)+'&pageNo=1&pageSize=20');
+  expect(created.list).toHaveLength(1);coupon=String(created.list[0].id);
+  await api(admin,'PUT','/admin/promotion/coupons/'+coupon+'/issue',{id:coupon,issueEndTime:new Date(Date.now()+86400000).toISOString().slice(0,19),termDays:7},crypto.randomUUID());
+  await login(page,'student','/coupons');
+  await page.locator('.el-table__row').filter({hasText:name}).getByRole('button',{name:'领取',exact:true}).click();
+  await expect(page.getByRole('alert').filter({hasText:'领取成功'})).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(0);
+  const listing=page.waitForResponse(r=>r.url().includes('/user-coupons/page?'));
+  await page.getByRole('button',{name:'我的优惠券',exact:true}).click();
+  const response=await listing;expect(response.ok()).toBeTruthy();expect(new URL(response.url()).searchParams.has('status')).toBe(false);
+  expect((await response.json()).data.list.some((row:any)=>String(row.id)===coupon)).toBe(true);
+  await expect(page.locator('.el-table__row').filter({hasText:name})).toBeVisible();
+  const availableAfterReload=page.waitForResponse(r=>r.url().includes('/services/promotion/coupons/list'));
+  await page.reload();expect((await availableAfterReload).ok()).toBeTruthy();await expect(page.getByRole('status')).toHaveCount(0);
+  await page.getByRole('button',{name:'我的优惠券',exact:true}).click();
+  await expect(page.locator('.el-table__row').filter({hasText:name})).toBeVisible();
+  const unused=await api(page,'GET','/services/promotion/user-coupons/page?status=1&pageNo=1&pageSize=100');
+  expect(unused.list.some((row:any)=>String(row.id)===coupon)).toBe(true);
+  const used=await api(page,'GET','/services/promotion/user-coupons/page?status=2&pageNo=1&pageSize=100');
+  expect(used.list.some((row:any)=>String(row.id)===coupon)).toBe(false);
+  const other=await api(admin,'GET','/services/promotion/user-coupons/page?pageNo=1&pageSize=100');
+  expect(other.list.some((row:any)=>String(row.id)===coupon)).toBe(false);
+ }finally{
+  if(coupon)await api(admin,'PUT','/admin/promotion/coupons/'+coupon+'/pause',undefined,crypto.randomUUID());
+  await adminContext.close();
+ }
+});
+
 test('admin reliability pages render real persistent task states',async({page},info)=>{
  test.skip(info.project.name!=='admin');await login(page,'admin','/reliability');const loaded=page.waitForResponse(r=>r.url().endsWith('/admin/operation-failures/trade'));await page.getByRole('button',{name:'查询服务',exact:true}).click();expect((await loaded).status()).toBe(200);await expect(page.getByRole('heading',{name:'事件与业务冲突处理'})).toBeVisible();await expect(page.locator('.el-alert--error')).toHaveCount(0);await page.reload();await expect(page.getByRole('heading',{name:'事件与业务冲突处理'})).toBeVisible();
 });

@@ -1,0 +1,79 @@
+{
+  "status": "PASSED",
+  "validatedAt": "2026-10-09T20:36:16.724635+08:00",
+  "acceptanceScope": "coupon-query-fix",
+  "performanceValidation": "NOT_RUN",
+  "baseImageSourceCommit": "7aec0a216ce603e806ee93f14bca195bd8065b00",
+  "sourceFileSha256": {
+    "tj-promotion/src/main/java/com/tianji/promotion/service/impl/UserCouponServiceImpl.java": "7917a0b696061deaed53171d65a851b8dc21208a43ad362057c01a95e589111b",
+    "tj-promotion/src/main/java/com/tianji/promotion/domain/query/UserCouponQuery.java": "2f709af1e0c0fa8e60c939e2a7e077c68b18fdf313e293756e78769c79535907",
+    "frontend/e2e/persistence.spec.ts": "672d251100c884c55cf0a83c6a0e77808da64d034f4a5226d9e809e4836a1e5b"
+  },
+  "regression": {
+    "beforeFix": {
+      "failed": 1,
+      "failure": "Claimed coupon absent from default own-list response"
+    },
+    "afterFix": {
+      "status": "PASSED",
+      "passed": 32,
+      "failed": 0,
+      "skipped": 20
+    },
+    "coverage": [
+      "default list after UI claim",
+      "list after reload",
+      "explicit unused/used filter",
+      "another account cannot see the claimed coupon"
+    ]
+  },
+  "backend": {
+    "status": "PASSED",
+    "tests": 134,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "security": {
+    "status": "PASSED",
+    "assertions": 26
+  },
+  "audit": {
+    "status": "PASSED",
+    "scopes": 3
+  },
+  "supplementary": {
+    "status": "PASSED",
+    "assertions": 17,
+    "auxiliaryAssertions": 9
+  },
+  "frontendTypecheck": "PASSED",
+  "accessPolicyCheck": "PASSED",
+  "existingRecords": {
+    "status": "PASSED",
+    "tables": 18,
+    "recordIdentities": 1617,
+    "mediaHashes": 47,
+    "scope": "Identity/media snapshot taken before this update; mutable business state is not asserted identical"
+  },
+  "deployment": {
+    "mode": "copy-jar-and-restart-existing-container",
+    "updatedService": "app-commerce",
+    "existingContainers": 11,
+    "containerIdsUnchanged": true,
+    "allDockerContainerIdsUnchanged": true,
+    "baseImagesUnchanged": true,
+    "mountsUnchanged": true,
+    "allHealthy": true,
+    "originalJarSha256": "076521b1ba08b6bfbcdd296de0454103324c2670209916eaee97190dc7e38245",
+    "updatedJarSha256": "529e46e114e11e2d395a548c0b5809a34989084a97850858be5c086c6a4dad89",
+    "rollbackJarRetainedLocally": true,
+    "baseImageContainsFix": false
+  },
+  "notRepeated": [
+    "independent backup recovery",
+    "Elasticsearch major-version rollback",
+    "performance measurement"
+  ],
+  "privateEvidence": "deploy/compact/.local/coupon-fix-20261009/"
+}

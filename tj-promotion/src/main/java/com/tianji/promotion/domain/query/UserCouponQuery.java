@@ -9,6 +9,6 @@ import lombok.EqualsAndHashCode;
 @Data
 @Schema(description = "用户优惠券查询参数")
 public class UserCouponQuery extends PageQuery {
-    @Schema(description = "优惠券状态，1：未使用，2：已使用，3：已过期")
+    @Schema(description = "优惠券状态，1：未使用，2：已使用，3：已过期；省略时查询本人全部状态")
     private Integer status;
 }

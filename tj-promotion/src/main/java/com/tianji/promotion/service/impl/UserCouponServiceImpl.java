@@ -113,7 +113,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         // 2. 分页查询
         Page<UserCoupon> page = this.lambdaQuery()
                 .eq(UserCoupon::getUserId, userId)
-                .eq(UserCoupon::getStatus, query.getStatus())
+                .eq(query.getStatus() != null, UserCoupon::getStatus, query.getStatus())
                 .page(query.toMpPage(OrderItem.asc("term_end_time")));
         List<UserCoupon> records = page.getRecords();
         if(CollUtils.isEmpty(records)) {
