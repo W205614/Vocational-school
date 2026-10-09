@@ -124,6 +124,7 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         for (OrderDetail record : records) {
             // 6.1.转换vo
             OrderDetailPageVO v = BeanUtils.toBean(record, OrderDetailPageVO.class);
+            v.setCourseName(record.getName());
             list.add(v);
             // 6.2.用户信息
             UserDTO u = userMap.get(record.getUserId());

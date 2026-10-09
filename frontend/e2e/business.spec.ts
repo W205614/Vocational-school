@@ -36,6 +36,14 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   await page.getByRole('link',{name:'打开本地模拟支付 →'}).click();await page.getByRole('button',{name:'确认模拟支付成功'}).click();await expect(page.getByText('模拟器已保存支付事实，业务订单正在通过通知和对账更新',{exact:true})).toBeVisible();
   await expect.poll(async()=>(await api(page,'/orders/'+orderId)).status,{timeout:30000}).toBe(2);
   await expect.poll(async()=>(await api(page,'/services/learning/learning-records/course/'+fixture.course))?.id,{timeout:30000}).toBeTruthy();
+  const purchased=(await api(page,'/orders/'+orderId)).details.find((detail:any)=>String(detail.courseId)===String(fixture.course));expect(purchased).toBeTruthy();
+  const learner=await api(page,'/services/user/users/me');await admin.goto('/orders');
+  await admin.getByRole('textbox',{name:'按订单条目 ID 查询',exact:true}).fill(String(purchased.id));
+  const orderListing=admin.waitForResponse(response=>response.url().includes('/order-details/page?')&&new URL(response.url()).searchParams.get('id')===String(purchased.id));
+  await admin.getByRole('button',{name:'查询',exact:true}).click();const listed=(await (await orderListing).json()).data.list;
+  expect(listed).toHaveLength(1);expect(listed[0].courseName).toBe(fixture.name);expect(listed[0].name).toBe(learner.name);
+  await expect(admin.getByRole('columnheader',{name:'课程',exact:true})).toBeVisible();await expect(admin.getByRole('columnheader',{name:'学员',exact:true})).toBeVisible();
+  const purchasedRow=admin.locator('.el-table__row').filter({hasText:String(purchased.id)});await expect(purchasedRow).toContainText(fixture.name);await expect(purchasedRow).toContainText(learner.name);
   await page.goto('/courses/'+fixture.course);await expect(page.getByRole('heading',{name:fixture.name,exact:true})).toBeVisible();await page.getByRole('button',{name:/Browser video/}).click();
   const video=page.locator('video');await expect(video).toBeVisible();await video.evaluate(async(element:HTMLVideoElement)=>{element.muted=true;await element.play();});
   const retainedPlayUrl=await video.getAttribute('src');expect(retainedPlayUrl).toBeTruthy();

@@ -14,6 +14,8 @@ public class OrderDetailPageVO {
     private Long orderId;
     @Schema(description = "学员姓名")
     private String name;
+    @Schema(description = "下单时的课程名称快照")
+    private String courseName;
     @Schema(description = "手机号")
     private String mobile;
     @Schema(description = "订单金额，也就是课程原价")
