@@ -15,3 +15,8 @@ target
 .project
 logs
 job
+
+# Local Docker Desktop migration data, credentials, and artifacts
+deploy/docker/.local/
+deploy/docker/.env
+deploy/docker/__pycache__/
