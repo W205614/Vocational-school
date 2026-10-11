@@ -1,6 +1,5 @@
-import {test,expect,type Page} from '@playwright/test';import fs from 'node:fs';
-const home=process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local',accounts=JSON.parse(fs.readFileSync(home+'/accounts.json','utf8'));
-async function login(page:Page,role:string){await page.goto('/');await page.locator('input[autocomplete="username"]').fill(accounts[role].username);await page.locator('input[autocomplete="current-password"]').fill(accounts[role].password);await page.getByRole('button',{name:role==='student'?'登录':'登录管理端',exact:true}).click();await expect(page.locator('.sidebar')).toBeVisible();}
+import {accounts, fixture, login} from './helpers';
+import {test,expect} from '@playwright/test';
 test('login explains invalid credentials and allows recovery',async({page},info)=>{
  const role=info.project.name==='student'?'student':'admin';await page.goto('/');const submit=page.getByRole('button',{name:role==='student'?'登录':'登录管理端',exact:true});await expect(submit).toBeDisabled();await page.locator('input[autocomplete="username"]').fill(accounts[role].username);await page.locator('input[autocomplete="current-password"]').fill('deliberately-invalid-qa-password');await submit.click();await expect(page.getByRole('alert')).toBeVisible();await expect(page.locator('input[autocomplete="username"]')).toHaveValue(accounts[role].username);await page.locator('input[autocomplete="current-password"]').fill(accounts[role].password);await submit.click();await expect(page.locator('.sidebar')).toBeVisible();
 });
@@ -24,7 +23,6 @@ test('student can find exams without entering internal IDs',async({page},info)=>
 
 test('expired enrollment explains exam access and keeps history visible',async({page},info)=>{
  test.skip(info.project.name!=='student');await login(page,'student');
- const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
  await page.goto('/exams?courseId='+fixture.expiredCourse);
  await expect(page.locator('.enrollment-hint')).toContainText('学习权益已失效');
   const history=page.getByRole('region',{name:'我的考试记录',exact:true});await history.locator('.el-table__row').filter({hasText:fixture.expiredAttempt}).getByRole('button',{name:'查看答卷',exact:true}).click();await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Historical draft before expiry');await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toBeDisabled();await expect(page.getByRole('button',{name:'提交全部答案',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'同步草稿',exact:true})).toHaveCount(0);
@@ -44,7 +42,6 @@ test('expired enrollment explains exam access and keeps history visible',async({
 });
 test('search highlights readable titles and applies the selected price order',async({page},info)=>{
  test.skip(info.project.name!=='student');await login(page,'student');
- const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
  await page.getByRole('textbox',{name:'搜索课程',exact:true}).fill(fixture.marker);
  const searched=page.waitForResponse(r=>r.url().includes('/services/search/courses/portal?')&&r.url().includes('keyword='+fixture.marker));
  await page.getByRole('button',{name:'搜索',exact:true}).click();expect((await searched).ok()).toBeTruthy();
@@ -60,7 +57,6 @@ test('search highlights readable titles and applies the selected price order',as
 });
 test('private note filters use enrolled course names',async({page},info)=>{
  test.skip(info.project.name!=='student');await login(page,'student');await page.goto('/notes');
- const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
  await expect(page.getByPlaceholder('课程 ID')).toHaveCount(0);
  await page.getByRole('combobox',{name:'筛选笔记课程',exact:true}).click();
  const filtered=page.waitForResponse(r=>r.url().includes('/notes?')&&r.url().includes('courseId='+fixture.notesCourse));
@@ -75,7 +71,7 @@ test('dashboard quick actions and real-data details remain usable',async({page},
 
 test('free enrollment survives refresh and expired enrollment is explained upfront',async({page},info)=>{
  test.skip(info.project.name!=='student');await login(page,'student');
- const fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));await page.goto('/courses/'+fixture.expiredCourse);await expect(page.getByRole('button',{name:'报名已结束',exact:true})).toBeDisabled();
+ await page.goto('/courses/'+fixture.expiredCourse);await expect(page.getByRole('button',{name:'报名已结束',exact:true})).toBeDisabled();
  await expect(page.getByText('学习权益已失效',{exact:true})).toBeVisible();
  await expect(page.getByText('学习进度、私人笔记和已有答卷仍保留。重新报名后可继续学习。',{exact:true})).toBeVisible();
  await expect(page.locator('.lesson-item').filter({hasText:'Browser video'})).toBeDisabled();

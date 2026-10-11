@@ -1,7 +1,6 @@
+import {home, accounts} from './helpers';
 import {expect,type Page} from '@playwright/test';
 import fs from 'node:fs';
-const home=process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local';
-const accounts=JSON.parse(fs.readFileSync(home+'/accounts.json','utf8'));
 
 export async function assertPersistedAudit(page:Page){
  await page.goto('/audit');

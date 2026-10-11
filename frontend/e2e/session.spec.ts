@@ -1,6 +1,5 @@
-import {test,expect,type Page} from '@playwright/test';import fs from 'node:fs';
-const home=process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local',accounts=JSON.parse(fs.readFileSync(home+'/accounts.json','utf8'));
-async function login(page:Page,role:string){await page.locator('input[autocomplete="username"]').fill(accounts[role].username);await page.locator('input[autocomplete="current-password"]').fill(accounts[role].password);await page.getByRole('button',{name:role==='student'?'登录':'登录管理端',exact:true}).click();await expect(page.locator('.sidebar')).toBeVisible();}
+import {accounts, signIn as login} from './helpers';
+import {test,expect} from '@playwright/test';
 test('expired credentials return to sign-in and preserve same-account drafts',async({page,context},info)=>{
  const role=info.project.name==='student'?'student':'admin';await page.goto('/');await login(page,role);
  await page.evaluate(()=>sessionStorage.setItem('school-exam-draft-qa-recovery',JSON.stringify({answer:'keep my draft'})));

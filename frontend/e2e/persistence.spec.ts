@@ -1,8 +1,5 @@
-import {test,expect,type Page} from '@playwright/test';import fs from 'node:fs';
-const accounts=JSON.parse(fs.readFileSync((process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local')+'/accounts.json','utf8'));
-const fixture=JSON.parse(fs.readFileSync((process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local')+'/browser-fixture.json','utf8'));
-async function login(page:Page,role:string,path:string){await page.goto(path);const credential=accounts[role];await page.locator('input[autocomplete="username"]').fill(credential.username);await page.locator('input[autocomplete="current-password"]').fill(credential.password);await page.getByRole('button',{name:role==='student'?'登录':'登录管理端',exact:true}).click();await expect(page.locator('.sidebar')).toBeVisible();}
-async function api(page:Page,method:string,path:string,body?:unknown,key?:string){const token=await page.evaluate(()=>sessionStorage.getItem('school-token'));const response=await page.request.fetch('/api/v2'+path,{method,data:body,headers:{Authorization:'Bearer '+token,...(key?{'Idempotency-Key':key}:{})}});const envelope=await response.json();expect(response.ok(),JSON.stringify(envelope)).toBeTruthy();expect(envelope.code).toBe(200);return envelope.data;}
+import {accounts, fixture, login, api} from './helpers';
+import {test,expect,type Page} from '@playwright/test';
 async function operation(page:Page,service:string,op:any){await expect.poll(async()=>{op=await api(page,'GET','/operations/'+service+'/'+op.operationId);return op.status;},{timeout:30000}).not.toBe('PENDING');return op;}
 test('student notes persist after refresh and reject stale edits',async({page},info)=>{
  test.skip(info.project.name!=='student');await login(page,'student','/notes');const marker='Browser note '+crypto.randomUUID(),key=crypto.randomUUID();

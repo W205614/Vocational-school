@@ -6,13 +6,14 @@ import shutil
 import subprocess
 import uuid
 from setup import LOCAL, ROOT, secrets_config
+from test_suites import TRANSPORT_TESTS
 
 
 def main():
     values, _ = secrets_config()
     env = {**os.environ, 'TJ_INTERNAL_TOKEN': values['ACCEPTANCE_INTERNAL_TOKEN']}
     env.setdefault('JAVA_HOME', 'E:/Program Files/jdk')
-    tests = ['LocalModuleTransportTest', 'ModuleGuardTest']
+    tests = TRANSPORT_TESTS
     folder = LOCAL / 'transport-tests' / uuid.uuid4().hex
     folder.mkdir(parents=True, exist_ok=False)
     command = [shutil.which('mvn') or 'E:/download/apache-maven-3.9.4/bin/mvn.cmd',

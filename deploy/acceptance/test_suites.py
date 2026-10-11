@@ -1,0 +1,64 @@
+"""Named regression suites shared by local runners and CI."""
+
+REGRESSION_TESTS = [
+    'PageQueryTest',
+    'ReliabilityDatabaseTest',
+    'ResponseConverterTest',
+    'CookieBuilderTest',
+    'AcceptanceFaultsTest',
+    'LearningReliabilityTest',
+    'ExamReliabilityTest',
+    'ExamDraftReliabilityTest',
+    'ObjectiveScoringTest',
+    'DiscountServiceTest',
+    'ProviderSettlementTest',
+    'CourseRepositoryBulkTest',
+    'FeignBulkheadTest',
+    'ReliabilityMetricsTest',
+    'AsyncSmsClientReliabilityTest',
+    'VerificationCodeReliabilityTest',
+    'LikeConcurrencyReliabilityTest',
+    'CourseDeadlineTest',
+    'CourseTeacherDraftTest',
+    'LocalCourseCoverStoreTest',
+    'AccessPolicyTest',
+    'SessionStoreTest',
+    'JwtSignerPrefixTest',
+    'LoginFailureClassificationTest',
+    'LearningEntitlementRegressionTest',
+    'OrderDeletionRegressionTest',
+    'OrderDeletionDatabaseTest',
+    'RefundInitialStateTest',
+    'SearchCompatibilityTest',
+    'CallDepthPropagationTest',
+    'UserInfoInterceptorDepthTest',
+    'InternalEntitlementControllerTest',
+    'GatewayAdmissionTest',
+    'LocalMediaPlaybackTest',
+    'LearningHistoryAccessTest',
+    'FinancialDueTimeTest',
+    'CourseSearchMetadataTest',
+]
+
+CORE_TESTS = [
+    'LearningEntitlementRegressionTest',
+    'OrderDeletionRegressionTest',
+    'OrderDeletionDatabaseTest',
+    'RefundInitialStateTest',
+    'ExamReliabilityTest',
+    'ExamDraftReliabilityTest',
+    'LearningReliabilityTest',
+    'FeignBulkheadTest',
+    'CallDepthPropagationTest',
+    'UserInfoInterceptorDepthTest',
+    'InternalEntitlementControllerTest',
+    'GatewayAdmissionTest',
+    'LocalMediaPlaybackTest',
+]
+
+TRANSPORT_TESTS = [
+    'LocalModuleTransportTest',
+    'ModuleGuardTest',
+]
+
+SUITES = {"regression": REGRESSION_TESTS, "core": CORE_TESTS}

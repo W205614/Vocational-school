@@ -2,8 +2,23 @@ from pathlib import Path
 import os,subprocess,json,argparse,re,shutil
 from prepare import BASE,LOCAL,mysql
 REPO=BASE.parents[1]
+def parse_arguments(arguments=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--modules')
+    parser.add_argument('--phase', choices=['test', 'install'], default='test')
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--tests')
+    selection.add_argument('--suite', choices=['regression', 'core'])
+    args = parser.parse_args(arguments)
+    if args.suite:
+        from test_suites import SUITES
+        args.tests = ','.join(SUITES[args.suite])
+    args.tests = args.tests or 'PageQueryTest,ReliabilityDatabaseTest'
+    args.modules = args.modules or ('all' if args.suite else 'tj-common')
+    return args
+
 def main():
- parser=argparse.ArgumentParser();parser.add_argument('--modules',default='tj-common');parser.add_argument('--phase',choices=['test','install'],default='test');parser.add_argument('--tests',default='PageQueryTest,ReliabilityDatabaseTest');args=parser.parse_args()
+ args = parse_arguments()
  env=os.environ.copy()
  for line in (Path(os.environ.get('TJ_ENV_FILE',str(BASE/'.env')))).read_text().splitlines():
   if '=' in line: key,value=line.split('=',1);env[key]=value

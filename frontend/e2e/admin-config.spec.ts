@@ -1,6 +1,6 @@
+import {home, accounts, fixture, login, api as request} from './helpers';
 import {test,expect,type Page,type Route} from '@playwright/test';import fs from 'node:fs';
-const home=process.env.TJ_UI_RUNTIME_HOME||'../deploy/acceptance/.local',accounts=JSON.parse(fs.readFileSync(home+'/accounts.json','utf8')),fixture=JSON.parse(fs.readFileSync(home+'/browser-fixture.json','utf8'));
-async function api(page:Page,path:string,body?:unknown){const token=await page.evaluate(()=>sessionStorage.getItem('school-token'));const result=await page.request.fetch('/api/v2'+path,{method:body===undefined?'GET':'POST',data:body,headers:{Authorization:'Bearer '+token,'Idempotency-Key':crypto.randomUUID()}});expect(result.ok()).toBeTruthy();const value=await result.json();expect(value.code).toBe(200);return value.data;}
+function api(page:Page,path:string,body?:unknown){return request(page,body===undefined?'GET':'POST',path,body,crypto.randomUUID());}
 async function pick(page:Page,label:string,keyword:string,names:string[],multiple=false){
  await page.getByRole('button',{name:label,exact:true}).click();const dialog=page.getByRole('dialog',{name:label,exact:true}),query=dialog.getByRole('button',{name:'查询',exact:true});
  await expect(query).toBeEnabled();await dialog.getByRole('textbox',{name:label+'关键词',exact:true}).fill(keyword);
@@ -19,7 +19,7 @@ async function pick(page:Page,label:string,keyword:string,names:string[],multipl
 async function option(page:Page,label:string,value:string){const box=page.getByRole('combobox',{name:label,exact:true});await expect(box).toBeEnabled();await page.locator('.el-select').filter({has:box}).click();await page.getByRole('option',{name:value,exact:true}).click();}
 test('managed draft keeps closed enrollment and persists cover, syllabus, media, questions and teachers',async({page},info)=>{
  test.skip(info.project.name!=='admin');test.setTimeout(120000);
- await page.goto('/courses');await page.locator('input[autocomplete="username"]').fill(accounts.admin.username);await page.locator('input[autocomplete="current-password"]').fill(accounts.admin.password);await page.getByRole('button',{name:'登录管理端',exact:true}).click();await expect(page.locator('.sidebar')).toBeVisible();
+ await login(page,'admin','/courses');
  const tree=await api(page,'/services/course/categorys/list?status=1'),leaf=tree[0].children[0].children[0].id;
  const name='UX managed draft '+fixture.marker+' '+Date.now().toString(36),deadline=new Date(Date.now()-86400000).toISOString().slice(0,19);
  const body={name,thirdCateId:leaf,coverUrl:'/missing-original-cover.png',free:false,price:100,purchaseEndTime:new Date(Date.now()+86400000*365).toISOString().slice(0,19),validDuration:12,introduce:'Original isolated description',usePeople:'Local QA students',detail:'<h2>Original isolated detail</h2>'};
