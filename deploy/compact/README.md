@@ -4,6 +4,8 @@
 
 2026-10-09，运行源码 `7aec0a2` 的八类功能证据门禁通过，清理后 11 个最终容器均健康；累计 162 个不同的多余项目镜像已归档校验并删除，3 个冗余标签已移除。后端、浏览器、独立恢复、当前 MySQL 搜索 9→7→9 回退、原有记录与媒资保留等结果见 [交付报告](reports/functional-20261009.md) 和 [脱敏指纹](reports/functional-20261009.json)。性能采样状态为 `DEFERRED`。
 
+2026-10-11 从冗余整理提交 `c3d6971` 重建七个应用/网页镜像，原优惠券修复已包含在 commerce 镜像中。后端 133 项、浏览器 32 项、八类同批次功能门禁通过；独立恢复核对 183 张表内容及 51 个对象文件，搜索 9→7→9 三阶段各 32 项浏览器通过。清理本轮 24 个演练容器、9 个不同镜像和 7 个重复标签后，11 个最终容器健康，14 项业务冒烟通过。四个基础设施容器、挂载、205 个原有卷和其他 35 个项目容器保留，详情见 [整理与重建报告](reports/refactor-rebuild-20261011.md)。
+
 ## 结构
 
 | 应用 | 原模块 | 默认端口 |
@@ -46,6 +48,9 @@ Linux 构建使用当前非 root 用户的 UID/GID 创建镜像用户，匹配�
 ```powershell
 python deploy/compact/check_policy.py
 python deploy/compact/run_backend_tests.py
+# 已准备独立回归库时，也可直接选取集中维护的清单：
+python deploy/acceptance/run_tests.py --suite regression
+python deploy/acceptance/run_tests.py --suite core
 npm --prefix frontend run typecheck
 npm --prefix frontend run test:unit
 python deploy/compact/security_smoke.py
@@ -59,6 +64,10 @@ python deploy/compact/audit_smoke.py
 ```
 
 数据库测试仅初始化 `acceptance_*` 专用库；完整后端入口还串行执行真实套接字与模块准入测试，要求指定用例全部执行且没有跳过，失败日志按次保留。浏览器每次新建明确标识的合成夹具并重建搜索投影；验证购买、媒资、学习、笔记问答、考试草稿冲突、评分、退款和退款后的考试历史。失效权益保留本人历史读取，页面解释原因；开始考试、保存草稿及收费视频继续受权益限制。管理订单分别显示课程快照和学员，回归同时核对接口字段与表格。管理端新增按模块查询的操作审计；教师待评分列表有分页及课程、学生筛选。审计的异步操作与操作记录关联，`ACCEPTED` 不等于业务成功。
+
+完整、核心和传输清单统一在 `deploy/acceptance/test_suites.py` 维护。`--suite` 与显式 `--tests` 互斥；无参数仍仅运行原 `tj-common` 两项，显式 `--modules/--tests` 保持兼容。真实支付与短信测试仍需分别显式设置 `TJ_REAL_PAYMENT_TESTS=true`、`TJ_REAL_SMS_TESTS=true`，本轮未启用。
+
+重复浏览器运行会累积业务数据；原学生超过 6 张有效券时，现有结算方案会拒绝查询并显示远程服务错误。本轮没有改写或删除旧券来规避该行为。独立恢复先核对原备份内容、读取原账号历史，再新增仅供浏览器业务流程的学生账号；搜索演练每阶段也新增独立学生，全部历史记录继续保留。该边界与首次失败诊断见本轮报告。
 
 CI 增加权限清单、会话与登录分类测试、草稿/封面/课程配置测试、合并启动及浏览器主流程。修改后的远程 CI 是否成功须以本次提交的运行结果为准。
 
