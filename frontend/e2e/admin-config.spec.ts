@@ -16,7 +16,14 @@ async function pick(page:Page,label:string,keyword:string,names:string[],multipl
  for(const name of names){const row=dialog.locator('.el-table__row').filter({hasText:name});await row.getByRole('button',{name:multiple?'添加':'选用',exact:true}).click();if(multiple)await expect(row.getByRole('button',{name:'已选',exact:true})).toBeVisible();}
  if(multiple)await dialog.getByRole('button',{name:'确认选择',exact:true}).click();await expect(dialog).not.toBeVisible();
 }
-async function option(page:Page,label:string,value:string){const box=page.getByRole('combobox',{name:label,exact:true});await expect(box).toBeEnabled();await page.locator('.el-select').filter({has:box}).click();await page.getByRole('option',{name:value,exact:true}).click();}
+async function option(page:Page,label:string,value:string){
+ const box=page.getByRole('combobox',{name:label,exact:true});await expect(box).toBeEnabled();
+ await page.locator('.el-select').filter({has:box}).click();
+ // Keep the locator after aria-hidden changes: the leaving popup still affects page width.
+ const choice=page.getByRole('option',{name:value,exact:true,includeHidden:true});
+ const popup=page.locator('.el-select__popper').filter({has:choice});
+ await choice.click();await expect(popup).toHaveCSS('display','none');
+}
 test('managed draft keeps closed enrollment and persists cover, syllabus, media, questions and teachers',async({page},info)=>{
  test.skip(info.project.name!=='admin');test.setTimeout(120000);
  await login(page,'admin','/courses');
@@ -37,8 +44,17 @@ test('managed draft keeps closed enrollment and persists cover, syllabus, media,
  await page.goto('/course-editor?courseId='+draft.id);await expect(page.getByPlaceholder('课程 ID')).toHaveCount(0);await page.getByRole('button',{name:'新增章',exact:true}).click();await page.getByPlaceholder('章名称').fill('UX chapter');await page.getByPlaceholder('小节 / 考试名称').fill('UX video');await page.getByRole('button',{name:'新增小节 / 考试',exact:true}).click();await page.getByPlaceholder('小节 / 考试名称').nth(1).fill('UX exam');await page.locator('.chapter-editor .el-select').nth(1).click();await page.getByRole('option',{name:'考试',exact:true}).click();await page.getByRole('button',{name:'保存章节',exact:true}).click();await expect(page.getByText('章节已保存',{exact:true})).toBeVisible();
  await option(page,'选择视频小节','UX chapter / UX video');await page.getByRole('button',{name:'选择课程视频',exact:true}).click();const mediaDialog=page.getByRole('dialog',{name:'选择课程视频',exact:true});await expect(mediaDialog.locator('.el-table__row').first()).toBeVisible();await mediaDialog.locator('.el-table__row').first().getByRole('button',{name:'选用',exact:true}).click();await page.getByRole('button',{name:'保存视频关联',exact:true}).click();await expect(page.getByText('视频关联已保存',{exact:true})).toBeVisible();
  await option(page,'选择关联考试小节','UX chapter / UX exam');await pick(page,'选择关联题目',fixture.marker,['Browser objective '+fixture.marker,'Browser subjective '+fixture.marker],true);await page.getByRole('button',{name:'关联题目',exact:true}).click();await expect(page.getByText('考试题目关联已保存',{exact:true})).toBeVisible();await pick(page,'选择授课教师','teacher acceptance',['teacher acceptance'],true);await page.getByRole('button',{name:'保存授课教师',exact:true}).click();await expect(page.getByText('授课教师已保存',{exact:true})).toBeVisible();
- await page.reload();await expect(page.getByText('teacher acceptance',{exact:true})).toBeVisible();await option(page,'选择关联考试小节','UX chapter / UX exam');await expect(page.getByText('Browser objective '+fixture.marker,{exact:true})).toBeVisible();await option(page,'选择视频小节','UX chapter / UX video');await expect(page.getByRole('button',{name:'保存视频关联',exact:true})).toBeEnabled();
+ await page.reload();await expect(page.getByText('teacher acceptance',{exact:true})).toBeVisible();await option(page,'选择关联考试小节','UX chapter / UX exam');await expect(page.getByText('Browser objective '+fixture.marker,{exact:true})).toBeVisible();
+ // Hold desktop popup geometry during a slow close, so an early resize fails deterministically.
+ const videoBox=page.locator('.el-select').filter({has:page.getByRole('combobox',{name:'选择视频小节',exact:true})});
+ const desktop=await videoBox.boundingBox();expect(desktop).not.toBeNull();
+ const slowClose=await page.addStyleTag({content:`.el-select__popper.el-zoom-in-top-leave-active {
+  left:${desktop!.x}px!important;min-width:${desktop!.width}px!important;
+  transform:none!important;transition-duration:1s!important;
+ }`});
+ await option(page,'选择视频小节','UX chapter / UX video');await expect(page.getByRole('button',{name:'保存视频关联',exact:true})).toBeEnabled();
  await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await page.getByRole('button',{name:'选择授课教师',exact:true}).click();await expect(page.getByRole('dialog',{name:'选择授课教师',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await page.getByRole('dialog',{name:'选择授课教师',exact:true}).getByRole('button',{name:'取消',exact:true}).click();await page.setViewportSize({width:1440,height:900});
+ await slowClose.evaluate(el=>el.parentNode?.removeChild(el));
  fs.mkdirSync(home+'/ux-admin-screenshots',{recursive:true});await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:home+'/ux-admin-screenshots/course-config.png',fullPage:true,animations:'disabled'});
  fs.writeFileSync(home+'/admin-ux-fixture.json',JSON.stringify({courseId:draft.id,name,deadline,cover,step:5},null,2));
 });
