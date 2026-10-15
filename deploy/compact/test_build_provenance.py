@@ -2,9 +2,18 @@ import subprocess
 import tempfile
 from pathlib import Path
 import unittest
-from build_provenance import clean_commit,packaged,require_package
+from unittest.mock import patch
+from build_provenance import clean_commit,packaged,require_package,retain_previous_image
 
 class PackageProvenanceTest(unittest.TestCase):
+ def test_mutable_image_replacement_retains_previous_id_and_refuses_other_projects(self):
+  old='sha256:'+'a'*64
+  with patch('build_provenance.subprocess.check_output',return_value=old+'\n'),patch('build_provenance.subprocess.run') as run:
+   self.assertEqual('tianji-rollback/education:before-'+'a'*16,retain_previous_image('education'))
+   self.assertEqual(['docker','tag',old,'tianji-rollback/education:before-'+'a'*16],run.call_args.args[0])
+  with patch('build_provenance.subprocess.check_output',return_value=''),patch('build_provenance.subprocess.run') as run:
+   self.assertIsNone(retain_previous_image('student'));run.assert_not_called()
+  with self.assertRaises(ValueError):retain_previous_image('other-project')
  def test_profile_or_dirty_production_cannot_be_relabelled_as_a_fresh_build(self):
   with tempfile.TemporaryDirectory() as directory:
    root=Path(directory)

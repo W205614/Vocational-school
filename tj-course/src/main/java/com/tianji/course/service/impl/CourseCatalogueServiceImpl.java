@@ -42,6 +42,35 @@ public class CourseCatalogueServiceImpl extends ServiceImpl<CourseCatalogueMappe
     private ExamClient examClient;
 
     @Override
+    public List<CatalogueDTO> queryPublicCourseCatalogues(Long courseId) {
+        var query=Wrappers.lambdaQuery(CourseCatalogue.class)
+                .select(CourseCatalogue::getId,CourseCatalogue::getName,CourseCatalogue::getType,
+                        CourseCatalogue::getParentCatalogueId,CourseCatalogue::getCIndex,CourseCatalogue::getMediaDuration)
+                .eq(CourseCatalogue::getCourseId,courseId)
+                .eq(CourseCatalogue::getDeleted,0)
+                .in(CourseCatalogue::getType,1,2,3)
+                .orderByAsc(CourseCatalogue::getCIndex,CourseCatalogue::getId);
+        List<CourseCatalogue> rows=baseMapper.selectList(query);
+        if(CollUtils.isEmpty(rows))return List.of();
+        // Construct the public projection explicitly; CatalogueDTO also serves authenticated APIs.
+        Map<Long,CatalogueDTO> nodes=new LinkedHashMap<>();
+        for(var row:rows) {
+            var node=new CatalogueDTO();node.setId(row.getId());node.setName(row.getName());
+            node.setType(row.getType());node.setIndex(row.getCIndex());node.setMediaDuration(row.getMediaDuration());
+            node.setSections(new ArrayList<>());nodes.put(row.getId(),node);
+        }
+        List<CatalogueDTO> roots=new ArrayList<>();
+        for(var row:rows) {
+            var node=nodes.get(row.getId());Long parent=row.getParentCatalogueId();
+            if(parent==null || parent==0)roots.add(node);
+            else if(nodes.containsKey(parent))nodes.get(parent).getSections().add(node);
+        }
+        Comparator<CatalogueDTO> order=Comparator.comparing(CatalogueDTO::getIndex,Comparator.nullsLast(Integer::compareTo))
+                .thenComparing(CatalogueDTO::getId,Comparator.nullsLast(Long::compareTo));
+        roots.sort(order);nodes.values().forEach(node->node.getSections().sort(order));return roots;
+    }
+
+    @Override
     public List<CatalogueDTO> queryCourseCatalogues(Long courseId, Boolean withPractice) {
         //1.课程目录查询条件
         LambdaQueryWrapper<CourseCatalogue> queryWrapper =

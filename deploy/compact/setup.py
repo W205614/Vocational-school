@@ -142,7 +142,7 @@ def build(package=True,group=None):
  app_gid=os.getgid() if hasattr(os,'getgid') and os.getgid()!=0 else 10001
  mvn=shutil.which('mvn') or 'mvn'
  # Profile switches must rebuild plain dependency jars, never reuse standalone BOOT-INF jars.
- from build_provenance import clean_commit,packaged,require_package,digest
+ from build_provenance import clean_commit,packaged,require_package,digest,retain_previous_image
  commit=clean_commit(ROOT)
  if package:
   run([mvn,'-B','-Pcompact','-DskipTests','clean','package'],'maven')
@@ -159,14 +159,19 @@ def build(package=True,group=None):
   run([shutil.which('javac') or 'javac','-d',str(folder),str(ACC/'docker/HealthProbe.java')],'health-compile')
   heap='384m' if group=='gateway' else '768m'
   (folder/'Dockerfile').write_text('FROM eclipse-temurin:21-jre\nENV TZ=Asia/Shanghai\nWORKDIR /app\nRUN groupadd --non-unique --gid '+str(app_gid)+' app && useradd --non-unique --uid '+str(app_uid)+' --gid app --home /app app && mkdir -p /app/logs/csp && chown -R app:app /app/logs\nCOPY app.jar /app/app.jar\nCOPY HealthProbe.class /app/health/HealthProbe.class\nUSER app\nENTRYPOINT ["java","-Xms96m","-Xmx'+heap+'","-XX:MaxDirectMemorySize=96m","-XX:ActiveProcessorCount=2","-jar","/app/app.jar"]\n',encoding='utf8')
+  retain_previous_image(group)
   image='tianji-compact/'+group+':local';run(['docker','build','--pull=false','-t',image,str(folder)],'image-'+group)
+  run(['docker','tag',image,'tianji-release/'+group+':'+commit],'tag-'+group)
   manifest[group]={'image':image,'jarSha256':hashlib.sha256(jar.read_bytes()).hexdigest(),'imageId':subprocess.check_output(['docker','image','inspect',image,'--format','{{.Id}}']).decode().strip()}
   print('Built compact '+group,flush=True)
  if not requested_group:
   run([shutil.which('npm') or 'npm','--prefix',str(ROOT/'frontend'),'run','build'],'frontend')
   for app in ['student','admin']:
    folder=LOCAL/'images'/app;folder.mkdir(parents=True,exist_ok=True);shutil.copytree(ROOT/'frontend/apps'/app/'dist',folder/'dist',dirs_exist_ok=True)
-   shutil.copyfile(ACC/'docker/nginx.conf.template',folder/'nginx.conf.template');shutil.copyfile(ACC/'docker/Dockerfile.web',folder/'Dockerfile');run(['docker','build','--pull=false','-t','tianji-compact/'+app+':local',str(folder)],'image-'+app)
+   shutil.copyfile(ACC/'docker/nginx.conf.template',folder/'nginx.conf.template');shutil.copyfile(ACC/'docker/Dockerfile.web',folder/'Dockerfile')
+   retain_previous_image(app)
+   run(['docker','build','--pull=false','-t','tianji-compact/'+app+':local',str(folder)],'image-'+app)
+   run(['docker','tag','tianji-compact/'+app+':local','tianji-release/'+app+':'+commit],'tag-'+app)
    manifest[app]={'image':'tianji-compact/'+app+':local','imageId':subprocess.check_output(['docker','image','inspect','tianji-compact/'+app+':local','--format','{{.Id}}']).decode().strip()}
  (LOCAL/'images.json').write_text(json.dumps(manifest,indent=2),encoding='utf8')
  if clean_commit(ROOT)!=commit:raise RuntimeError('Production source changed while building images')

@@ -1,6 +1,7 @@
 """Advanced motivation fixtures for an explicitly disposable compact project.
 
-Seeded: synthetic catalogue/question-bank rows, teacher assignment, a read-only
+Seeded: a dedicated synthetic course/enrollment, catalogue/question-bank rows,
+teacher assignment, a read-only
 legacy rank for presentation, and one PENDING reward request/outbox event.
 Executed by the current application: exam publication, failed/correct submissions,
 learning completion/first-exam badge, discussion creation, coupon creation/issue,
@@ -35,14 +36,17 @@ def require_isolated():
 
 def identifier(value):
     result = str(value)
-    if not re.fullmatch(r'[1-9][0-9]{0,18}', result):
+    if not re.fullmatch(r'[1-9][0-9]{0,18}', result) or int(result) > 9223372036854775807:
         raise ValueError('Invalid fixture identifier')
     return result
 
 
 def literal(value):
     """A UTF-8 SQL literal without shell interpolation or backslash assumptions."""
-    return "CONVERT(0x" + str(value).encode('utf8').hex() + " USING utf8mb4)"
+    # A character-set introducer keeps this a literal (coercibility 4). CONVERT
+    # creates a coercibility-2 expression, which conflicts with legacy columns
+    # when their utf8mb4 collation differs from the current connection default.
+    return "_utf8mb4 X'" + str(value).encode('utf8').hex() + "'"
 
 
 def sql(database, statement):
@@ -133,15 +137,28 @@ def main():
     original = json.loads((setup.LOCAL / 'browser-fixture.json').read_text(encoding='utf8'))
     accounts = json.loads((setup.LOCAL / 'accounts.json').read_text(encoding='utf8'))
     student, admin_id, teacher = [identifier(accounts[role]['id']) for role in ['student', 'admin', 'teacher']]
-    course, lesson = identifier(original['notesCourse']), identifier(original['notesLesson'])
+    template_course = identifier(original['notesCourse'])
     base = 850000000000000000 + int(time.time() * 1000) * 1000 + secrets.randbelow(500)
     chapter, section, question, assignment, replay_rule = [identifier(base + n) for n in range(1, 6)]
+    course, lesson = identifier(base + 7), identifier(base + 8)
     marker = uuid.uuid4().hex[:12]
     review_name = 'Synthetic motivation question ' + marker
     question_title = 'Synthetic teacher discussion ' + marker
-    name = 'Browser notes ' + original['marker']
-    if sql('tj_learning', 'SELECT COUNT(*) FROM learning_entitlement WHERE user_id=' + student + ' AND course_id=' + course + ' AND active=1 AND (expires_at IS NULL OR expires_at>NOW())') != '1':
-        raise RuntimeError('Fresh browser note-course entitlement is required')
+    name = 'Synthetic motivation course ' + marker
+    # The shared notesCourse deliberately has no published exam. Keep it intact
+    # for its own historical-access tests; all advanced data gets a new identity.
+    columns = [line.split('\t')[0] for line in sql('tj_course', 'SHOW COLUMNS FROM course').splitlines()]
+    replacements = {'id': course, 'name': literal(name), 'status': '2', 'free': '0', 'price': '100',
+                    'section_num': '2', 'media_duration': '0', 'creater': admin_id, 'updater': admin_id,
+                    'deleted': '0', 'purchase_start_time': 'NOW()-INTERVAL 1 DAY',
+                    'purchase_end_time': 'NOW()+INTERVAL 1 YEAR', 'valid_duration': '12'}
+    fields = ','.join('`' + column + '`' for column in columns)
+    values = ','.join(replacements.get(column, '`' + column + '`') for column in columns)
+    sql('tj_course', 'INSERT INTO course(' + fields + ') SELECT ' + values + ' FROM course WHERE id=' + template_course)
+    if sql('tj_course', 'SELECT COUNT(*) FROM course WHERE id=' + course) != '1':
+        raise RuntimeError('The isolated synthetic course template was unavailable')
+    sql('tj_learning', 'START TRANSACTION;INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections) VALUES(' + lesson + ',' + student + ',' + course + ',NOW()+INTERVAL 1 YEAR,0,0);'
+        'INSERT INTO learning_entitlement(order_detail_id,order_id,user_id,course_id,active,expires_at) VALUES(' + lesson + ',' + lesson + ',' + student + ',' + course + ',1,NOW()+INTERVAL 1 YEAR);COMMIT;')
     sql('tj_course', 'START TRANSACTION;INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES(' + assignment + ',' + course + ',' + teacher + ',1,1,0,NOW(),NOW(),' + admin_id + ',' + admin_id + ',0);'
         'INSERT INTO course_catalogue(id,name,course_id,type,parent_catalogue_id,media_duration,c_index,dep_id,creater,updater) VALUES(' + chapter + ',' + literal('Synthetic motivation chapter') + ',' + course + ',1,0,0,1,0,' + admin_id + ',' + admin_id + '),(' + section + ',' + literal('Synthetic motivation exam') + ',' + course + ',3,' + chapter + ',0,1,0,' + admin_id + ',' + admin_id + ');COMMIT;')
     sql('tj_exam', 'START TRANSACTION;INSERT INTO question(id,name,type,cate_id1,cate_id2,cate_id3,difficulty,score,creater,updater) VALUES(' + question + ',' + literal(review_name) + ',2,1,2,3,1,10,' + admin_id + ',' + admin_id + ');'
@@ -218,7 +235,7 @@ def main():
                       questionTitle=question_title, unassignedCourse=unassigned, historyMonth=history_month,
                       historyName=history_name, historyStatus='LEGACY_READONLY', historyPoints=37,
                       badgeName='首次通过考试', rewardRequestId=request_id, rewardCouponId=coupon, rewardMonth=reward_month,
-                      evidence=dict(project=setup.PROJECT, seeded=['catalogue/question bank/active teaching assignment and separate deleted assignment', 'legacy read-only UI snapshot', 'PENDING replay reward request and outbox envelope'],
+                      evidence=dict(project=setup.PROJECT, seeded=['dedicated synthetic course and enrollment without a payment claim', 'catalogue/question bank/active teaching assignment and separate deleted assignment', 'legacy read-only UI snapshot', 'PENDING replay reward request and outbox envelope'],
                                     executed=['paper publication', 'failed and correct exam submissions', 'exam-to-learning completion and badge', 'discussion creation', 'coupon creation and issue', 'reward outbox dispatch, stock debit, ticket issuance and acknowledgement'],
                                     naturalSettlement=False, rewardEventId=event_id, rewardUserCouponId=ticket, passedAttempt=passed_id))
         fixture_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf8')

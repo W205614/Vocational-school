@@ -3,6 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import re
 
 def production(path):
     return '/src/main/' in path or path.endswith('pom.xml') or path.startswith('frontend/') and '/e2e/' not in path
@@ -16,6 +17,18 @@ def clean_commit(root):
     return commit
 
 def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+def retain_previous_image(alias):
+    """Keep a named reference before Docker replaces a mutable local tag."""
+    if alias not in {'identity','commerce','education','support','gateway','student','admin'}:
+        raise ValueError('Only compact application images may be retained')
+    image='tianji-compact/'+alias+':local'
+    ids=subprocess.check_output(['docker','image','ls','--no-trunc','--filter','reference='+image,'--format','{{.ID}}'],text=True).splitlines()
+    if not ids:return None
+    if len(ids)!=1 or not re.fullmatch(r'sha256:[0-9a-f]{64}',ids[0]):raise RuntimeError('Unexpected previous image identity')
+    retained='tianji-rollback/'+alias+':before-'+ids[0].split(':')[1][:16]
+    subprocess.run(['docker','tag',ids[0],retained],check=True,stdout=subprocess.DEVNULL)
+    return retained
 
 def packaged(root,local,commit,mode,jars):
     if clean_commit(root)!=commit:raise RuntimeError('Production source changed while packaging')

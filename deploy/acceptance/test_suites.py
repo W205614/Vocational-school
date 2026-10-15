@@ -16,6 +16,7 @@ REGRESSION_TESTS = [
     'DiscountServiceTest',
     'SeasonRewardDeliveryReliabilityTest',
     'PublicCourseControllerTest',
+    'PublicCourseMetadataTest',
     'ProviderSettlementTest',
     'CourseRepositoryBulkTest',
     'FeignBulkheadTest',

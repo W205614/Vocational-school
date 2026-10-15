@@ -48,6 +48,10 @@ if (private/'runtime-images.json').exists():
  frozen.update(actual)
 for image in frozen.values():
  if not re.fullmatch(r'sha256:[0-9a-f]{64}',image):raise RuntimeError('Recovery requires immutable image IDs')
+ # Upgrade recovery never boots the old application/web images. Their recorded
+ # IDs remain provenance; only infrastructure and the verified new images run.
+required_frozen={name:image for name,image in frozen.items() if not upgrade or not name.startswith(('app-','web-'))}
+for image in required_frozen.values():
  if subprocess.check_output(['docker','image','inspect',image,'--format','{{.Id}}']).decode().strip()!=image:
   raise RuntimeError('Load the verified rollback image archive before restoring this bundle')
 from recovery_configuration import recorded_configuration
@@ -84,10 +88,11 @@ for name,sha in manifest['mediaFiles'].items():
 # Verify immutable images before boot, including browser assets.
 images=json.loads((LOCAL/'images.json').read_text(encoding='utf8'))
 for details in images.values():
+ if upgrade:continue
  current=subprocess.check_output(['docker','image','inspect',details['imageId'],'--format','{{.Id}}']).decode().strip()
  if current!=details['imageId']:raise RuntimeError('Recorded image is unavailable; load the verified rollback archive before boot')
 result={'status':'DATA_VERIFIED','tableCount':len(expected),'tableContentChecksumsMatched':True,'mediaFileCount':len(manifest['mediaFiles']),'backup':str(backup),**redis_proof,**broker_proof}
-result['rawRestoreProof']={'status':'PASSED','sourceCommit':source['sourceCommit'],'imageDigests':frozen,'tableCount':len(expected),'tableCountsMatched':True,'tableContentChecksumsMatched':True,'mediaFileCount':len(manifest['mediaFiles']),**redis_proof,**broker_proof}
+result['rawRestoreProof']={'status':'PASSED','sourceCommit':source['sourceCommit'],'imageDigests':frozen,'executedRecoveryImages':required_frozen,'oldApplicationsStarted':not bool(upgrade),'tableCount':len(expected),'tableCountsMatched':True,'tableContentChecksumsMatched':True,'mediaFileCount':len(manifest['mediaFiles']),**redis_proof,**broker_proof}
 result['migrationUpgradeProof']={'status':'PENDING' if upgrade else 'NOT_REQUESTED'}
 (LOCAL/'recovery-result.json').write_text(json.dumps(result,indent=2),encoding='utf8')
 try:

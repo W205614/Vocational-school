@@ -177,6 +177,7 @@ test('finished mistakes keep snapshot feedback and cross-device revision never a
     await dialog.getByRole('textbox', {name: '复习答案', exact: true}).fill('1,2');
     await dialog.getByRole('button', {name: '提交复习', exact: true}).click();
     await expect(page.getByText('复习已记录，原考试成绩保持不变', {exact: true})).toBeVisible();
+    await expect(dialog.getByRole('status').filter({hasText: '本次回答正确'})).toBeVisible();
     await expect(dialog).toContainText('标准答案：1,2');
     await expect(dialog).toContainText('Motivation snapshot analysis');
     if (initial.feedback) await expect(dialog).toContainText(String(initial.feedback));
@@ -199,7 +200,11 @@ test('finished mistakes keep snapshot feedback and cross-device revision never a
         expect(Number(retained.mastered)).toBe(1);
         expect(retained.reviews[0].response).toBe('1,2');
         expect(retained.reviews.length).toBe(revised.reviews.length);
-        await device.getByRole('dialog', {name: '复习错题', exact: true}).getByRole('button', {name: '重新加入复习', exact: true}).click();
+        const retainedDialog = device.getByRole('dialog', {name: '复习错题', exact: true});
+        await retainedDialog.locator('summary').filter({hasText: '最近练习记录'}).click();
+        await expect(retainedDialog.locator('details').filter({hasText: '最近练习记录'})).toContainText('1,2');
+        await expect(retainedDialog.locator('details').filter({hasText: '最近练习记录'})).toContainText('回答正确');
+        await retainedDialog.getByRole('button', {name: '重新加入复习', exact: true}).click();
         await expect(retainedRow).toHaveCount(0);
         await choose(device, '掌握状态', '待复习');
         await expect(retainedRow).toBeVisible();

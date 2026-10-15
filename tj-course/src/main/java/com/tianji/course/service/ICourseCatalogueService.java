@@ -28,6 +28,9 @@ public interface ICourseCatalogueService extends IService<CourseCatalogue> {
      */
     List<CatalogueDTO> queryCourseCatalogues(Long courseId, Boolean withPractice);
 
+    /** Published directory metadata only, with no private exam or media enrichment. */
+    List<CatalogueDTO> queryPublicCourseCatalogues(Long courseId);
+
     /**
      * 批量统计媒资id引用次数
      *
