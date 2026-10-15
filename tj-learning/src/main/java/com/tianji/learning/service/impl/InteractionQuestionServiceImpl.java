@@ -77,7 +77,7 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
         // 1. 参数校验, 课程id和小节id不能都为空
         Long courseId = query.getCourseId();
         Long sectionId = query.getSectionId();
-        if(courseId == null && sectionId == null) {
+        if(courseId == null && sectionId == null && !Boolean.TRUE.equals(query.getOnlyMine())) {
             throw new BadRequestException("课程id和小节id不能都为空");
         }
 

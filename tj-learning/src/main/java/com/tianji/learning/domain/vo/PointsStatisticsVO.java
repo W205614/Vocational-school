@@ -8,6 +8,7 @@ import lombok.Data;
 public class PointsStatisticsVO {
     @Schema(description = "获取积分方式")
     private String type;
+    private Integer typeCode;
     @Schema(description = "今日已获取积分值")
     private Integer points;
     @Schema(description = "单日积分上限")

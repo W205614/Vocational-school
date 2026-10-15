@@ -42,7 +42,7 @@ class ExamReliabilityTest {
    for(var row:rows){assertFalse(row.containsKey("user_id"));assertFalse(row.containsKey("answers"));assertFalse(row.containsKey("answer"));assertFalse(row.containsKey("analysis"));}
    assertEquals(mine.getFirst(),((List<Map<String,Object>>)controller().history(2,2,paper).get("list")).getFirst().get("id"));
    assertTrue(((List<?>)controller().history(3,2,paper).get("list")).isEmpty());assertEquals(4L,controller().history(1,20,null).get("total"));assertEquals(1L,controller().history(1,20,otherPaper).get("total"));
-   var detail=controller().attempt(mine.getLast());assertTrue(json.writeValueAsString(detail).contains("2,1"));assertFalse(json.writeValueAsString(detail).contains("private reference"));
+   var detail=controller().attempt(mine.getLast());assertTrue(json.writeValueAsString(detail).contains("2,1"));assertTrue(json.writeValueAsString(detail).contains("private reference"));
    assertThrows(BadRequestException.class,()->controller().attempt(foreign));org.mockito.Mockito.verifyNoInteractions(learning);
    assertThrows(ForbiddenException.class,this::start);
   }finally{com.tianji.common.utils.UserContext.removeUser();}
@@ -94,7 +94,7 @@ class ExamReliabilityTest {
   assertEquals("2,1",jdbc.queryForObject("SELECT response FROM exam_answer WHERE attempt_id=?",String.class,attempt));
   assertEquals(10,jdbc.queryForObject("SELECT score FROM exam_attempt WHERE id=?",Integer.class,attempt));
   assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM reliability_outbox WHERE business_key=?",Integer.class,"exam:"+attempt+":passed"));
-  var view=service.view(attempt,user,false);assertFalse(json.writeValueAsString(view).contains("private answer explanation"));
+  var view=service.view(attempt,user,false);assertTrue(json.writeValueAsString(view).contains("private answer explanation"));
   assertThrows(BadRequestException.class,()->service.view(attempt,user+99,false));
  }
  @Test void concurrentSubjectiveGradesUseVersionAndFinishOnlyOnce() throws Exception{

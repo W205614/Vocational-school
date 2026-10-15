@@ -97,6 +97,7 @@ public class CourseTeacherServiceImpl extends ServiceImpl<CourseTeacherMapper, C
         LambdaQueryWrapper<CourseTeacher> queryWrapper =
                 Wrappers.lambdaQuery(CourseTeacher.class)
                         .eq(CourseTeacher::getCourseId, courseId)
+                        .eq(CourseTeacher::getDeleted, 0)
                         .orderByAsc(CourseTeacher::getCIndex);
         //2.查询数据
         List<CourseTeacher> courseTeachers = baseMapper.selectList(queryWrapper);

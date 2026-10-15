@@ -76,6 +76,21 @@ public class ExamWorkflowController {
         if(!Long.valueOf(1).equals(role) && (!Long.valueOf(3).equals(role) || jdbc.queryForList("SELECT g.user_id FROM exam_grader g JOIN exam_attempt a ON a.paper_id=g.paper_id WHERE a.id=? AND g.user_id=?",id,user).isEmpty())) throw new ForbiddenException("没有评分权限");
         return service.view(id,user,true);
     }
+    /** Grading assignment is deliberately independent from permission to inspect taught-course learning. */
+    @GetMapping("/teacher/exam-statistics") public Map<String,Object> statistics(@RequestParam(defaultValue="1") int pageNo,@RequestParam(defaultValue="20") int pageSize,@RequestParam(required=false) Long courseId,@RequestParam(required=false) Long studentId) {
+        long user=UserContext.requireUser();Long role=UserContext.getRole();
+        if(!Set.of(1L,3L).contains(role==null?0L:role))throw new ForbiddenException("需要评分教师权限");
+        if(pageNo<1 || pageNo>10000 || pageSize<1 || pageSize>100 || courseId!=null && courseId<=0 || studentId!=null && studentId<=0)throw new BadRequestException("统计筛选参数无效");
+        String from=" FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE 1=1";List<Object> args=new ArrayList<>();
+        if(role!=1L){from+=" AND EXISTS(SELECT 1 FROM exam_grader g WHERE g.paper_id=p.id AND g.user_id=?)";args.add(user);}
+        if(courseId!=null){from+=" AND p.course_id=?";args.add(courseId);}
+        if(studentId!=null){from+=" AND a.user_id=?";args.add(studentId);}
+        String groups=" GROUP BY p.course_id,a.user_id";
+        Long total=jdbc.queryForObject("SELECT COUNT(*) FROM(SELECT p.course_id,a.user_id"+from+groups+") grouped",Long.class,args.toArray());
+        args.add(pageSize);args.add((pageNo-1)*pageSize);
+        var rows=jdbc.queryForList("SELECT p.course_id,a.user_id AS student_id,COUNT(*) AS attempts,SUM(a.status='WAIT_GRADING') AS pending_grading,SUM(a.status='FINISHED') AS finished,SUM(a.status='FINISHED' AND a.passed=1) AS passed,ROUND(100.0*SUM(a.status='FINISHED' AND a.passed=1)/NULLIF(SUM(a.status='FINISHED'),0),1) AS pass_rate,MAX(a.submitted_at) AS last_submitted_at"+from+groups+" ORDER BY p.course_id,a.user_id LIMIT ? OFFSET ?",args.toArray());
+        return Map.of("scope","GRADING_ASSIGNMENT","total",total,"pageNo",pageNo,"pageSize",pageSize,"list",rows);
+    }
     @PostMapping("/teacher/exam-attempts/{id}/grades") public ResponseEntity<OperationStore.View> grade(@PathVariable long id,@RequestBody Command form,@RequestHeader("Idempotency-Key") String key) {
         return command(key,new Command("GRADE",null,id,null,null,form.questionId(),form.score(),form.version(),form.feedback(),UserContext.getRole()));
     }

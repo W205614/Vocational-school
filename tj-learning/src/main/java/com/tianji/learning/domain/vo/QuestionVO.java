@@ -30,4 +30,8 @@ public class QuestionVO {
     private String latestReplyContent;
     @Schema(description = "最新的回答者昵称")
     private String latestReplyUser;
+    private Long courseId;
+    private Long sectionId;
+    private Long acceptedReplyId;
+    private LocalDateTime acceptedAt;
 }

@@ -14,6 +14,10 @@ import java.util.List;
 @FeignClient(value = "promotion-service", fallbackFactory = PromotionClientFallback.class)
 public interface PromotionClient {
 
+    @PostMapping("/user-coupons/quote")
+    com.tianji.api.dto.promotion.CouponQuoteDTO quote(@RequestBody List<OrderCourseDTO> courses,
+            @RequestParam(value="couponIds",required=false) List<Long> couponIds);
+
     @PostMapping("/user-coupons/available")
     List<CouponDiscountDTO> findDiscountSolution(@RequestBody List<OrderCourseDTO> orderCourses);
 

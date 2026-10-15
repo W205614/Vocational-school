@@ -7,6 +7,8 @@ export const accounts = JSON.parse(fs.readFileSync(path.join(home, 'accounts.jso
 export const fixture = JSON.parse(fs.readFileSync(path.join(home, 'browser-fixture.json'), 'utf8'));
 
 export async function signIn(page: Page, role: string) {
+    const location=new URL(page.url());
+    if(role==='student' && location.pathname!=='/login')await page.goto('/login?redirect='+encodeURIComponent(location.pathname+location.search));
     await page.locator('input[autocomplete="username"]').fill(accounts[role].username);
     await page.locator('input[autocomplete="current-password"]').fill(accounts[role].password);
     await page.getByRole('button', {name: role === 'student' ? '登录' : '登录管理端', exact: true}).click();
@@ -14,7 +16,7 @@ export async function signIn(page: Page, role: string) {
 }
 
 export async function login(page: Page, role: string, destination = '/') {
-    await page.goto(destination);
+    await page.goto(role==='student'?'/login?redirect='+encodeURIComponent(destination):destination);
     await signIn(page, role);
 }
 

@@ -52,6 +52,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
         String ant=sanitized.getRequest().getMethod().name()+":"+path;
         if(path.startsWith("/api/v2/") && !policy.declares(sanitized.getRequest().getMethod().name(),path))throw new ForbiddenException("该接口没有授权声明");
         if(ant.startsWith("GET:/api/v2/services/media/local-content/"))return chain.filter(sanitized);
+        if(ant.equals("GET:/api/v2/public/courses") || ant.equals("GET:/api/v2/public/categories") || ant.matches("GET:/api/v2/public/courses/[0-9]{1,20}"))return chain.filter(sanitized);
         if(ant.matches("GET:/api/v2/services/media/course-covers/[0-9a-f]{64}\\.(png|jpg)"))return chain.filter(sanitized);
         if(ant.equals("GET:/api/v2/environment") || ant.equals("POST:/api/v2/auth/accounts/login") || ant.equals("POST:/api/v2/auth/accounts/admin/login") || ant.equals("GET:/api/v2/auth/accounts/refresh"))
             return chain.filter(sanitized);

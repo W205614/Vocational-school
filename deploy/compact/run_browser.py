@@ -2,6 +2,10 @@ import os,sys,subprocess,shutil,json,re
 from setup import ROOT,LOCAL,OFFSET,SOURCE,configure_acceptance,ACC
 # Every run uses fresh explicit fixtures, so failed runs do not contaminate later attempts.
 configure_acceptance();__import__('runpy').run_path(str(ACC/'browser_fixture.py'),run_name='__main__')
+if os.environ.get('TJ_MOTIVATION_FIXTURE')=='1' or os.environ.get('GITHUB_ACTIONS')=='true':
+ # Advanced historical/replay data belongs only to explicit clones and ephemeral CI.
+ os.environ['TJ_MOTIVATION_FIXTURE']='1'
+ __import__('runpy').run_path(str(SOURCE/'motivation_fixture.py'),run_name='__main__')
 subprocess.run([sys.executable,str(SOURCE/'rebuild_search.py')],check=True)
 os.environ.update(ACCEPTANCE_CONTAINER_UI='1',TJ_UI_RUNTIME_HOME=str(LOCAL),TJ_STUDENT_URL='http://127.0.0.1:'+str(24500+OFFSET),TJ_ADMIN_URL='http://127.0.0.1:'+str(24501+OFFSET),TJ_PYTHON=sys.executable,TJ_MEDIA_FIXTURE_SCRIPT=str(SOURCE/'attach_browser_media.py'))
 with (LOCAL/'browser.log').open('wb') as out:r=subprocess.run([shutil.which('npm') or 'npm','--prefix',str(ROOT/'frontend'),'run','test:e2e'],env=os.environ,stdout=out,stderr=subprocess.STDOUT)

@@ -2,19 +2,28 @@
 import {ref,computed,watch} from 'vue';
 import {get} from '../../../../packages/shared/src/client';
 import {query,type Row} from '../../../../packages/shared/src/ui';
-const props=withDefaults(defineProps<{modelValue:string|string[];kind:'courses'|'questions'|'teachers'|'media';label:string;multiple?:boolean;limit?:number;courseStatuses?:number[];selectedRows?:Row[];disabled?:boolean}>(),{limit:100,courseStatuses:()=>[2,4]});
+const props=withDefaults(defineProps<{modelValue:string|string[];kind:'courses'|'questions'|'teachers'|'media'|'roles'|'templates'|'users';label:string;multiple?:boolean;limit?:number;courseStatuses?:number[];selectedRows?:Row[];disabled?:boolean}>(),{limit:100,courseStatuses:()=>[2,4]});
 const emit=defineEmits<{ 'update:modelValue':[value:string|string[]];change:[rows:Row[]] }>();
-const open=ref(false),keyword=ref(''),page=ref(1),total=ref(0),rows=ref<Row[]>([]),cache=ref<Record<string,Row>>({}),staged=ref<string[]>([]),busy=ref(false),error=ref(''),status=ref(props.courseStatuses[0]);let sequence=0;
+const open=ref(false),keyword=ref(''),page=ref(1),total=ref(0),rows=ref<Row[]>([]),cache=ref<Record<string,Row>>({}),staged=ref<string[]>([]),busy=ref(false),error=ref(''),status=ref(props.courseStatuses[0]),userScope=ref('students');let sequence=0;
 const values=computed(()=>Array.isArray(props.modelValue)?props.modelValue:props.modelValue?[props.modelValue]:[]);
 const name=(row:Row)=>String(row.name||row.filename||'未命名记录');
 const selected=computed(()=>values.value.map(id=>cache.value[id]||{id,name:'已选记录'}));
 watch(()=>props.selectedRows,list=>{for(const row of list||[])cache.value[String(row.id)]=row;},{immediate:true,deep:true});
+async function hydrate(){
+ if(!['roles','templates','users'].includes(props.kind))return;
+ const missing=values.value.filter(id=>!cache.value[id]);if(!missing.length)return;
+ try{
+  if(props.kind==='roles'){for(const row of await get<Row[]>('/admin/auth/roles/list'))cache.value[String(row.id)]=row;return;}
+  let index=0;await Promise.all(Array.from({length:Math.min(4,missing.length)},async()=>{while(index<missing.length){const id=missing[index++]!;const path=props.kind==='templates'?'/admin/message/notice-templates/':'/admin/user/users/';try{const row=await get<Row>(path+id);if(row)cache.value[id]={...row,id};}catch{/* A removed record remains visible as a saved selection. */}}}));
+ }catch{/* Selection is still editable when a name cannot be restored. */}
+}
+watch(()=>props.modelValue,()=>{void hydrate();},{immediate:true,deep:true});
 const typeName=(value:unknown)=>({1:'单选',2:'多选',3:'不定项',4:'判断',5:'主观'}[Number(value)]||'题目');
 function detail(row:Row){if(props.kind==='questions')return typeName(row.type)+' · '+row.score+' 分';if(props.kind==='media')return row.duration+' 秒';if(props.kind==='courses')return [row.categories||row.cateNames,row.sections?row.sections+' 节':'',row.updateTime?'更新 '+String(row.updateTime).replace('T',' '):''].filter(Boolean).join(' · ');return row.job||'';}
 async function load(){
  const current=++sequence;busy.value=true;error.value='';
- const paths={courses:'/admin/course/courses/page',questions:'/admin/exam/questions/page',teachers:'/admin/user/teachers/page',media:'/admin/media/medias'};
- try{const result=await get<Row>(paths[props.kind]+'?'+query({pageNo:page.value,pageSize:20,name:['teachers','media'].includes(props.kind)?keyword.value:undefined,keyword:['questions','courses'].includes(props.kind)?keyword.value:undefined,status:props.kind==='courses'?status.value:props.kind==='teachers'?1:undefined}));if(current!==sequence)return;rows.value=result.list||[];total.value=Number(result.total||0);for(const row of rows.value)cache.value[String(row.id)]=row;}
+ const paths={courses:'/admin/course/courses/page',questions:'/admin/exam/questions/page',teachers:'/admin/user/teachers/page',media:'/admin/media/medias',roles:'/admin/auth/roles/list',templates:'/admin/message/notice-templates',users:userScope.value==='students'?'/admin/user/students/page':'/admin/user/staffs/page'};
+ try{const result=await get<Row|Row[]>(paths[props.kind]+'?'+query({pageNo:page.value,pageSize:20,name:['teachers','media','users'].includes(props.kind)?keyword.value:undefined,keyword:['questions','courses','templates'].includes(props.kind)?keyword.value:undefined,status:props.kind==='courses'?status.value:props.kind==='teachers'?1:undefined}));if(current!==sequence)return;if(Array.isArray(result)){const filtered=keyword.value?result.filter(r=>name(r).includes(keyword.value)):result;rows.value=filtered.slice((page.value-1)*20,page.value*20);total.value=filtered.length;}else{rows.value=result.list||[];total.value=Number(result.total||0);}for(const row of rows.value)cache.value[String(row.id)]=row;}
  catch(e){if(current===sequence)error.value=e instanceof Error?e.message:'加载失败，请重试';}
  finally{if(current===sequence)busy.value=false;}
 }
@@ -27,7 +36,7 @@ function remove(id:string){commit(values.value.filter(x=>x!==id));}
  <div class="toolbar"><el-button :aria-label="label" :disabled="disabled" @click="choose">{{label}}</el-button><span v-if="multiple" class="muted">已选 {{values.length}}{{limit<100?' / '+limit:''}}</span></div>
  <div class="picker-chips"><el-tag v-for="row in selected" :key="row.id" :closable="!disabled" @close="remove(String(row.id))">{{name(row)}}</el-tag></div>
  <el-dialog v-model="open" :title="label" class="entity-dialog" append-to-body>
-  <div class="toolbar"><el-input v-model="keyword" :aria-label="label+'关键词'" placeholder="输入名称关键词" clearable @keyup.enter="page=1;load()"/>
+  <div class="toolbar"><el-select v-if="kind==='users'" v-model="userScope" aria-label="接收人群体" @change="page=1;load()"><el-option label="学生" value="students"/><el-option label="教师与员工" value="staff"/></el-select><el-input v-model="keyword" :aria-label="label+'关键词'" placeholder="输入名称关键词" clearable @keyup.enter="page=1;load()"/>
    <el-select v-if="kind==='courses' && courseStatuses.length>1" v-model="status" aria-label="筛选课程状态" style="width:140px" @change="page=1;load()"><el-option v-for="s in courseStatuses" :key="s" :value="s" :label="({1:'待上架',2:'已上架',3:'已下架',4:'已完结'} as Record<number,string>)[s]"/></el-select>
    <el-button @click="page=1;load()" :disabled="busy">查询</el-button></div>
   <el-alert v-if="error" :title="error" type="error" :closable="false"/>

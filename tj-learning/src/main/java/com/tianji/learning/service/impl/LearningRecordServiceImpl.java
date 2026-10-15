@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-@RequiredArgsConstructor
 public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper,LearningRecord> implements ILearningRecordService {
     private final ILearningLessonService lessonService;
     private final CourseClient courseClient;
@@ -28,6 +27,16 @@ public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper,
     private final JdbcTemplate jdbc;
     private final PlatformTransactionManager manager;
     private final LearningEntitlementService entitlements;
+    private final LearningMilestoneService milestones;
+    @org.springframework.beans.factory.annotation.Qualifier("learningClock")
+    private final java.time.Clock clock;
+    @org.springframework.beans.factory.annotation.Autowired
+    public LearningRecordServiceImpl(ILearningLessonService lessonService,CourseClient courseClient,LearningRecordDelayTaskHandler taskHandler,JdbcTemplate jdbc,PlatformTransactionManager manager,LearningEntitlementService entitlements,LearningMilestoneService milestones,@org.springframework.beans.factory.annotation.Qualifier("learningClock") java.time.Clock clock) {
+        this.lessonService=lessonService;this.courseClient=courseClient;this.taskHandler=taskHandler;this.jdbc=jdbc;this.manager=manager;this.entitlements=entitlements;this.milestones=milestones;this.clock=clock;
+    }
+    public LearningRecordServiceImpl(ILearningLessonService lessonService,CourseClient courseClient,LearningRecordDelayTaskHandler taskHandler,JdbcTemplate jdbc,PlatformTransactionManager manager,LearningEntitlementService entitlements) {
+        this(lessonService,courseClient,taskHandler,jdbc,manager,entitlements,null,java.time.Clock.system(java.time.ZoneId.of("Asia/Shanghai")));
+    }
     @Override public LearningLessonDTO queryLearningRecordByCourse(Long courseId) {
         long user=UserContext.requireUser();
         LearningLesson lesson=lessonService.queryByUserIdAndCourseId(user,courseId);
@@ -68,6 +77,7 @@ public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper,
             taskHandler.addLearningRecordTask(record);
             if((long)moment*2>=duration && jdbc.update("UPDATE learning_record SET moment=GREATEST(COALESCE(moment,0),?),finished=1,finish_time=CURRENT_TIMESTAMP(3) WHERE id=? AND finished=0",moment,recordId)==1) {
                 jdbc.update("UPDATE learning_lesson SET status=CASE WHEN learned_sections+1>=? THEN 2 ELSE 1 END,learned_sections=learned_sections+1,latest_section_id=?,latest_learn_time=CURRENT_TIMESTAMP(3) WHERE id=?",course.getSectionNum(),form.getSectionId(),lesson.getId());
+                milestones.completed(user,lesson.getCourseId(),form.getSectionId(),false,LocalDateTime.now(clock));
             }
         });
     }

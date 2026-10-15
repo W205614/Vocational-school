@@ -414,7 +414,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     public CourseFullInfoDTO getInfoById(Long id, boolean withCatalogue, boolean withTeachers) {
         // 1.查询课程基本信息
         Course course = baseMapper.selectById(id);
-        if (course == null) {
+        if (course == null || course.getDeleted()!=null && course.getDeleted()!=0) {
             throw new BadRequestException(CourseErrorInfo.Msg.COURSE_CHECK_NOT_EXISTS);
         }
         // 2.转换vo

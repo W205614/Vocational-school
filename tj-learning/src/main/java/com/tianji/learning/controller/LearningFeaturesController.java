@@ -32,10 +32,14 @@ public class LearningFeaturesController {
         var rows=jdbc.queryForList("SELECT course_id,created_at FROM course_favorite WHERE user_id=? ORDER BY created_at DESC,course_id DESC LIMIT ? OFFSET ?",user,page.getPageSize(),page.from());
         return Map.of("list",rows,"total",jdbc.queryForObject("SELECT COUNT(*) FROM course_favorite WHERE user_id=?",Long.class,user),"pageNo",page.getPageNo());
     }
-    @GetMapping("/notes") public Map<String,Object> notes(PageQuery page,@RequestParam(required=false) Long courseId) {
+    @GetMapping("/notes") public Map<String,Object> notes(PageQuery page,@RequestParam(required=false) Long courseId,@RequestParam(required=false) String keyword) {
         page.validate();long user=UserContext.requireUser();
         String condition="user_id=? AND deleted=0"+(courseId==null?"":" AND course_id=?");
         List<Object> params=new ArrayList<>(List.of(user));if(courseId!=null) params.add(courseId);
+        if(keyword!=null && !keyword.isBlank()) {
+            keyword=keyword.trim();if(keyword.length()>200)throw new BadRequestException("搜索词最多200字");
+            condition+=" AND content LIKE ? ESCAPE '!'";params.add("%"+keyword.replace("!","!!").replace("%","!%").replace("_","!_")+"%");
+        }
         long count=jdbc.queryForObject("SELECT COUNT(*) FROM course_note WHERE "+condition,Long.class,params.toArray());
         params.add(page.getPageSize());params.add(page.from());
         return Map.of("list",jdbc.queryForList("SELECT * FROM course_note WHERE "+condition+" ORDER BY updated_at DESC,id DESC LIMIT ? OFFSET ?",params.toArray()),"total",count);

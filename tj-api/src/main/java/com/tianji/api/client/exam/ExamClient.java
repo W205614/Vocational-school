@@ -15,6 +15,9 @@ import java.util.Map;
 @FeignClient("exam-service")
 public interface ExamClient {
 
+    @GetMapping("/internal/v1/exams/settlement-readiness")
+    Map<String,Object> settlementReadiness(@RequestParam("before") String before);
+
     @PostMapping("/question-biz/list")
     void saveQuestionBizInfoBatch(@RequestBody Iterable<QuestionBizDTO> qbs);
 

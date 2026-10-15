@@ -9,6 +9,9 @@ import java.util.List;
 @Data
 @Schema(description = "订单确认页信息")
 public class OrderConfirmVO {
+    private List<java.util.Map<String,Object>> availableCoupons = List.of();
+    private boolean couponSelectionRequired;
+    private String discountError;
     @Schema(description = "订单id")
     private Long orderId;
     @Schema(description = "订单总金额")

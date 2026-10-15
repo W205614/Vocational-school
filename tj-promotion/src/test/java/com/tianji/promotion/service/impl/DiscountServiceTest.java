@@ -42,6 +42,33 @@ class DiscountServiceTest {
   when(mapper.queryMyCoupons(1L)).thenReturn(java.util.stream.IntStream.rangeClosed(1,7).mapToObj(this::coupon).toList());
   assertThrows(BadRequestException.class,()->service.findDiscountSolution(courses()));
  }
+ @Test void quoteListsAllOwnedTicketsAndRequestsSelectionBeforeSearchingMoreThanSix(){
+  var owned=java.util.stream.IntStream.rangeClosed(1,9).mapToObj(this::coupon).toList();when(mapper.queryMyCoupons(1L)).thenReturn(owned);
+  List<Runnable> queued=new ArrayList<>();var quote=new DiscountServiceImpl(mapper,scopes,queued::add).quote(courses(),null);
+  assertTrue(quote.isCouponSelectionRequired());assertEquals(9,quote.getAvailableCoupons().size());assertEquals(owned.stream().map(Coupon::getCreater).toList(),quote.getAvailableCoupons().stream().map(c->c.get("id")).toList());
+  assertTrue(quote.getDiscounts().isEmpty());assertNull(quote.getDiscountError());assertTrue(queued.isEmpty());verifyNoInteractions(scopes);
+ }
+ @Test void quoteSearchesOnlySelectedUserTicketsAndKeepsTheIndependentSixTicketOptimum(){
+  var owned=java.util.stream.IntStream.rangeClosed(1,9).mapToObj(this::coupon).toList();when(mapper.queryMyCoupons(1L)).thenReturn(owned);
+  var selected=owned.subList(2,8);var ids=selected.stream().map(Coupon::getCreater).toList();var quote=service.quote(courses(),ids);
+  assertFalse(quote.isCouponSelectionRequired());assertEquals(9,quote.getAvailableCoupons().size());assertEquals(oracle(selected,new boolean[6],2628,0),quote.getDiscounts().getFirst().getDiscountAmount());
+  for(var discount:quote.getDiscounts())assertTrue(new HashSet<>(ids).containsAll(discount.getIds()));
+ }
+ @Test void quoteRejectsDuplicateExcessUnknownAndNullTicketSelection(){
+  var owned=java.util.stream.IntStream.rangeClosed(1,9).mapToObj(this::coupon).toList();when(mapper.queryMyCoupons(1L)).thenReturn(owned);
+  for(var ids:List.of(List.of(101L,101L),owned.subList(0,7).stream().map(Coupon::getCreater).toList(),List.of(99999L),Arrays.asList(101L,null)))assertThrows(BadRequestException.class,()->service.quote(courses(),ids));
+ }
+ @Test void explicitNoCouponSelectionSkipsSearchEvenWithMoreThanSixTickets(){
+  when(mapper.queryMyCoupons(1L)).thenReturn(java.util.stream.IntStream.rangeClosed(1,9).mapToObj(this::coupon).toList());
+  List<Runnable> queued=new ArrayList<>();var timed=new DiscountServiceImpl(mapper,scopes,queued::add);var quote=timed.quote(courses(),List.of());
+  assertEquals(9,quote.getAvailableCoupons().size());assertFalse(quote.isCouponSelectionRequired());assertTrue(quote.getDiscounts().isEmpty());assertNull(quote.getDiscountError());assertTrue(queued.isEmpty());
+  var order=new OrderCouponDTO();order.setCourseList(courses());order.setUserCouponIds(List.of());assertEquals(0,timed.queryDiscountDetailByOrder(order).getDiscountAmount());verify(mapper,never()).queryCouponByUserCouponIds(any(),any(),any(),any());
+ }
+ @Test void quoteReportsTimeoutWithoutPartialDiscountAndStillAllowsExplicitNoCoupon(){
+  when(mapper.queryMyCoupons(1L)).thenReturn(List.of(coupon(1)));List<Runnable> queued=new ArrayList<>();var timed=new DiscountServiceImpl(mapper,scopes,queued::add);
+  var quote=timed.quote(courses(),List.of(101L));assertFalse(quote.isCouponSelectionRequired());assertFalse(quote.getDiscountError().isBlank());assertTrue(quote.getDiscountError().contains("不使用优惠券"));assertTrue(quote.getDiscounts().isEmpty());
+  assertEquals(1,queued.size());assertTrue(((Future<?>)queued.getFirst()).isCancelled());var noCoupon=timed.quote(courses(),List.of());assertNull(noCoupon.getDiscountError());assertTrue(noCoupon.getDiscounts().isEmpty());assertEquals(1,queued.size());
+ }
  @Test @SuppressWarnings("unchecked") void scopeFilteringAndDuplicateTemplateTicketsPreserveUserTicketIds(){
   var first=coupon(1).setSpecific(true);var second=coupon(1).setCreater(999L).setSpecific(true);
   when(mapper.queryMyCoupons(1L)).thenReturn(List.of(first,second));

@@ -14,4 +14,9 @@ public class PointsBoardVO {
     private Integer points;
     @Schema(description = "前100名上榜人信息")
     private List<PointsBoardItemVO> boardList;
+    private String month;
+    private String status;
+    private Long total;
+    private Integer gapToPrevious;
+    private boolean legacyReadonly;
 }

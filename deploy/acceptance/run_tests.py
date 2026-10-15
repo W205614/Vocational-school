@@ -37,7 +37,7 @@ def main():
   for table in tables:
    if mysql(f"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='{target}' AND table_name='{table}'")=='0':mysql(f'CREATE TABLE {table} LIKE {origin}.{table}',target)
   apply_migrations(target,list((BASE/'migrations/common').glob('V*.sql')))
- apply_migrations('acceptance_exam',list((BASE/'migrations/tj_exam').glob('V003*.sql')))
+ apply_migrations('acceptance_exam',sorted(p for p in (BASE/'migrations/tj_exam').glob('V*.sql') if int(p.name[1:4])>=3))
  mysql('CREATE DATABASE IF NOT EXISTS acceptance_trade')
  if mysql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='tj_trade' AND table_name='order'")=='1':
   mysql('CREATE TABLE IF NOT EXISTS `order` LIKE tj_trade.`order`','acceptance_trade')

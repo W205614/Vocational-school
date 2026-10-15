@@ -59,6 +59,9 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
 
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final LearningEntitlementService entitlements;
+    private java.time.Clock clock=java.time.Clock.system(java.time.ZoneId.of("Asia/Shanghai"));
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setLearningClock(@org.springframework.beans.factory.annotation.Qualifier("learningClock") java.time.Clock clock){this.clock=clock;}
 
     @Override
     public PageDTO<LearningLessonVO> queryMyLessons(PageQuery query) {
@@ -243,7 +246,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         Long userId = UserContext.getUser();
 
         // 2. 获取本周起始时间
-        LocalDate now = LocalDate.now();
+        LocalDate now = LocalDate.now(clock);
         LocalDateTime begin = DateUtils.getWeekBeginTime(now);
         LocalDateTime end = begin.plusWeeks(1);
 

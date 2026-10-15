@@ -30,7 +30,7 @@ export async function request<T>(path:string,options:RequestInit={},key?:string,
   if(key) headers.set('Idempotency-Key',key);
   const signal=options.signal?AbortSignal.any([options.signal,abort.signal]):abort.signal;
   const response=await fetch('/api/v2'+path,{...options,headers,credentials:'include',signal});
-  const body=await response.json() as Envelope<T>;
+  const body=await response.json().catch(()=>{throw new ApiError('服务暂时无法连接，请稍后重试',response.status);}) as Envelope<T>;
   if(response.status===401 && token && !retried && !path.startsWith('/auth/accounts/')){
    await refreshIdentity();return request<T>(path,options,key,true);
   }

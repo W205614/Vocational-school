@@ -25,6 +25,25 @@ public class DiscountServiceImpl implements IDiscountService {
         validateCourses(courses);
         List<Coupon> coupons=userCouponMapper.queryMyCoupons(requireUser());
         if(coupons.size()>MAX_COUPONS) throw new BadRequestException("一次最多参与 6 张有效用户券，请选择后重试");
+        return solutions(courses,coupons);
+    }
+    @Override public CouponQuoteDTO quote(List<OrderCourseDTO> courses,List<Long> ids) {
+        validateCourses(courses);
+        List<Coupon> owned=userCouponMapper.queryMyCoupons(requireUser());
+        CouponQuoteDTO result=new CouponQuoteDTO();
+        result.setAvailableCoupons(owned.stream().map(c->{Map<String,Object> item=new LinkedHashMap<>();
+            item.put("id",c.getCreater());item.put("couponId",c.getId());item.put("name",c.getName());
+            item.put("rule",DiscountStrategy.getDiscount(c.getDiscountType()).getRule(c));return item;}).toList());
+        if(ids==null && owned.size()>MAX_COUPONS){result.setCouponSelectionRequired(true);return result;}
+        if(ids!=null && (ids.size()>MAX_COUPONS || ids.stream().anyMatch(Objects::isNull) || new HashSet<>(ids).size()!=ids.size()))
+            throw new BadRequestException("请选择最多 6 张不同的优惠券");
+        List<Coupon> selected=ids==null?owned:owned.stream().filter(c->ids.contains(c.getCreater())).toList();
+        if(ids!=null && selected.size()!=ids.size())throw new BadRequestException("优惠券已失效或不属于当前用户");
+        try {result.setDiscounts(solutions(courses,selected));}
+        catch(CommonException unavailable){result.setDiscountError("优惠计算暂时不可用，请重试或不使用优惠券购买");}
+        return result;
+    }
+    private List<CouponDiscountDTO> solutions(List<OrderCourseDTO> courses,List<Coupon> coupons) {
         Map<Coupon,List<OrderCourseDTO>> scopes=available(coupons,courses);
         if(scopes.isEmpty()) return List.of();
         FutureTask<List<CouponDiscountDTO>> task=new FutureTask<>(() -> {

@@ -71,6 +71,7 @@ def prepare():
   tj['reliability']={'enabled':database is not None,'operation-interval-ms':tuning['interval'],'dispatch-interval-ms':tuning['interval'],'operation-core':tuning['workers'],'operation-max':4,'outbox-core':tuning['workers'],'outbox-max':2}
   if alias=='trade':tj.setdefault('trade',{}).update({'creation-interval-ms':tuning['interval'],'financial-interval-ms':tuning['interval']})
   resource=tj.setdefault('auth',{}).setdefault('resource',{});resource['enable']=True;resource.setdefault('excludeLoginPaths',[]).extend(['/actuator/health/**','/readyz'])
+  if alias in ('course','search'):resource['excludeLoginPaths'].extend(['/api/v2/public/**'])
   if alias=='auth':c['encrypt']={'key-store':{'alias':'compact','location':'file:/run/compact/signing.jks','password':env['ACCEPTANCE_INTERNAL_TOKEN'],'secret':env['ACCEPTANCE_INTERNAL_TOKEN']}};resource['includeLoginPaths']=['/menus/me','/accounts/logout','/accounts/sessions/**']
   if alias=='media':tj['platform']={'file':'LOCAL','media':'LOCAL'};tj['local-storage']={'enabled':True,'directory':'/run/objects'};tj['tencent']['vod']['enable']=False;tj['tencent']['cos']['enable']=False;resource['excludeLoginPaths'].extend(['/local-content/**','/course-covers/*']);s['servlet']={'multipart':{'max-file-size':'200MB','max-request-size':'201MB'}}
   if alias=='search':s['elasticsearch']={'uris':'http://elasticsearch:9200'};tj['interests']={'top-number':10}

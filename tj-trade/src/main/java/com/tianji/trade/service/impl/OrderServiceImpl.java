@@ -203,6 +203,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Override
     public OrderConfirmVO prePlaceOrder(List<Long> courseIds) {
+        return prePlaceOrder(courseIds,null);
+    }
+    @Override public OrderConfirmVO prePlaceOrder(List<Long> courseIds,List<Long> couponIds) {
+        UserContext.requireUser();
+        if(courseIds==null || courseIds.isEmpty() || courseIds.size()>100 || new java.util.HashSet<>(courseIds).size()!=courseIds.size())
+            throw new com.tianji.common.exceptions.BadRequestException("请选择 1 到 100 门不同课程");
         // 1.查询课程信息
         List<CourseSimpleInfoDTO> courseInfos = courseClient.getSimpleInfoList(courseIds);
         if (CollUtils.isEmpty(courseInfos)) {
@@ -215,14 +221,23 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         List<OrderCourseDTO> orderCourse = courseInfos.stream()
                 .map(ci -> new OrderCourseDTO().setId(ci.getId()).setCateId(ci.getThirdCateId()).setPrice(ci.getPrice()))
                 .collect(Collectors.toList());
-        List<CouponDiscountDTO> discountSolution = promotionClient.findDiscountSolution(orderCourse);
+        com.tianji.api.dto.promotion.CouponQuoteDTO quote;
+        try {quote=couponIds!=null && couponIds.isEmpty()?new com.tianji.api.dto.promotion.CouponQuoteDTO():promotionClient.quote(orderCourse,couponIds);}
+        catch(com.tianji.common.exceptions.CommonException unavailable) {
+            if(unavailable.getStatus()<500)throw unavailable;
+            quote=new com.tianji.api.dto.promotion.CouponQuoteDTO();
+            quote.setDiscountError("优惠方案暂时无法加载，可重试或不使用优惠券购买");
+        }
         // 4.生成订单id
         long orderId = IdWorker.getId();
         // 5.组织返回
         OrderConfirmVO vo = new OrderConfirmVO();
         vo.setOrderId(orderId);
         vo.setTotalAmount(total);
-        vo.setDiscounts(discountSolution);
+        vo.setDiscounts(quote.getDiscounts());
+        vo.setAvailableCoupons(quote.getAvailableCoupons());
+        vo.setCouponSelectionRequired(quote.isCouponSelectionRequired());
+        vo.setDiscountError(quote.getDiscountError());
         vo.setCourses(courses);
         return vo;
     }

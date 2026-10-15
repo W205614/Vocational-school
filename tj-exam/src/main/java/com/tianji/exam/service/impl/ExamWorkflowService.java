@@ -111,7 +111,8 @@ public class ExamWorkflowService implements OperationHandler {
         boolean passed=(long)score*100>=((Number)paper.get("total_score")).longValue()*((Number)paper.get("pass_percent")).intValue();
         jdbc.update("UPDATE exam_attempt SET status='FINISHED',score=?,passed=?,graded_at=CURRENT_TIMESTAMP(3),version=version+1 WHERE id=? AND status='WAIT_GRADING'",score,passed,id);
         if(passed) outbox.enqueue("exam:"+id+":passed","learning.topic","exam.passed",
-                Map.of("attemptId",id,"userId",attempt.get("user_id"),"lessonId",attempt.get("lesson_id"),"courseId",paper.get("course_id"),"sectionId",paper.get("section_id"),"sectionCount",paper.get("section_count")));
+                Map.of("attemptId",id,"userId",attempt.get("user_id"),"lessonId",attempt.get("lesson_id"),"courseId",paper.get("course_id"),"sectionId",paper.get("section_id"),"sectionCount",paper.get("section_count"),
+                        "occurredAt",jdbc.queryForObject("SELECT graded_at FROM exam_attempt WHERE id=?",java.time.LocalDateTime.class,id)));
     }
     private Map<String,Object> lockAttempt(Long id) {
         if(id==null) throw new BadRequestException("考试标识不能为空");
@@ -150,7 +151,10 @@ public class ExamWorkflowService implements OperationHandler {
         if(rows.isEmpty()) throw new BadRequestException("考试记录不存在");
         var attempt=rows.getFirst();
         if(!grader && ((Number)attempt.get("user_id")).longValue()!=user) throw new BadRequestException("考试记录不存在");
-        List<Map<String,Object>> questions=jdbc.queryForList("SELECT question_id,position,name,type,score,options FROM exam_paper_question WHERE paper_id=? ORDER BY position",attempt.get("paper_id"));
+        // Reference material is the published snapshot, never the mutable question bank.
+        // A mixed paper remains sealed until every subjective answer is graded.
+        String reference=(!grader && "FINISHED".equals(attempt.get("status")))?",answer,analysis":"";
+        List<Map<String,Object>> questions=jdbc.queryForList("SELECT question_id,position,name,type,score,options"+reference+" FROM exam_paper_question WHERE paper_id=? ORDER BY position",attempt.get("paper_id"));
         for(var q:questions) {if(q.get("options")!=null) q.put("options",json.readValue(q.get("options").toString(),Object.class));}
         attempt.put("questions",questions);
         if(!"IN_PROGRESS".equals(attempt.get("status"))) attempt.put("answers",jdbc.queryForList("SELECT question_id,response,score,feedback,version FROM exam_answer WHERE attempt_id=?",id));

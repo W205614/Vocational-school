@@ -48,6 +48,8 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
     private final RemarkClient remarkClient;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final LearningEntitlementService entitlements;
+    private final com.tianji.api.client.course.CourseClient courses;
+    private final com.tianji.common.autoconfigure.reliability.OutboxStore outbox;
 
     @Override
     @Transactional
@@ -57,6 +59,10 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
         InteractionQuestion question=questionMapper.selectById(dto.getQuestionId());
         if(question==null || Boolean.TRUE.equals(question.getHidden()))throw new BadRequestException("问题不存在");
         boolean staff=Set.of(1L,3L).contains(UserContext.getRole());
+        if(Long.valueOf(3).equals(UserContext.getRole())) {
+            var info=courses.getCourseInfoById(question.getCourseId(),false,true);
+            if(info==null || info.getTeacherIds()==null || !info.getTeacherIds().contains(userId))throw new com.tianji.common.exceptions.ForbiddenException("需要该课程的授课权限");
+        }
         if(!staff) entitlements.require(userId,question.getCourseId());
         if(dto.getAnswerId()!=null){var parent=getById(dto.getAnswerId());
             if(parent==null || !Objects.equals(parent.getQuestionId(),question.getId()) || parent.getAnswerId()!=null)throw new BadRequestException("评论所属回答无效");}
@@ -88,6 +94,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
             //dto.getIsStudent()为true则代表学生提交，如果是将问题表中该问题的status字段改为未查看
             jdbc.update("UPDATE interaction_question SET status=0 WHERE id=?",question.getId());
         }
+        if(!Objects.equals(userId,question.getUserId()))outbox.enqueue("reply-notice:"+reply.getId(),"learning.topic","learning.notice.created",java.util.Map.of("noticeId","reply:"+reply.getId(),"userId",question.getUserId(),"title","你的课程问题收到新回复","content","打开课程讨论查看回复内容。","bizId",question.getId()));
     }
 
     @Override

@@ -12,4 +12,8 @@ public class SignRecordVO {
     private Integer signDays;
     @Schema(description = "签到记录，例如：[0,1,1,0,1]，按照数组角标0~30，代表当月1~31号, 0代表未签到，1代表已签到")
     private List<Byte> signRecords;
+    private String month;
+    private boolean todaySigned;
+    private int daysInMonth;
+    private List<java.util.Map<String,Integer>> rewards;
 }

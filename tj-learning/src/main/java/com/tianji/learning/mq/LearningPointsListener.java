@@ -16,7 +16,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class LearningPointsListener {
 
-    private final IPointsRecordService recordService;
+    private final com.tianji.learning.service.impl.PointsRecordServiceImpl recordService;
+    private final tools.jackson.databind.json.JsonMapper json;
 
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(name = "qa.points.queue", durable = "true"),
@@ -24,7 +25,7 @@ public class LearningPointsListener {
             key = MqConstants.Key.WRITE_REPLY
     ))
     public void listenWriteReplyMessage(Long userId, org.springframework.amqp.core.Message raw) {
-        recordService.addPointsRecord(userId, 5, PointsRecordType.QA, raw.getMessageProperties().getMessageId());
+        // Legacy reply.new events never imply teacher acceptance and cannot award points.
     }
 
     @RabbitListener(bindings = @QueueBinding(
@@ -33,6 +34,13 @@ public class LearningPointsListener {
             key = MqConstants.Key.SIGN_IN
     ))
     public void listenSignInMessage(SignInMessage message, org.springframework.amqp.core.Message raw) {
-        recordService.addPointsRecord(message.getUserId(), message.getPoints(), PointsRecordType.SIGN, raw.getMessageProperties().getMessageId());
+        java.time.LocalDateTime occurred=message.getOccurredAt();
+        if(occurred==null) {
+            var envelope=json.readTree(raw.getBody());String key=envelope.has("businessKey")?envelope.get("businessKey").asString():"";
+            String prefix="sign:"+message.getUserId()+":";
+            if(!key.startsWith(prefix))throw new IllegalArgumentException("旧签到事件缺少可核实日期，需要人工核对");
+            occurred=java.time.LocalDate.parse(key.substring(prefix.length())).atStartOfDay();
+        }
+        recordService.award(message.getUserId(),message.getPoints(),PointsRecordType.SIGN,raw.getMessageProperties().getMessageId(),occurred);
     }
 }

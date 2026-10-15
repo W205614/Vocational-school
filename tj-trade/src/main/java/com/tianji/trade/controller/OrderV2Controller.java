@@ -19,7 +19,7 @@ public class OrderV2Controller {
     @PostMapping("/free-courses/{courseId}") public ResponseEntity<OperationStore.View> enroll(@PathVariable Long courseId,@RequestHeader("Idempotency-Key") String key){
         return ResponseEntity.accepted().body(operations.submit(UserContext.requireUser(),"FREE_ENROLL",key,java.util.Map.of("courseId",courseId)));
     }
-    @GetMapping("/confirmation") public Object confirm(@RequestParam List<Long> courseIds) {UserContext.requireUser();return orders.prePlaceOrder(courseIds);}
+    @GetMapping("/confirmation") public Object confirm(@RequestParam List<Long> courseIds,@RequestParam(required=false) List<Long> couponIds) {UserContext.requireUser();return orders.prePlaceOrder(courseIds,couponIds);}
     @GetMapping("/{id}") public Object detail(@PathVariable Long id) {return orders.queryOrderById(id);}
     @GetMapping("/{id}/status") public Object status(@PathVariable Long id) {return orders.queryOrderStatus(id);}
     @PutMapping("/{id}/cancel") public void cancel(@PathVariable Long id) {orders.cancelOrder(id);}

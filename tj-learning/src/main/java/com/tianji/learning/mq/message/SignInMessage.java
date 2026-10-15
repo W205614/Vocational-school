@@ -10,4 +10,6 @@ import lombok.NoArgsConstructor;
 public class SignInMessage {
     private Long userId;
     private Integer points;
+    private java.time.LocalDateTime occurredAt;
+    public static SignInMessage of(Long userId,Integer points){return of(userId,points,null);}
 }

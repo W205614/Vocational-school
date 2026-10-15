@@ -45,5 +45,6 @@ public interface IOrderService extends IService<Order> {
     PlaceOrderResultVO enrolledFreeCourse(Long courseId);
 
     OrderConfirmVO prePlaceOrder(List<Long> courseIds);
+    OrderConfirmVO prePlaceOrder(List<Long> courseIds, List<Long> couponIds);
 
 }

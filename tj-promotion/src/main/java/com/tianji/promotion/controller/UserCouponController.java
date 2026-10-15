@@ -34,6 +34,12 @@ public class UserCouponController {
     private final IUserCouponService userCouponService;
 
     private final IDiscountService discountService;
+
+    @PostMapping("/quote")
+    public com.tianji.api.dto.promotion.CouponQuoteDTO quote(@RequestBody List<OrderCourseDTO> courses,
+            @RequestParam(value="couponIds",required=false) List<Long> ids) {
+        return discountService.quote(courses,ids);
+    }
     private final com.tianji.common.autoconfigure.reliability.OperationStore operations;
 
     @Operation(summary = "领取优惠卷接口")

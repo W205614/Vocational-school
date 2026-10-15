@@ -17,6 +17,9 @@ public class PromotionClientFallback implements FallbackFactory<PromotionClient>
     public PromotionClient create(Throwable cause) {
         log.error("查询促销服务出现异常, ", cause);
         return new PromotionClient() {
+            @Override public com.tianji.api.dto.promotion.CouponQuoteDTO quote(List<OrderCourseDTO> courses,List<Long> couponIds) {
+                throw new com.tianji.common.exceptions.ServiceUnavailableException("优惠方案暂时不可用，可以不使用优惠券购买");
+            }
             @Override public java.util.Map<String,Object> reserveCoupons(Long order,com.tianji.api.dto.promotion.CouponReservationDTO request) {
                 throw new com.tianji.common.exceptions.CommonException("优惠券预占暂不可用",cause);
             }

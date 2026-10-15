@@ -97,6 +97,9 @@ public class InteractionQuestion implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
+    private Long acceptedReplyId;
+    private LocalDateTime acceptedAt;
+    private Long acceptedBy;
 
 
 }
