@@ -55,6 +55,16 @@ def sql(database, statement):
     return setup.mysql('USE `' + database + '`;\n' + statement)
 
 
+def reward_diagnostics(request_id, ticket, student, coupon):
+    """Only predicate flags and time metadata; never identities or credentials."""
+    statement = "SELECT JSON_OBJECT('receiptSucceeded',d.status='SUCCEEDED','ticketMatches',u.id=" + identifier(ticket)
+    statement += ",'ownerMatches',u.user_id=" + identifier(student) + ",'couponMatches',u.coupon_id=" + identifier(coupon)
+    statement += ",'stockMatches',c.issue_num=1,'unused',u.status=1,'started',u.term_begin_time<=NOW(),'unexpired',u.term_end_time>NOW(),"
+    statement += "'validFrom',u.term_begin_time,'validUntil',u.term_end_time,'serverNow',NOW(6),'shanghaiNow',UTC_TIMESTAMP(6)+INTERVAL 8 HOUR,'sessionTimeZone',@@session.time_zone) "
+    statement += 'FROM season_reward_delivery d LEFT JOIN user_coupon u ON u.id=d.user_coupon_id LEFT JOIN coupon c ON c.id=u.coupon_id WHERE d.request_id=' + literal(request_id) + ' LIMIT 1'
+    return sql('tj_promotion', statement) or '{"receiptMissing":true}'
+
+
 def gateway_call(session, method, endpoint, body=None, key=None):
     # Derive the endpoint from this compact project's configured port, never an
     # arbitrary external base URL supplied by another tool or the fixture file.
@@ -226,7 +236,7 @@ def main():
         ticket = identifier(receipt['userCouponId'])
         verified = sql('tj_promotion', 'SELECT COUNT(*) FROM season_reward_delivery d JOIN user_coupon u ON u.id=d.user_coupon_id JOIN coupon c ON c.id=u.coupon_id WHERE d.request_id=' + literal(request_id) + " AND d.status='SUCCEEDED' AND u.id=" + ticket + ' AND u.user_id=' + student + ' AND u.coupon_id=' + coupon + ' AND c.issue_num=1 AND u.status=1 AND u.term_begin_time<=NOW() AND u.term_end_time>NOW()')
         if verified != '1':
-            raise RuntimeError('Fulfilled receipt is not backed by a real valid student-owned coupon')
+            raise RuntimeError('Fulfilled receipt is not backed by a real valid student-owned coupon; predicates=' + reward_diagnostics(request_id, ticket, student, coupon))
         confirmation = gateway_call(learner, 'GET', '/orders/confirmation?courseIds=' + identifier(original['course']))
         candidate = next((item for item in confirmation['availableCoupons'] if str(item['id']) == ticket and str(item['couponId']) == coupon), None)
         if candidate is None:

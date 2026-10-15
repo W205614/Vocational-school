@@ -61,6 +61,19 @@ class MotivationFixtureTest(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 self.fixture.identifier(value)
 
+    def test_reward_failure_diagnostics_preserve_predicates_without_returning_identities(self):
+        self.setup.mysql.return_value = '{"started":0,"ownerMatches":1}'
+        self.assertEqual('{"started":0,"ownerMatches":1}', self.fixture.reward_diagnostics('synthetic-request', '101', '102', '103'))
+        statement = self.setup.mysql.call_args.args[0]
+        for predicate in ['receiptSucceeded', 'ticketMatches', 'ownerMatches', 'couponMatches', 'stockMatches', 'unused', 'started', 'unexpired', 'sessionTimeZone', 'shanghaiNow']:
+            self.assertIn("'" + predicate + "'", statement)
+        self.assertIn('u.term_begin_time<=NOW()', statement)
+        self.assertIn('u.term_end_time>NOW()', statement)
+        self.assertNotIn("'userId'", statement)
+        self.assertNotIn("'requestId'", statement)
+        self.setup.mysql.return_value = ''
+        self.assertEqual('{"receiptMissing":true}', self.fixture.reward_diagnostics('synthetic-request', '101', '102', '103'))
+
 
 if __name__ == '__main__':
     unittest.main()

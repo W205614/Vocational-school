@@ -70,6 +70,20 @@ class SeasonRewardDeliveryReliabilityTest {
         assertEquals(1,stock());assertEquals(1,ticketCount());assertEquals(1,receiptCount());assertEquals(1,ackCount("learning.reward.fulfilled"));assertEquals(0,ackCount("learning.reward.failed"));
         var receipt=jdbc.queryForMap("SELECT status,user_coupon_id FROM season_reward_delivery WHERE request_id=?",requestId);assertEquals("SUCCEEDED",receipt.get("status"));assertEquals(receipt.get("user_coupon_id"),jdbc.queryForObject("SELECT id FROM user_coupon WHERE coupon_id=?",Long.class,couponId));
     }
+    @Test void relativeRewardIsImmediatelyUsableWhenDatetimeWouldRoundPointNineSecondsForward(){
+        var zone=ZoneId.of("Asia/Shanghai");var at=LocalDateTime.now(zone).withNano(900_000_000);
+        var rounded=jdbc.queryForObject("SELECT CAST(CAST(? AS DATETIME(6)) AS DATETIME)",java.sql.Timestamp.class,at.toString()).toLocalDateTime();
+        assertEquals(at.withNano(0).plusSeconds(1),rounded,"Real MySQL DATETIME(0) must reproduce the old forward-rounding boundary");
+        delivery=new SeasonRewardDelivery(jdbc,coupons,tickets,outbox,new DataSourceTransactionManager(source),Clock.fixed(at.atZone(zone).toInstant(),zone));
+        delivery.receive(request(),message("precision-"+couponId));
+        var ticket=jdbc.queryForMap("SELECT * FROM user_coupon WHERE coupon_id=?",couponId);
+        assertEquals(at.withNano(0),ticket.get("term_begin_time"));
+        assertEquals(at.withNano(0).plusDays(30),ticket.get("term_end_time"));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM user_coupon WHERE coupon_id=? AND user_id=? AND status=1 AND term_begin_time<=CAST(? AS DATETIME(6)) AND term_end_time>CAST(? AS DATETIME(6))",Integer.class,couponId,user,at.toString(),at.toString()));
+        assertEquals(1,stock());assertEquals(1,ticketCount());assertEquals(1,receiptCount());assertEquals(1,ackCount("learning.reward.fulfilled"));assertEquals(0,ackCount("learning.reward.failed"));
+        var receipt=jdbc.queryForMap("SELECT status,user_coupon_id FROM season_reward_delivery WHERE request_id=?",requestId);
+        assertEquals("SUCCEEDED",receipt.get("status"));assertEquals(ticket.get("id"),receipt.get("user_coupon_id"));
+    }
     @Test void depletedStockFailsDurablyAndOnlyANewExplicitRetryCanDeliverAfterRestock(){
         jdbc.update("UPDATE coupon SET total_num=0 WHERE id=?",couponId);var original=message("empty-"+couponId);delivery.receive(request(),original);
         assertEquals("FAILED",jdbc.queryForObject("SELECT status FROM season_reward_delivery WHERE request_id=?",String.class,requestId));assertEquals(0,stock());assertEquals(0,ticketCount());assertEquals(1,ackCount("learning.reward.failed"));
