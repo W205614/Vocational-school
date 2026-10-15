@@ -278,7 +278,8 @@ test('admin configures a future rule, current rules stay locked and real reward 
     const current = seasons.find((s: any) => s.month === now);
     expect(future).toBeTruthy();expect(current).toBeTruthy();
     await page.reload();
-    await choose(page, '管理赛季', future.name + ' · ' + seasonStatus[future.status]);
+    expect(future.status).toBe('OPEN');
+    await choose(page, '管理赛季', future.name + ' · 未开始');
     await page.getByRole('button', {name: '新增奖励档位', exact: true}).click();
     const dialog = page.getByRole('dialog', {name: '赛季奖励规则', exact: true});
     await dialog.getByRole('spinbutton', {name: '结束名次', exact: true}).fill('502');

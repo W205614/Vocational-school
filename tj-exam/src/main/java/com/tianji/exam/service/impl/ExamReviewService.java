@@ -60,5 +60,11 @@ public class ExamReviewService implements OperationHandler {
         var rows=jdbc.queryForList("SELECT "+FIELDS+FROM+" AND a.id=? AND q.question_id=?",user,attemptId,questionId);
         if(rows.isEmpty())throw new BadRequestException("已评分错题不存在");return rows.getFirst();
     }
-    private void decodeOptions(Map<String,Object> row){if(row.get("options")!=null)row.put("options",json.readValue(row.get("options").toString(),Object.class));}
+    private void decodeOptions(Map<String,Object> row){
+        if(row.get("options")!=null)row.put("options",json.readValue(row.get("options").toString(),Object.class));
+        // MySQL promotes COALESCE(TINYINT, 0) to a wider integer. The platform's
+        // identifier serializer writes Long as strings, so expose this flag explicitly.
+        Object mastered=row.get("mastered");
+        row.put("mastered",mastered instanceof Number value?value.intValue()!=0:Boolean.TRUE.equals(mastered));
+    }
 }

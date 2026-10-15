@@ -228,8 +228,12 @@ def main():
         if verified != '1':
             raise RuntimeError('Fulfilled receipt is not backed by a real valid student-owned coupon')
         confirmation = gateway_call(learner, 'GET', '/orders/confirmation?courseIds=' + identifier(original['course']))
-        if not any(str(item['id']) == ticket and str(item['couponId']) == coupon for item in confirmation['availableCoupons']):
+        candidate = next((item for item in confirmation['availableCoupons'] if str(item['id']) == ticket and str(item['couponId']) == coupon), None)
+        if candidate is None:
             raise RuntimeError('Actual reward ticket is unavailable to its owner at order confirmation')
+        actual_expiry = sql('tj_promotion', "SELECT DATE_FORMAT(term_end_time,'%Y-%m-%d %H:%i:%s') FROM user_coupon WHERE id=" + ticket + ' AND user_id=' + student)
+        if candidate.get('name') != coupon_name or str(candidate.get('termEndTime', '')).replace('T', ' ')[:19] != actual_expiry:
+            raise RuntimeError('Coupon choice metadata must match the real template name and owned ticket expiry')
         result = dict(synthetic=True, course=course, name=name, lesson=lesson, reviewAttempt=wrong_id,
                       reviewQuestion=question, reviewName=review_name, question=identifier(discussion['id']),
                       questionTitle=question_title, unassignedCourse=unassigned, historyMonth=history_month,

@@ -17,7 +17,7 @@ class DiscountServiceTest {
  @BeforeEach void setup(){mapper=mock(UserCouponMapper.class);scopes=mock(ICouponScopeService.class);service=new DiscountServiceImpl(mapper,scopes,Runnable::run);UserContext.setUser(1L);}
  @AfterEach void cleanup(){UserContext.removeUser();}
  private Coupon coupon(int i){
-  return new Coupon().setId((long)i).setCreater(100L+i).setDiscountType(i%2==0?DiscountType.RATE_DISCOUNT:DiscountType.PRICE_DISCOUNT)
+  return new Coupon().setId((long)i).setCreater(100L+i).setName("Coupon "+i).setTermEndTime(java.time.LocalDateTime.of(2030,1,1,0,0)).setDiscountType(i%2==0?DiscountType.RATE_DISCOUNT:DiscountType.PRICE_DISCOUNT)
    .setDiscountValue(i%2==0?80:125).setThresholdAmount(0).setMaxDiscountAmount(100000).setSpecific(false);
  }
  private List<OrderCourseDTO> courses(){return List.of(new OrderCourseDTO().setId(1L).setCateId(10L).setPrice(1737),new OrderCourseDTO().setId(2L).setCateId(20L).setPrice(891));}
@@ -46,6 +46,7 @@ class DiscountServiceTest {
   var owned=java.util.stream.IntStream.rangeClosed(1,9).mapToObj(this::coupon).toList();when(mapper.queryMyCoupons(1L)).thenReturn(owned);
   List<Runnable> queued=new ArrayList<>();var quote=new DiscountServiceImpl(mapper,scopes,queued::add).quote(courses(),null);
   assertTrue(quote.isCouponSelectionRequired());assertEquals(9,quote.getAvailableCoupons().size());assertEquals(owned.stream().map(Coupon::getCreater).toList(),quote.getAvailableCoupons().stream().map(c->c.get("id")).toList());
+  for(int i=0;i<owned.size();i++){assertEquals(owned.get(i).getName(),quote.getAvailableCoupons().get(i).get("name"));assertEquals(owned.get(i).getTermEndTime(),quote.getAvailableCoupons().get(i).get("termEndTime"));}
   assertTrue(quote.getDiscounts().isEmpty());assertNull(quote.getDiscountError());assertTrue(queued.isEmpty());verifyNoInteractions(scopes);
  }
  @Test void quoteSearchesOnlySelectedUserTicketsAndKeepsTheIndependentSixTicketOptimum(){

@@ -33,6 +33,7 @@ public class DiscountServiceImpl implements IDiscountService {
         CouponQuoteDTO result=new CouponQuoteDTO();
         result.setAvailableCoupons(owned.stream().map(c->{Map<String,Object> item=new LinkedHashMap<>();
             item.put("id",c.getCreater());item.put("couponId",c.getId());item.put("name",c.getName());
+            item.put("termEndTime",c.getTermEndTime());
             item.put("rule",DiscountStrategy.getDiscount(c.getDiscountType()).getRule(c));return item;}).toList());
         if(ids==null && owned.size()>MAX_COUPONS){result.setCouponSelectionRequired(true);return result;}
         if(ids!=null && (ids.size()>MAX_COUPONS || ids.stream().anyMatch(Objects::isNull) || new HashSet<>(ids).size()!=ids.size()))

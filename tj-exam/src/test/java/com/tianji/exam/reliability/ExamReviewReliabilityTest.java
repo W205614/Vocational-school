@@ -50,12 +50,36 @@ class ExamReviewReliabilityTest {
         var result=execute(new ExamReviewService.Command("REVIEW",attempt,question,"2,1",null,0L));
         var history=(List<Map<String,Object>>)result.get("reviews");assertEquals(1,history.size());assertEquals(1,((Number)history.getFirst().get("correct")).intValue());assertEquals(1L,((Number)result.get("version")).longValue());
         execute(new ExamReviewService.Command("STATE",attempt,question,null,true,1L));
-        var otherDevice=new ExamReviewService(jdbc,json);assertEquals(1,((Number)otherDevice.detail(user,attempt,question).get("mastered")).intValue());
+        var otherDevice=new ExamReviewService(jdbc,json);assertEquals(Boolean.TRUE,otherDevice.detail(user,attempt,question).get("mastered"));
         assertEquals(0L,otherDevice.page(user,1,20,paper,2,false).get("total"));assertEquals(1L,otherDevice.page(user,1,20,paper,2,true).get("total"));
         assertThrows(ConflictException.class,()->execute(new ExamReviewService.Command("STATE",attempt,question,null,false,1L)));
         execute(new ExamReviewService.Command("STATE",attempt,question,null,false,2L));
         assertEquals(1L,reviews.page(user,1,20,paper,2,false).get("total"));assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM exam_review_record WHERE attempt_id=?",Integer.class,attempt));
         assertEquals(0,jdbc.queryForObject("SELECT score FROM exam_attempt WHERE id=?",Integer.class,attempt));assertEquals("3",jdbc.queryForObject("SELECT response FROM exam_answer WHERE attempt_id=?",String.class,attempt));assertEquals(0,jdbc.queryForObject("SELECT score FROM exam_answer WHERE attempt_id=?",Integer.class,attempt));
+    }
+    @Test void masteryIsABooleanAcrossActualMysqlResultsAndPlatformJson(){
+        var builder=JsonMapper.builder();
+        new com.tianji.common.autoconfigure.mvc.JsonConfig().platformJsonCustomizer().customize(builder);
+        var transport=builder.build();
+        assertMasteryContract(transport,false);
+        execute(new ExamReviewService.Command("REVIEW",attempt,question,"1,2",null,0L));
+        assertMasteryContract(transport,false);
+        execute(new ExamReviewService.Command("STATE",attempt,question,null,true,1L));
+        assertMasteryContract(transport,true);
+        execute(new ExamReviewService.Command("STATE",attempt,question,null,false,2L));
+        assertMasteryContract(transport,false);
+        assertEquals(0,jdbc.queryForObject("SELECT score FROM exam_attempt WHERE id=?",Integer.class,attempt));
+        assertEquals("3",jdbc.queryForObject("SELECT response FROM exam_answer WHERE attempt_id=?",String.class,attempt));
+        assertEquals(0,jdbc.queryForObject("SELECT score FROM exam_answer WHERE attempt_id=?",Integer.class,attempt));
+    }
+    void assertMasteryContract(JsonMapper transport,boolean expected){
+        for(var value:List.of(reviews.detail(user,attempt,question),list(reviews.page(user,1,20,paper,2,null)).getFirst())){
+            assertEquals(Boolean.valueOf(expected),value.get("mastered"));
+            var wire=transport.readTree(transport.writeValueAsString(value));
+            assertTrue(wire.get("mastered").isBoolean());
+            assertEquals(expected,wire.get("mastered").asBoolean());
+            assertTrue(wire.get("attempt_id").isString(),"identifier precision contract must remain unchanged");
+        }
     }
     @Test void concurrentDevicesCannotSilentlyOverwriteReviewState()throws Exception{
         AtomicInteger successes=new AtomicInteger(),conflicts=new AtomicInteger();
