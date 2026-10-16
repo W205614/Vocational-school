@@ -11,6 +11,7 @@ export interface SignCalendar {month:string;signDays:number;todaySigned:boolean;
 export interface ReviewItem {attempt_id:string;question_id:string;course_id:string;type:number;name:string;options:string|string[];answer:string;analysis?:string;response?:string;score:number;max_score:number;feedback?:string;mastered:boolean;version:number|string;last_reviewed_at?:string}
 export interface LearningStudent {userId:string;name:string;learnedSections:number;sections:number;progressPercent:number;status:number;latestLearnTime?:string;expireTime?:string}
 export interface TeachingOverview extends Page<LearningStudent> {courseId:string;courseName:string;summary:{students:number;completedStudents:number;completionRate:number;unansweredQuestions:number;unacceptedQuestions:number}}
+export interface LearningReminders {pendingExams:number|null;waitingForGradingExams:number|null;examReminderError:string|null;unreadReplies:number|null;replyReminderError:string|null}
 
 /** OPEN is a backend lifecycle state; its user label also depends on the Shanghai month. */
 export function seasonLabel(status:unknown,month:unknown,now=new Date()):string {

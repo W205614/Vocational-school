@@ -19,15 +19,15 @@ import java.util.*;
 @RequestMapping("/api/v2/learning-hub")
 public class LearningHubController {
     private final JdbcTemplate jdbc;private final Clock clock;private final LearningSeasonService seasons;
-    private final ILearningLessonService lessons;private final OperationStore operations;private final LearningHubOperationHandler handler;
-    public LearningHubController(JdbcTemplate jdbc,@Qualifier("learningClock") Clock clock,LearningSeasonService seasons,ILearningLessonService lessons,OperationStore operations,LearningHubOperationHandler handler){this.jdbc=jdbc;this.clock=clock;this.seasons=seasons;this.lessons=lessons;this.operations=operations;this.handler=handler;}
+    private final ILearningLessonService lessons;private final OperationStore operations;private final LearningHubOperationHandler handler;private final LearningReminderService reminders;
+    public LearningHubController(JdbcTemplate jdbc,@Qualifier("learningClock") Clock clock,LearningSeasonService seasons,ILearningLessonService lessons,OperationStore operations,LearningHubOperationHandler handler,LearningReminderService reminders){this.jdbc=jdbc;this.clock=clock;this.seasons=seasons;this.lessons=lessons;this.operations=operations;this.handler=handler;this.reminders=reminders;}
     @GetMapping("/overview") public Object overview() {
         long user=UserContext.requireUser();var plan=lessons.queryMyPlans(new PageQuery().setPageSize(100));
         var result=new LinkedHashMap<String,Object>();result.put("weekFinished",plan.getWeekFinished());result.put("weekTotalPlan",Objects.requireNonNullElse(plan.getWeekTotalPlan(),0));result.put("weekPoints",Objects.requireNonNullElse(plan.getWeekPoints(),0));result.put("plans",plan.getList()==null?List.of():plan.getList());
         result.put("currentSeason",seasons.seasons().stream().filter(s->seasons.currentMonth().equals(s.get("month"))).findFirst().orElse(Map.of()));
         result.put("recentAchievements",jdbc.queryForList("SELECT code,name,awarded_at AS awardedAt,season_month AS seasonMonth FROM learning_achievement WHERE user_id=? ORDER BY awarded_at DESC LIMIT 5",user));
         var next=jdbc.queryForList("SELECT course_id AS courseId,latest_section_id AS sectionId,learned_sections AS learnedSections,latest_learn_time AS latestLearnTime FROM learning_lesson WHERE user_id=? AND status IN(0,1) AND (expire_time IS NULL OR expire_time>?) ORDER BY latest_learn_time DESC,id DESC LIMIT 1",user,LocalDateTime.now(clock));
-        result.put("continueLearning",next.isEmpty()?null:next.getFirst());return result;
+        result.put("continueLearning",next.isEmpty()?null:next.getFirst());result.putAll(reminders.overview());return result;
     }
     @GetMapping("/seasons") public Object seasons(){UserContext.requireUser();return seasons.seasons();}
     @GetMapping("/board") public Object board(@RequestParam(required=false) String month,PageQuery query){if(month==null)seasons.seasons();return seasons.board(month,query);}

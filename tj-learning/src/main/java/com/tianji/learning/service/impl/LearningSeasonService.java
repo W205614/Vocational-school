@@ -72,7 +72,12 @@ public class LearningSeasonService {
     }
     @Scheduled(fixedDelayString="${tj.learning.season-interval-ms:60000}")
     public void maintain() {
-        seasons();
+        // Empty months have no projection row to discover after a long outage.
+        // Start at the immutable rollout boundary; never invent older seasons.
+        YearMonth current=YearMonth.now(clock),through=current.plusMonths(1);
+        var boundary=jdbc.queryForList("SELECT start_month FROM learning_rollout_boundary WHERE id=1",String.class);
+        YearMonth first=boundary.isEmpty()?current:parseMonth(boundary.getFirst());
+        for(YearMonth month=first;!month.isAfter(through);month=month.plusMonths(1))ensureSeason(jdbc,month);
         for(String month:jdbc.queryForList("SELECT DISTINCT board_month FROM points_projection",String.class))ensureSeason(jdbc,parseMonth(month));
         for(String month:jdbc.queryForList("SELECT board_month FROM learning_season WHERE state NOT IN ('SETTLED','LEGACY_READONLY') AND freeze_at<=? ORDER BY board_month",String.class,LocalDateTime.now(clock))) {
             try{settle(month);}catch(Exception error){jdbc.update("UPDATE learning_season SET state='BLOCKED',blocked_reason=? WHERE board_month=? AND state<>'SETTLED'","结算依赖不可用，等待下次检查",month);}

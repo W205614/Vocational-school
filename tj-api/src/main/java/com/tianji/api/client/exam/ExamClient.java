@@ -18,6 +18,9 @@ public interface ExamClient {
     @GetMapping("/internal/v1/exams/settlement-readiness")
     Map<String,Object> settlementReadiness(@RequestParam("before") String before);
 
+    @PostMapping("/internal/v1/exams/learning-overview")
+    Map<String,Integer> learningOverview(@RequestBody List<Long> courseIds);
+
     @PostMapping("/question-biz/list")
     void saveQuestionBizInfoBatch(@RequestBody Iterable<QuestionBizDTO> qbs);
 

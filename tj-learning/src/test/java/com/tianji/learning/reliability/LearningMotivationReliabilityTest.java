@@ -108,4 +108,87 @@ class LearningMotivationReliabilityTest {
         var stats=points.queryMyPointsToday();assertEquals(1,stats.size());assertEquals(10,stats.getFirst().getPoints());assertEquals(1,stats.getFirst().getTypeCode());
     }
 
+    /** Real JDBC and production maintain; producer/name services are contract mocks, not broker proof. */
+    private LearningSeasonService maintenanceAt(LocalDateTime now,String nickname) {
+        var fixed=Clock.fixed(now.atZone(ZoneId.of("Asia/Shanghai")).toInstant(),ZoneId.of("Asia/Shanghai"));
+        var exams=mock(ExamClient.class);when(exams.settlementReadiness(anyString())).thenReturn(Map.of("ready",true,"pending",0,"eventIds",List.of()));
+        var names=mock(UserClient.class);when(names.queryUserByIds(any())).thenAnswer(call->{
+            var requested=(Iterable<Long>)call.getArgument(0);boolean present=false;for(Long id:requested)if(id==user)present=true;
+            if(!present)return List.of();var detail=new UserDTO();detail.setId(user);detail.setName(nickname);return List.of(detail);
+        });
+        return new LearningSeasonService(jdbc,fixed,exams,new OutboxStore(jdbc,JsonMapper.builder().findAndAddModules().build()),names,manager);
+    }
+    private YearMonth unusedLeapRecoveryPeriod() {
+        var boundary=LearningSeasonService.parseMonth(jdbc.queryForObject("SELECT start_month FROM learning_rollout_boundary WHERE id=1",String.class));
+        int year=boundary.getYear()+2;while(!Year.isLeap(year))year++;
+        for(int attempt=0;attempt<16;attempt++,year+=4) {
+            YearMonth start=YearMonth.of(year-1,11),end=start.plusMonths(4);String first=start.format(LearningSeasonService.MONTH),last=end.format(LearningSeasonService.MONTH);
+            int occupied=jdbc.queryForObject("SELECT (SELECT COUNT(*) FROM learning_season WHERE board_month BETWEEN ? AND ?)+(SELECT COUNT(*) FROM points_projection WHERE board_month BETWEEN ? AND ?)+(SELECT COUNT(*) FROM learning_reward_rule WHERE board_month BETWEEN ? AND ?)",Integer.class,first,last,first,last,first,last);
+            if(occupied==0)return start;
+        }
+        throw new IllegalStateException("No isolated leap-year recovery period available");
+    }
+    @Test void maintenanceRecoversThreeSilentMonthsAcrossNewYearAndLeapFebruaryWithoutDuplicates() {
+        new TransactionTemplate(manager).executeWithoutResult(rollback->{
+            rollback.setRollbackOnly();YearMonth start=unusedLeapRecoveryPeriod();String boundary=jdbc.queryForObject("SELECT start_month FROM learning_rollout_boundary WHERE id=1",String.class);
+            String before=LearningSeasonService.parseMonth(boundary).minusMonths(1).format(LearningSeasonService.MONTH);
+            int beforeRows=jdbc.queryForObject("SELECT COUNT(*) FROM learning_season WHERE board_month=?",Integer.class,before);
+            maintenanceAt(start.atDay(5).atStartOfDay(),"重启前昵称").maintain();
+            assertEquals("OPEN",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,start.format(LearningSeasonService.MONTH)));
+            assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM learning_season WHERE board_month=?",Integer.class,start.plusMonths(1).format(LearningSeasonService.MONTH)));
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_season WHERE board_month=?",Integer.class,start.plusMonths(2).format(LearningSeasonService.MONTH)));
+            // No invocation for three months. A new service instance compensates even months with no point facts.
+            var restored=maintenanceAt(start.plusMonths(3).atDay(3).atStartOfDay(),"重启后昵称");restored.maintain();
+            for(int offset=0;offset<=4;offset++)assertEquals(offset<3?"SETTLED":"OPEN",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,start.plusMonths(offset).format(LearningSeasonService.MONTH)));
+            var february=start.plusMonths(3);assertEquals(29,february.lengthOfMonth());
+            assertEquals(february.plusMonths(1).atDay(2).atStartOfDay().toString().replace('T',' ')+":00",jdbc.queryForObject("SELECT DATE_FORMAT(freeze_at,'%Y-%m-%d %H:%i:%s') FROM learning_season WHERE board_month=?",String.class,february.format(LearningSeasonService.MONTH)));
+            String first=start.format(LearningSeasonService.MONTH),last=start.plusMonths(4).format(LearningSeasonService.MONTH);
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_season_rank WHERE board_month BETWEEN ? AND ?",Integer.class,first,last));
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_reward_request WHERE board_month BETWEEN ? AND ?",Integer.class,first,last));
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_achievement WHERE season_month BETWEEN ? AND ?",Integer.class,first,last));
+            var frozen=jdbc.queryForList("SELECT board_month,state,CAST(freeze_at AS CHAR) freeze_at,CAST(settled_at AS CHAR) settled_at FROM learning_season WHERE board_month BETWEEN ? AND ? ORDER BY board_month",first,last);
+            restored.maintain();assertEquals(frozen,jdbc.queryForList("SELECT board_month,state,CAST(freeze_at AS CHAR) freeze_at,CAST(settled_at AS CHAR) settled_at FROM learning_season WHERE board_month BETWEEN ? AND ? ORDER BY board_month",first,last));
+            assertEquals(boundary,jdbc.queryForObject("SELECT start_month FROM learning_rollout_boundary WHERE id=1",String.class));
+            assertEquals(beforeRows,jdbc.queryForObject("SELECT COUNT(*) FROM learning_season WHERE board_month=?",Integer.class,before));
+        });
+    }
+    @Test void restartedMaintenanceCreatesOneSnapshotRewardOutboxAndKeepsFrozenResultsAfterLatePoints() {
+        new TransactionTemplate(manager).executeWithoutResult(rollback->{
+            rollback.setRollbackOnly();var start=unusedLeapRecoveryPeriod();var earned=start.plusMonths(1);String value=earned.format(LearningSeasonService.MONTH);
+            var recoveryTime=start.plusMonths(3).atDay(3).atStartOfDay();var fixed=Clock.fixed(recoveryTime.atZone(ZoneId.of("Asia/Shanghai")).toInstant(),ZoneId.of("Asia/Shanghai"));
+            var ledger=new PointsRecordServiceImpl(jdbc,inbox,fixed);long rule=IdWorker.getId();
+            jdbc.update("INSERT INTO learning_reward_rule(id,board_month,rank_from,rank_to,coupon_id,enabled,created_by) VALUES(?,?,1,1,99,1,?)",rule,value,user);
+            ledger.award(user,10,PointsRecordType.LEARNING,"restart-first:"+user,earned.atDay(3).atTime(10,0));
+            maintenanceAt(recoveryTime,"补偿结算昵称").maintain();
+            assertEquals("SETTLED",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,value));
+            var snapshot=jdbc.queryForList("SELECT user_id,rank_no,points,display_name,CAST(reached_at AS CHAR) reached_at FROM learning_season_rank WHERE board_month=?",value);
+            assertEquals(1,snapshot.size());assertEquals("补偿结算昵称",snapshot.getFirst().get("display_name"));
+            String request=jdbc.queryForObject("SELECT request_id FROM learning_reward_request WHERE user_id=? AND board_month=?",String.class,user,value);
+            String event=jdbc.queryForObject("SELECT event_id FROM reliability_outbox WHERE business_key=?",String.class,"season-reward:"+request+":1");
+            ledger.award(user,10,PointsRecordType.LEARNING,"restart-late:"+user,earned.atDay(4).atTime(10,0));
+            maintenanceAt(recoveryTime.plusHours(1),"结算后修改的昵称").maintain();
+            assertEquals(snapshot,jdbc.queryForList("SELECT user_id,rank_no,points,display_name,CAST(reached_at AS CHAR) reached_at FROM learning_season_rank WHERE board_month=?",value));
+            assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM learning_reward_request WHERE user_id=? AND board_month=?",Integer.class,user,value));
+            assertEquals(event,jdbc.queryForObject("SELECT event_id FROM reliability_outbox WHERE business_key=?",String.class,"season-reward:"+request+":1"));
+            assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM reliability_outbox WHERE business_key LIKE ?",Integer.class,"season-reward:"+request+":%"));
+            assertEquals(20,jdbc.queryForObject("SELECT SUM(points) FROM points_record WHERE user_id=?",Integer.class,user));
+            assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM learning_points_reconciliation WHERE user_id=? AND board_month=?",Integer.class,user,value));
+        });
+    }
+    @Test void maintenanceRetainsLegacyPointFactsWithoutMintingHistoricalRewardsOrHonours() {
+        new TransactionTemplate(manager).executeWithoutResult(rollback->{
+            rollback.setRollbackOnly();var boundary=LearningSeasonService.parseMonth(jdbc.queryForObject("SELECT start_month FROM learning_rollout_boundary WHERE id=1",String.class));
+            var legacy=boundary.minusMonths(1);String value=legacy.format(LearningSeasonService.MONTH);long rule=IdWorker.getId();
+            jdbc.update("INSERT INTO points_projection(board_month,user_id,points,version,processed_version,reached_at) VALUES(?,?,55,1,0,?)",value,user,legacy.atDay(3).atStartOfDay());
+            jdbc.update("INSERT INTO learning_reward_rule(id,board_month,rank_from,rank_to,coupon_id,enabled,created_by) VALUES(?,?,1,1000,99,1,?)",rule,value,user);
+            maintenanceAt(boundary.plusMonths(4).atDay(3).atStartOfDay(),"旧积分昵称").maintain();
+            assertEquals("LEGACY_READONLY",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,value));
+            assertEquals(55,jdbc.queryForObject("SELECT points FROM points_projection WHERE board_month=? AND user_id=?",Integer.class,value,user));
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM points_record WHERE user_id=?",Integer.class,user));
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_achievement WHERE user_id=?",Integer.class,user));
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_reward_request WHERE user_id=?",Integer.class,user));
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_season_rank WHERE board_month=? AND user_id=?",Integer.class,value,user));
+        });
+    }
+
 }
