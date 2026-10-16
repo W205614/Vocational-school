@@ -3,9 +3,21 @@ import tempfile
 from pathlib import Path
 import unittest
 from unittest.mock import patch
-from build_provenance import clean_commit,packaged,require_package,retain_previous_image
+from build_provenance import clean_commit,packaged,require_package,retain_previous_image,new_web_context
 
 class PackageProvenanceTest(unittest.TestCase):
+ def test_new_web_build_cannot_ship_assets_from_a_previous_build(self):
+  with tempfile.TemporaryDirectory() as directory:
+   local=Path(directory);old=local/'images/student/dist/assets/previous.js'
+   old.parent.mkdir(parents=True);old.write_text('previous build')
+   first=new_web_context(local,'student');(first/'dist').mkdir();(first/'dist/current.js').write_text('first build')
+   second=new_web_context(local,'student')
+   self.assertNotEqual(first,second)
+   self.assertEqual([],list(second.iterdir()))
+   self.assertTrue(second.is_relative_to(local/'images/student'))
+   self.assertEqual('previous build',old.read_text())
+   self.assertEqual('first build',(first/'dist/current.js').read_text())
+  with self.assertRaises(ValueError):new_web_context(Path('unused'),'../other-project')
  def test_mutable_image_replacement_retains_previous_id_and_refuses_other_projects(self):
   old='sha256:'+'a'*64
   with patch('build_provenance.subprocess.check_output',return_value=old+'\n'),patch('build_provenance.subprocess.run') as run:

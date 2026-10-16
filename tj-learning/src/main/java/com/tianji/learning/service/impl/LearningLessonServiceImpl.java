@@ -3,6 +3,7 @@ package com.tianji.learning.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.tianji.api.client.course.CatalogueClient;
 import com.tianji.api.client.course.CourseClient;
 import com.tianji.api.dto.IdAndNumDTO;
@@ -71,7 +72,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         // select * from learning_lesson where user_id = #{userId} order by latest_learn_time limit 0, 5
         Page<LearningLesson> page = lambdaQuery()
                 .eq(LearningLesson::getUserId, userId) // where user_id = #{userId}
-                .page(query.toMpPage("latest_learn_time", false));
+                .page(query.<LearningLesson>toMpPage("latest_learn_time", false).addOrder(OrderItem.desc("id")));
         List<LearningLesson> records = page.getRecords();
         if (CollUtils.isEmpty(records)) {
             return PageDTO.empty(page);
@@ -275,7 +276,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
                 .eq(LearningLesson::getUserId, userId)
                 .eq(LearningLesson::getPlanStatus, PlanStatus.PLAN_RUNNING)
                 .in(LearningLesson::getStatus, LessonStatus.NOT_BEGIN, LessonStatus.LEARNING)
-                .page(query.toMpPage("latest_learn_time", false));
+                .page(query.<LearningLesson>toMpPage("latest_learn_time", false).addOrder(OrderItem.desc("id")));
         List<LearningLesson> records = p.getRecords();
         if (CollUtils.isEmpty(records)) {
             return result.emptyPage(p);

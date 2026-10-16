@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import {ref,watch,onMounted} from 'vue';import {get,write} from '../../../../packages/shared/src/client';import {useOperations} from '../../../../packages/shared/src/operations';import {useTask,query,type Row} from '../../../../packages/shared/src/ui';import Status from '../../../../packages/shared/src/Status.vue';
+import {ref,watch,onMounted,onBeforeUnmount} from 'vue';import {get,write} from '../../../../packages/shared/src/client';import {enrolledCourseOptions} from '../../../../packages/shared/src/courseOptions';import {useOperations} from '../../../../packages/shared/src/operations';import {useTask,query,type Row} from '../../../../packages/shared/src/ui';import Status from '../../../../packages/shared/src/Status.vue';
 const props=defineProps<{mode:string}>(),task=useTask(),ops=useOperations(),rows=ref<Row[]>([]),total=ref(0),page=ref(1),courseId=ref(''),keyword=ref(''),editing=ref<Row>(),content=ref(''),profile=ref<Row>({}),oldPassword=ref(''),password=ref(''),courseNames=ref<Record<string,string>>({});
-const noteCourses=ref<Row[]>([]);
+const noteCourses=ref<Row[]>([]);let choicesAbort:AbortController|undefined;
+onBeforeUnmount(()=>choicesAbort?.abort());
 async function noteCourseChoices(){
- let number=1,result:Row;const all:Row[]=[];
- do{result=await get<Row>('/services/learning/lessons/page?pageNo='+number+'&pageSize=100');all.push(...(result.list||[]));number++;}while(all.length<Number(result.total||0) && result.list?.length);
- noteCourses.value=all;for(const item of all)courseNames.value[String(item.courseId)]=item.courseName||'课程已下架';
+ choicesAbort?.abort();const controller=new AbortController();choicesAbort=controller;
+ try{const all=await enrolledCourseOptions(controller.signal);if(controller.signal.aborted||props.mode!=='notes')return;noteCourses.value=all;for(const item of all)courseNames.value[String(item.courseId)]=item.courseName||'课程已下架';}
+ catch(error){if(!controller.signal.aborted)throw error;}
 }
 async function names(){
  const ids=[...new Set(rows.value.map(x=>String(x.course_id||'')).filter(x=>x&&!courseNames.value[x]))];
@@ -21,7 +22,7 @@ async function load(){editing.value=undefined;await task.run(async()=>{
 });}
 async function updateNote(){const saved=await task.run(async()=>{if(!editing.value)return false;const result=await ops.begin('learning','编辑私人笔记','/notes/'+editing.value.id,{content:content.value,version:editing.value.version},'PUT');if(result.status==='SUCCEEDED'){editing.value=undefined;return true;}return false;});if(saved){await load();task.message.value='笔记已更新';}}
 async function deleteNote(row:Row){const result=await task.run(()=>ops.begin('learning','删除私人笔记','/notes/'+row.id+'?version='+row.version,undefined,'DELETE'));if(result?.status==='SUCCEEDED')await load();}
-watch(()=>props.mode,()=>{page.value=1;courseId.value='';rows.value=[];void load();});onMounted(load);
+watch(()=>props.mode,()=>{choicesAbort?.abort();page.value=1;courseId.value='';rows.value=[];void load();});onMounted(load);
 </script>
 <template><section class="card personal-page"><div class="section-heading"><div><h2>{{titles[mode]}}</h2></div><RouterLink to="/">发现更多课程 →</RouterLink></div><Status :busy="task.busy.value"  :error="editing?undefined:task.error.value" :message="task.message.value"/>
 <div v-if="mode==='notes'" class="toolbar"><el-input v-model="keyword" placeholder="搜索笔记内容" aria-label="搜索笔记内容" clearable @keyup.enter="page=1;load()"/><el-button @click="page=1;load()">搜索笔记</el-button><el-select v-model="courseId" clearable filterable placeholder="筛选课程" aria-label="筛选笔记课程" @change="page=1;load()"><el-option v-for="item in noteCourses" :key="item.courseId" :label="item.courseName||'课程已下架'" :value="String(item.courseId)"/></el-select><p>笔记默认私有。并发编辑冲突时请刷新后重新编辑。</p></div>

@@ -81,7 +81,19 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   await expect(teacher.locator('.el-table__row').filter({hasText:attempt!})).toHaveCount(1);await teacher.locator('.el-table__row').filter({hasText:attempt!}).getByRole('button',{name:'查看答卷'}).click();await teacher.getByRole('spinbutton').fill('10');await teacher.getByPlaceholder('评分反馈').fill('Reviewed browser answer');await teacher.getByRole('button',{name:'提交评分'}).click();await expect(teacher.getByText('已评分 10 · Reviewed browser answer',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'刷新评分状态'}).click();await expect(page.locator('.exam-result')).toContainText('20');await expect(page.locator('.exam-result')).toContainText('已通过');
   await expect.poll(async()=>(await api(page,'/services/learning/learning-records/course/'+fixture.course)).records.filter((r:any)=>r.finished).length,{timeout:30000}).toBe(2);
-  await page.goto('/orders');await page.locator('.el-table__row').filter({hasText:orderId}).getByRole('button',{name:'详情'}).click();await page.getByRole('button',{name:'申请退款'}).click();await expect(page.getByRole('dialog',{name:'申请课程退款'})).toBeVisible();await expect(page.getByRole('button',{name:'提交退款申请',exact:true})).toBeDisabled();await page.getByPlaceholder('请说明退款原因').fill('浏览器验收退款，验证学习历史保留');await page.getByRole('button',{name:'提交退款申请',exact:true}).click();await expect(page.getByText('退款申请已提交',{exact:true})).toBeVisible();
+  await page.goto('/orders');await page.locator('.el-table__row').filter({hasText:orderId}).getByRole('button',{name:'详情'}).click();await page.getByRole('button',{name:'申请退款'}).click();await expect(page.getByRole('dialog',{name:'申请课程退款'})).toBeVisible();await expect(page.getByRole('button',{name:'提交退款申请',exact:true})).toBeDisabled();await page.getByPlaceholder('请说明退款原因').fill('浏览器验收退款，验证学习历史保留');
+  // Observe the UI's async submission and its own polling before checking feedback.
+  const submittedRefund=page.waitForResponse(response=>response.request().method()==='POST'&&new URL(response.url()).pathname==='/api/v2/services/trade/refund-apply',{timeout:60000}).then(async response=>({response,envelope:await response.json()}));
+  const completedRefund=page.waitForResponse(async response=>{
+   if(response.request().method()!=='GET'||!new URL(response.url()).pathname.startsWith('/api/v2/operations/trade/'))return false;
+   const submitted=await submittedRefund;
+   if(new URL(response.url()).pathname!=='/api/v2/operations/trade/'+submitted.envelope.data.operationId)return false;
+   return (await response.json()).data?.status!=='PENDING';
+  },{timeout:60000});
+  await page.getByRole('button',{name:'提交退款申请',exact:true}).click();
+  const refundSubmission=await submittedRefund;expect(refundSubmission.response.status()).toBe(202);expect(refundSubmission.envelope.code).toBe(200);expect(refundSubmission.envelope.data.status).toBe('PENDING');
+  const refundCompletion=await completedRefund;expect(refundCompletion.status()).toBe(200);const refundOperation=(await refundCompletion.json()).data;expect(refundOperation.operationId).toBe(refundSubmission.envelope.data.operationId);expect(refundOperation.status).toBe('SUCCEEDED');expect(refundOperation.result.accepted).toBe(true);
+  await expect(page.getByText('退款申请已提交',{exact:true})).toBeVisible();
   await admin.goto('/refunds');const refund=admin.locator('.el-table__row').filter({hasText:orderId});await refund.getByRole('button',{name:'同意退款'}).click();await admin.getByRole('button',{name:'确定',exact:true}).click();await expect(admin.getByText('同意退款已完成',{exact:true})).toBeVisible();
   await expect.poll(async()=>(await api(page,'/orders/'+orderId)).status,{timeout:60000}).toBe(7);
   // Financial completion precedes consumption of the entitlement event. Confirm

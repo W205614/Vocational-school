@@ -4,6 +4,15 @@ import json
 from pathlib import Path
 import subprocess
 import re
+import tempfile
+
+def new_web_context(local,alias):
+    """Use an empty build context; retain earlier generated assets for diagnosis."""
+    if alias not in {'student','admin'}:
+        raise ValueError('Only compact web applications have build contexts')
+    parent=Path(local)/'images'/alias
+    parent.mkdir(parents=True,exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix='build-',dir=parent))
 
 def production(path):
     return '/src/main/' in path or path.endswith('pom.xml') or path.startswith('frontend/') and '/e2e/' not in path

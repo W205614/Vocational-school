@@ -9,6 +9,8 @@ REGRESSION_TESTS = [
     'LearningReliabilityTest',
     'LearningMotivationTest',
     'LearningMotivationReliabilityTest',
+    'MybatisPaginationConfigurationTest',
+    'LearningLessonPaginationTest',
     'ExamReliabilityTest',
     'ExamDraftReliabilityTest',
     'ExamReviewReliabilityTest',
@@ -47,6 +49,8 @@ REGRESSION_TESTS = [
 ]
 
 CORE_TESTS = [
+    'MybatisPaginationConfigurationTest',
+    'LearningLessonPaginationTest',
     'LearningEntitlementRegressionTest',
     'OrderDeletionRegressionTest',
     'OrderDeletionDatabaseTest',

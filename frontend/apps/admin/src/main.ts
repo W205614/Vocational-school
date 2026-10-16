@@ -1,1 +1,1 @@
-import {createApp} from 'vue';import {createPinia} from 'pinia';import '../../../packages/shared/src/style.css';import App from './App.vue';import {router} from './router';createApp(App).use(createPinia()).use(router).mount('#app');
+import {createApp} from 'vue';import {createPinia} from 'pinia';import '../../../packages/shared/src/style.css';import App from './App.vue';import {router} from './router';const app=createApp(App).use(createPinia()).use(router);void router.isReady().then(()=>app.mount('#app'));

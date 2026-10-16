@@ -142,7 +142,7 @@ def build(package=True,group=None):
  app_gid=os.getgid() if hasattr(os,'getgid') and os.getgid()!=0 else 10001
  mvn=shutil.which('mvn') or 'mvn'
  # Profile switches must rebuild plain dependency jars, never reuse standalone BOOT-INF jars.
- from build_provenance import clean_commit,packaged,require_package,digest,retain_previous_image
+ from build_provenance import clean_commit,packaged,require_package,digest,retain_previous_image,new_web_context
  commit=clean_commit(ROOT)
  if package:
   run([mvn,'-B','-Pcompact','-DskipTests','clean','package'],'maven')
@@ -167,7 +167,7 @@ def build(package=True,group=None):
  if not requested_group:
   run([shutil.which('npm') or 'npm','--prefix',str(ROOT/'frontend'),'run','build'],'frontend')
   for app in ['student','admin']:
-   folder=LOCAL/'images'/app;folder.mkdir(parents=True,exist_ok=True);shutil.copytree(ROOT/'frontend/apps'/app/'dist',folder/'dist',dirs_exist_ok=True)
+   folder=new_web_context(LOCAL,app);shutil.copytree(ROOT/'frontend/apps'/app/'dist',folder/'dist')
    shutil.copyfile(ACC/'docker/nginx.conf.template',folder/'nginx.conf.template');shutil.copyfile(ACC/'docker/Dockerfile.web',folder/'Dockerfile')
    retain_previous_image(app)
    run(['docker','build','--pull=false','-t','tianji-compact/'+app+':local',str(folder)],'image-'+app)
