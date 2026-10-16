@@ -72,7 +72,7 @@ class SeasonRewardDeliveryReliabilityTest {
     }
     @Test void relativeRewardIsImmediatelyUsableWhenDatetimeWouldRoundPointNineSecondsForward(){
         var zone=ZoneId.of("Asia/Shanghai");var at=LocalDateTime.now(zone).withNano(900_000_000);
-        var rounded=jdbc.queryForObject("SELECT CAST(CAST(? AS DATETIME(6)) AS DATETIME)",java.sql.Timestamp.class,at.toString()).toLocalDateTime();
+        var rounded=jdbc.queryForObject("SELECT CAST(CAST(? AS DATETIME(6)) AS DATETIME)",LocalDateTime.class,at.toString());
         assertEquals(at.withNano(0).plusSeconds(1),rounded,"Real MySQL DATETIME(0) must reproduce the old forward-rounding boundary");
         delivery=new SeasonRewardDelivery(jdbc,coupons,tickets,outbox,new DataSourceTransactionManager(source),Clock.fixed(at.atZone(zone).toInstant(),zone));
         delivery.receive(request(),message("precision-"+couponId));
