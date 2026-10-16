@@ -71,6 +71,8 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
+        <!-- Cross-module regression only: execute the durable learning caller against real identity HTTP. -->
+        <dependency><groupId>com.tianji</groupId><artifactId>tj-learning</artifactId><version>1.0.0</version><scope>test</scope></dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>

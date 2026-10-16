@@ -47,8 +47,17 @@ public class LearningHubOperationHandler implements OperationHandler {
         var replies=jdbc.queryForList("SELECT * FROM interaction_reply WHERE id=? AND question_id=? AND hidden=0 FOR UPDATE",cmd.replyId(),cmd.questionId());
         if(replies.isEmpty())throw new BadRequestException("回答不存在");var reply=replies.getFirst();
         if(reply.get("answer_id")!=null && ((Number)reply.get("answer_id")).longValue()!=0)throw new BadRequestException("只能采纳问题的顶层回答");
-        long student=((Number)reply.get("user_id")).longValue();var author=users.queryUserById(student);
-        if(author==null || !Integer.valueOf(2).equals(author.getType()) || student==actor || student==((Number)question.get("user_id")).longValue())throw new BadRequestException("只能奖励其他学员提供的有效回答");
+        long student=((Number)reply.get("user_id")).longValue();
+        if(student==actor || student==((Number)question.get("user_id")).longValue())throw new BadRequestException("只能奖励其他学员提供的有效回答");
+        // Durable workers have no browser identity. Use the existing service-authenticated
+        // account contract, not the interactive /users/{id} endpoint or configurable role IDs.
+        com.tianji.common.domain.dto.LoginUserDTO author;
+        try {author=users.sessionIdentity(student);}
+        catch(feign.FeignException failure) {
+            if(failure.status()==401)throw new BadRequestException("回答用户已禁用或不存在");
+            throw failure;
+        }
+        if(author==null || !Objects.equals(author.getUserId(),student) || !Integer.valueOf(2).equals(author.getUserType()))throw new BadRequestException("只能奖励其他学员提供的有效回答");
         LocalDateTime time=cmd.occurredAt()==null?LocalDateTime.now(clock):cmd.occurredAt();
         jdbc.update("UPDATE interaction_question SET accepted_reply_id=?,accepted_by=?,accepted_at=? WHERE id=?",cmd.replyId(),actor,time,cmd.questionId());
         points.award(student,5,PointsRecordType.QA,"accepted:"+cmd.questionId(),time);
