@@ -1,0 +1,46 @@
+{
+  "productionSource": "8dcf8e7d44c6048318ad1e306e1425c8fd40fb70",
+  "scope": "Reviewed general acceptance and read-only reward UI sources only; excludes the private one-off observer and every runtime output",
+  "files": {
+    "run_live_settlement.py": {
+      "sha256": "74f3207a28ec62761f43acfaecc9d0b985bf7874e2a175fb659e5424f5262238",
+      "bytes": 28940
+    },
+    "LiveSettlementProbe.java": {
+      "sha256": "76615c91735fe5a1af3b55befae382205c5b36eff891c0ab1d94bf32fba7c9cc",
+      "bytes": 14193
+    },
+    "test_live_settlement_guards.py": {
+      "sha256": "8da6af91145587128d81fe8be3e0dee88f627a58bfc8384a62079f0575457d0d",
+      "bytes": 7996
+    },
+    "verify_live_learning_pagination.py": {
+      "sha256": "f02cb0718c42d13532cb015c63aa45073dfbd58aec1be87d24ea0741276c843d",
+      "bytes": 6073
+    },
+    "live-interaction-probe.py": {
+      "sha256": "d648af0a547cd0976ad6dcd8036c296bc22a2e03601720b5324b03f80f07d9e4",
+      "bytes": 24957
+    },
+    "FixtureDtoContractProbe.java": {
+      "sha256": "52dcb15035fadaca618ee14649e6468ee95a6581e0b54ad0261fb264b7a1c75c",
+      "bytes": 3214
+    },
+    "README.md": {
+      "sha256": "773571aae7bc2cbf1927144c605353e30434c8b99527982d7b00cbdf5b3c6a48",
+      "bytes": 5413
+    },
+    "run_live_reward_ui.py": {
+      "sha256": "b0916909253eb81d8c2766ebdf34c6a24bdc30b35f52f71aea6e12c949af0555",
+      "bytes": 11064
+    },
+    "live_reward_ui.mjs": {
+      "sha256": "ae37d475bf6b407579a62194718e571d1c766e2b1b106c0ca9b8ac329426d2c9",
+      "bytes": 13441
+    },
+    "LIVE_REWARD_UI.md": {
+      "sha256": "b483229f193e13d225428df4492ea426dc6ab58ecd38302e845fff6607cd49e0",
+      "bytes": 5552
+    }
+  }
+}

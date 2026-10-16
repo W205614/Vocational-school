@@ -1,0 +1,349 @@
+{
+  "status": "PASSED",
+  "acceptanceScope": "functional",
+  "sourceCommit": "8dcf8e7d44c6048318ad1e306e1425c8fd40fb70",
+  "imageDigests": {
+    "app-commerce": "sha256:507933532e8a9b047f1545205663e79554a46642d5f9bc8c2685feaa962354a9",
+    "app-education": "sha256:a09a053c53b796a356eafb48c6440f1423342f22fb82f96b614ed17c6431b875",
+    "app-gateway": "sha256:5f94aaa28704c43c2e5981d5d1993eb35bd1fa444dd08520e18f4d87456f4d4b",
+    "app-identity": "sha256:b7de3cf8ccd98be37b641427cd2f1636e21da6c5938426087e7538785ec7a984",
+    "app-support": "sha256:12692d93023ab85da517aa1634cd4a6bc7fb64e010002073ab04f319be1908e7",
+    "elasticsearch": "sha256:13b4a40bb095774f5fda635e45fd5677cc6a26565e42b24997b0c72b88e75984",
+    "mysql": "sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb",
+    "rabbitmq": "sha256:19c5ee40801d36eaa46020c9e2ff802c4ef7e74839a00b0f8bd43f935f845778",
+    "redis": "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+    "web-admin": "sha256:4e074ff7d99ca306ee5fe10cdc77ffae3d25546aef314f1f69fff9de09d84745",
+    "web-student": "sha256:c47fa45084f024cdb1298eb52237e04a745191474f650ccfbfe31d26a13d6fc5"
+  },
+  "releaseRunId": "b7598ddf6154457ca6a808d7e5c4a922",
+  "configFingerprint": "1b1f57022ce4c5ccb4928d9b609bad5737914a3f9e0d1b2c82c72b0aca880dec",
+  "baseSnapshotFingerprint": "683bfea49522097acd7e06a55291dd80a4ed6446aec167f9d881c2828426a3c6",
+  "backend": {
+    "tests": 195,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "browser": {
+    "passed": 37,
+    "failed": 0,
+    "skipped": 35
+  },
+  "security": {
+    "checks": 26
+  },
+  "audit": {
+    "checks": 3
+  },
+  "redis": {
+    "records": 5,
+    "binaryAndTypesVerified": true,
+    "absoluteExpiryVerified": true,
+    "nonemptyTargetRejected": true
+  },
+  "recovery": {
+    "tableCount": 183,
+    "tableContentChecksumsMatched": true,
+    "mediaFileCount": 51,
+    "browser": {
+      "status": "PASSED",
+      "passed": 42,
+      "failed": 0,
+      "skipped": 30
+    }
+  },
+  "search": {
+    "sequence": [
+      9,
+      7,
+      9
+    ],
+    "stages": [
+      {
+        "major": 9,
+        "browser": {
+          "status": "PASSED",
+          "passed": 37,
+          "failed": 0,
+          "skipped": 35
+        },
+        "retainedHistory": true
+      },
+      {
+        "major": 7,
+        "browser": {
+          "status": "PASSED",
+          "passed": 37,
+          "failed": 0,
+          "skipped": 35
+        },
+        "retainedHistory": true
+      },
+      {
+        "major": 9,
+        "browser": {
+          "status": "PASSED",
+          "passed": 37,
+          "failed": 0,
+          "skipped": 35
+        },
+        "retainedHistory": true
+      }
+    ],
+    "compatibilitySourceCommit": "189f31eba6e71bf9f374fa15d68e0832e1c93e47",
+    "baseCommit": "8dcf8e7d44c6048318ad1e306e1425c8fd40fb70"
+  },
+  "history": {
+    "tables": 18,
+    "existingRecords": 1696,
+    "existingMedia": 51
+  },
+  "preservation": {
+    "finalHealthy": 11,
+    "infrastructureIdentityPreserved": true,
+    "mountsPreserved": true,
+    "otherProjectContainersPreserved": true,
+    "originalVolumesPreserved": true,
+    "localComposeNonImageSettingsPreserved": true,
+    "originalDockerFilesPreserved": true,
+    "originalDockerFileCount": 6284,
+    "otherProjectContainerCount": 35,
+    "originalVolumeCount": 224
+  },
+  "cleanup": {
+    "removedContainers": 59,
+    "retainedVolumes": 27,
+    "finalContainers": 11,
+    "volumeDeletion": false,
+    "imageDeletion": false,
+    "projects": [
+      "tianji-opt-learning-search-1016-062611",
+      "tianji-opt-learning-search-1016-064825",
+      "tianji-recovery-final-upgrade-1016-051004",
+      "tianji-recovery-final-upgrade-1016-061134",
+      "tianji-recovery-upgrade-20261015b",
+      "tianji-redis-proof-20261016040428-source",
+      "tianji-redis-proof-20261016040428-target",
+      "tianji-redis-proof-20261016060443-source",
+      "tianji-redis-proof-20261016060443-target"
+    ],
+    "allVolumesPreserved": true,
+    "globalVolumeCount": 252
+  },
+  "fileCleanup": {
+    "removedBuildDirectories": 77,
+    "removedFiles": 3604,
+    "removedBytes": 1539282833,
+    "sourceCleanVerified": true,
+    "testEvidencePreserved": true
+  },
+  "networkCleanup": {
+    "removedNetworks": 22,
+    "allVolumesPreserved": true,
+    "otherNetworksPreserved": true
+  },
+  "ui": {
+    "sourceCommit": "8dcf8e7d44c6048318ad1e306e1425c8fd40fb70",
+    "pageStates": 24,
+    "pageErrors": 0,
+    "apiErrors": 0,
+    "businessWrites": 0,
+    "accessibilityChecks": 8,
+    "accessibilityScope": "Lightweight keyboard, reduced-motion, target geometry and viewport checks; not a complete WCAG audit or certification.",
+    "inspectorFailures": 0,
+    "inspectorWarnings": 2,
+    "publicScreenshots": [
+      {
+        "file": "portal-1440.png",
+        "sha256": "e920cd23303eb62ee416fda5fedfda8d2ac52c7e308b122e9d56a3cb15a40b8b",
+        "manualReviewPassed": true
+      },
+      {
+        "file": "portal-390.png",
+        "sha256": "4fdecb1429540e26ee06ec412149bc2b4b0ab63e7074bd2a65286c8c4632e363",
+        "manualReviewPassed": true
+      },
+      {
+        "file": "points-calendar-390.png",
+        "sha256": "24b77aae38298c89bf324d6582b80b015da77987fc08d878d169c4825e860a9c",
+        "manualReviewPassed": true
+      },
+      {
+        "file": "season-admin-1440.png",
+        "sha256": "61a9ad59a87bfc21b3f9bad634422c3576c2a1e27b03f7e877b9858f8f26480a",
+        "manualReviewPassed": true
+      }
+    ]
+  },
+  "continuousProofs": {
+    "interaction": {
+      "passed": true,
+      "sourceAndIsolationVerified": true,
+      "browserCaseCountAdded": 0,
+      "guestPublicAndPrivateBoundary": true,
+      "realFreeEnrollments": 2,
+      "adoptions": 5,
+      "qaPoints": 20,
+      "qaCreditedFacts": 4,
+      "firstAwardFive": true,
+      "fifthAwardCapped": true,
+      "sameAnswerReplayUnique": true,
+      "acceptedNotices": 5,
+      "replyNotices": 5,
+      "actualBrokerNotices": true,
+      "realOverviewRelay": true,
+      "ownUnreadIncrement": 5,
+      "markReadDecrement": 1,
+      "pendingExamProgression": [
+        0,
+        1,
+        1,
+        0,
+        1,
+        0
+      ],
+      "separateWaitingCountZero": true,
+      "firstCourseViaRealExamConsumer": true,
+      "learningPoints": 10,
+      "courseBadgeCount": 1,
+      "retakeDoesNotDuplicate": true
+    },
+    "rewardBrowser": {
+      "status": "PASSED",
+      "sourceCommit": "8dcf8e7d44c6048318ad1e306e1425c8fd40fb70",
+      "phase": "browser",
+      "startedAt": "2026-10-16T07:20:23.556962+00:00",
+      "businessRecordsWritten": false,
+      "scope": "Read-only actual student UI and HTTP after an independently verified reward purchase; private screenshots only",
+      "runtimePreflightPassed": true,
+      "imageCount": 7,
+      "uiChecks": 6,
+      "httpChecks": 6,
+      "limitations": [
+        "Order UI shows paid status and actual payment, not a separate discount amount. Discount is independently verified from the real order-detail HTTP response.",
+        "Owned-coupon UI labels records 已领取 and does not show USED status or user-ticket identity. Used state is separately verified via the real status=2 filtered endpoint, correlated to the exact ticket by the prior successful SQL/HTTP settlement proof.",
+        "The user-coupon page returns coupon definitions rather than user-ticket ids; this supplemental HTTP check does not claim an explicit ticket-status field was returned.",
+        "Screenshots are private; account names and transaction identifiers may be visible. They must not be copied to public documentation."
+      ],
+      "completedAt": "2026-10-16T07:20:40.793626+00:00"
+    },
+    "settlement": {
+      "status": "PASSED",
+      "hostClockChanged": false,
+      "snapshotRequestAckSeeded": false,
+      "stockDebitedOnce": true,
+      "ticketCount": 1,
+      "actualCouponAvailable": true,
+      "actualRewardPurchased": true,
+      "brokerAckObserved": true,
+      "consumerOutage": {
+        "service": "app-commerce",
+        "requestPending": true,
+        "outboxSent": true,
+        "durableBrokerQueued": true,
+        "stockDebited": false,
+        "tickets": 0
+      }
+    },
+    "rewardPurchase": {
+      "actualRewardPurchased": true,
+      "actualRewardUsed": true,
+      "paymentMode": "LOCAL_SIMULATOR",
+      "totalAmount": 100,
+      "discountAmount": 10,
+      "paidAmount": 90,
+      "httpChecks": [
+        "original run: exact reward ticket quote/name/expiry",
+        "original run: idempotent order and local mockPay confirmation",
+        "continuation: student reads original paid discounted order"
+      ],
+      "sqlChecks": [
+        "same original fulfilled reward request and unique delivery/ticket",
+        "same original succeeded ORDER_CREATE operation",
+        "same original order/detail ten-cent discount",
+        "same original provider and trade payment facts",
+        "binary UUID broker receipts for payment, learning grant and coupon use",
+        "exact ticket USED, stock issue1/use1 and active entitlement",
+        "original frozen snapshot SHA unchanged across restart"
+      ]
+    },
+    "settlementObservation": {
+      "readOnly": true,
+      "continuationAfterObservationFailure": true,
+      "originalFailureReportSha256": "301c745fa0d9cdd93b25a388a016b562e30dc6326b12e66a8d33c490594d3d77",
+      "originalFailedStatusPreserved": true,
+      "restartPersistenceAcceptance": true,
+      "businessDataWrites": false,
+      "businessCommandsExecuted": false,
+      "collationRegression": {
+        "status": "PASSED",
+        "checks": 3,
+        "originalError": 1267,
+        "sameBytesCount": 1,
+        "differentCaseCount": 0,
+        "tableWrites": false
+      },
+      "snapshot": {
+        "readOnly": true,
+        "jdbcReadOnly": true,
+        "sessionTransactionReadOnly": 1,
+        "snapshotUnchanged": true,
+        "businessReplayExecuted": false
+      }
+    },
+    "settlementExecution": {
+      "examHttpCalls": 2,
+      "examReadinessObservations": [
+        {
+          "pending": "0",
+          "eventCount": 0,
+          "ready": true
+        },
+        {
+          "pending": "0",
+          "eventCount": 0,
+          "ready": true
+        }
+      ],
+      "userHttpCalls": 1,
+      "productionCalendarAssertions": 6,
+      "paginationAssertions": 2
+    }
+  },
+  "gateChecks": {
+    "bound-release-manifest": true,
+    "live-build-config-snapshot": true,
+    "publication-source-equivalence": true,
+    "security-smoke": true,
+    "browser-result": true,
+    "backend-result": true,
+    "audit-smoke": true,
+    "redis-recovery-proof": true,
+    "recovery-acceptance": true,
+    "search-rollback-acceptance": true,
+    "history-preservation": true
+  },
+  "deferredChecks": [
+    "perf-3h-v1 formal sampling",
+    "latency thresholds",
+    "20 percent Java RSS reduction"
+  ],
+  "jarSha256": {
+    "identity": "dd038da07b00b70ce1d0f9fd3f6d002857cc63809c971271e82c650da38f743f",
+    "commerce": "e4738414a327789ae127ad3a7d03d2b3199866ad13bf83dd9c0902ed02fa5cd1",
+    "education": "aedf665fc486eadbf40b8a9dc1e678ac01295d1d60b459bdf725c7996232779c",
+    "support": "d888da9f354a94fe538971311dd05f222d201f1810a3927e1ca41a50c6108dfe",
+    "gateway": "20d2dc2d1df0718a928e252c28379b1a40a6d014da6a6ca4e60090b92ff5d7d8"
+  },
+  "sourceCI": {
+    "sourceCommit": "8dcf8e7d44c6048318ad1e306e1425c8fd40fb70",
+    "runId": 38857524064,
+    "url": "https://github.com/W205614/Vocational-school/actions/runs/38857524064",
+    "jobs": {
+      "frontend": "success",
+      "backend": "success",
+      "compact-browser": "success"
+    },
+    "checkedAt": "2026-10-16T05:56:10Z"
+  }
+}
