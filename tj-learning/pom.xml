@@ -87,6 +87,20 @@
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
+            <!-- Keep the executable primary artifact; expose ordinary classes only to cross-module tests. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <executions>
+                    <execution>
+                        <id>contract-classes</id>
+                        <phase>process-classes</phase>
+                        <goals><goal>jar</goal></goals>
+                        <configuration><classifier>contract-classes</classifier></configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
