@@ -90,7 +90,7 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
         Order order=orderMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Order>().eq("id",hint.getOrderId()).last("FOR UPDATE"));
         jdbc.queryForMap("SELECT id FROM order_detail WHERE id=? FOR UPDATE",hint.getId());
         OrderDetail detail=detailService.getById(hint.getId());
-        if(order==null || !Set.of(2,6).contains(order.getStatus()) || detail.getRealPayAmount()<=0) throw new BizIllegalException(TradeErrorInfo.ORDER_CANNOT_REFUND);
+        if(order==null || !Set.of(2,6).contains(order.getStatus()) || detail.getRealPayAmount()<0) throw new BizIllegalException(TradeErrorInfo.ORDER_CANNOT_REFUND);
         List<RefundApply> previous=queryByDetailId(detail.getId());
         if(previous.stream().anyMatch(r->RefundStatus.inProgress(r.getStatus())))return;
         if(previous.stream().anyMatch(r->RefundStatus.SUCCESS.equalsValue(r.getStatus())))throw new BizIllegalException("该订单条目已退款");
@@ -253,7 +253,7 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
         RefundApply apply=baseMapper.selectOne(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<RefundApply>().eq("id",form.getId()).last("FOR UPDATE"));
         if(apply==null)throw new BadRequestException(TradeErrorInfo.REFUND_NOT_EXISTS);
         int target=form.getApproveType()==1?3:4;
-        if(apply.getStatus()==target)return;
+        if(apply.getStatus()==target || target==3 && RefundStatus.SUCCESS.equalsValue(apply.getStatus()))return;
         if(apply.getStatus()!=1)throw new com.tianji.common.exceptions.ConflictException("退款申请已处理");
         jdbc.update("UPDATE refund_apply SET status=?,approver=?,approve_time=NOW(),approve_opinion=?,remark=?,message=? WHERE id=? AND status=1",target,UserContext.getUser(),form.getApproveOpinion(),form.getRemark(),RefundStatus.desc(target),apply.getId());
         jdbc.update("UPDATE order_detail SET refund_status=?,status=? WHERE id=?",target,target==4?2:6,apply.getOrderDetailId());
@@ -389,6 +389,7 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
 
     @Override
     public void sendRefundRequest(RefundApply refundApply) {
+        if(refundApply.getRefundAmount()==0) { completeZeroRefund(refundApply); return; }
         // 1.组织请求参数
         RefundApplyDTO applyDTO = RefundApplyDTO.builder()
                 .bizOrderNo(refundApply.getOrderId())
@@ -409,6 +410,7 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
         if(!AGREE.equalsValue(status)){
             return true;
         }
+        if(refundApply.getRefundAmount()==0) { completeZeroRefund(refundApply); return true; }
         // 2.远程查询，判断是否已经退款成功
         RefundResultDTO result = payClient.queryRefundResult(refundApply.getId());
         if (result == null) {
@@ -429,6 +431,11 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
         jdbc.update("UPDATE `order` SET status=?,message=? WHERE id=? AND status IN(2,6,7)",target,OrderStatus.desc(target),orderId);
     }
     private void sendRefundRequestAsync(RefundApply refundApply) {
+        if(refundApply.getRefundAmount()==0) { completeZeroRefund(refundApply); return; }
         jdbc.update("INSERT IGNORE INTO refund_delivery_task(refund_id) VALUES(?)",refundApply.getId());
+    }
+    private void completeZeroRefund(RefundApply apply) {
+        self.getObject().handleRefundResult(RefundResultDTO.builder().status(RefundResultDTO.SUCCESS)
+                .bizPayOrderId(apply.getOrderId()).bizRefundOrderId(apply.getId()).refundChannel("ZERO").build());
     }
 }

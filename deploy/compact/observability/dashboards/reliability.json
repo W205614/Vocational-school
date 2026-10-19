@@ -1,0 +1,10 @@
+{
+  "uid": "tianji-reliability", "title": "Tianji Reliability", "schemaVersion": 39,
+  "refresh": "30s", "time": {"from": "now-6h", "to": "now"},
+  "panels": [
+    {"id": 1, "title": "Module availability", "type": "timeseries", "gridPos": {"x": 0, "y": 0, "w": 12, "h": 7}, "datasource": {"type": "prometheus", "uid": "compact-prometheus"}, "targets": [{"expr": "up", "legendFormat": "{{job}}"}]},
+    {"id": 2, "title": "Oldest durable event (seconds)", "type": "timeseries", "gridPos": {"x": 12, "y": 0, "w": 12, "h": 7}, "datasource": {"type": "prometheus", "uid": "compact-prometheus"}, "targets": [{"expr": "tj_events_oldest_seconds", "legendFormat": "{{job}}"}]},
+    {"id": 3, "title": "Failures requiring review", "type": "timeseries", "gridPos": {"x": 0, "y": 7, "w": 12, "h": 7}, "datasource": {"type": "prometheus", "uid": "compact-prometheus"}, "targets": [{"expr": "tj_events_dead or tj_consumer_failures or tj_payment_reconciliation_dead or tj_payment_anomalies or tj_seasons_blocked", "legendFormat": "{{__name__}} {{job}}"}]},
+    {"id": 4, "title": "Hours since verified full backup", "type": "stat", "gridPos": {"x": 12, "y": 7, "w": 12, "h": 7}, "datasource": {"type": "prometheus", "uid": "compact-prometheus"}, "targets": [{"expr": "(time() - tj_backup_last_success_timestamp_seconds) / 3600"}]}
+  ]
+}

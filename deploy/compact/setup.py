@@ -41,7 +41,7 @@ def prepare():
  excludes=[line.strip() for source in ROOT.glob('tj-*/**/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports') for line in source.read_text(encoding='utf8').splitlines() if line.strip()]+['com.tianji.authsdk.resource.config.ResourceInterceptorConfiguration','com.tianji.authsdk.resource.config.FeignRelayUserAutoConfiguration','org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration','org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration','org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration','com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration']
  for alias,(module,_,_,database) in MODULES.items():
   if alias in {'data','gateway'}:database=None
-  c=yaml.safe_load((ROOT/module/'src/main/resources/application.yml').read_text(encoding='utf8'));s=c['spring'];c['server']={'port':PORTS.get(alias,0),'shutdown':'graceful'}
+  c=yaml.safe_load((ROOT/module/'src/main/resources/application.yml').read_text(encoding='utf8'));s=c['spring'];c['server']={'port':PORTS.get(alias,0),'shutdown':'graceful','forward-headers-strategy':'none'}
   s['profiles']={'active':'local-simulator'};s['config']={'import':[]};s['main']={'allow-bean-definition-overriding':False}
   # Fixed-delay tasks keep one pending invocation per registered job. Two bounded
   # scheduler threads let durable progress flushing coexist with command/outbox
@@ -84,6 +84,8 @@ def prepare():
   c['mybatis-plus']={'mapper-locations':'classpath*:mapper/**/*.xml','configuration':{'map-underscore-to-camel-case':True}}
   c['logging']={'level':{'root':'INFO','com.alibaba.nacos':'WARN','feign':'WARN'}}
   c['management']['endpoint']['health']['group']['readiness']['include']='readinessState,redis'+(',db' if database else '')
+  from operations_config import module_defaults
+  c=module_defaults(alias,c)
   (configs/(alias+'.yml')).write_text(yaml.safe_dump(c,allow_unicode=True,sort_keys=False),encoding='utf8')
  for group in GROUPS:
   c={'server':{'port':PORTS[group],'shutdown':'graceful','tomcat':{'threads':{'max':80,'min-spare':4},'accept-count':50,'max-connections':2000}},'spring':{'application':{'name':group+'-app'},'autoconfigure':{'exclude':excludes},'main':{'allow-bean-definition-overriding':False},'cloud':{'sentinel':{'enabled':False},'nacos':{'config':{'enabled':False,'import-check':{'enabled':False}},'discovery':{'enabled':False}}}},'tj':{'compact':{'config-directory':'/run/compact/configs'},'reliability':{'enabled':False}},'management':{'endpoints':{'web':{'exposure':{'include':'health,info,prometheus'}}},'endpoint':{'health':{'probes':{'enabled':True},'group':{'readiness':{'include':'readinessState,modules','additional-path':'server:/readyz'}}}}}}
@@ -98,7 +100,10 @@ def prepare():
   from http_ports import listener_sysctls
   services['app-'+group]['sysctls']=listener_sysctls(PORTS[group],internal_ports.get(group))
  for app,port in [('student',24500+OFFSET),('admin',24501+OFFSET)]:services['web-'+app]={'image':'tianji-compact/'+app+':local','environment':{'GW_UPSTREAM':'app-gateway:'+str(PORTS['gateway'])},'ports':['127.0.0.1:'+str(port)+':8080'],'mem_limit':'128m','depends_on':{'app-gateway':{'condition':'service_healthy'}}}
- (BASE/'compose.yaml').write_text(yaml.safe_dump({'name':PROJECT,'services':services,'volumes':{n:{} for n in ['compact_mysql','compact_redis','compact_rabbit','compact_search','compact_search_v9']}},sort_keys=False),encoding='utf8')
+ from operations_config import observability,generate
+ compose=observability({'name':PROJECT,'services':services,'volumes':{n:{} for n in ['compact_mysql','compact_redis','compact_rabbit','compact_search','compact_search_v9']}},OFFSET)
+ (BASE/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
+ generate(BASE,compose,env['ACCEPTANCE_INTERNAL_TOKEN'])
  print('Independent compact configuration generated; secrets kept in ignored files',flush=True)
 def initialize(clone=None,migrate_schema=True):
  if not migrate_schema and clone is None:raise RuntimeError('Skipping migration requires a complete recovery bundle')
@@ -178,9 +183,11 @@ def build(package=True,group=None):
 def up(group=None):run(COMPOSE+['up','-d','--wait']+(['app-'+group] if group else []),'up-'+str(group))
 def main():
  parser=argparse.ArgumentParser();parser.add_argument('action',choices=['prepare','init','build','up','migrate']);parser.add_argument('--skip-package',action='store_true');parser.add_argument('--clone',type=Path);parser.add_argument('--group',choices=list(GROUPS)+['gateway']);args=parser.parse_args()
- if args.action=='prepare':prepare()
- elif args.action=='init':initialize(args.clone)
- elif args.action=='build':build(not args.skip_package,args.group)
- elif args.action=='migrate':configure_acceptance();import migrate;migrate.main()
- else:up(args.group)
+ from maintenance import maintenance_lock
+ with maintenance_lock(LOCAL):
+  if args.action=='prepare':prepare()
+  elif args.action=='init':initialize(args.clone)
+  elif args.action=='build':build(not args.skip_package,args.group)
+  elif args.action=='migrate':configure_acceptance();import migrate;migrate.main()
+  else:up(args.group)
 if __name__=='__main__':main()

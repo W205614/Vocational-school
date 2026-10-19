@@ -84,7 +84,7 @@ python deploy/compact/prepare_search.py
 python deploy/compact/rebuild_search.py
 ```
 
-不需要私有历史 JAR、旧数据库备份或真实支付密钥。构建脚本要求生产源码已提交；首次体验直接使用克隆后的代码即可。默认 Compose 项目名为 `tianji-compact`，包含 11 个容器。
+不需要私有历史 JAR、旧数据库备份或真实支付密钥。构建脚本要求生产源码已提交；首次体验直接使用克隆后的代码即可。默认 Compose 项目名为 `tianji-compact`，包含 11 个业务／基础设施容器和 3 个本机监控容器。
 
 ### 3. 打开页面并获取账号
 
@@ -93,6 +93,8 @@ python deploy/compact/rebuild_search.py
 | 学生门户 | [http://127.0.0.1:24500/](http://127.0.0.1:24500/) | 游客可浏览；学生登录后购买、学习 |
 | 教师与管理工作台 | [http://127.0.0.1:24501/](http://127.0.0.1:24501/) | 教师、管理员 |
 | API 网关 | [http://127.0.0.1:24310/api/v2/](http://127.0.0.1:24310/api/v2/) | 接口入口，非网页首页 |
+| 监控面板 | [http://127.0.0.1:24592/](http://127.0.0.1:24592/) | Grafana 用户 `tianji`，密码在本机 `deploy/compact/.env` 的 `ACCEPTANCE_GRAFANA_PASSWORD` |
+| 本机告警 | [http://127.0.0.1:24591/](http://127.0.0.1:24591/) | Alertmanager，无外部通知 |
 
 初始化后，在本机查看登录信息：
 
@@ -108,6 +110,8 @@ Get-Content deploy/compact/.local/accounts.json
 2. **学生体验**：使用学生账号登录，将课程加入购物车并完成模拟支付；进入「我的学习」设置周目标、继续学习、记录笔记，再查看考试、错题本和积分签到。
 3. **教师体验**：在管理工作台使用教师账号登录，进入「授课学情与答疑」或「考试」查看授权课程、答疑和待评分答卷。没有提交的答卷时，待评分列表为空。
 4. **管理员体验**：使用管理员账号登录管理工作台，维护课程、章节、媒资、题库和试卷；在「赛季与奖励」查看积分来源并配置未来赛季奖励。
+
+优惠券抵扣全部金额时，订单直接按「零元成交」完成，不进入付款页；优惠券确认与学习权益仍由持久事件处理。零元退课沿用原审批流程，不发起渠道退款。管理员可在「可靠性与补偿」核对渠道异常并记录处理依据。
 
 教师授课权限与评分权限分别配置。详细页面说明、计分和奖励规则见[学习与教学使用说明](docs/learning-experience.md)。
 
@@ -133,6 +137,20 @@ python deploy/compact/setup.py up
 | 已有环境需要升级 | 先备份，再按[部署手册](deploy/compact/README.md)完成迁移、配置补全和重新构建；不要重复执行首次准备步骤 |
 
 数据库等数据保存在 Docker 命名卷，上传文件在 `deploy/compact/.local/objects`。保留 `.env`、`.local` 和数据卷；**不要用 `docker compose down -v` 清理有数据的部署**。所有默认发布端口仅绑定本机回环地址，其他设备不能直接访问。
+
+### 本机自动备份
+
+Windows 下可注册每日北京时间 **03:30** 的完整备份任务：
+
+```powershell
+powershell -NoProfile -File deploy/compact/register_backup_task.ps1
+```
+
+备份只保存在本项目 `deploy/compact/.local/backup/`。新自动备份校验成功后，仅保留最近两份本脚本创建的自动备份；历史备份、手动备份和升级前回退备份不会自动删除。完整备份需要短暂停写，完成后恢复原服务状态。
+
+**Docker Desktop 未运行时跳过，不自动启动它。** Docker 可用但业务容器已停止时，只临时启动备份必需的 MySQL、Redis、RabbitMQ，备份后恢复停止。任务每 15 分钟检查是否欠缺备份，成功后不重复备份；需要主机及当前用户会话可用，不保存账户密码。
+
+跳过状态覆盖同一小文件，不持续追加日志；错误日志总量最多 3 MB。真正备份失败后暂停自动重试，处理原因后运行 `python deploy/compact/maintenance.py retry` 恢复。详细操作、告警及回退约束见[稳定性与运维说明](docs/stability-operations.md)。
 
 ## 技术与代码导航
 

@@ -3,7 +3,8 @@ import argparse,os,json,subprocess,zipfile,sys,re,time
 from pathlib import Path
 from recovery_upgrade import (load_upgrade,preserve_generated_configs,activate_generated_configs,upgraded_configuration,
                               copy_verified_manifests,compare_broker_archives,compare_redis_snapshots,tar_inventory)
-parser=argparse.ArgumentParser();parser.add_argument('backup',type=Path);parser.add_argument('--home',type=Path,required=True);parser.add_argument('--project',required=True);parser.add_argument('--offset',type=int,default=1000);parser.add_argument('--upgrade-from',type=Path,help='Verified deployment home supplying seven new application images after raw recovery checks');args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('backup',type=Path);parser.add_argument('--home',type=Path,required=True);parser.add_argument('--project',required=True);parser.add_argument('--offset',type=int,default=1000);parser.add_argument('--upgrade-from',type=Path,help='Verified deployment home supplying seven new application images after raw recovery checks');parser.add_argument('--browser-grep',help='Explicit focused browser selection; recorded as partial coverage');args=parser.parse_args()
+if args.browser_grep:os.environ['TJ_BROWSER_GREP']=args.browser_grep
 home=args.home.resolve()
 backup=args.backup.resolve()
 if home.is_relative_to(backup):raise RuntimeError('Recovery home must be outside the immutable backup bundle')
@@ -38,7 +39,8 @@ if upgrade:(LOCAL/'generated-upgrade-compose.yaml').write_text(yaml.safe_dump(ge
 if not (private/'compose.yaml').exists() or not (private/'build-source.json').exists():
  raise RuntimeError('Legacy bundle lacks immutable Compose/source metadata; recover it using its original source checkout')
 recorded=yaml.safe_load((private/'compose.yaml').read_text(encoding='utf8'))
-if set(recorded['services'])!=set(generated['services']):raise RuntimeError('Recovery topology differs from the recorded deployment')
+from operations_config import MONITORS
+if set(recorded['services'])-MONITORS!=set(generated['services'])-MONITORS:raise RuntimeError('Recovery topology differs from the recorded deployment')
 frozen={}
 if (private/'infrastructure-images.json').exists():frozen.update(json.loads((private/'infrastructure-images.json').read_text(encoding='utf8')))
 source=json.loads((private/'build-source.json').read_text(encoding='utf8'));frozen.update(source['imageDigests'])
@@ -56,6 +58,13 @@ for image in required_frozen.values():
   raise RuntimeError('Load the verified rollback image archive before restoring this bundle')
 from recovery_configuration import recorded_configuration
 compose=recorded_configuration(recorded,private/'configs',home,args.project,args.offset,frozen,manifest['broker']['hostname'])
+# Raw recovery retains the recorded optional monitor topology. Generate isolated
+# scrape targets from the restored ports rather than copying original endpoints.
+from operations_config import generate
+generate(home,compose,dict(line.split('=',1) for line in (home/'.env').read_text(encoding='utf8').splitlines() if '=' in line)['ACCEPTANCE_INTERNAL_TOKEN'])
+# Do not import the source process's RUNNING flag or unfinished maintenance journal.
+from maintenance import status
+status(LOCAL,'RESTORE_PREPARING',running=0,requiresAttention=False)
 (home/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
 run(COMPOSE+['create','rabbitmq'],'create-broker')
 container=subprocess.check_output(COMPOSE+['ps','-aq','rabbitmq']).decode().strip();mounts=json.loads(subprocess.check_output(['docker','inspect',container]))[0]['Mounts'];volume=next(m['Name'] for m in mounts if m['Destination']=='/var/lib/rabbitmq')
@@ -124,6 +133,8 @@ try:
  if result['browser'].get('status')!='PASSED':raise RuntimeError('Recovery browser report did not pass')
  if upgrade:result['migrationUpgradeProof'].update(status='PASSED',searchRebuilt=True,businessSmokePassed=True,browserPassed=True)
  result['status']='PASSED'
+ from datetime import datetime,timezone
+ status(LOCAL,'RESTORE_VERIFIED',running=0,requiresAttention=False,lastSuccess=int(datetime.strptime(manifest['at'],'%Y%m%dT%H%M%S.%fZ').replace(tzinfo=timezone.utc).timestamp()))
 except Exception as error:
  result.update(status='FAILED',failureType=type(error).__name__)
  if upgrade:result['migrationUpgradeProof']['status']='FAILED'

@@ -6,7 +6,7 @@ import yaml
 
 
 def translated(value,old_offset,new_offset,path=()):
-    bases=(24001,24002,24003,24004,24310,24316,24379,24373,24920,24500,24501,25001,25002,25003,25004,25005,25006,25007)
+    bases=(24001,24002,24003,24004,24310,24316,24379,24373,24920,24500,24501,24590,24591,24592,25001,25002,25003,25004,25005,25006,25007)
     ports={port+old_offset:port+new_offset for port in bases}
     if isinstance(value,dict):return {key:translated(child,old_offset,new_offset,path+(key,)) for key,child in value.items()}
     if isinstance(value,list):return [translated(child,old_offset,new_offset,path) for child in value]

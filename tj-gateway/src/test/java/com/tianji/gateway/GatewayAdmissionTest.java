@@ -24,11 +24,34 @@ class GatewayAdmissionTest {
     Scheduler scheduler;
     @BeforeEach void setup()throws Exception {
         scheduler=Schedulers.newBoundedElastic(4,16,"admission-test");
-        filter=new AccountAuthFilter(mock(AuthUtil.class),new AuthProperties(),new AccessPolicy(),scheduler);
+        filter=new AccountAuthFilter(mock(AuthUtil.class),new AuthProperties(),new AccessPolicy(),scheduler,new com.tianji.gateway.config.TrustedProxyIdentity(new org.springframework.mock.env.MockEnvironment()));
         capacity=(Semaphore)ReflectionTestUtils.getField(filter,"requests");
         capacity.acquire(198);
     }
     @AfterEach void close(){scheduler.dispose();}
+    @Test void publicRoutesStripForgedIdentityAndProtocolHeaders(){
+        var request=MockServerHttpRequest.get("/api/v2/environment")
+                .remoteAddress(new java.net.InetSocketAddress("198.51.100.7",4567))
+                .header("user-info","1").header("user-role","1").header("user-session","forged")
+                .header("X-Internal-Token","forged").header("X-Client-IP","203.0.113.1").header("X-Client-Proto","https")
+                .header("X-Forwarded-For","203.0.113.1").header("X-Forwarded-Proto","https").header("Forwarded","for=203.0.113.1;proto=https").build();
+        filter.filter(MockServerWebExchange.from(request),exchange->{
+            var headers=exchange.getRequest().getHeaders();assertEquals("198.51.100.7",headers.getFirst("X-Client-IP"));assertEquals("http",headers.getFirst("X-Client-Proto"));
+            for(String header:java.util.List.of("user-info","user-role","user-session","Forwarded","X-Forwarded-For","X-Forwarded-Proto"))assertNull(headers.getFirst(header));
+            assertEquals(System.getenv("TJ_INTERNAL_TOKEN"),headers.getFirst("X-Internal-Token"));return reactor.core.publisher.Mono.empty();
+        }).block(Duration.ofSeconds(2));
+    }
+    @Test void trustedProxyIdentityAndHttpsReachAuthAsInternalHeaders(){
+        var proxies=new com.tianji.gateway.config.TrustedProxyIdentity(new org.springframework.mock.env.MockEnvironment().withProperty("tj.gateway.proxy.trusted-addresses","172.20.0.2"));
+        var trusted=new AccountAuthFilter(mock(AuthUtil.class),new AuthProperties(),new AccessPolicy(),scheduler,proxies);
+        var request=MockServerHttpRequest.post("/api/v2/auth/accounts/login")
+                .remoteAddress(new java.net.InetSocketAddress("172.20.0.2",4567))
+                .header("X-Forwarded-For","203.0.113.10").header("X-Forwarded-Proto","https").header("X-Client-IP","forged").build();
+        trusted.filter(MockServerWebExchange.from(request),exchange->{
+            var headers=exchange.getRequest().getHeaders();assertEquals("203.0.113.10",headers.getFirst("X-Client-IP"));assertEquals("https",headers.getFirst("X-Client-Proto"));
+            assertNull(headers.getFirst("X-Forwarded-For"));assertEquals(System.getenv("TJ_INTERNAL_TOKEN"),headers.getFirst("X-Internal-Token"));return reactor.core.publisher.Mono.empty();
+        }).block(Duration.ofSeconds(2));
+    }
     private MockServerWebExchange exchange(){return MockServerWebExchange.from(MockServerHttpRequest.get("/api/v2/environment").build());}
     @Test void shortSaturationWaitsForCompletionWithoutRejectingNormalWork()throws Exception {
         var entered=new CountDownLatch(2);var next=new CountDownLatch(1);
@@ -59,7 +82,7 @@ class GatewayAdmissionTest {
         var configuration=new com.tianji.gateway.config.AuthorizationExecutorConfiguration();
         var pool=configuration.authorizationExecutor();pool.initialize();
         var configuredScheduler=configuration.authorizationScheduler(pool);
-        var actual=new AccountAuthFilter(mock(AuthUtil.class),new AuthProperties(),new AccessPolicy(),configuredScheduler);
+        var actual=new AccountAuthFilter(mock(AuthUtil.class),new AuthProperties(),new AccessPolicy(),configuredScheduler,new com.tianji.gateway.config.TrustedProxyIdentity(new org.springframework.mock.env.MockEnvironment()));
         var entered=new CountDownLatch(8);var release=new CountDownLatch(1);
         var futures=new java.util.ArrayList<CompletableFuture<Void>>();
         try {

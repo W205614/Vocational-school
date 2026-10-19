@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: compact
+    type: file
+    disableDeletion: true
+    options:
+      path: /run/dashboards

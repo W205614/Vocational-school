@@ -170,6 +170,8 @@ GET:/api/v2/admin/promotion/coupons/page
 GET:/api/v2/admin/promotion/coupons/{id}
 GET:/api/v2/admin/promotion/user-coupons/page
 GET:/api/v2/admin/promotion/user-coupons/rules
+GET:/api/v2/admin/provider-payments/anomalies
+GET:/api/v2/admin/provider-payments/reconciliations
 GET:/api/v2/admin/remark/likes/list
 GET:/api/v2/admin/search-projections
 GET:/api/v2/admin/search/courses/portal
@@ -432,6 +434,7 @@ POST:/api/v2/admin/promotion/user-coupons/available
 POST:/api/v2/admin/promotion/user-coupons/discount
 POST:/api/v2/admin/promotion/user-coupons/{code}/exchange
 POST:/api/v2/admin/promotion/user-coupons/{couponId}/receive
+POST:/api/v2/admin/provider-payments/reconciliations/{number}/replay
 POST:/api/v2/admin/remark/likes
 POST:/api/v2/admin/search-projections/{id}/replay
 POST:/api/v2/admin/search/courses/down
@@ -523,6 +526,7 @@ PUT:/api/v2/admin/promotion/coupons/{id}/issue
 PUT:/api/v2/admin/promotion/coupons/{id}/pause
 PUT:/api/v2/admin/promotion/user-coupons/refund
 PUT:/api/v2/admin/promotion/user-coupons/use
+PUT:/api/v2/admin/provider-payments/anomalies/{number}/{reason}
 PUT:/api/v2/admin/trade/orders/{id}/cancel
 PUT:/api/v2/admin/trade/refund-apply/approval
 PUT:/api/v2/admin/trade/refund-apply/cancel

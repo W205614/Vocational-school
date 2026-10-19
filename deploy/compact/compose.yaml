@@ -21,6 +21,13 @@ services:
       interval: 5s
       timeout: 3s
       retries: 60
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   redis:
     image: redis:7.4-alpine
     command:
@@ -44,6 +51,13 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   rabbitmq:
     image: rabbitmq:4.1-management
     environment:
@@ -63,6 +77,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
     environment:
@@ -81,6 +102,13 @@ services:
       interval: 5s
       timeout: 3s
       retries: 60
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   app-identity:
     image: tianji-compact/identity:local
     restart: unless-stopped
@@ -121,6 +149,12 @@ services:
       retries: 30
     sysctls:
       net.ipv4.ip_local_reserved_ports: 24001,25001,25002,25003,25004
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   app-commerce:
     image: tianji-compact/commerce:local
     restart: unless-stopped
@@ -161,6 +195,12 @@ services:
       retries: 30
     sysctls:
       net.ipv4.ip_local_reserved_ports: 24002,25002,25003,25004,25005
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   app-education:
     image: tianji-compact/education:local
     restart: unless-stopped
@@ -201,6 +241,12 @@ services:
       retries: 30
     sysctls:
       net.ipv4.ip_local_reserved_ports: 24003,25003,25004,25005,25006
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   app-support:
     image: tianji-compact/support:local
     restart: unless-stopped
@@ -241,6 +287,12 @@ services:
       retries: 30
     sysctls:
       net.ipv4.ip_local_reserved_ports: 24004,25004,25005,25006,25007
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   app-gateway:
     image: tianji-compact/gateway:local
     restart: unless-stopped
@@ -252,6 +304,7 @@ services:
     - ./.local/configs:/run/compact/configs:ro
     - ./.local/signing.jks:/run/compact/signing.jks:ro
     - ./.local/objects:/run/objects
+    - ./.local/ops-status:/run/ops-status:ro
     mem_limit: 768m
     environment:
       APP_PORT: '24310'
@@ -281,6 +334,12 @@ services:
       retries: 30
     sysctls:
       net.ipv4.ip_local_reserved_ports: '24310'
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   web-student:
     image: tianji-compact/student:local
     environment:
@@ -291,6 +350,13 @@ services:
     depends_on:
       app-gateway:
         condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
   web-admin:
     image: tianji-compact/admin:local
     environment:
@@ -301,9 +367,106 @@ services:
     depends_on:
       app-gateway:
         condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 90s
+  prometheus:
+    restart: unless-stopped
+    logging: &id001
+      driver: local
+      options:
+        max-size: 10m
+        max-file: '3'
+    stop_grace_period: 30s
+    image: prom/prometheus:v3.15.0
+    mem_limit: 256m
+    ports:
+    - 127.0.0.1:24590:9090
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.path=/prometheus
+    - --storage.tsdb.retention.time=7d
+    - --storage.tsdb.retention.size=256MB
+    - --storage.tsdb.wal-compression
+    - --storage.tsdb.wal-segment-size=16MB
+    volumes:
+    - ./.local/observability:/etc/prometheus:ro
+    - compact_prometheus:/prometheus
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - -O
+      - /dev/null
+      - http://127.0.0.1:9090/-/ready
+      interval: 15s
+      timeout: 4s
+      retries: 20
+  alertmanager:
+    restart: unless-stopped
+    logging: *id001
+    stop_grace_period: 30s
+    image: prom/alertmanager:v0.34.1
+    mem_limit: 128m
+    ports:
+    - 127.0.0.1:24591:9093
+    command:
+    - --config.file=/etc/alertmanager/alertmanager.yml
+    - --storage.path=/alertmanager
+    - --data.retention=48h
+    - --cluster.listen-address=
+    volumes:
+    - ./.local/observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    - compact_alertmanager:/alertmanager
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - -O
+      - /dev/null
+      - http://127.0.0.1:9093/-/ready
+      interval: 15s
+      timeout: 4s
+      retries: 20
+  grafana:
+    restart: unless-stopped
+    logging: *id001
+    stop_grace_period: 30s
+    image: grafana/grafana:13.2.4
+    mem_limit: 256m
+    ports:
+    - 127.0.0.1:24592:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: tianji
+      GF_SECURITY_ADMIN_PASSWORD: ${ACCEPTANCE_GRAFANA_PASSWORD:?Existing observability
+        password required}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_ANALYTICS_REPORTING_ENABLED: 'false'
+      GF_ANALYTICS_CHECK_FOR_UPDATES: 'false'
+      GF_NEWS_NEWS_FEED_ENABLED: 'false'
+    volumes:
+    - ./.local/observability/grafana:/etc/grafana/provisioning:ro
+    - ./.local/observability/dashboards:/run/dashboards:ro
+    - compact_grafana:/var/lib/grafana
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget -q -O /dev/null http://127.0.0.1:3000/api/health
+      interval: 15s
+      timeout: 4s
+      retries: 20
 volumes:
   compact_mysql: {}
   compact_redis: {}
   compact_rabbit: {}
   compact_search: {}
   compact_search_v9: {}
+  compact_prometheus: {}
+  compact_grafana: {}
+  compact_alertmanager: {}

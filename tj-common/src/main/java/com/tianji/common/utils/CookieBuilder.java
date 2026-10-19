@@ -20,6 +20,8 @@ public class CookieBuilder {
     private int maxAge = -1;
     private String path = "/";
     private boolean httpOnly;
+    private boolean requireSecure;
+    private boolean trustedHttps;
     private String name;
     private String value;
     private String domain;
@@ -43,7 +45,7 @@ public class CookieBuilder {
         if(StringUtils.isNotBlank(domain)) {
             cookie.setDomain(domain);
         }
-        cookie.setSecure(request!=null && request.isSecure());
+        cookie.setSecure(requireSecure || trustedHttps || request!=null && request.isSecure());
         cookie.setAttribute("SameSite","Lax");
         cookie.setHttpOnly(httpOnly);
         cookie.setMaxAge(maxAge);

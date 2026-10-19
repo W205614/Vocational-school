@@ -38,6 +38,8 @@ def main():
    if mysql(f"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='{target}' AND table_name='{table}'")=='0':mysql(f'CREATE TABLE {table} LIKE {origin}.{table}',target)
   apply_migrations(target,list((BASE/'migrations/common').glob('V*.sql')))
  apply_migrations('acceptance_exam',sorted(p for p in (BASE/'migrations/tj_exam').glob('V*.sql') if int(p.name[1:4])>=3))
+ apply_migrations('acceptance_learning',sorted(p for p in (BASE/'migrations/tj_learning').glob('V*.sql') if int(p.name[1:4])>=8))
+ apply_migrations('acceptance_pay',list((BASE/'migrations/tj_pay').glob('V004*.sql'))+list((BASE/'migrations/tj_pay').glob('V006*.sql')))
  mysql('CREATE DATABASE IF NOT EXISTS acceptance_trade')
  if mysql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='tj_trade' AND table_name='order'")=='1':
   mysql('CREATE TABLE IF NOT EXISTS `order` LIKE tj_trade.`order`','acceptance_trade')
@@ -55,6 +57,12 @@ def main():
     definition=re.search(r'CREATE TABLE '+table+r'\s*\(.*?\) ENGINE=.*?;',source,re.S)
     if definition is None:raise RuntimeError('Missing retained financial fact schema')
     mysql(definition.group(),'acceptance_trade')
+ bootstrap=(REPO/'deploy/compact/schema.sql').read_text(encoding='utf8')
+ for table in ('order_detail','order_creation','refund_apply','refund_delivery_task'):
+  definition=re.search(r'CREATE TABLE `'+table+r'` \(.*?\) ENGINE=.*?;',bootstrap,re.S)
+  if definition is None:raise RuntimeError('Missing zero-amount test prerequisite '+table)
+  mysql(definition.group().replace('CREATE TABLE','CREATE TABLE IF NOT EXISTS',1),'acceptance_trade')
+ apply_migrations('acceptance_trade',list((BASE/'migrations/common').glob('V*.sql')))
  mysql("CREATE TABLE IF NOT EXISTS test_counter(id INT PRIMARY KEY,value INT NOT NULL);INSERT IGNORE INTO test_counter VALUES(1,0)",'acceptance_common')
  command=[shutil.which('mvn') or 'E:/download/apache-maven-3.9.4/bin/mvn.cmd','-B',*(['-pl',args.modules,'-am'] if args.modules!='all' else []),'-Dtest='+args.tests,'-Dsurefire.failIfNoSpecifiedTests=false',args.phase]
  with (LOCAL/'tests.log').open('w',encoding='utf8') as output:

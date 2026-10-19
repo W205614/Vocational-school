@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.tianji.api.client.exam.ExamClient;
 import com.tianji.api.client.user.UserClient;
 import com.tianji.api.dto.user.UserDTO;
+import com.tianji.api.dto.exam.ExamSettlementPage;
 import com.tianji.common.autoconfigure.reliability.*;
 import com.tianji.common.domain.query.PageQuery;
 import com.tianji.common.utils.UserContext;
@@ -24,21 +25,22 @@ import static org.mockito.Mockito.*;
 @EnabledIfEnvironmentVariable(named="ACCEPTANCE_DB_PASSWORD",matches=".+")
 class LearningMotivationReliabilityTest {
     private JdbcTemplate jdbc;private PointsRecordServiceImpl points;private LearningSeasonService seasons;private YearMonth month;private Clock clock;private long user;private InboxStore inbox;private DataSourceTransactionManager manager;
+    private ExamClient examClient;private UserClient userClient;
     @BeforeEach void setup() {
         var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_learning?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
         jdbc=new JdbcTemplate(source);manager=new DataSourceTransactionManager(source);inbox=new InboxStore(jdbc,new TransactionTemplate(manager));user=IdWorker.getId();
         month=YearMonth.of(3000+ThreadLocalRandom.current().nextInt(5000),1+ThreadLocalRandom.current().nextInt(12));
         clock=Clock.fixed(month.plusMonths(1).atDay(3).atStartOfDay(ZoneId.of("Asia/Shanghai")).toInstant(),ZoneId.of("Asia/Shanghai"));points=new PointsRecordServiceImpl(jdbc,inbox,clock);
-        var exams=mock(ExamClient.class);when(exams.settlementReadiness(anyString())).thenReturn(Map.of("ready",true,"pending",0,"eventIds",List.of()));
-        var users=mock(UserClient.class);var detail=new UserDTO();detail.setId(user);detail.setName("真实昵称快照");when(users.queryUserByIds(any())).thenReturn(List.of(detail));
-        seasons=new LearningSeasonService(jdbc,clock,exams,new OutboxStore(jdbc,JsonMapper.builder().findAndAddModules().build()),users,manager);
+        examClient=mock(ExamClient.class);when(examClient.settlementReadiness(anyString(),anyLong(),nullable(Long.class))).thenAnswer(call->new ExamSettlementPage(call.getArgument(0),0,0,List.of(),0,null));
+        userClient=mock(UserClient.class);var detail=new UserDTO();detail.setId(user);detail.setName("真实昵称快照");when(userClient.queryUserByIds(any())).thenReturn(List.of(detail));
+        seasons=new LearningSeasonService(jdbc,clock,examClient,new OutboxStore(jdbc,JsonMapper.builder().findAndAddModules().build()),userClient,manager);
         UserContext.setUser(user);
     }
     @AfterEach void cleanup(){UserContext.removeUser();}
     @Test void frozenRankingAndNameStayStableWhileLateAwardIsRetainedForReconciliation() {
         String value=month.format(LearningSeasonService.MONTH);LocalDateTime time=month.atDay(3).atTime(10,0);
         points.award(user,10,PointsRecordType.LEARNING,"first:"+user,time);
-        seasons.settle(value);seasons.settle(value);
+        seasons.settle(value);seasons.settle(value);seasons.hydrateNames();
         var before=seasons.board(value,new PageQuery());assertEquals("SETTLED",before.get("status"));assertEquals(1,((Number)before.get("myRank")).intValue());
         assertEquals("真实昵称快照",((Map<?,?>)((List<?>)before.get("list")).getFirst()).get("name"));
         points.award(user,10,PointsRecordType.LEARNING,"late:"+user,time.plusHours(1));
@@ -108,10 +110,84 @@ class LearningMotivationReliabilityTest {
         var stats=points.queryMyPointsToday();assertEquals(1,stats.size());assertEquals(10,stats.getFirst().getPoints());assertEquals(1,stats.getFirst().getTypeCode());
     }
 
+    @Test void remotePagesAreCheckedBeforeLockingAndMissingReceiptOnSecondPageBlocksFreeze() {
+        String value=month.format(LearningSeasonService.MONTH);
+        points.award(user,10,PointsRecordType.LEARNING,"page-first:"+user,month.atDay(3).atTime(10,0));
+        var ids=java.util.stream.IntStream.range(0,1001).mapToObj(index->UUID.randomUUID().toString()).toList();
+        jdbc.batchUpdate("INSERT INTO reliability_inbox(consumer_name,event_id) VALUES('learning.exam',?)",ids.subList(0,1000),1000,(statement,id)->statement.setString(1,id));
+        when(examClient.settlementReadiness(eq(value),anyLong(),nullable(Long.class))).thenAnswer(call->{
+            assertFalse(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive(),"Remote IO must precede the freeze transaction");
+            long cursor=call.getArgument(1);
+            if(cursor==0){assertNull(call.getArgument(2));return new ExamSettlementPage(value,2000,0,ids.subList(0,1000),0,1000L);}
+            assertEquals(1000,cursor);assertEquals(2000L,(Long)call.getArgument(2));
+            return new ExamSettlementPage(value,2000,1000,ids.subList(1000,1001),0,null);
+        });
+        seasons.settle(value);
+        assertEquals("BLOCKED",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,value));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_season_rank WHERE board_month=?",Integer.class,value));
+        inbox.once("learning.exam",ids.getLast(),()->{});seasons.settle(value);
+        assertEquals("SETTLED",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,value));
+        verify(examClient,times(4)).settlementReadiness(eq(value),anyLong(),nullable(Long.class));
+    }
+
+    @Test void malformedOrPendingRemotePageCannotBeMistakenForACompletedScan() {
+        String value=month.format(LearningSeasonService.MONTH);
+        points.award(user,10,PointsRecordType.LEARNING,"invalid-page:"+user,month.atDay(3).atTime(10,0));
+        for(var page:List.of(new ExamSettlementPage(value,100,0,List.of(),1,null),
+                new ExamSettlementPage(value,100,0,List.of(),0,0L),
+                new ExamSettlementPage("199901",100,0,List.of(),0,null))) {
+            when(examClient.settlementReadiness(value,0,null)).thenReturn(page);seasons.settle(value);
+            assertEquals("BLOCKED",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,value));
+        }
+    }
+
+    @Test void differentLearnersShareMonthFenceWhileFreezeWaitsAndLateAwardsReconcile() throws Exception {
+        String value=month.format(LearningSeasonService.MONTH);LocalDateTime time=month.atDay(3).atTime(10,0);
+        LearningSeasonService.ensureSeason(jdbc,month);
+        CountDownLatch sharedHeld=new CountDownLatch(1),release=new CountDownLatch(1),freezeStarted=new CountDownLatch(1);
+        when(examClient.settlementReadiness(value,0,null)).thenAnswer(call->{freezeStarted.countDown();return new ExamSettlementPage(value,0,0,List.of(),0,null);});
+        try(var pool=Executors.newFixedThreadPool(3)) {
+            var first=pool.submit(()->new TransactionTemplate(manager).executeWithoutResult(status->{
+                points.award(user,10,PointsRecordType.LEARNING,"shared-1:"+user,time);sharedHeld.countDown();
+                try{assertTrue(release.await(10,TimeUnit.SECONDS));}catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new IllegalStateException(interrupted);}
+            }));
+            try {
+                assertTrue(sharedHeld.await(5,TimeUnit.SECONDS));
+                // This completes while another user's transaction retains its FOR SHARE lock.
+                pool.submit(()->points.award(user+1,10,PointsRecordType.LEARNING,"shared-2:"+user,time)).get(5,TimeUnit.SECONDS);
+                var freeze=pool.submit(()->seasons.settle(value));assertTrue(freezeStarted.await(5,TimeUnit.SECONDS));
+                assertThrows(TimeoutException.class,()->freeze.get(200,TimeUnit.MILLISECONDS));
+                release.countDown();first.get(5,TimeUnit.SECONDS);freeze.get(5,TimeUnit.SECONDS);
+            } finally {release.countDown();}
+        }
+        assertEquals("SETTLED",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,value));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM learning_season_rank WHERE board_month=? AND user_id IN (?,?)",Integer.class,value,user,user+1));
+        points.award(user+2,10,PointsRecordType.LEARNING,"after-freeze:"+user,time.plusHours(1));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM learning_points_reconciliation WHERE board_month=? AND user_id=?",Integer.class,value,user+2));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM points_projection WHERE board_month=? AND user_id=?",Integer.class,value,user+2));
+    }
+
+    @Test void nameTimeoutCannotBlockRewardsAndFirstSuccessfulNameRemainsFixed() {
+        String value=month.format(LearningSeasonService.MONTH);long rule=IdWorker.getId();
+        jdbc.update("INSERT INTO learning_reward_rule(id,board_month,rank_from,rank_to,coupon_id,enabled,created_by) VALUES(?,?,1,1,99,1,?)",rule,value,user);
+        points.award(user,10,PointsRecordType.LEARNING,"name-timeout:"+user,month.atDay(3).atTime(10,0));
+        when(userClient.queryUserByIds(any())).thenThrow(new org.springframework.web.client.ResourceAccessException("synthetic timeout"));
+        seasons.settle(value);verifyNoInteractions(userClient);assertDoesNotThrow(()->seasons.hydrateNames());
+        assertEquals("SETTLED",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,value));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM learning_reward_request WHERE board_month=? AND user_id=?",Integer.class,value,user));
+        assertNull(jdbc.queryForObject("SELECT display_name FROM learning_season_rank WHERE board_month=? AND user_id=?",String.class,value,user));
+        jdbc.update("UPDATE learning_season_rank SET name_next_attempt_at=DATE_SUB(CURRENT_TIMESTAMP(3),INTERVAL 1 SECOND) WHERE board_month=? AND user_id=?",value,user);
+        var name=new UserDTO();name.setId(user);name.setName("首次成功昵称");
+        doAnswer(call->{assertFalse(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());return List.of(name);}).when(userClient).queryUserByIds(any());
+        seasons.hydrateNames();assertEquals("首次成功昵称",jdbc.queryForObject("SELECT display_name FROM learning_season_rank WHERE board_month=? AND user_id=?",String.class,value,user));
+        name.setName("之后的新昵称");seasons.hydrateNames();
+        assertEquals("首次成功昵称",jdbc.queryForObject("SELECT display_name FROM learning_season_rank WHERE board_month=? AND user_id=?",String.class,value,user));
+    }
+
     /** Real JDBC and production maintain; producer/name services are contract mocks, not broker proof. */
     private LearningSeasonService maintenanceAt(LocalDateTime now,String nickname) {
         var fixed=Clock.fixed(now.atZone(ZoneId.of("Asia/Shanghai")).toInstant(),ZoneId.of("Asia/Shanghai"));
-        var exams=mock(ExamClient.class);when(exams.settlementReadiness(anyString())).thenReturn(Map.of("ready",true,"pending",0,"eventIds",List.of()));
+        var exams=mock(ExamClient.class);when(exams.settlementReadiness(anyString(),anyLong(),nullable(Long.class))).thenAnswer(call->new ExamSettlementPage(call.getArgument(0),0,0,List.of(),0,null));
         var names=mock(UserClient.class);when(names.queryUserByIds(any())).thenAnswer(call->{
             var requested=(Iterable<Long>)call.getArgument(0);boolean present=false;for(Long id:requested)if(id==user)present=true;
             if(!present)return List.of();var detail=new UserDTO();detail.setId(user);detail.setName(nickname);return List.of(detail);
@@ -159,7 +235,7 @@ class LearningMotivationReliabilityTest {
             var ledger=new PointsRecordServiceImpl(jdbc,inbox,fixed);long rule=IdWorker.getId();
             jdbc.update("INSERT INTO learning_reward_rule(id,board_month,rank_from,rank_to,coupon_id,enabled,created_by) VALUES(?,?,1,1,99,1,?)",rule,value,user);
             ledger.award(user,10,PointsRecordType.LEARNING,"restart-first:"+user,earned.atDay(3).atTime(10,0));
-            maintenanceAt(recoveryTime,"补偿结算昵称").maintain();
+            var restarted=maintenanceAt(recoveryTime,"补偿结算昵称");restarted.maintain();restarted.hydrateNames();
             assertEquals("SETTLED",jdbc.queryForObject("SELECT state FROM learning_season WHERE board_month=?",String.class,value));
             var snapshot=jdbc.queryForList("SELECT user_id,rank_no,points,display_name,CAST(reached_at AS CHAR) reached_at FROM learning_season_rank WHERE board_month=?",value);
             assertEquals(1,snapshot.size());assertEquals("补偿结算昵称",snapshot.getFirst().get("display_name"));

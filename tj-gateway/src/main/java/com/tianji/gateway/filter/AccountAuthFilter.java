@@ -17,9 +17,10 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
     private final AuthProperties properties;
     private final com.tianji.gateway.config.AccessPolicy policy;
     private final reactor.core.scheduler.Scheduler authorizationScheduler;
+    private final com.tianji.gateway.config.TrustedProxyIdentity proxyIdentity;
     private final java.util.concurrent.Semaphore requests=new java.util.concurrent.Semaphore(200,true);
     private final AntPathMatcher matcher=new AntPathMatcher();
-    public AccountAuthFilter(AuthUtil auth,AuthProperties properties,com.tianji.gateway.config.AccessPolicy policy,@org.springframework.beans.factory.annotation.Qualifier("authorizationScheduler") reactor.core.scheduler.Scheduler authorizationScheduler) {this.auth=auth;this.properties=properties;this.policy=policy;this.authorizationScheduler=authorizationScheduler;}
+    public AccountAuthFilter(AuthUtil auth,AuthProperties properties,com.tianji.gateway.config.AccessPolicy policy,@org.springframework.beans.factory.annotation.Qualifier("authorizationScheduler") reactor.core.scheduler.Scheduler authorizationScheduler,com.tianji.gateway.config.TrustedProxyIdentity proxyIdentity) {this.auth=auth;this.properties=properties;this.policy=policy;this.authorizationScheduler=authorizationScheduler;this.proxyIdentity=proxyIdentity;}
     @Override public Mono<Void> filter(ServerWebExchange exchange,GatewayFilterChain chain) {
         // Permission-cache Redis calls are blocking; never run them on Netty's event loop.
         // Acquire off Netty. using also disposes an acquisition completed after cancellation,
@@ -39,12 +40,13 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
         private void close(){if(closed.compareAndSet(false,true))requests.release();}
     }
     private Mono<Void> authorize(ServerWebExchange exchange,GatewayFilterChain chain) {
+        var client=proxyIdentity.identify(exchange.getRequest());
         // Identity is derived exclusively from the signed token. Strip on every path, including public paths.
         ServerWebExchange sanitized=exchange.mutate().request(b->b.headers(h->{
-            h.remove("user-session");h.remove("X-Client-IP");h.remove("X-Forwarded-For");h.remove("X-Real-IP");h.remove(USER_HEADER);h.remove("user-role");h.remove("X-User-Id");h.remove("X-Role-Id");h.remove("X-Internal-Token");h.remove("X-TJ-Call-Depth");
+            h.remove("user-session");h.remove("X-Client-IP");h.remove("X-Client-Proto");h.remove("Forwarded");h.remove("X-Forwarded-Proto");h.remove("X-Forwarded-Host");h.remove("X-Forwarded-Port");h.remove("X-Forwarded-For");h.remove("X-Real-IP");h.remove(USER_HEADER);h.remove("user-role");h.remove("X-User-Id");h.remove("X-Role-Id");h.remove("X-Internal-Token");h.remove("X-TJ-Call-Depth");
             String internal=System.getenv("TJ_INTERNAL_TOKEN");if(internal==null || internal.length()<32)throw new IllegalStateException("Gateway service identity is not configured");
             h.set("X-Internal-Token",internal);
-            var peer=exchange.getRequest().getRemoteAddress();h.set("X-Client-IP",peer==null?"unknown":peer.getAddress().getHostAddress());
+            h.set("X-Client-IP",client.address());h.set("X-Client-Proto",client.protocol());
         })).build();
         String path=sanitized.getRequest().getPath().value();
         if(path.contains("/api/v2/services/pay/pay-orders") || path.contains("/api/v2/services/pay/refund-orders") || path.contains("/api/v2/admin/pay/pay-orders") || path.contains("/api/v2/admin/pay/refund-orders") || path.contains("/internal/") || path.contains("/user-coupons/use") || path.contains("/user-coupons/refund"))

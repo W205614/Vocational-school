@@ -68,7 +68,8 @@ def load_upgrade(home, root, inspect=inspect_image, verify_source=verify_source_
 
 def upgraded_configuration(recorded, generated, application_images):
     """Retain recovered infrastructure and fresh volumes; use new application settings."""
-    if set(application_images) != SERVICES or set(recorded['services']) != set(generated['services']):
+    from operations_config import MONITORS
+    if set(application_images) != SERVICES or set(recorded['services'])-MONITORS != set(generated['services'])-MONITORS:
         raise RuntimeError('Recovery upgrade topology differs from the verified seven-image deployment')
     if recorded.get('name') != generated.get('name'):
         raise RuntimeError('Upgrade configuration must belong to the isolated recovery project')
@@ -80,6 +81,10 @@ def upgraded_configuration(recorded, generated, application_images):
         service.pop('container_name', None)
         service['image'] = image
         result['services'][name] = service
+    for name in MONITORS & set(generated['services']):
+        result['services'][name] = copy.deepcopy(generated['services'][name])
+    for name in MONITORS:
+        if 'compact_'+name in generated.get('volumes',{}):result.setdefault('volumes',{}).setdefault('compact_'+name,{})
     if any(settings for settings in result.get('volumes', {}).values()):
         raise RuntimeError('Upgrade cannot reference shared or externally named volumes')
     for service in result['services'].values():

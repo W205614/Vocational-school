@@ -68,7 +68,7 @@ public class WxPayService implements IPayService {
         JSONObject result = JsonUtils.parseObj(responseJson);
         String code = result.getStr("code");
         String message = result.getStr("message");
-        LocalDateTime successTime = result.getLocalDateTime("success_time", LocalDateTime.now());
+        LocalDateTime successTime = result.getLocalDateTime("success_time", null);
         // 3.1.请求异常
         if(StringUtils.isNotBlank(code)){
             return PayStatusResponse.builder().success(false).code(code).msg(message).build();
@@ -76,7 +76,7 @@ public class WxPayService implements IPayService {
         // 3.2.请求成功
         return PayStatusResponse.builder()
                 .success(true)
-                .payOrderNo(payOrderNo)
+                .payOrderNo(result.getStr("out_trade_no"))
                 .payStatus(parsePayStatus(result.getStr("trade_state")))
                 .msg(result.getStr("trade_state_desc"))
                 .totalAmount(result.getJSONObject("amount").getInt("total"))

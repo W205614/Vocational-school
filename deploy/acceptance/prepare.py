@@ -12,7 +12,7 @@ def run(args,**kwargs):
     return result
 def mysql(sql,db=None):
     cmd=COMPOSE+['exec','-T','mysql','sh','-c','MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --default-character-set=utf8mb4 -uroot -N -B'+(' '+db if db else '')]
-    result=subprocess.run(cmd,input=sql.encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    result=subprocess.run(cmd,input=sql.encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=300)
     if result.returncode:
         LOCAL.mkdir(exist_ok=True)
         (LOCAL/'mysql-errors.log').write_bytes(result.stderr)

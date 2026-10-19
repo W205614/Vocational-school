@@ -12,4 +12,7 @@ class CookieBuilderTest {
   }
  }
  @Test void secureRequestProducesSecureCookie(){var request=new MockHttpServletRequest();request.setSecure(true);var response=new MockHttpServletResponse();new CookieBuilder(request,response).name("refresh").value("token").build();assertTrue(response.getCookie("refresh").getSecure());}
+ @Test void productionRequiresSecureEvenBehindHttpUpstream(){var response=new MockHttpServletResponse();new CookieBuilder(new MockHttpServletRequest(),response).name("refresh").value("token").requireSecure(true).build();assertTrue(response.getCookie("refresh").getSecure());}
+ @Test void trustedHttpsProducesSecureCookieBehindHttpUpstream(){var response=new MockHttpServletResponse();new CookieBuilder(new MockHttpServletRequest(),response).name("refresh").value("token").trustedHttps(true).build();assertTrue(response.getCookie("refresh").getSecure());}
+ @Test void untrustedForwardedHeaderCannotMarkLocalCookieSecure(){var request=new MockHttpServletRequest();request.addHeader("X-Forwarded-Proto","https");request.addHeader("X-Client-Proto","https");var response=new MockHttpServletResponse();new CookieBuilder(request,response).name("refresh").value("token").build();assertFalse(response.getCookie("refresh").getSecure());}
 }

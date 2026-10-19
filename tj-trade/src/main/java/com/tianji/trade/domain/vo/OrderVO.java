@@ -15,6 +15,10 @@ public class OrderVO {
     private LocalDateTime createTime;
     @Schema(description = "订单实付金额")
     private Integer realAmount;
+    @Schema(description = "支付渠道，ZERO表示优惠抵扣后的零元成交")
+    private String payChannel;
+    @Schema(description = "支付流水；零元成交没有外部支付流水")
+    private Long payOrderNo;
     @Schema(description = "订单明细金额")
     private Integer totalAmount;
     @Schema(description = "优惠券规则,可以有多个优惠券规则")

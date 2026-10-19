@@ -1,4 +1,5 @@
 server:
+  forward-headers-strategy: none
   port: 10010
   tomcat:
     uri-encoding: UTF-8

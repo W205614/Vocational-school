@@ -31,6 +31,15 @@ public class AccountServiceImpl implements IAccountService{
     private final JwtTool jwtTool;
     private final UserClient userClient;
     private final ILoginRecordService loginRecordService;
+    @org.springframework.beans.factory.annotation.Value("${tj.auth.cookie.require-secure:false}")
+    private boolean requireSecureCookie;
+
+    private com.tianji.common.utils.CookieBuilder refreshCookie() {
+        // The gateway strips client headers and supplies protocol only with its service identity.
+        com.tianji.common.utils.InternalAuth.requireService();
+        return WebUtils.cookieBuilder().requireSecure(requireSecureCookie)
+                .trustedHttps("https".equals(WebUtils.getHeader("X-Client-Proto")));
+    }
 
     @Override
     public String login(LoginFormDTO loginDTO, boolean isStaff) {
@@ -67,7 +76,7 @@ public class AccountServiceImpl implements IAccountService{
         // 2.4.将refresh-token写入用户cookie，并设置HttpOnly为true
         int maxAge = BooleanUtils.isTrue(detail.getRememberMe()) ?
                 (int) JwtConstants.JWT_REMEMBER_ME_TTL.toSeconds() : -1;
-        WebUtils.cookieBuilder()
+        refreshCookie()
                 .name(detail.getRoleId() == 2 ? JwtConstants.REFRESH_HEADER : JwtConstants.ADMIN_REFRESH_HEADER)
                 .value(refreshToken)
                 .maxAge(maxAge)
@@ -81,13 +90,13 @@ public class AccountServiceImpl implements IAccountService{
         // 删除jti
         jwtTool.cleanJtiCache();
         // 删除cookie
-        WebUtils.cookieBuilder()
+        refreshCookie()
                 .name(JwtConstants.REFRESH_HEADER)
                 .value("")
                 .maxAge(0)
                 .httpOnly(true)
                 .build();
-        WebUtils.cookieBuilder().name(JwtConstants.ADMIN_REFRESH_HEADER)
+        refreshCookie().name(JwtConstants.ADMIN_REFRESH_HEADER)
                 .value("").maxAge(0).httpOnly(true).build();
     }
 

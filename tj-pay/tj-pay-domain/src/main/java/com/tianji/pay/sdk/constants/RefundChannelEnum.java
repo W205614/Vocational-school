@@ -5,6 +5,7 @@ import lombok.Getter;
 
 @Getter
 public enum RefundChannelEnum {
+    ZERO("零元退课，无资金退款"),
     COUPON("支付宝红包"),
     ALIPAYACCOUNT("支付宝账户"),
     POINT("集分宝"),

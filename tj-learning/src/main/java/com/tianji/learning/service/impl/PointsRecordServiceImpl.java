@@ -54,7 +54,8 @@ public class PointsRecordServiceImpl extends ServiceImpl<PointsRecordMapper, Poi
             java.time.LocalDate date=occurredAt.toLocalDate();
             String month=date.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMM"));
             LearningSeasonService.ensureSeason(jdbc,java.time.YearMonth.from(date));
-            var season=jdbc.queryForMap("SELECT state FROM learning_season WHERE board_month=? FOR UPDATE",month);
+            // Different learners share the month fence; settlement alone takes the exclusive lock.
+            var season=jdbc.queryForMap("SELECT state FROM learning_season WHERE board_month=? FOR SHARE",month);
             boolean late=java.util.Set.of("SETTLED","LEGACY_READONLY").contains(season.get("state"));
             jdbc.update("INSERT INTO points_daily_quota(user_id,type,quota_day,points) VALUES(?,?,?,0) ON DUPLICATE KEY UPDATE points=points",userId,type.getValue(),date);
             Integer used=jdbc.queryForObject("SELECT points FROM points_daily_quota WHERE user_id=? AND type=? AND quota_day=? FOR UPDATE",Integer.class,userId,type.getValue(),date);

@@ -14,7 +14,7 @@ def config_fingerprint(home):
 def normalized(home):
     home=Path(home);compose=yaml.safe_load((home/'compose.yaml').read_text(encoding='utf8'))
     offset=int(compose['services']['app-gateway']['environment']['APP_PORT'])-24310
-    ports={number+offset:number for number in (24001,24002,24003,24004,24310,25001,25002,25003,25004,25005,25006,25007,24316,24379,24373,24920,24500,24501)}
+    ports={number+offset:number for number in (24001,24002,24003,24004,24310,25001,25002,25003,25004,25005,25006,25007,24316,24379,24373,24920,24500,24501,24590,24591,24592)}
     def value(item,path=()):
         if path in PRIVATE:return '<local-credential>'
         if isinstance(item,dict):return {key:value(child,path+(key,)) for key,child in item.items()}

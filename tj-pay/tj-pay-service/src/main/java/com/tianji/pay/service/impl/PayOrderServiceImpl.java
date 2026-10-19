@@ -52,6 +52,7 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
     private Map<String, IPayService> payServiceChannels;
     private final ProviderSettlementService settlement;
     private final ProviderRequestGuard requests;
+    private final ProviderPaymentReconciler reconciliation;
 
     @Override
     // Serialize provider creation, then immediately let retries read the stored link.
@@ -68,6 +69,7 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
 
         // 2.幂等性校验
         PayOrder payOrder = requests.prepare("PAY",payApplyDTO.getBizOrderNo(),()->checkIdempotent(payApplyDTO));
+        reconciliation.ensure(payOrder.getPayOrderNo());
         if (StringUtils.isNotBlank(payOrder.getQrCodeUrl())) {
             log.debug("支付链接已经存在，不再重新创建，直接返回");
             return payOrder.getQrCodeUrl();
@@ -214,42 +216,8 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
     @Override
     @Lock(name = PayConstants.RedisKeyFormatter.PAY_ORDER_CHECK_TASK, lockStrategy = LockStrategy.SKIP_AFTER_RETRY_TIMEOUT)
     public void checkPayOrder(PayOrder payOrder) {
-        // 1.选择支付渠道
-        IPayService payService = payServiceChannels.get(payOrder.getPayChannelCode());
-        if (payService == null) {
-            log.error("支付渠道不存在，业务单号：{}", payOrder.getBizOrderNo());
-            // 异常订单，需要关闭支付单
-            closeOrder(payOrder.getId());
-            return;
-        }
-        // 2.判断订单是否超时
-        if (payOrder.getPayOverTime().isBefore(LocalDateTime.now())) {
-            log.debug("支付单{}已经超时，关闭订单", payOrder.getPayOrderNo());
-            closeOrder(payOrder.getId());
-            return;
-        }
-        // 3.查询支付状态
-        PayStatusResponse response = payService.queryPayOrderStatus(payOrder.getPayOrderNo().toString());
-        Integer payStatus = response.getPayStatus();
-        // 3.1.判断是否查询失败或者正在支付
-        if (!response.isSuccess() || PayStatus.WAIT_BUYER_PAY.equalsValue(payStatus)) {
-            // 查询异常或正在支付，结束
-            return;
-        }
-        // 3.2.判断支付状态是否变更
-        if (payStatus.equals(payOrder.getStatus())) {
-            // 支付状态没有变更
-            return;
-        }
-        if(PayStatus.TRADE_SUCCESS.equalsValue(response.getPayStatus()))
-            settlement.paid(payOrder.getPayOrderNo(),payOrder.getAmount(),response.getSuccessTime());
-        else updatePayStatus2DB(response,payOrder.getId());
+        reconciliation.ensure(payOrder.getPayOrderNo());
+        reconciliation.check(payOrder);
     }
 
-    private void updatePayStatus2DB(PayStatusResponse response,Long id){
-        lambdaUpdate().set(PayOrder::getStatus,response.getPayStatus())
-         .set(PayOrder::getResultCode,response.getCode()).set(PayOrder::getResultMsg,response.getMsg())
-         .eq(PayOrder::getId,id).in(PayOrder::getStatus,0,1).update();
-    }
-    private void closeOrder(Long id){lambdaUpdate().set(PayOrder::getStatus,2).eq(PayOrder::getId,id).in(PayOrder::getStatus,0,1).update();}
 }

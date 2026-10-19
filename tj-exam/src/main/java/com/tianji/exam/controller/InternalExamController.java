@@ -1,10 +1,14 @@
 package com.tianji.exam.controller;
 
 import com.tianji.common.utils.InternalAuth;
+import com.tianji.api.dto.exam.ExamSettlementPage;
+import com.tianji.common.exceptions.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @RestController @RequiredArgsConstructor @RequestMapping("/internal/v1/exams")
@@ -24,15 +28,28 @@ public class InternalExamController {
         var counts=jdbc.queryForMap(sql,args.toArray());
         return Map.of("pendingExams",Math.toIntExact(((Number)counts.get("pending")).longValue()),"waitingForGradingExams",Math.toIntExact(((Number)counts.get("waiting")).longValue()));
     }
-    @GetMapping("/settlement-readiness") public Map<String,Object> readiness(@RequestParam LocalDateTime before) {
+    @GetMapping("/settlement-readiness") public ExamSettlementPage readiness(
+            @RequestParam String month,@RequestParam(defaultValue="0") long cursor,
+            @RequestParam(required=false) Long upperBound) {
         InternalAuth.requireService();
-        // Use the committed grading time across midnight, including legacy events
-        // whose payload predates the explicit occurredAt field.
-        String from=" FROM reliability_outbox o LEFT JOIN exam_attempt a ON o.business_key=CONCAT('exam:',a.id,':passed') WHERE o.routing_key='exam.passed' AND COALESCE(a.graded_at,o.created_at)>=? AND COALESCE(a.graded_at,o.created_at)<?";
-        LocalDateTime start=before.minusMonths(1);
-        long pending=jdbc.queryForObject("SELECT COUNT(*)"+from+" AND o.status<>'SENT'",Long.class,start,before);
-        var eventIds=jdbc.queryForList("SELECT o.event_id"+from+" ORDER BY o.created_at,o.event_id LIMIT 10001",String.class,start,before);
-        boolean truncated=eventIds.size()>10000;
-        return Map.of("ready",pending==0 && !truncated,"pending",pending,"eventIds",truncated?eventIds.subList(0,10000):eventIds,"truncated",truncated);
+        YearMonth period;
+        try {
+            if(month==null || !month.matches("[0-9]{6}"))throw new IllegalArgumentException();
+            period=YearMonth.parse(month,DateTimeFormatter.ofPattern("yyyyMM"));
+        } catch(RuntimeException invalid) {throw new BadRequestException("赛季月份无效");}
+        if(cursor<0 || upperBound!=null && (upperBound<0 || cursor>upperBound) || upperBound==null && cursor!=0)
+            throw new BadRequestException("结算扫描游标无效");
+        long bound=upperBound==null?jdbc.queryForObject("SELECT COALESCE(MAX(settlement_sequence),0) FROM reliability_outbox",Long.class):upperBound;
+        // An immutable sequence bounds work across pages; publishing/status changes never move an event.
+        // The grading business time preserves legacy envelopes and the month's midnight boundary.
+        String from=" FROM reliability_outbox o LEFT JOIN exam_attempt a ON a.id=CASE WHEN o.business_key REGEXP '^exam:[0-9]+:passed$' THEN CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(o.business_key,':',2),':',-1) AS UNSIGNED) END AND o.business_key=CONCAT('exam:',a.id,':passed') WHERE o.routing_key='exam.passed' AND o.settlement_sequence>? AND o.settlement_sequence<=? AND COALESCE(a.graded_at,o.created_at)>=? AND COALESCE(a.graded_at,o.created_at)<?";
+        var rows=jdbc.queryForList("SELECT o.settlement_sequence,o.event_id,o.status"+from+" ORDER BY o.settlement_sequence LIMIT ?",
+                cursor,bound,period.atDay(1).atStartOfDay(),period.plusMonths(1).atDay(1).atStartOfDay(),ExamSettlementPage.PAGE_SIZE+1);
+        boolean more=rows.size()>ExamSettlementPage.PAGE_SIZE;
+        var page=more?rows.subList(0,ExamSettlementPage.PAGE_SIZE):rows;
+        var eventIds=page.stream().map(row->row.get("event_id").toString()).toList();
+        long pending=page.stream().filter(row->!"SENT".equals(row.get("status"))).count();
+        Long next=more?((Number)page.getLast().get("settlement_sequence")).longValue():null;
+        return new ExamSettlementPage(month,bound,cursor,eventIds,pending,next);
     }
 }

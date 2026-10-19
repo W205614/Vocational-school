@@ -15,5 +15,5 @@ for table in ('interaction_question','interaction_reply'):
  if definition is None:raise RuntimeError('Missing test prerequisite '+table)
  mysql(definition.group().replace('CREATE TABLE','CREATE TABLE IF NOT EXISTS',1),'acceptance_learning')
 apply_migrations('acceptance_learning',sorted(p for p in (BASE/'migrations/tj_learning').glob('V*.sql') if int(p.name[1:4])>=8))
-apply_migrations('acceptance_exam',list((BASE/'migrations/tj_exam').glob('V004*.sql')))
+apply_migrations('acceptance_exam',sorted(p for p in (BASE/'migrations/tj_exam').glob('V*.sql') if int(p.name[1:4])>=4))
 print('Dedicated integration-test schemas initialized.')

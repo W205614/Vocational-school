@@ -41,13 +41,13 @@ def verify(directory):
 
 @contextmanager
 def quiesce(p):
- services=subprocess.check_output(p.COMPOSE+['ps','--status','running','--services']).decode().splitlines()
+ services=subprocess.check_output(p.COMPOSE+['ps','--status','running','--services'],timeout=30).decode().splitlines()
  apps=[name for name in services if name.startswith(('app-','web-'))]
  try:
-  if apps:subprocess.run(p.COMPOSE+['stop','-t','60',*apps],check=True,stdout=subprocess.DEVNULL)
+  if apps:subprocess.run(p.COMPOSE+['stop','-t','60',*apps],check=True,stdout=subprocess.DEVNULL,timeout=120)
   yield
  finally:
-  if apps:subprocess.run(p.COMPOSE+['start','--wait','--wait-timeout','180',*apps],check=True,stdout=subprocess.DEVNULL)
+  if apps:subprocess.run(p.COMPOSE+['start','--wait','--wait-timeout','180',*apps],check=True,stdout=subprocess.DEVNULL,timeout=210)
 
 def capture(runtime=None,source_base=None,quiesced=False):
  p=runtime or configure()
@@ -57,11 +57,11 @@ def capture(runtime=None,source_base=None,quiesced=False):
  stamp=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
  directory=Path(tempfile.mkdtemp(prefix='.incomplete-',dir=base));sql=directory/'business.sql'
  with sql.open('wb') as output:
-  result=subprocess.run(p.COMPOSE+['exec','-T','mysql','sh','-c','MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump -uroot --single-transaction --skip-lock-tables --no-tablespaces --set-gtid-purged=OFF --routines --triggers --databases '+' '.join(p.DATABASES)],stdout=output,stderr=subprocess.PIPE)
+  result=subprocess.run(p.COMPOSE+['exec','-T','mysql','sh','-c','MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump -uroot --single-transaction --skip-lock-tables --no-tablespaces --set-gtid-purged=OFF --routines --triggers --databases '+' '.join(p.DATABASES)],stdout=output,stderr=subprocess.PIPE,timeout=1800)
  if result.returncode or sql.stat().st_size<10000:raise RuntimeError('Backup failed; incomplete bundle retained')
- container_ids=subprocess.check_output(p.COMPOSE+['ps','-aq']).decode().splitlines()
+ container_ids=subprocess.check_output(p.COMPOSE+['ps','-aq'],timeout=30).decode().splitlines()
  runtime_images={}
- for container in json.loads(subprocess.check_output(['docker','inspect',*container_ids])) if container_ids else []:
+ for container in json.loads(subprocess.check_output(['docker','inspect',*container_ids],timeout=30)) if container_ids else []:
   service=container['Config']['Labels']['com.docker.compose.service']
   if service in runtime_images:raise RuntimeError('Ambiguous runtime image inventory')
   runtime_images[service]=container['Image']
@@ -73,9 +73,24 @@ def capture(runtime=None,source_base=None,quiesced=False):
  with zipfile.ZipFile(directory/'private-config.zip','w',compression=zipfile.ZIP_DEFLATED) as archive:
   archive.write(directory/'runtime-images.json','runtime-images.json')
   for path,name in [(source/'.env','.env'),(local/'signing.jks','signing.jks'),(local/'app.env','app.env'),(local/'database-accounts.json','database-accounts.json'),(local/'accounts.json','accounts.json'),(local/'browser-fixture.json','browser-fixture.json'),(local/'images.json','images.json'),(local/'load-accounts.json','load-accounts.json'),(local/'build-source.json','build-source.json'),(local/'infrastructure-images.json','infrastructure-images.json')]:
-   if path.exists():archive.write(path,name)
+   if path.exists():
+    if name=='images.json':
+     # A new build may already have replaced mutable local tags. Recovery must
+     # describe the captured running applications, not an uninstalled candidate.
+     image_manifest=json.loads(path.read_text(encoding='utf8'))
+     for alias,details in image_manifest.items():
+      service=('web-' if alias in {'student','admin'} else 'app-')+alias
+      actual=runtime_images.get(service)
+      if actual and details.get('imageId')!=actual:
+       details={'image':actual,'imageId':actual};image_manifest[alias]=details
+     archive.writestr(name,json.dumps(image_manifest,indent=2))
+    else:archive.write(path,name)
   for path in sorted((local/'configs').iterdir()):
    if path.is_file() and path.suffix in {'.yml','.security'}:archive.write(path,'configs/'+path.name)
+  for folder in ['observability','ops-status']:
+   for path in sorted((local/folder).rglob('*')):
+    if path.is_symlink():raise RuntimeError('Private recovery configuration must not contain symlinks')
+    if path.is_file() and path.name!='resume.json':archive.write(path,folder+'/'+path.relative_to(local/folder).as_posix())
   if (source/'compose.yaml').exists():archive.write(source/'compose.yaml','compose.yaml')
  media={}
  with zipfile.ZipFile(directory/'media.zip','w',compression=zipfile.ZIP_STORED) as archive:
@@ -97,14 +112,14 @@ def capture(runtime=None,source_base=None,quiesced=False):
   (directory/'table-checksums.json').write_text(json.dumps(table_checksums(p.mysql,counts),indent=2),encoding='utf8')
  broker=None
  if quiesced:
-  node=subprocess.check_output(p.COMPOSE+['exec','-T','rabbitmq','hostname']).decode().strip()
-  subprocess.run(p.COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','stop_app'],check=True,stdout=subprocess.DEVNULL)
+  node=subprocess.check_output(p.COMPOSE+['exec','-T','rabbitmq','hostname'],timeout=30).decode().strip()
+  subprocess.run(p.COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','stop_app'],check=True,stdout=subprocess.DEVNULL,timeout=120)
   try:
    with (directory/'rabbitmq.tar.gz').open('wb') as output:
-    result=subprocess.run(p.COMPOSE+['exec','-T','-u','0','rabbitmq','tar','-czf','-','-C','/var/lib/rabbitmq','.'],stdout=output,stderr=subprocess.PIPE)
+    result=subprocess.run(p.COMPOSE+['exec','-T','-u','0','rabbitmq','tar','-czf','-','-C','/var/lib/rabbitmq','.'],stdout=output,stderr=subprocess.PIPE,timeout=1800)
    if result.returncode:raise RuntimeError('Broker bytes capture failed')
    broker={'hostname':node,'file':'rabbitmq.tar.gz'}
-  finally:subprocess.run(p.COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','start_app'],check=True,stdout=subprocess.DEVNULL)
+  finally:subprocess.run(p.COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','start_app'],check=True,stdout=subprocess.DEVNULL,timeout=180)
  files=['business.sql','media.zip','private-config.zip','redis.json','table-counts.json','runtime-images.json']+(['rabbitmq.tar.gz','table-checksums.json'] if broker else [])
  manifest={'format':4,'quiesced':quiesced,'tableContentChecksumsCaptured':quiesced,'broker':broker,'queueRecovery':'broker-bytes' if broker else 'NOT_CAPTURED','at':stamp,'databaseCount':len(p.DATABASES),'files':{name:digest(directory/name) for name in files},'mediaFiles':media}
  (directory/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf8');verify(directory)

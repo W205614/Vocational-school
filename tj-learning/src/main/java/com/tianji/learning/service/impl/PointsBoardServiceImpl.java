@@ -54,6 +54,7 @@ public class PointsBoardServiceImpl extends ServiceImpl<PointsBoardMapper,Points
   if(pageNo==null || pageNo<1 || pageSize==null || pageSize<1 || pageSize>1000)throw new BadRequestException("榜单分页无效");
   if(key==null || !key.matches(".*[0-9]{6}$"))throw new BadRequestException("榜单月份无效");
   String month=key.substring(key.length()-6);
-  return jdbc.query("SELECT user_id,points,ROW_NUMBER() OVER(ORDER BY points DESC,reached_at ASC,user_id ASC) rank_no FROM points_projection WHERE board_month=? ORDER BY rank_no LIMIT ? OFFSET ?",(rs,n)->new PointsBoard().setUserId(rs.getLong("user_id")).setPoints(rs.getInt("points")).setRank(rs.getInt("rank_no")),month,pageSize,(long)(pageNo-1)*pageSize);
+   long offset=(long)(pageNo-1)*pageSize;
+   return jdbc.query("SELECT user_id,points FROM points_projection WHERE board_month=? ORDER BY points DESC,reached_at ASC,user_id ASC LIMIT ? OFFSET ?",(rs,n)->new PointsBoard().setUserId(rs.getLong("user_id")).setPoints(rs.getInt("points")).setRank(Math.toIntExact(offset+n+1)),month,pageSize,offset);
  }
 }

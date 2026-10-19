@@ -49,6 +49,7 @@ public class AccountController {
             @CookieValue(value = JwtConstants.ADMIN_REFRESH_HEADER, required = false) String adminToken,
             @RequestParam(required=false) String audience
     ) {
+        com.tianji.common.utils.InternalAuth.requireService();
         if (studentToken == null && adminToken == null) {
             throw new BadRequestException("登录超时");
         }

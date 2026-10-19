@@ -41,11 +41,11 @@ else:
 """
 def transfer(runtime,path,restore=False):
  # Only the deployment's verified loopback mapping is used.
- container=subprocess.check_output(runtime.COMPOSE+['ps','-q','redis']).decode().strip()
+ container=subprocess.check_output(runtime.COMPOSE+['ps','-q','redis'],timeout=30).decode().strip()
  if not container:raise RuntimeError('Redis container missing')
- mapping=subprocess.check_output(['docker','port',container,'6379/tcp']).decode().strip()
+ mapping=subprocess.check_output(['docker','port',container,'6379/tcp'],timeout=30).decode().strip()
  if not mapping.startswith('127.0.0.1:') or '\n' in mapping:raise RuntimeError('Redis must have one loopback-only mapping')
  command=[sys.executable,'-c',SCRIPT,'restore' if restore else 'capture',mapping.rsplit(':',1)[1]]
- result=subprocess.run(command,input=path.read_bytes() if restore else None,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+ result=subprocess.run(command,input=path.read_bytes() if restore else None,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=300)
  if result.returncode:raise RuntimeError('Redis transfer failed; snapshot was not published')
  if not restore:path.write_bytes(result.stdout)

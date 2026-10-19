@@ -82,7 +82,7 @@ public class AliPayService implements IPayService {
         // 2.2.响应结果正常
         String success_time = response.getSendPayDate();
         LocalDateTime successTime = StringUtils.isBlank(success_time) ?
-                LocalDateTime.now() : DateUtils.parse(success_time, DateUtils.DEFAULT_DATE_TIME_FORMAT);
+                null : DateUtils.parse(success_time, DateUtils.DEFAULT_DATE_TIME_FORMAT);
         return PayStatusResponse.builder().success(true)
                         .payStatus(PayStatus.valueOf(response.getTradeStatus()).getValue())
                         .payOrderNo(response.getOutTradeNo())

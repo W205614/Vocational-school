@@ -1,0 +1,22 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "支付渠道异常人工核对", "version": "1.0", "description": "四个管理端接口的手写补充契约；仅管理员可调用。记录处理依据不恢复订单、发课或退款。"},
+  "paths": {
+    "/api/v2/admin/provider-payments/anomalies": {
+      "get": {"summary": "查询渠道异常，最多100条", "parameters": [{"name": "status", "in": "query", "schema": {"type": "string", "enum": ["OPEN", "RESOLVED"], "default": "OPEN"}}], "responses": {"200": {"description": "统一响应data中返回原始snake_case异常行数组"}, "403": {"description": "需要管理员权限"}}}
+    },
+    "/api/v2/admin/provider-payments/reconciliations": {
+      "get": {"summary": "查询持久化渠道核对任务，最多100条", "parameters": [{"name": "status", "in": "query", "schema": {"type": "string", "enum": ["PENDING", "SENDING", "DONE", "DEAD"], "default": "DEAD"}}], "responses": {"200": {"description": "统一响应data中返回原始snake_case任务行数组"}, "403": {"description": "需要管理员权限"}}}
+    },
+    "/api/v2/admin/provider-payments/anomalies/{number}/{reason}": {
+      "put": {"summary": "以version进行CAS记录异常处理依据", "parameters": [{"$ref": "#/components/parameters/PaymentNumber"}, {"name": "reason", "in": "path", "required": true, "schema": {"type": "string", "enum": ["WINDOW_EXHAUSTED", "CHANNEL_UNAVAILABLE", "ORDER_NUMBER_MISMATCH", "AMOUNT_MISMATCH", "INVALID_SUCCESS_TIME", "UNKNOWN_STATUS"]}}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Resolution"}}}}, "responses": {"200": {"description": "处理依据已记录"}, "403": {"description": "需要管理员权限"}, "409": {"description": "异常已更新，必须重新查询核对"}}}
+    },
+    "/api/v2/admin/provider-payments/reconciliations/{number}/replay": {
+      "post": {"summary": "以version进行CAS重试DEAD任务并记录依据", "parameters": [{"$ref": "#/components/parameters/PaymentNumber"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Resolution"}}}}, "responses": {"200": {"description": "任务重新进入PENDING，重核窗口为7天"}, "403": {"description": "需要管理员权限"}, "409": {"description": "任务已更新或状态不是DEAD"}}}
+    }
+  },
+  "components": {
+    "parameters": {"PaymentNumber": {"name": "number", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9]{1,20}$"}}},
+    "schemas": {"Resolution": {"type": "object", "required": ["version", "resolution"], "properties": {"version": {"type": "integer", "format": "int64", "minimum": 0}, "resolution": {"type": "string", "minLength": 1, "maxLength": 2000, "description": "人工核对渠道账单的依据，不接受空白"}}}}
+  }
+}

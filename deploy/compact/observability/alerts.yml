@@ -1,0 +1,38 @@
+groups:
+  - name: compact-reliability
+    rules:
+      - alert: ServiceUnavailable
+        expr: up == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "A Tianji module cannot be scraped"}
+      - alert: EventDeliveryBacklog
+        expr: tj_events_oldest_seconds > 60
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Durable events have been delayed for over one minute"}
+      - alert: FailedDurableWork
+        expr: tj_events_dead > 0 or tj_consumer_failures > 0
+        for: 30s
+        labels: {severity: warning}
+        annotations: {summary: "Durable work requires investigation or replay"}
+      - alert: PaymentNeedsReconciliation
+        expr: tj_payment_reconciliation_dead > 0 or tj_payment_anomalies > 0
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Payment facts require review"}
+      - alert: SeasonSettlementBlocked
+        expr: tj_seasons_blocked > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "A past learning season remains blocked"}
+      - alert: BackupFailed
+        expr: tj_backup_last_failure_timestamp_seconds > tj_backup_last_success_timestamp_seconds
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "The latest attempted full backup failed"}
+      - alert: BackupStale
+        expr: time() - tj_backup_last_success_timestamp_seconds > 93600
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "No verified full backup within 26 hours"}

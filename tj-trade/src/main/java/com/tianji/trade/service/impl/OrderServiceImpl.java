@@ -71,6 +71,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final org.springframework.transaction.PlatformTransactionManager transactionManager;
     private final tools.jackson.databind.json.JsonMapper json;
+    private final ZeroAmountSettlementService zeroAmountSettlement;
 
     @Override
     public PlaceOrderResultVO placeOrder(PlaceOrderDTO request) {
@@ -112,6 +113,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 throw new BadRequestException("订单创建已超时");
             if(getById(order.getId())!=null) return;
             saveOrderAndDetails(order,details);
+            if(order.getRealAmount()==0) zeroAmountSettlement.settle(order.getId());
             cartService.deleteCartByUserAndCourseIds(user,request.getCourseIds());
             jdbc.update("UPDATE order_creation SET status='CREATED' WHERE order_id=?",order.getId());
         });

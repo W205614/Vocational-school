@@ -2,6 +2,7 @@ package com.tianji.api.client.exam;
 
 import com.tianji.api.dto.exam.QuestionBizDTO;
 import com.tianji.api.dto.exam.QuestionDTO;
+import com.tianji.api.dto.exam.ExamSettlementPage;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +17,9 @@ import java.util.Map;
 public interface ExamClient {
 
     @GetMapping("/internal/v1/exams/settlement-readiness")
-    Map<String,Object> settlementReadiness(@RequestParam("before") String before);
+    ExamSettlementPage settlementReadiness(@RequestParam("month") String month,
+                                           @RequestParam("cursor") long cursor,
+                                           @RequestParam(value="upperBound",required=false) Long upperBound);
 
     @PostMapping("/internal/v1/exams/learning-overview")
     Map<String,Integer> learningOverview(@RequestBody List<Long> courseIds);

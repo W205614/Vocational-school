@@ -50,6 +50,14 @@ REGRESSION_TESTS = [
     'LearningHistoryAccessTest',
     'FinancialDueTimeTest',
     'CourseSearchMetadataTest',
+    'TrustedProxyIdentityTest',
+    'RuntimeCapabilitiesTest',
+    'RefreshCookieSecurityTest',
+    'BackupStatusMetricsTest',
+    'ProviderPaymentReconciliationTest',
+    'ZeroAmountPurchaseDatabaseTest',
+    'ExamSettlementPaginationTest',
+    'LearningSeasonMetricsTest',
 ]
 
 CORE_TESTS = [
