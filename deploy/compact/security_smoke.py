@@ -1,10 +1,19 @@
 """Exercise actual gateway/identity/DB invalidation. Touch only generated fixture identities."""
 import json,time,requests
-from setup import LOCAL,PORTS,mysql,configure_acceptance
+from setup import LOCAL,PORTS,mysql,configure_acceptance,secrets_config
 BASE='http://127.0.0.1:'+str(PORTS['gateway']);accounts=json.loads((LOCAL/'accounts.json').read_text(encoding='utf8'));checks=[]
 def check(condition,name):
  if not condition:raise AssertionError(name)
  checks.append(name);print('PASS '+name,flush=True)
+
+# Local actuator endpoints bypass Gateway GlobalFilter; verify their own boundary.
+internal_token=secrets_config()[0]['ACCEPTANCE_INTERNAL_TOKEN']
+for module,port,path in [('gateway',PORTS['gateway'],'/actuator/prometheus'),('pay',PORTS['commerce'],'/_modules/pay/actuator/prometheus'),('learning',PORTS['education'],'/_modules/learning/actuator/prometheus')]:
+ url='http://127.0.0.1:'+str(port)+path
+ for headers,label in [({},'missing'),({'X-Internal-Token':'invalid-metrics-probe'},'invalid')]:
+  check(requests.get(url,headers=headers,timeout=10).status_code==403,module+' metrics rejects '+label+' credential')
+ response=requests.get(url,headers={'X-Internal-Token':internal_token},timeout=10)
+ check(response.status_code==200 and '# HELP' in response.text,module+' metrics accepts collector credential')
 def login(role='student'):
  a=accounts[role];session=requests.Session();r=session.post(BASE+'/api/v2/auth/accounts/'+('admin/login' if role!='student' else 'login'),json=dict(type=1,username=a['username'],password=a['password'],rememberMe=False),timeout=10)
  check(r.status_code==200,'login '+role);session.headers['Authorization']='Bearer '+r.json()['data'];return session

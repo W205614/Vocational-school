@@ -54,6 +54,7 @@ REGRESSION_TESTS = [
     'RuntimeCapabilitiesTest',
     'RefreshCookieSecurityTest',
     'BackupStatusMetricsTest',
+    'MetricsScrapeWebFilterTest',
     'ProviderPaymentReconciliationTest',
     'ZeroAmountPurchaseDatabaseTest',
     'ExamSettlementPaginationTest',

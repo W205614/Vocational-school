@@ -1,9 +1,11 @@
 from pathlib import Path
 import tempfile
 import unittest
+import sys
 from unittest.mock import patch
 import yaml
 import setup
+sys.path.insert(0,str(setup.SOURCE.parent/'final'))
 import upgrade_existing
 
 

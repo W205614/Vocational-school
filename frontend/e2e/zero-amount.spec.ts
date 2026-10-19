@@ -17,9 +17,9 @@ test('full coupon discount settles without payment and approved withdrawal keeps
   await page.goto('/courses/'+fixture.course);await page.getByRole('button',{name:'加入购物车',exact:true}).click();await expect(page.getByText('已加入购物车',{exact:true})).toBeVisible();
   await page.goto('/cart');const line=page.locator('.el-table__row').filter({hasText:fixture.name});await expect(line).toBeVisible();await line.locator('.el-checkbox').click();
   await page.getByRole('button',{name:/确认选购 1 门课程/}).click();
-  const confirmation=page.getByRole('dialog',{name:'确认订单',exact:true});await confirmation.getByRole('checkbox',{name:new RegExp(name)}).check();
+  const confirmation=page.getByRole('dialog',{name:'确认订单',exact:true});const couponOption=confirmation.locator('.el-checkbox').filter({hasText:name});await couponOption.click();await expect(couponOption.getByRole('checkbox')).toBeChecked();
   await confirmation.getByRole('button',{name:'计算所选优惠券',exact:true}).click();
-  const solution=confirmation.getByRole('radio',{name:/无门槛/});await expect(solution).toHaveCount(1);await solution.check();
+  const solution=confirmation.locator('.el-radio').filter({hasText:'无门槛'});await expect(solution).toHaveCount(1);await solution.click();await expect(solution.getByRole('radio')).toBeChecked();
   await expect(confirmation.locator('.checkout-total')).toContainText('0.00');await confirmation.getByRole('button',{name:'提交订单',exact:true}).click();
   const done=page.getByRole('dialog',{name:'订单创建成功',exact:true});await expect(done).toContainText('订单已成交，无需付款');
   await expect(done.getByRole('button',{name:'立即付款',exact:true})).toHaveCount(0);await expect(done.getByRole('button',{name:'查看我的学习',exact:true})).toBeVisible();
