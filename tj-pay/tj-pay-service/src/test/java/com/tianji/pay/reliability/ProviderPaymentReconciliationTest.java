@@ -22,6 +22,22 @@ import static org.mockito.Mockito.*;
 
 @EnabledIfEnvironmentVariable(named="ACCEPTANCE_DB_PASSWORD",matches=".+")
 class ProviderPaymentReconciliationTest {
+    private static TimeZone originalTimeZone;
+    @BeforeAll static void useProductionTimeZone() {
+        originalTimeZone=TimeZone.getDefault();
+        // Production JVM and the forced JDBC session both use Asia/Shanghai.
+        // Pin the fixture's JVM too, even when CI itself starts in UTC.
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
+        assertEquals("Asia/Shanghai",TimeZone.getDefault().getID());
+        System.out.println("Payment reconciliation timezone fixture: original="+originalTimeZone.getID()+", active="+TimeZone.getDefault().getID());
+    }
+    @AfterAll static void restoreTimeZone() {
+        if(originalTimeZone!=null) {
+            TimeZone.setDefault(originalTimeZone);
+            assertEquals(originalTimeZone.getID(),TimeZone.getDefault().getID());
+            System.out.println("Payment reconciliation timezone fixture restored="+TimeZone.getDefault().getID());
+        }
+    }
     JdbcTemplate jdbc;DataSourceTransactionManager manager;ProviderSettlementService settlement;
     ProviderPaymentReconciler worker;IPayService provider;long number,business;
     final List<Long> inserted=new ArrayList<>();

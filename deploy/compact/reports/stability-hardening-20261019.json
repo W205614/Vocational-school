@@ -254,5 +254,25 @@
     "no HA, production SLA or capacity assertion",
     "TLS and real providers require separate deployment and acceptance"
   ],
-  "createdAt": "2026-10-19T15:06:17.927191+00:00"
+  "createdAt": "2026-10-19T15:06:17.927191+00:00",
+  "firstCiAttempt": {
+    "sha": "341d2b34519a65b1f55fe485609aca614c27a198",
+    "url": "https://github.com/W205614/Vocational-school/actions/runs/39275129900",
+    "frontend": "success",
+    "compact-browser": "success",
+    "backend": "failure",
+    "cause": "payment test JVM UTC did not match forced Asia/Shanghai JDBC session; production timezone unchanged"
+  },
+  "paymentUtcFixtureRetest": {
+    "tests": 7,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "startedInUTC": true,
+    "activeTimeZone": "Asia/Shanghai",
+    "restoredUTC": true,
+    "productionCodeChanged": false,
+    "log": "deploy/compact/.local/stability-20261019/payment-timezone-utc-retest.log"
+  }
 }
