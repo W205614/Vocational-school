@@ -17,7 +17,7 @@
 
 不要重新执行 `setup.py prepare` 或首次初始化，不要覆盖既有 `.env`、密钥及数据卷。
 
-1. 保存当前未提交改动，完成本项目完整备份与校验。`python deploy/compact/backup.py` 的输出目录就是后续 `--backup` 参数。
+1. 保存当前未提交改动，运行 `python deploy/compact/backup.py` 完成本项目完整备份与校验。完成后读取 `deploy/compact/.local/ops-status/backup.json` 的 `lastBundle` 字段，作为后续 `--backup` 参数。
 2. 提交本次生产源码，运行 `python deploy/compact/setup.py build` 重建全部七个应用／网页镜像。
 3. 运行 `python deploy/compact/upgrade_existing.py stage`，取得已验证候选目录。候选包含源码与七镜像绑定，不修改现有运行部署。
 4. 在独立副本验证新迁移及受影响链路，保留原数据与媒体；随后用以下入口停写、增量迁移、更新配置和镜像：

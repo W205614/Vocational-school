@@ -128,7 +128,7 @@ python deploy/compact/load_test.py --users 50 --seconds 60
 
 ## 切换与回退约束
 
-本轮功能交付使用 `python deploy/compact/release_gate.py --scope functional`：仍要求同批次的后端、浏览器、安全、审计、非空 Redis、完整独立恢复、搜索回退和既有记录保留证据；提交、镜像、配置或基础快照不匹配，以及缺失、陈旧或失败的证明均返回非零。报告明确记录 `acceptanceScope=functional`、`performanceValidation=DEFERRED`，不会把未测量的指标写成通过。
+2026-10-16 历史功能交付使用 `python deploy/compact/release_gate.py --scope functional`：要求同批次的后端、浏览器、安全、审计、非空 Redis、完整独立恢复、搜索回退和既有记录保留证据；提交、镜像、配置或基础快照不匹配，以及缺失、陈旧或失败的证明均返回非零。2026-10-19 稳定性修复仅验证修改及直接影响链路，不宣称重新通过含搜索版本切换的整套历史门禁；完整 CI 单独核对最终提交。
 
 默认 `python deploy/compact/release_gate.py` 保留完整 `perf-3h-v1` 门槛；`--historical` 另要求原历史数据一致性证据。当前功能交付不代表原离线历史数据可以直接切换，不自动变更原入口。性能与历史证据不得手填“成功”绕过验证。安全检查或高频浏览器登录后应等待登录窗口自然到期再开始下组检查；不要删除限流键或关闭防护。
 
@@ -174,7 +174,11 @@ python deploy/compact/restore.py <完整备份目录> --home .local/upgrade-rehe
 
 高级激励回归仅允许显式的隔离副本（`TJ_MOTIVATION_FIXTURE=1` 且项目名不是 `tianji-compact`）或临时 GitHub Actions 环境，覆盖真实考试、学习事件、发券及回执。历史榜展示夹具与待发事件重放会明确标为合成数据，自然月结算另由可控时钟数据库测试验证。
 
-## 本轮交付记录
+## 2026-10-19 稳定性交付
+
+本批修复可信代理、零元订单／退款、支付核对、赛季分页／锁、榜单索引、增量配置、Windows 每日备份和本机监控；记录见[稳定性交付报告](reports/stability-hardening-20261019.md)。后续日常操作以[稳定性与运维说明](../../docs/stability-operations.md)为准。下方保留的历史数字不作为本批重新测试的结果。
+
+## 2026-10-16 历史交付记录
 
 生产镜像来源为 **`8dcf8e7d44c6048318ad1e306e1425c8fd40fb70`**；[源码 CI 38857524064](https://github.com/W205614/Vocational-school/actions/runs/38857524064) 的 `backend`、`frontend`、`compact-browser` 均成功。主批次为 `b7598ddf6154457ca6a808d7e5c4a922`，镜像／配置绑定、测试范围及阶段差异详见 [交付报告](reports/README.md)。
 
@@ -195,6 +199,6 @@ python deploy/compact/restore.py <完整备份目录> --home .local/upgrade-rehe
 
 实际操作由代理以游客、学生、教师和管理员完成，不是招募真人的满意度研究。积分依据平台记录的完成事实，不代表核实真实观看或完整防作弊。真实支付／短信、正式容量、长期稳定性、多节点高可用，以及另一套外部旧生产环境的正式割接未验收。
 
-912 等阶段通过与失败、2cf 未部署的修复过程、同单只读续验和测试替身边界均保留在交付报告；本手册只集中记录当前交付状态。原运行字节派生回滚镜像不等于恢复原 OCI 身份，也不证明旧代码可直接读取升级后数据库，回退不能覆盖新订单、评分或退款。
+912 等阶段通过与失败、2cf 未部署的修复过程、同单只读续验和测试替身边界均保留在交付报告；以上为该历史批次的交付状态。原运行字节派生回滚镜像不等于恢复原 OCI 身份，也不证明旧代码可直接读取升级后数据库，回退不能覆盖新订单、评分或退款。
 
-本次文档提交的 CI 从 [dev 当前提交](https://github.com/W205614/Vocational-school/commit/dev) 的 Checks 查看；运行镜像仍归属上述生产源码，最终交付回复另列准确文档 SHA 和对应 CI 链接。
+当前稳定性交付的文档提交与准确 CI 链接在最终交付回复中分别列出，不能用动态 `dev` 分支的新结果代替上述历史源码的结果。
