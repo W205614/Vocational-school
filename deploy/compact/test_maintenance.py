@@ -66,6 +66,18 @@ class MaintenanceTest(unittest.TestCase):
                 for _ in range(20):self.assertEqual(0,maintenance.scheduled())
             backup.assert_not_called()
 
+    def test_interrupted_broker_is_resumed_before_apps_and_scheduler_requires_attention(self):
+        with tempfile.TemporaryDirectory() as directory:
+            local=Path(directory); runtime=SimpleNamespace(COMPOSE=['docker','compose','-p','owned'])
+            maintenance.atomic_json(local/'ops-status/resume.json',{'home':str(local.resolve()),'compose':runtime.COMPOSE,'apps':['app-commerce'],'temporary':[]})
+            calls=[]
+            fake=SimpleNamespace(LOCAL=local,configure_acceptance=lambda:runtime)
+            with patch.dict('sys.modules',{'setup':fake}),patch.object(maintenance,'docker_available',return_value=True),patch.object(maintenance.subprocess,'run',side_effect=lambda command,**kwargs:calls.append(command)),patch.object(maintenance,'perform_backup') as backup:
+                self.assertEqual(0,maintenance.scheduled())
+            self.assertIn('start_app',calls[1]);self.assertIn('check_running',calls[2]);self.assertIn('app-commerce',calls[3])
+            backup.assert_not_called()
+            self.assertTrue(json.loads((local/'ops-status/backup.json').read_text())['requiresAttention'])
+
     def test_retention_keeps_two_owned_verified_automatic_bundles_and_all_existing_backups(self):
         with tempfile.TemporaryDirectory() as directory:
             local = Path(directory); root = local / 'backup'; root.mkdir()
@@ -80,6 +92,18 @@ class MaintenanceTest(unittest.TestCase):
             self.assertTrue(created[1].exists() and created[2].exists() and legacy.exists() and manual.exists())
             escaped = local / 'elsewhere'; escaped.mkdir()
             with self.assertRaisesRegex(RuntimeError, 'escaped'): maintenance.retain_automatic(local, escaped, verify)
+
+    def test_publication_pin_removes_an_automatic_backup_from_rotation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            local=Path(directory);root=local/'backup';root.mkdir()
+            created=[]
+            for i in range(4):
+                bundle=root/f'20261019T030000.00000{i}Z';bundle.mkdir();(bundle/'manifest.json').write_text('{}')
+                created.append(bundle);maintenance.retain_automatic(local,bundle,lambda path:{})
+                if i==0:(bundle/'publication-pin.json').write_text('{}')
+            self.assertTrue(created[0].exists())
+            self.assertFalse(created[1].exists())
+            self.assertTrue(created[2].exists() and created[3].exists())
 
 
 if __name__ == '__main__': unittest.main()

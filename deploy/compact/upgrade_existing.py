@@ -8,7 +8,7 @@ import sys
 import yaml
 import setup
 from maintenance import atomic_json, maintenance_lock
-from operations_config import upgrade, MONITORS
+from operations_config import upgrade, observability, MONITORS
 from recovery_upgrade import load_upgrade
 
 
@@ -42,6 +42,15 @@ def deploy(candidate, backup):
         raise RuntimeError('A verified project-local full backup is required')
     proof=load_upgrade(candidate,setup.ROOT)
     with maintenance_lock(setup.LOCAL):
+        # Recheck and pin while holding the same lock as automatic retention.
+        saved=verify(backup)
+        if not saved.get('quiesced'):raise RuntimeError('A verified full backup is required')
+        atomic_json(backup/'publication-pin.json',{'sourceCommit':proof['sourceCommit'],'purpose':'publication-rollback'})
+        env=setup.secrets_config()[0]
+        if any(not env.get(key) for key in ('ACCEPTANCE_INTERNAL_TOKEN','ACCEPTANCE_GRAFANA_PASSWORD')):
+            raise RuntimeError('Existing deployment credentials are incomplete')
+        planned=observability(yaml.safe_load((setup.BASE/'compose.yaml').read_text(encoding='utf8')),setup.OFFSET)
+        monitor_images={name:subprocess.check_output(['docker','image','inspect',planned['services'][name]['image'],'--format','{{.Id}}'],text=True,timeout=30).strip() for name in MONITORS}
         runtime=setup.configure_acceptance()
         broker=subprocess.check_output(setup.COMPOSE+['ps','-aq','rabbitmq'],text=True,timeout=30).strip()
         if not broker or '\n' in broker:raise RuntimeError('Existing RabbitMQ node identity is required')
@@ -51,14 +60,13 @@ def deploy(candidate, backup):
         if apps:setup.run(setup.COMPOSE+['stop','-t','90',*apps],'upgrade-stop')
         # No automatic restore of an old SQL snapshot: migrations and newly accepted facts are retained on failure.
         try:
-            previous=upgrade(setup.BASE,setup.secrets_config()[0]['ACCEPTANCE_INTERNAL_TOKEN'],setup.OFFSET,broker_hostname)
+            previous=upgrade(setup.BASE,env['ACCEPTANCE_INTERNAL_TOKEN'],setup.OFFSET,broker_hostname)
             import migrate
             migrate.main()
             compose=yaml.safe_load((setup.BASE/'compose.yaml').read_text(encoding='utf8'))
             for name,image in proof['imageDigests'].items():compose['services'][name]['image']=image
             for name in MONITORS:
-                reference=compose['services'][name]['image']
-                compose['services'][name]['image']=subprocess.check_output(['docker','image','inspect',reference,'--format','{{.Id}}'],text=True).strip()
+                compose['services'][name]['image']=monitor_images[name]
             (setup.BASE/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
             for name in ('images.json','build-source.json'):
                 shutil.copyfile(candidate/'.local'/name,setup.LOCAL/name)

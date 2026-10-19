@@ -132,6 +132,14 @@ def resume_interrupted(runtime, local):
     apps=journal['apps'];temporary=journal['temporary']
     if any(not name.startswith(('app-','web-')) for name in apps) or any(name not in REQUIRED for name in temporary):
         raise RuntimeError('Invalid original service-state journal')
+    # capture can be interrupted between rabbitmqctl stop_app/start_app while
+    # the container itself still reports running. Restore the broker before apps.
+    if 'rabbitmq' not in temporary:
+        subprocess.run(runtime.COMPOSE+['start','rabbitmq'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=60)
+        subprocess.run(runtime.COMPOSE+['exec','-T','rabbitmq','rabbitmqctl','start_app'],check=True,
+                       stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=180)
+        subprocess.run(runtime.COMPOSE+['exec','-T','rabbitmq','rabbitmq-diagnostics','-q','check_running'],check=True,
+                       stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=30)
     if apps:subprocess.run(runtime.COMPOSE+['start','--wait','--wait-timeout','180',*apps],check=True,
                            stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=210)
     if temporary:subprocess.run(runtime.COMPOSE+['stop','-t','60',*temporary],check=True,
@@ -151,7 +159,7 @@ def retain_automatic(local, bundle, verify):
                                       'manifestSha256': manifest_hash(bundle)})
     candidates = []
     for path in root.iterdir():
-        if not path.is_dir() or path.is_symlink() or not re.fullmatch(r'[0-9]{8}T[0-9]{6}\.[0-9]{6}Z', path.name):
+        if not path.is_dir() or path.is_symlink() or (path/'publication-pin.json').exists() or not re.fullmatch(r'[0-9]{8}T[0-9]{6}\.[0-9]{6}Z', path.name):
             continue
         marker = path / marker_name
         if not marker.is_file() or marker.is_symlink(): continue
@@ -230,8 +238,8 @@ def scheduled():
     try:
         if (setup.LOCAL/'ops-status/resume.json').exists():
             with maintenance_lock(setup.LOCAL):resume_interrupted(setup.configure_acceptance(),setup.LOCAL)
-            if previous.get('requiresAttention'):return 0
-            if not backup_due(previous):return 0
+            status(setup.LOCAL,'INTERRUPTED_RESTORED',running=0,lastFailure=int(time.time()),requiresAttention=True)
+            return 0
         perform_backup(automated=True)
         return 0
     except RuntimeError as error:
