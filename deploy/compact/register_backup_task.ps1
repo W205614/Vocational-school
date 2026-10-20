@@ -10,9 +10,14 @@ if ($Project -notmatch '^[a-z][a-z0-9-]{2,40}$') { throw 'Invalid project name' 
 if (-not (Test-Path -LiteralPath (Join-Path $resolvedHome 'compose.yaml'))) { throw 'Existing deployment required' }
 if ((Get-TimeZone).Id -ne 'China Standard Time') { throw 'Task host timezone must be China Standard Time (Asia/Shanghai)' }
 $taskName = 'Tianji-Backup-' + $Project
-$driver = Join-Path $PSScriptRoot 'scheduled_backup.ps1'
-$arguments = '-NoProfile -NonInteractive -WindowStyle Hidden -File "' + $driver + '" -HomeDirectory "' + $resolvedHome + '" -Project "' + $Project + '" -PortOffset ' + $PortOffset + ' -PythonPath "' + $PythonPath + '"'
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments -WorkingDirectory $PSScriptRoot
+$resolvedPython = (Resolve-Path -LiteralPath $PythonPath).Path
+$windowlessPython = Join-Path (Split-Path -Parent $resolvedPython) 'pythonw.exe'
+if (-not (Test-Path -LiteralPath $windowlessPython -PathType Leaf)) {
+    throw 'Scheduled backup requires pythonw.exe beside PythonPath to avoid opening terminal windows'
+}
+$driver = Join-Path $PSScriptRoot 'scheduled_backup.py'
+$arguments = '"' + $driver + '" --home "' + $resolvedHome.TrimEnd('\') + '" --project "' + $Project + '" --port-offset ' + $PortOffset + ' --python "' + $resolvedPython + '"'
+$action = New-ScheduledTaskAction -Execute $windowlessPython -Argument $arguments -WorkingDirectory $PSScriptRoot
 $daily = New-ScheduledTaskTrigger -Daily -At '03:30'
 # The process exits after each check; retries only catch up a missing full backup.
 $repeat = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddDays(1).AddHours(3).AddMinutes(30) -RepetitionInterval (New-TimeSpan -Minutes 15)

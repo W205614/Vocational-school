@@ -148,7 +148,7 @@ powershell -NoProfile -File deploy/compact/register_backup_task.ps1
 
 备份只保存在本项目 `deploy/compact/.local/backup/`。新自动备份校验成功后，仅保留最近两份本脚本创建的自动备份；历史备份、手动备份和升级前回退备份不会自动删除。完整备份需要短暂停写，完成后恢复原服务状态。
 
-**Docker Desktop 未运行时跳过，不自动启动它。** Docker 可用但业务容器已停止时，只临时启动备份必需的 MySQL、Redis、RabbitMQ，备份后恢复停止。任务每 15 分钟检查是否欠缺备份，成功后不重复备份；需要主机及当前用户会话可用，不保存账户密码。
+**Docker Desktop 未运行时跳过，不自动启动它。** Docker 可用但业务容器已停止时，只临时启动备份必需的 MySQL、Redis、RabbitMQ，备份后恢复停止。任务每 15 分钟在后台无窗口检查是否欠缺备份，成功后不重复备份；需要 Python 目录含 `pythonw.exe`、主机及当前用户会话可用，不保存账户密码。03:30 是计划时间，条件不满足时会延后补执行。
 
 跳过状态覆盖同一小文件，不持续追加日志；错误日志总量最多 3 MB。真正备份失败后暂停自动重试，处理原因后运行 `python deploy/compact/maintenance.py retry` 恢复。详细操作、告警及回退约束见[稳定性与运维说明](docs/stability-operations.md)。
 

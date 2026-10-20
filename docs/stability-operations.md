@@ -34,14 +34,14 @@ python deploy/compact/upgrade_existing.py deploy --candidate <本项目.local/ca
 
 手动完整备份：`python deploy/compact/backup.py`。`--online` 仅是部分在线导出，不计入完整备份成功记录。默认完整备份短暂停止原本运行的业务和网页，捕获 MySQL、Redis、RabbitMQ、配置、签名密钥及真实媒体字节，校验后恢复原状态。
 
-Windows 注册：`powershell -NoProfile -File deploy/compact/register_backup_task.ps1`，任务名 `Tianji-Backup-tianji-compact`。再次注册更新同一个任务，不创建重复任务；采用当前登录用户的有限权限，不保存账户密码。主机时区要求北京时间。停用可在 Windows 任务计划程序禁用该任务。
+Windows 注册：`powershell -NoProfile -File deploy/compact/register_backup_task.ps1`，任务名 `Tianji-Backup-tianji-compact`。再次注册更新同一个任务，不创建重复任务；采用当前登录用户的有限权限，不保存账户密码。主机时区要求北京时间。Python 安装目录须包含 `pythonw.exe`；任务通过它无窗口启动，备份工作进程及其命令使用隐藏控制台，避免每次检查弹出终端。停用可在 Windows 任务计划程序禁用该任务。
 
-- 每日 03:30 到期，每 15 分钟检查一次欠缺备份；成功后当日跳过。检查进程会退出，不保留常驻 Python 进程。
+- 每日 03:30 到期，每 15 分钟检查一次欠缺备份；成功后当日跳过。03:30 是计划时间，电脑、当前用户会话或 Docker 不可用时无法保证准点执行，条件恢复后补执行。检查进程会退出，不保留常驻 Python 进程。
 - Docker Desktop 关闭：记录 `SKIPPED_DOCKER_UNAVAILABLE`，不启动 Docker Desktop，也不追加失败日志。
 - Docker 可用但原容器停止：仅临时启动已初始化的 MySQL、Redis、RabbitMQ，完成后停止它们；不启动业务和网页，也不启动 ES。
 - 容器暂停或正在重启：跳过，不改变其状态。维护恢复 journal 仅属于当前部署，不导入恢复副本。
 - 实际备份失败：保留不完整材料并暂停自动大备份，避免每次检查重复产生全量失败包；排查后执行 `python deploy/compact/maintenance.py retry` 显式重试。
-- 状态存于 `.local/ops-status/`，覆盖更新。错误日志 `.local/maintenance.log` 最多 3 份、每份 1 MB。
+- 状态存于 `.local/ops-status/`，覆盖更新。`scheduler.json` 记录最近检查时间与退出码，`backup.json` 的 `lastSuccess` 才是完整备份成功时间；计划任务的“下次运行时间”包含补执行检查。错误日志 `.local/maintenance.log` 最多 3 份、每份 1 MB。
 - 自动完整备份只存本项目 `.local/backup/`；验证成功后最多保留两份带本脚本归属标记的自动包。旧历史包、人工包、失败材料和发布回退包不会自动删除。
 - 备份包含私有账号和密钥，不提交 GitHub。本机备份不能抵御本机磁盘故障。媒体及既有历史备份本身仍会占空间，需要人工评估；日志上限不等于整个项目空间恒定。
 
