@@ -6,6 +6,7 @@
 
 | 日期 | 交付内容 | 记录 |
 | --- | --- | --- |
+| 2026-10-20 | 各角色模拟使用、学生切页与改密、教师评分与答疑体验修复 | [修复与验证说明](role-experience-20261020.md) |
 | 2026-10-19 | 可信代理、零元成交／退课、支付核对、赛季分页与锁、增量升级、Windows 定时备份和本机监控 | [交付报告](stability-hardening-20261019.md) · [脱敏结果](stability-hardening-20261019.json) |
 | 2026-10-16 | 学习闭环、月度赛季奖励、双端改版、权益到期修复与完整功能／恢复／搜索回退交付 | [交付报告](learning-motivation-20261016.md) · [脱敏结果](2026-10-16-learning-motivation-summary.json) · [ES7复现](search7-8dcf8e7-reproduction.md) |
 | 2026-10-11 | 浏览器手机布局偶发失败根因、菜单关闭同步与受控回归 | [修复报告](browser-layout-race-20261011.md) |
