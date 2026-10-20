@@ -4,7 +4,7 @@
 
 适合本地体验在线教育业务、学习 Java 多模块架构与前后端协作。默认部署使用合成演示数据，支付与短信为本地模拟，不会真实扣款或发送短信。
 
-[快速部署](#快速部署) · [首次使用](#首次使用) · [界面预览](#界面预览) · [更多文档](#更多文档)
+[快速部署](#快速部署) · [首次使用](#首次使用) · [界面预览](#界面预览) · [项目结构](docs/project-structure.md) · [更多文档](#更多文档)
 
 ## 功能与解决的问题
 
@@ -171,6 +171,8 @@ powershell -NoProfile -File deploy/compact/register_backup_task.ps1
 
 ## 更多文档
 
+- [目录职责、源码阅读顺序与本地文件边界](docs/project-structure.md)
+- [文档导航](docs/README.md) · [部署与运维工具索引](deploy/compact/TOOLS.md)
 - [学习、考试、赛季与教学使用说明](docs/learning-experience.md)
 - [部署、升级与备份恢复手册](deploy/compact/README.md)
 - [可靠性运行手册](docs/reliability-runbook.md)
