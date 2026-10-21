@@ -2,6 +2,7 @@ import datetime
 import json
 from pathlib import Path
 import tempfile
+import shutil
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -78,7 +79,8 @@ class MaintenanceTest(unittest.TestCase):
             backup.assert_not_called()
             self.assertTrue(json.loads((local/'ops-status/backup.json').read_text())['requiresAttention'])
 
-    def test_retention_keeps_two_owned_verified_automatic_bundles_and_all_existing_backups(self):
+    @patch("backup_retention.recycle", side_effect=shutil.rmtree)
+    def test_retention_keeps_latest_owned_bundle_and_protects_unowned_backups(self, dispose):
         with tempfile.TemporaryDirectory() as directory:
             local = Path(directory); root = local / 'backup'; root.mkdir()
             legacy = root / '20261018T030000.000001Z'; legacy.mkdir(); (legacy/'manifest.json').write_text('{}')
@@ -86,24 +88,27 @@ class MaintenanceTest(unittest.TestCase):
             verify = lambda path: json.loads((path/'manifest.json').read_text())
             created = []
             for i in range(3):
-                bundle = root / f'20261019T030000.00000{i}Z'; bundle.mkdir(); (bundle/'manifest.json').write_text('{}')
+                bundle = root / f'20261019T030000.00000{i}Z'; bundle.mkdir(); (bundle/'manifest.json').write_text('{"quiesced":true}')
                 created.append(bundle); maintenance.retain_automatic(local, bundle, verify)
             self.assertFalse(created[0].exists())
-            self.assertTrue(created[1].exists() and created[2].exists() and legacy.exists() and manual.exists())
+            self.assertFalse(created[1].exists())
+            self.assertTrue(created[2].exists() and legacy.exists() and manual.exists())
             escaped = local / 'elsewhere'; escaped.mkdir()
             with self.assertRaisesRegex(RuntimeError, 'escaped'): maintenance.retain_automatic(local, escaped, verify)
 
-    def test_publication_pin_removes_an_automatic_backup_from_rotation(self):
+    @patch("backup_retention.recycle", side_effect=shutil.rmtree)
+    def test_new_complete_backup_supersedes_owned_publication_pin(self, dispose):
         with tempfile.TemporaryDirectory() as directory:
             local=Path(directory);root=local/'backup';root.mkdir()
             created=[]
             for i in range(4):
-                bundle=root/f'20261019T030000.00000{i}Z';bundle.mkdir();(bundle/'manifest.json').write_text('{}')
-                created.append(bundle);maintenance.retain_automatic(local,bundle,lambda path:{})
-                if i==0:(bundle/'publication-pin.json').write_text('{}')
-            self.assertTrue(created[0].exists())
+                bundle=root/f'20261019T030000.00000{i}Z';bundle.mkdir();(bundle/'manifest.json').write_text('{"quiesced":true}')
+                created.append(bundle);maintenance.retain_automatic(local,bundle,lambda path:{"quiesced":True})
+                if i==0:(bundle/'publication-pin.json').write_text('{"purpose":"publication-rollback"}')
+            self.assertFalse(created[0].exists())
             self.assertFalse(created[1].exists())
-            self.assertTrue(created[2].exists() and created[3].exists())
+            self.assertFalse(created[2].exists())
+            self.assertTrue(created[3].exists())
 
 
 if __name__ == '__main__': unittest.main()

@@ -1,4 +1,4 @@
-"""Bounded host maintenance. Never launches Docker Desktop or deletes recovery points."""
+"""Bounded host maintenance with one verified current recovery point."""
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -8,9 +8,6 @@ import json
 import logging
 from logging.handlers import RotatingFileHandler
 import os
-import hashlib
-import re
-import shutil
 import subprocess
 import sys
 import time
@@ -150,34 +147,9 @@ def resume_interrupted(runtime, local):
 
 
 def retain_automatic(local, bundle, verify):
-    """Retain two *owned* automatic bundles. Existing/manual backups are never candidates."""
-    root = (Path(local) / 'backup').resolve()
-    bundle = Path(bundle).resolve()
-    if bundle.parent != root or bundle.is_symlink():
-        raise RuntimeError('Automatic backup escaped its project directory')
-    marker_name = 'automatic-owner.json'
-    manifest_hash = lambda path: hashlib.sha256((path / 'manifest.json').read_bytes()).hexdigest()
-    atomic_json(bundle / marker_name, {'owner': 'tianji-maintenance-v1', 'home': str(Path(local).resolve()),
-                                      'manifestSha256': manifest_hash(bundle)})
-    candidates = []
-    for path in root.iterdir():
-        if not path.is_dir() or path.is_symlink() or (path/'publication-pin.json').exists() or not re.fullmatch(r'[0-9]{8}T[0-9]{6}\.[0-9]{6}Z', path.name):
-            continue
-        marker = path / marker_name
-        if not marker.is_file() or marker.is_symlink(): continue
-        try:
-            owned = json.loads(marker.read_text(encoding='utf8'))
-            if owned != {'owner': 'tianji-maintenance-v1', 'home': str(Path(local).resolve()), 'manifestSha256': manifest_hash(path)}:
-                continue
-            verify(path)
-        except (ValueError, OSError, RuntimeError, KeyError):
-            continue
-        candidates.append(path)
-    for path in sorted(candidates, key=lambda p: p.name, reverse=True)[2:]:
-        # Validate the final absolute target immediately before recursive removal.
-        if path.resolve().parent != root or not root.is_relative_to(Path(local).resolve()) or path.is_symlink():
-            raise RuntimeError('Retention target escaped owned project backup root')
-        shutil.rmtree(path)
+    """Compatibility entry point: keep the latest owned complete backup only."""
+    from backup_retention import retain_latest
+    return retain_latest(local, bundle, verify)
 
 
 def perform_backup(online=False, automated=False):
@@ -204,7 +176,10 @@ def perform_backup(online=False, automated=False):
                     with quiesce(runtime):
                         bundle = capture(runtime, setup.BASE, quiesced=True)
             if journal.exists():journal.unlink()
-            if automated and not online:
+            if not online:
+                # Publish/reuse current images before retiring any prior complete data bundle.
+                from backup_images import refresh
+                refresh(setup.LOCAL, setup.PROJECT, bundle)
                 retain_automatic(setup.LOCAL, bundle, verify)
             # Partial online exports never satisfy the full-backup schedule.
             values = {'running': 0, 'lastBundle': str(bundle)}

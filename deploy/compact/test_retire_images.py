@@ -51,7 +51,9 @@ class ImageRetirementTest(unittest.TestCase):
             def document(value):return blob(json.dumps(value,separators=(',',':')).encode())
             layer=blob(gzip.compress(plain));configuration=document({'architecture':'amd64','os':'linux','rootfs':{'type':'layers','diff_ids':['sha256:'+hashlib.sha256(plain).hexdigest()]}})
             manifest=document({'config':configuration,'layers':[layer]});manifest['platform']={'architecture':'amd64','os':'linux'}
-            root=document({'manifests':[manifest,{'digest':'sha256:'+'f'*64,'size':1,'platform':{'architecture':'arm64','os':'linux'}}]})
+            attestation_config=document({'architecture':'unknown','os':'unknown','rootfs':{'type':'layers','diff_ids':[]}})
+            attestation=document({'config':attestation_config,'layers':[]});attestation['platform']={'architecture':'unknown','os':'unknown'}
+            root=document({'manifests':[manifest,attestation,{'digest':'sha256:'+'f'*64,'size':1,'platform':{'architecture':'arm64','os':'linux'}}]})
             contents['index.json']=json.dumps({'manifests':[root]}).encode()
             contents['manifest.json']=json.dumps([{'Config':'blobs/sha256/'+configuration['digest'].split(':')[1],'Layers':['blobs/sha256/'+layer['digest'].split(':')[1]]}]).encode()
             def write():

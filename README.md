@@ -146,7 +146,7 @@ Windows 下可注册每日北京时间 **03:30** 的完整备份任务：
 powershell -NoProfile -File deploy/compact/register_backup_task.ps1
 ```
 
-备份只保存在本项目 `deploy/compact/.local/backup/`。新自动备份校验成功后，仅保留最近两份本脚本创建的自动备份；历史备份、手动备份和升级前回退备份不会自动删除。完整备份需要短暂停写，完成后恢复原服务状态。
+备份只保存在本项目 `deploy/compact/.local/backup/`。手动和自动完整备份统一保留最新一份本脚本管理的有效备份；新数据和当前镜像恢复包均校验成功后，旧的受管备份（含升级前回退点）移入 Windows 回收站。当前镜像离线包固定保存在 `.local/current-runtime-backup/`，镜像未变化时复用，不再归档过时镜像。失败材料与无归属标记的历史文件不自动处置。完整备份需要短暂停写，完成后恢复原服务状态。
 
 **Docker Desktop 未运行时跳过，不自动启动它。** Docker 可用但业务容器已停止时，只临时启动备份必需的 MySQL、Redis、RabbitMQ，备份后恢复停止。任务每 15 分钟在后台无窗口检查是否欠缺备份，成功后不重复备份；需要 Python 目录含 `pythonw.exe`、主机及当前用户会话可用，不保存账户密码。03:30 是计划时间，条件不满足时会延后补执行。
 

@@ -1,4 +1,4 @@
-"""Archive and remove only unreferenced images proven to belong to this deployment."""
+"""Retire obsolete owned images after verifying the one current recovery bundle."""
 import datetime
 import hashlib
 import gzip
@@ -16,7 +16,7 @@ def output(arguments):
 
 
 def candidates(images, owned, referenced):
-    prefixes=('tianji-compact/', 'tianji-opt/', 'tianji-final/', 'tianji-acceptance/')
+    prefixes=('tianji-compact/', 'tianji-opt/', 'tianji-final/', 'tianji-acceptance/', 'tianji-release/', 'tianji-rollback/')
     infrastructure=('mysql:', 'redis:', 'rabbitmq:', 'docker.elastic.co/elasticsearch/elasticsearch:')
     return {item['Id'] for item in images if item['Id'] not in referenced and
             all(tag.startswith(prefixes+infrastructure) for tag in item.get('RepoTags') or []) and
@@ -63,6 +63,10 @@ def verify_descriptor_graph(archive, expected, configs, platforms):
         for layer in document['layers']:blob(layer)
         if document.get('artifactType'):return set()
         with archive.extractfile(config_member) as source:configuration=json.load(source)
+        if not required:
+            if configuration.get('architecture') not in (None,'unknown') or configuration.get('os') not in (None,'unknown'):
+                raise RuntimeError('Unexpected executable platform in an attestation')
+            return set()
         if any(configuration.get(key)!=value for key,value in platform.items()):raise RuntimeError('Archived configuration platform differs from inventory')
         return {document['config']['digest']}
     reachable=set()
@@ -133,15 +137,19 @@ def main():
     selected=candidates(inventory, owned, referenced())
     at=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     folder=LOCAL/'retirement'/('images-'+at);folder.mkdir(parents=True)
-    archive=folder/'rollback-images.tar'
     plan={'imageIds':sorted(selected),'images':[{key:item.get(key) for key in ('Id','RepoTags','Size')} for item in inventory if item['Id'] in selected],
-          'preservedReferencedImages':sorted(referenced()),'archive':str(archive),'releaseRunId':expected['releaseRunId']}
+          'preservedReferencedImages':sorted(referenced()),'archive':None,'releaseRunId':expected['releaseRunId'],
+          'retentionPolicy':'current-version-only'}
     (folder/'plan.json').write_text(json.dumps(plan,indent=2),encoding='utf8')
     if selected:
-        subprocess.run(['docker','image','save','--output',str(archive),*sorted(selected)],check=True)
-        platforms={item['Id']:{'architecture':item['Architecture'],'os':item['Os']} for item in inventory if item['Id'] in selected}
-        checksum=verify_archive(archive, selected, platforms)
-        (folder/'archive-verification.json').write_text(json.dumps({'status':'PASSED','sha256':checksum,'images':sorted(selected),'platforms':platforms,'scope':'Recorded local executable platforms and archived attestations'},indent=2),encoding='utf8')
+        # A current complete backup replaces historical rollback tar packages.
+        from backup_images import refresh
+        from final_backup import verify
+        backup=Path(json.loads((LOCAL/'ops-status/backup.json').read_text(encoding='utf8'))['lastBundle'])
+        if not verify(backup).get('quiesced'):raise RuntimeError('A current complete data backup is required')
+        refresh(LOCAL, PROJECT, backup)
+        recovery=json.loads((LOCAL/'current-runtime-backup/recovery.json').read_text(encoding='utf8'))
+        if selected & set(recovery['services'].values()):raise RuntimeError('Current recovery images cannot be retired')
         for item in inventory:
             if item['Id'] not in selected:continue
             if item['Id'] in referenced():raise RuntimeError('Image gained a container reference; removal stopped')
@@ -149,8 +157,8 @@ def main():
             subprocess.run(['docker','image','rm','--no-prune',*(tags or [item['Id']])],check=True,stdout=subprocess.DEVNULL)
         remaining=set(output(['docker','image','ls','-aq','--no-trunc']).splitlines())
         if selected & remaining:raise RuntimeError('Unreferenced project images remain')
-    result={'status':'PASSED','removedImages':len(selected),'archive':str(archive) if selected else None,
-            'rollbackPreservedInArchive':bool(selected),'otherProjectContainersChanged':False,'volumeDeletion':False,'at':at}
+    result={'status':'PASSED','removedImages':len(selected),'archive':None,'retentionPolicy':'current-version-only',
+            'rollbackPreservedInArchive':False,'otherProjectContainersChanged':False,'volumeDeletion':False,'at':at}
     (folder/'result.json').write_text(json.dumps(result,indent=2),encoding='utf8')
     (LOCAL/'image-retirement-result.json').write_text(json.dumps(result,indent=2),encoding='utf8')
     print(json.dumps(result))

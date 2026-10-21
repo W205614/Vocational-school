@@ -46,7 +46,9 @@ Windows 注册：`powershell -NoProfile -File deploy/compact/register_backup_tas
 - 容器暂停或正在重启：跳过，不改变其状态。维护恢复 journal 仅属于当前部署，不导入恢复副本。
 - 实际备份失败：保留不完整材料并暂停自动大备份，避免每次检查重复产生全量失败包；排查后执行 `python deploy/compact/maintenance.py retry` 显式重试。
 - 状态存于 `.local/ops-status/`，覆盖更新。`scheduler.json` 记录最近检查时间与退出码，`backup.json` 的 `lastSuccess` 才是完整备份成功时间；计划任务的“下次运行时间”包含补执行检查。错误日志 `.local/maintenance.log` 最多 3 份、每份 1 MB。
-- 自动完整备份只存本项目 `.local/backup/`；验证成功后最多保留两份带本脚本归属标记的自动包。旧历史包、人工包、失败材料和发布回退包不会自动删除。
+- 手动与自动完整备份统一只保留本项目 `.local/backup/` 中最新一份受管有效包。新包及当前镜像离线包都校验成功后，旧受管包（含升级前发布回退点）移入 Windows 回收站；无归属标记、归属不匹配、损坏或失败材料保留供人工检查。Windows 需安装 `deploy/compact/requirements.txt` 中的回收站依赖；其他系统不回退为永久删除，而是停止轮换并要求人工处理。
+- 当前镜像离线包仅保存在 `.local/current-runtime-backup/runtime-images.tar`。每天镜像未改变时只校验并复用；版本改变时，先验证新镜像包，再回收旧包。`retire_images.py` 不再导出旧镜像回滚 tar，只保留退役清单。恢复镜像执行 `python deploy/compact/backup_images.py restore`；单独刷新当前包执行 `python deploy/compact/backup_images.py refresh`，要求最近完整数据备份与当前容器镜像一致。
+- 旧文件进入回收站后仍占宿主机空间，回收站也可能按容量淘汰旧项；不自动清空回收站。新包失败不处置上一份完整恢复材料。
 - 备份包含私有账号和密钥，不提交 GitHub。本机备份不能抵御本机磁盘故障。媒体及既有历史备份本身仍会占空间，需要人工评估；日志上限不等于整个项目空间恒定。
 
 ## 本机监控
