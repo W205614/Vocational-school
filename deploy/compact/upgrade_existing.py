@@ -1,4 +1,6 @@
 """Stage seven source-bound images, then migrate an existing deployment under one host lock."""
+
+from runtime_compose import active_compose, compose_command
 from pathlib import Path
 import argparse
 import json
@@ -49,7 +51,7 @@ def deploy(candidate, backup):
         env=setup.secrets_config()[0]
         if any(not env.get(key) for key in ('ACCEPTANCE_INTERNAL_TOKEN','ACCEPTANCE_GRAFANA_PASSWORD')):
             raise RuntimeError('Existing deployment credentials are incomplete')
-        planned=observability(yaml.safe_load((setup.BASE/'compose.yaml').read_text(encoding='utf8')),setup.OFFSET)
+        planned=observability(yaml.safe_load((active_compose(setup.BASE)).read_text(encoding='utf8')),setup.OFFSET)
         monitor_images={name:subprocess.check_output(['docker','image','inspect',planned['services'][name]['image'],'--format','{{.Id}}'],text=True,timeout=30).strip() for name in MONITORS}
         runtime=setup.configure_acceptance()
         broker=subprocess.check_output(setup.COMPOSE+['ps','-aq','rabbitmq'],text=True,timeout=30).strip()
@@ -63,11 +65,11 @@ def deploy(candidate, backup):
             previous=upgrade(setup.BASE,env['ACCEPTANCE_INTERNAL_TOKEN'],setup.OFFSET,broker_hostname)
             import migrate
             migrate.main()
-            compose=yaml.safe_load((setup.BASE/'compose.yaml').read_text(encoding='utf8'))
+            compose=yaml.safe_load((active_compose(setup.BASE)).read_text(encoding='utf8'))
             for name,image in proof['imageDigests'].items():compose['services'][name]['image']=image
             for name in MONITORS:
                 compose['services'][name]['image']=monitor_images[name]
-            (setup.BASE/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
+            (active_compose(setup.BASE)).write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
             for name in ('images.json','build-source.json'):
                 shutil.copyfile(candidate/'.local'/name,setup.LOCAL/name)
             setup.up()

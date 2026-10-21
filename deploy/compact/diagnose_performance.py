@@ -1,4 +1,6 @@
 """Compare bounded tuning candidates on an owned clone; these are not formal acceptance runs."""
+
+from runtime_compose import active_compose, compose_command
 import argparse
 import json
 import os
@@ -23,7 +25,7 @@ def main():
     benchmark_snapshot.guard()
     runtime=json.loads((LOCAL/'benchmark-runtime.json').read_text(encoding='utf8'))
     if runtime['mode']!='compact':raise RuntimeError('Tune on the explicitly owned compact diagnostic clone')
-    original=yaml.safe_load((BASE/'compose.yaml').read_text(encoding='utf8'))
+    original=yaml.safe_load(active_compose(BASE).read_text(encoding='utf8'))
     source=json.loads((LOCAL/'build-source.json').read_text(encoding='utf8'))['sourceCommit']
     plans=[]
     for candidate in args.candidates:
@@ -38,7 +40,7 @@ def main():
             os.environ.update(values);prepare()
             # Only module tuning changes: preserve frozen images, ports, resource
             # limits and the existing owned volumes, including a migrated index.
-            (BASE/'compose.yaml').write_text(yaml.safe_dump(original,sort_keys=False),encoding='utf8')
+            active_compose(BASE).write_text(yaml.safe_dump(original,sort_keys=False),encoding='utf8')
             benchmark_snapshot.restore(args.snapshot)
             mysql('TRUNCATE TABLE performance_schema.events_statements_summary_by_digest')
             before_locks={name:int(value) for name,value in (line.split('\t') for line in mysql("SHOW GLOBAL STATUS LIKE 'Innodb_row_lock_%'").splitlines())}

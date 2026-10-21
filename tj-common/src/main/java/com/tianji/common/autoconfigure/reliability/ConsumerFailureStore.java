@@ -20,6 +20,11 @@ public class ConsumerFailureStore {
  public List<Map<String,Object>> failures(int limit){
   return jdbc.queryForList("SELECT failure_id,event_id,queue_name,status,attempts,last_error,version,created_at FROM reliability_consumer_failure WHERE status='FAILED' ORDER BY created_at DESC LIMIT ?",Math.min(100,Math.max(1,limit)));
  }
+ public FailurePage failurePage(int pageNo,int pageSize,String identifier){
+  String where=" WHERE status='FAILED'";var values=new ArrayList<Object>();String key=FailurePage.identifier(identifier);
+  if(key!=null){where+=" AND (failure_id=? OR event_id=? OR queue_name=?)";values.add(key);values.add(key);values.add(key);}
+  return FailurePage.query(jdbc,"failure_id,event_id,queue_name,status,attempts,last_error,version,created_at","FROM reliability_consumer_failure",where,"created_at DESC,failure_id DESC",pageNo,pageSize,values);
+ }
  public void replay(String id,long version){
   var rows=jdbc.queryForList("SELECT * FROM reliability_consumer_failure WHERE failure_id=? AND status='FAILED' AND version=?",id,version);
   if(rows.isEmpty())throw new ConflictException("失败任务状态或版本已改变");

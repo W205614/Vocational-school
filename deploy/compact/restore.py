@@ -1,4 +1,6 @@
 """Restore into a fresh independent home/project only. Never overwrite a running deployment."""
+
+from runtime_compose import active_compose, compose_command
 import argparse,os,json,subprocess,zipfile,sys,re,time
 from pathlib import Path
 from recovery_upgrade import (load_upgrade,preserve_generated_configs,activate_generated_configs,upgraded_configuration,
@@ -33,7 +35,7 @@ with zipfile.ZipFile(backup/'private-config.zip') as archive:
  __import__('shutil').copyfile(private/'.env',home/'.env')
 prepare()
 import yaml
-generated=yaml.safe_load((home/'compose.yaml').read_text(encoding='utf8'))
+generated=yaml.safe_load(active_compose(home).read_text(encoding='utf8'))
 generated_configs=preserve_generated_configs(home) if upgrade else None
 if upgrade:(LOCAL/'generated-upgrade-compose.yaml').write_text(yaml.safe_dump(generated,sort_keys=False),encoding='utf8')
 if not (private/'compose.yaml').exists() or not (private/'build-source.json').exists():
@@ -65,7 +67,7 @@ generate(home,compose,dict(line.split('=',1) for line in (home/'.env').read_text
 # Do not import the source process's RUNNING flag or unfinished maintenance journal.
 from maintenance import status
 status(LOCAL,'RESTORE_PREPARING',running=0,requiresAttention=False)
-(home/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
+active_compose(home).write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
 run(COMPOSE+['create','rabbitmq'],'create-broker')
 container=subprocess.check_output(COMPOSE+['ps','-aq','rabbitmq']).decode().strip();mounts=json.loads(subprocess.check_output(['docker','inspect',container]))[0]['Mounts'];volume=next(m['Name'] for m in mounts if m['Destination']=='/var/lib/rabbitmq')
 if not volume.startswith(args.project+'_'):raise RuntimeError('Recovery volume escaped its isolated project')
@@ -113,7 +115,7 @@ try:
   result['migrationUpgradeProof']['appliedMigrations']=json.loads((LOCAL/'migrations.json').read_text(encoding='utf8'))
   compose=upgraded_configuration(compose,generated,upgrade['imageDigests'])
   result['migrationUpgradeProof']['generatedConfigurationFingerprint']=activate_generated_configs(home,generated_configs)
-  (home/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
+  active_compose(home).write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
   copy_verified_manifests(upgrade_home,home,upgrade)
   result['migrationUpgradeProof']['status']='MIGRATED'
   (LOCAL/'recovery-result.json').write_text(json.dumps(result,indent=2),encoding='utf8')

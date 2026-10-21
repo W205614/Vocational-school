@@ -51,7 +51,7 @@ test('claimed coupons appear in the default own list and survive refresh',async(
 });
 
 test('admin reliability pages render real persistent task states',async({page},info)=>{
- test.skip(info.project.name!=='admin');await login(page,'admin','/reliability');const loaded=page.waitForResponse(r=>r.url().endsWith('/admin/operation-failures/trade'));await page.getByRole('button',{name:'查询服务',exact:true}).click();expect((await loaded).status()).toBe(200);await expect(page.getByRole('heading',{name:'事件与业务冲突处理'})).toBeVisible();await expect(page.locator('.el-alert--error')).toHaveCount(0);await page.reload();await expect(page.getByRole('heading',{name:'事件与业务冲突处理'})).toBeVisible();
+ test.skip(info.project.name!=='admin');await login(page,'admin','/reliability');const loaded=page.waitForResponse(r=>new URL(r.url()).pathname.endsWith('/admin/operation-failures/trade/page'));await page.getByRole('button',{name:'查询服务',exact:true}).click();expect((await loaded).status()).toBe(200);await expect(page.getByRole('heading',{name:'事件与业务冲突处理'})).toBeVisible();await expect(page.locator('.el-alert--error')).toHaveCount(0);await page.reload();await expect(page.getByRole('heading',{name:'事件与业务冲突处理'})).toBeVisible();
 });
 test('teacher workspace exposes scoring without administrator actions',async({page},info)=>{
  test.skip(info.project.name!=='admin');await login(page,'teacher','/exams');await expect(page.getByRole('heading',{name:'待评分考试'})).toBeVisible();await expect(page.getByRole('button',{name:'发布不可变试卷版本'})).toHaveCount(0);await expect(page.getByRole('link',{name:'失败与补偿任务'})).toHaveCount(0);

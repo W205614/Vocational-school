@@ -98,4 +98,4 @@ jobs:
             deploy/compact/.local/ci-diagnostics.json
       - name: Stop isolated CI processes; retain data for failure diagnostics
         if: always()
-        run: docker compose -p tianji-compact -f deploy/compact/compose.yaml --env-file deploy/compact/.env stop
+        run: python deploy/compact/setup.py stop

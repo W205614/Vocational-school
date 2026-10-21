@@ -91,7 +91,10 @@ def capture(runtime=None,source_base=None,quiesced=False):
    for path in sorted((local/folder).rglob('*')):
     if path.is_symlink():raise RuntimeError('Private recovery configuration must not contain symlinks')
     if path.is_file() and path.name!='resume.json':archive.write(path,folder+'/'+path.relative_to(local/folder).as_posix())
-  if (source/'compose.yaml').exists():archive.write(source/'compose.yaml','compose.yaml')
+  # Stable archive name keeps old and new recovery readers compatible.
+  compose_file=source/'.local/compose.runtime.yaml'
+  if not compose_file.exists():compose_file=source/'compose.yaml'
+  if compose_file.exists():archive.write(compose_file,'compose.yaml')
  media={}
  with zipfile.ZipFile(directory/'media.zip','w',compression=zipfile.ZIP_STORED) as archive:
   for path in sorted((local/'objects').rglob('*')):

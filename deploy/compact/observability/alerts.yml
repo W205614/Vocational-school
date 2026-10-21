@@ -12,10 +12,20 @@ groups:
         labels: {severity: warning}
         annotations: {summary: "Durable events have been delayed for over one minute"}
       - alert: FailedDurableWork
-        expr: tj_events_dead > 0 or tj_consumer_failures > 0
+        expr: tj_events_dead > 0 or tj_consumer_failures > 0 or tj_operations_retry_exhausted > 0
         for: 30s
         labels: {severity: warning}
         annotations: {summary: "Durable work requires investigation or replay"}
+      - alert: BusinessOperationBacklog
+        expr: tj_operations_oldest_seconds > 60
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "A durable business operation has remained pending for over one minute"}
+      - alert: ReliabilityMetricsStale
+        expr: time() - tj_reliability_metrics_last_success_timestamp_seconds > 60
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Reliability database metrics have not refreshed successfully"}
       - alert: PaymentNeedsReconciliation
         expr: tj_payment_reconciliation_dead > 0 or tj_payment_anomalies > 0
         for: 1m

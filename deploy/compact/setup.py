@@ -1,6 +1,8 @@
 """Reproducible compact deployment. Defaults create synthetic data in a new isolated project.
 No private historical artifact is needed. init refuses an occupied application database.
 """
+
+from runtime_compose import active_compose, compose_command
 from pathlib import Path
 import argparse,hashlib,json,os,re,secrets,shutil,subprocess,sys,time
 import yaml
@@ -11,7 +13,7 @@ PORTS={'identity':24001,'commerce':24002,'education':24003,'support':24004,'gate
 OFFSET=int(os.environ.get('TJ_COMPACT_PORT_OFFSET','0'));PORTS={k:v+OFFSET for k,v in PORTS.items()}
 PROJECT=os.environ.get('TJ_COMPACT_PROJECT','tianji-compact')
 if not re.fullmatch('[a-z][a-z0-9-]{2,40}',PROJECT):raise ValueError('Invalid isolated project name')
-COMPOSE=['docker','compose','-p',PROJECT,'-f',str(BASE/'compose.yaml'),'--env-file',str(BASE/'.env')]
+COMPOSE=compose_command(BASE,PROJECT)
 def run(command,name,input=None):
  LOCAL.mkdir(exist_ok=True)
  with (LOCAL/(name+'.log')).open('wb') as log:
@@ -29,6 +31,10 @@ def secrets_config():
  if not accounts.exists():accounts.write_text(json.dumps({a:secrets.token_hex(24) for a in MODULES if MODULES[a][3] and a!='data'},indent=2),encoding='utf8')
  return env,{a:pw for a,pw in json.loads(accounts.read_text(encoding='utf8')).items() if a!='data'}
 def prepare():
+ if (LOCAL/'init-state.json').exists() or any((LOCAL/'configs').glob('*.yml')):
+  raise RuntimeError('Existing deployment: use incremental upgrade, not prepare')
+ if subprocess.check_output(['docker','ps','-aq','--filter','label=com.docker.compose.project='+PROJECT],text=True).strip():
+  raise RuntimeError('This project already owns containers; prepare requires a fresh deployment')
  from tuning_profile import profile
  tuning=profile(sum(database is not None and alias not in {'data','gateway'} for alias,(_,_,_,database) in MODULES.items()))
  env,dbkeys=secrets_config();configs=LOCAL/'configs';configs.mkdir(exist_ok=True);(LOCAL/'objects').mkdir(exist_ok=True)
@@ -102,7 +108,7 @@ def prepare():
  for app,port in [('student',24500+OFFSET),('admin',24501+OFFSET)]:services['web-'+app]={'image':'tianji-compact/'+app+':local','environment':{'GW_UPSTREAM':'app-gateway:'+str(PORTS['gateway'])},'ports':['127.0.0.1:'+str(port)+':8080'],'mem_limit':'128m','depends_on':{'app-gateway':{'condition':'service_healthy'}}}
  from operations_config import observability,generate
  compose=observability({'name':PROJECT,'services':services,'volumes':{n:{} for n in ['compact_mysql','compact_redis','compact_rabbit','compact_search','compact_search_v9']}},OFFSET)
- (BASE/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
+ active_compose(BASE).write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
  generate(BASE,compose,env['ACCEPTANCE_INTERNAL_TOKEN'])
  print('Independent compact configuration generated; secrets kept in ignored files',flush=True)
 def initialize(clone=None,migrate_schema=True):
@@ -182,12 +188,16 @@ def build(package=True,group=None):
  if clean_commit(ROOT)!=commit:raise RuntimeError('Production source changed while building images')
 def up(group=None):run(COMPOSE+['up','-d','--wait']+(['app-'+group] if group else []),'up-'+str(group))
 def main():
- parser=argparse.ArgumentParser();parser.add_argument('action',choices=['prepare','init','build','up','migrate']);parser.add_argument('--skip-package',action='store_true');parser.add_argument('--clone',type=Path);parser.add_argument('--group',choices=list(GROUPS)+['gateway']);args=parser.parse_args()
+ parser=argparse.ArgumentParser();parser.add_argument('action',choices=['prepare','init','build','up','migrate','migrate-runtime','stop']);parser.add_argument('--skip-package',action='store_true');parser.add_argument('--clone',type=Path);parser.add_argument('--group',choices=list(GROUPS)+['gateway']);args=parser.parse_args()
  from maintenance import maintenance_lock
  with maintenance_lock(LOCAL):
   if args.action=='prepare':prepare()
   elif args.action=='init':initialize(args.clone)
   elif args.action=='build':build(not args.skip_package,args.group)
   elif args.action=='migrate':configure_acceptance();import migrate;migrate.main()
+  elif args.action=='migrate-runtime':
+   from runtime_compose import verify_migration
+   print('Runtime configuration verified: '+str(verify_migration(BASE,PROJECT)))
+  elif args.action=='stop':run(COMPOSE+['stop'],'stop')
   else:up(args.group)
 if __name__=='__main__':main()

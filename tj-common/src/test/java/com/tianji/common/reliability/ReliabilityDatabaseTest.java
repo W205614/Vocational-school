@@ -159,6 +159,54 @@ class ReliabilityDatabaseTest {
   } finally {jdbc.update("DELETE FROM reliability_consumer_failure WHERE event_id=?",event);admin.deleteQueue(queue);connection.destroy();}
  }
  private long count(String table){return jdbc.queryForObject("SELECT COUNT(*) FROM "+table,Long.class);}
+ @Test void failurePagesReachOlderRowsAndFilterExactIdentityWithoutChangingLegacyLists(){
+  var consumers=new ConsumerFailureStore(jdbc,new RabbitTemplate());
+  String batch="page-"+UUID.randomUUID();List<String> events=new ArrayList<>(),requests=new ArrayList<>();
+  try {
+   for(int i=0;i<105;i++){
+    String key=batch+"-"+String.format("%03d",i);
+    String event=tx.execute(s->outbox.enqueue(key,"test","event",Map.of()));events.add(event);
+    jdbc.update("UPDATE reliability_outbox SET status='DEAD' WHERE event_id=?",event);
+    String operation=operations.submit(1,"PAGE",key,Map.of()).operationId();requests.add(operation);
+    jdbc.update("UPDATE reliability_operation SET status='FAILED',error_code=? WHERE operation_id=?",i%2==0?"RETRY_EXHAUSTED":"BUSINESS_FAILED",operation);
+    jdbc.update("INSERT INTO reliability_operation_failure(operation_id,last_error) VALUES(?,'test')",operation);
+    var properties=new MessageProperties();properties.setMessageId(event);properties.setConsumerQueue(batch);
+    consumers.save(new Message(new byte[0],properties),new IllegalStateException("test failure"));
+   }
+   assertEquals(100,outbox.failures(1000).size());assertEquals(100,operations.failures().size());
+   assertEquals(100,consumers.failures(1000).size());
+   var first=outbox.failurePage(1,100,null);var last=outbox.failurePage(2,100,null);
+   assertEquals(105,first.total());assertEquals(5,last.list().size());assertEquals(2,last.pageNo());
+   var seen=new HashSet<String>();first.list().forEach(r->assertTrue(seen.add(r.get("event_id").toString())));last.list().forEach(r->assertTrue(seen.add(r.get("event_id").toString())));
+   assertEquals(new HashSet<>(events),seen);
+   assertEquals(5,operations.failurePage(2,100,null,null).list().size());
+   assertEquals(105,consumers.failurePage(1,100,batch).total());
+   assertEquals(5,consumers.failurePage(2,100,batch).list().size());
+   assertEquals(1,outbox.failurePage(1,20,batch+"-000").total());
+   assertEquals(1,outbox.failurePage(1,20,events.getFirst()).total());
+   assertEquals(1,consumers.failurePage(1,20,events.getFirst()).total());
+   assertEquals(1,operations.failurePage(1,20,requests.getFirst(),"RETRY_EXHAUSTED").total());
+   assertEquals(53,operations.failurePage(1,100,null,"RETRY_EXHAUSTED").total());
+   assertEquals(0,outbox.failurePage(1,20,"' OR 1=1 --").total());
+   assertTrue(outbox.failurePage(10000,100,null).list().isEmpty());
+   assertThrows(BadRequestException.class,()->operations.failurePage(1,20,null,"OTHER"));
+   assertThrows(BadRequestException.class,()->outbox.failurePage(0,20,null));
+   assertThrows(BadRequestException.class,()->consumers.failurePage(1,101,null));
+   assertThrows(BadRequestException.class,()->outbox.failurePage(1,20,"x".repeat(191)));
+  } finally {jdbc.update("DELETE FROM reliability_consumer_failure WHERE queue_name=?",batch);}
+ }
+ @Test void failurePagesRequireAdministratorBeforeReadingAnyTask(){
+  var consumers=new ConsumerFailureStore(jdbc,new RabbitTemplate());
+  try {
+   com.tianji.common.utils.UserContext.removeUser();
+   assertThrows(UnauthorizedException.class,()->new EventAdminController(outbox).page(1,20,null));
+   com.tianji.common.utils.UserContext.setUser(2L);com.tianji.common.utils.UserContext.setRole(3L);
+   assertThrows(ForbiddenException.class,()->new ConsumerFailureController(consumers).page(1,20,null));
+   assertThrows(ForbiddenException.class,()->new OperationFailureController(operations).page(1,20,null,null));
+   com.tianji.common.utils.UserContext.setRole(1L);
+   assertNotNull(new EventAdminController(outbox).page(1,20,null));
+  } finally {com.tianji.common.utils.UserContext.removeUser();}
+ }
  private int value(){return jdbc.queryForObject("SELECT value FROM test_counter WHERE id=1",Integer.class);}
  private String status(String id){return jdbc.queryForObject("SELECT status FROM reliability_outbox WHERE event_id=?",String.class,id);}
 }

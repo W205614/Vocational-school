@@ -1,4 +1,6 @@
 """Verify binary/type/expiry recovery in two disposable, separately named Redis projects."""
+
+from runtime_compose import active_compose, compose_command
 import datetime,json,subprocess,sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -19,8 +21,8 @@ try:
   home=directory/role;home.mkdir()
   project='tianji-redis-proof-'+stamp+'-'+role
   compose={'name':project,'services':{'redis':{'image':'redis:7.4-alpine','ports':['127.0.0.1:'+str(port)+':6379'],'mem_limit':'64m','healthcheck':{'test':['CMD','redis-cli','ping'],'interval':'1s','timeout':'2s','retries':30}}}}
-  file=home/'compose.yaml';file.write_text(yaml.safe_dump(compose),encoding='utf8')
-  runtime=SimpleNamespace(COMPOSE=['docker','compose','-p',project,'-f',str(file)])
+  file=active_compose(home);file.parent.mkdir(parents=True,exist_ok=True);file.write_text(yaml.safe_dump(compose),encoding='utf8')
+  runtime=SimpleNamespace(COMPOSE=['docker','compose','--project-directory',str(home),'-p',project,'-f',str(file)])
   runtimes.append(runtime)
   subprocess.run(runtime.COMPOSE+['up','-d','--wait'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
  source,target=runtimes;binary=bytes(range(256))*2

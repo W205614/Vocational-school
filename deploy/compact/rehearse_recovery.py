@@ -1,4 +1,6 @@
 """Run an isolated recovery rehearsal and restore only previously running source services."""
+
+from runtime_compose import active_compose, compose_command
 import argparse,datetime,json,subprocess,sys
 from pathlib import Path
 from setup import COMPOSE,LOCAL,SOURCE,run
@@ -26,8 +28,8 @@ try:
   print('Independent recovery acceptance PASSED',flush=True)
  else:print('Recovery failed; diagnostics and all recovery resources retained',flush=True)
 finally:
- if (home/'compose.yaml').exists() and (home/'.env').exists():
-  recovery=['docker','compose','-p',project,'-f',str(home/'compose.yaml'),'--env-file',str(home/'.env')]
+ if active_compose(home).exists() and (home/'.env').exists():
+  recovery=compose_command(home,project)
   subprocess.run(recovery+['stop','-t','60'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
  if args.pause_source and running:
   run(COMPOSE+['start','--wait',*running],'resume-after-recovery')

@@ -1,4 +1,6 @@
 """Retire only an owned measurement cohort, retaining its data and evidence."""
+
+from runtime_compose import active_compose, compose_command
 import datetime
 import json
 from pathlib import Path
@@ -15,7 +17,7 @@ def validate_cohort(home, project, containers, root):
         if labels.get('com.docker.compose.project')!=project:
             raise RuntimeError('Container project differs from the measurement cohort')
         configs=labels.get('com.docker.compose.project.config_files','').split(',')
-        if len(configs)!=1 or Path(configs[0]).resolve()!=home/'compose.yaml':
+        if len(configs)!=1 or Path(configs[0]).resolve() not in {home/'compose.yaml',home/'.local/compose.runtime.yaml'}:
             raise RuntimeError('Container belongs to a different Compose file')
     return home
 

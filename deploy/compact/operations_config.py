@@ -1,4 +1,6 @@
 """Generate bounded, loopback-only observability and incremental runtime defaults."""
+
+from runtime_compose import active_compose, compose_command, runtime_compose
 import copy
 import datetime
 import json
@@ -97,7 +99,7 @@ def generate(home, compose, token):
 
 def upgrade(home, token, offset=0, rabbit_hostname=None):
     """Preserve existing images, secrets, service settings and original data mounts."""
-    home = Path(home); local = home / '.local'; path = home / 'compose.yaml'
+    home = Path(home); local = home / '.local'; path = runtime_compose(home)
     compose = yaml.safe_load(path.read_text(encoding='utf8'))
     expected = {'mysql', 'redis', 'rabbitmq', 'elasticsearch', 'app-identity', 'app-commerce', 'app-education', 'app-support', 'app-gateway', 'web-student', 'web-admin'}
     if set(compose['services']) - MONITORS != expected:

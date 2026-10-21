@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $resolvedHome = (Resolve-Path -LiteralPath $HomeDirectory).Path
 if ($Project -notmatch '^[a-z][a-z0-9-]{2,40}$') { throw 'Invalid project name' }
-if (-not (Test-Path -LiteralPath (Join-Path $resolvedHome 'compose.yaml'))) { throw 'Existing deployment required' }
+if (-not ((Test-Path -LiteralPath (Join-Path $resolvedHome '.local/compose.runtime.yaml')) -or (Test-Path -LiteralPath (Join-Path $resolvedHome 'compose.yaml')))) { throw 'Existing deployment required' }
 if ((Get-TimeZone).Id -ne 'China Standard Time') { throw 'Task host timezone must be China Standard Time (Asia/Shanghai)' }
 $taskName = 'Tianji-Backup-' + $Project
 $resolvedPython = (Resolve-Path -LiteralPath $PythonPath).Path

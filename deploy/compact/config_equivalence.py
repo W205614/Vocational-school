@@ -1,4 +1,6 @@
 """Compare final/demo and benchmark configuration, allowing only ports and local credentials."""
+
+from runtime_compose import active_compose, compose_command
 import hashlib
 import json
 from pathlib import Path
@@ -9,10 +11,10 @@ from evidence import digest,tree_digest
 PRIVATE={('spring','datasource','password'),('spring','rabbitmq','password'),('encrypt','key-store','password'),('encrypt','key-store','secret')}
 def config_fingerprint(home):
     home=Path(home)
-    return hashlib.sha256((tree_digest(home/'.local/configs')+digest(home/'compose.yaml')).encode()).hexdigest()
+    return hashlib.sha256((tree_digest(home/'.local/configs')+digest(active_compose(home))).encode()).hexdigest()
 
 def normalized(home):
-    home=Path(home);compose=yaml.safe_load((home/'compose.yaml').read_text(encoding='utf8'))
+    home=Path(home);compose=yaml.safe_load(active_compose(home).read_text(encoding='utf8'))
     offset=int(compose['services']['app-gateway']['environment']['APP_PORT'])-24310
     ports={number+offset:number for number in (24001,24002,24003,24004,24310,25001,25002,25003,25004,25005,25006,25007,24316,24379,24373,24920,24500,24501,24590,24591,24592)}
     def value(item,path=()):

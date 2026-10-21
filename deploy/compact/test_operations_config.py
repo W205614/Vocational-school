@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import yaml
 from operations_config import observability, module_defaults, upgrade, MONITORS
+from runtime_compose import active_compose
 
 
 class OperationsConfigurationTest(unittest.TestCase):
@@ -39,7 +40,8 @@ class OperationsConfigurationTest(unittest.TestCase):
             self.assertEqual('none',current['server']['forward-headers-strategy'])
             self.assertEqual('private-token',(home/'.local/observability/internal-token').read_text())
             self.assertNotIn('private-token',(home/'compose.yaml').read_text())
-            self.assertEqual('original-node',yaml.safe_load((home/'compose.yaml').read_text())['services']['rabbitmq']['hostname'])
+            self.assertEqual(original,yaml.safe_load((home/'compose.yaml').read_text()))
+            self.assertEqual('original-node',yaml.safe_load(active_compose(home).read_text())['services']['rabbitmq']['hostname'])
 
 
 if __name__=='__main__': unittest.main()

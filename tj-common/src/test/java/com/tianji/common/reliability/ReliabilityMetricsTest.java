@@ -22,4 +22,24 @@ class ReliabilityMetricsTest {
   metrics.refresh();assertEquals(0,meters.get("tj.events.oldest.seconds").gauge().value());
   meters.close();
  }
+ @Test void exhaustedBusinessOperationsAreVisibleAndFailedRefreshDoesNotPretendFreshness(){
+  var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_common?serverTimezone=Asia/Shanghai","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+  boolean[] fail={false};
+  var jdbc=new JdbcTemplate(source){@Override public java.util.Map<String,Object> queryForMap(String sql){if(fail[0] && sql.contains("reliability_operation"))throw new org.springframework.dao.DataAccessResourceFailureException("injected collection failure");return super.queryForMap(sql);}};
+  jdbc.update("DELETE FROM reliability_operation_failure");jdbc.update("DELETE FROM reliability_operation");
+  String prefix=java.util.UUID.randomUUID().toString();
+  for(int i=0;i<3;i++)jdbc.update("INSERT INTO reliability_operation(operation_id,user_id,kind,idempotency_key,request_hash,payload,status,error_code,created_at) VALUES(?,1,'METRICS',?,'hash','{}',?,?,NOW(3)-INTERVAL 120 SECOND)",prefix+i,prefix+i,i==0?"PENDING":"FAILED",i==1?"RETRY_EXHAUSTED":i==2?"BUSINESS_FAILED":null);
+  var meters=new SimpleMeterRegistry();try{
+   var metrics=new ReliabilityMetrics(jdbc,meters);metrics.refresh();
+   assertEquals(1,meters.get("tj.operations.retry.exhausted").gauge().value());
+   assertEquals(1,meters.get("tj.operations.pending").gauge().value());
+   assertTrue(meters.get("tj.operations.oldest.seconds").gauge().value()>=120);
+   double success=meters.get("tj.reliability.metrics.last.success.timestamp.seconds").gauge().value();assertTrue(success>0);
+   jdbc.update("UPDATE reliability_operation SET status='SUCCEEDED' WHERE operation_id=?",prefix+"0");
+   fail[0]=true;assertThrows(org.springframework.dao.DataAccessException.class,metrics::refresh);
+   assertEquals(success,meters.get("tj.reliability.metrics.last.success.timestamp.seconds").gauge().value());
+   assertEquals(1,meters.get("tj.operations.pending").gauge().value());
+   fail[0]=false;metrics.refresh();assertEquals(0,meters.get("tj.operations.oldest.seconds").gauge().value());
+  } finally {meters.close();jdbc.update("DELETE FROM reliability_operation WHERE kind='METRICS'");}
+ }
 }

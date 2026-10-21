@@ -17,6 +17,8 @@
 
 不要重新执行 `setup.py prepare` 或首次初始化，不要覆盖既有 `.env`、密钥及数据卷。
 
+公共 `deploy/compact/compose.yaml` 不再保存本机镜像 SHA、搜索卷和 RabbitMQ 主机名。旧版本更新源码前，先按[部署手册](../deploy/compact/README.md#干净启动)的独立复制命令保存原生效文件；旧版本尚无 `migrate-runtime` 命令，不能先拉取新模板再拿它替代原配置。若存在未完成的 `ops-status/resume.json`，先用原版本恢复备份状态，再升级。已经迁移的部署直接使用私有 `.local/compose.runtime.yaml`；所有 Compose 命令必须指定部署目录作为 `--project-directory`，不要直接运行公共模板替换已有容器。
+
 1. 保存当前未提交改动，运行 `python deploy/compact/backup.py` 完成本项目完整备份与校验。完成后读取 `deploy/compact/.local/ops-status/backup.json` 的 `lastBundle` 字段，作为后续 `--backup` 参数。
 2. 提交本次生产源码，运行 `python deploy/compact/setup.py build` 重建全部七个应用／网页镜像。
 3. 运行 `python deploy/compact/upgrade_existing.py stage`，取得已验证候选目录。候选包含源码与七镜像绑定，不修改现有运行部署。
@@ -58,3 +60,11 @@ Windows 注册：`powershell -NoProfile -File deploy/compact/register_backup_tas
 Grafana 密码读取本机 `.env` 的 `ACCEPTANCE_GRAFANA_PASSWORD`；采集令牌仅保存在忽略目录，业务指标接口继续要求内部凭证。告警覆盖模块不可用、事件积压、失败持久任务、渠道核对异常、过去赛季阻塞、实际备份失败和超过 26 小时未成功完整备份。
 
 告警只在本机展示，没有邮件、Webhook 或其他外部通知。Docker 全部关闭时监控也关闭；重新运行后会反映备份新鲜度和未处理故障。健康检查并不会自动重启卡死的应用，需要查看告警和业务事实再处理。
+
+## 失败发现与管理处理
+
+可靠性页面按模块独立查询业务操作、事件投递和消费失败；身份模块 `auth` 同样可查。三类列表支持分页及精确标识查询，旧列表接口继续保留。业务操作可按 `RETRY_EXHAUSTED` 筛选，正常业务校验拒绝不触发基础设施故障告警。查询失败时只关闭对应区块；切换模块会清空旧记录，重放始终绑定记录来源模块。
+
+关注 `tj_operations_retry_exhausted`、`tj_operations_oldest_seconds` 和 `tj_reliability_metrics_last_success_timestamp_seconds`。采集成功时间停滞时，旧零值不能证明健康；先检查该模块数据库连接和采集异常。重试耗尽时先核对请求、事件或业务事实及失败原因，再修复依赖并重放；版本冲突后重新查询，不能反复使用旧版本提交。重放只是重新安排处理，完成与否以刷新后的持久状态及业务结果为准。
+
+告警仅投递本机 Alertmanager 面板，不宣称已接通外部通知。排障顺序为：确认模块与追踪编号 → 核对失败原因和已有业务结果 → 修复依赖 → 按原标识重放 → 确认状态、业务结果与告警恢复。

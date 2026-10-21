@@ -1,4 +1,6 @@
 """Measure frozen pre-fix configurations serially, even when baseline targets fail."""
+
+from runtime_compose import active_compose, compose_command
 import json
 import os
 from pathlib import Path
@@ -25,7 +27,7 @@ def reusable_report(home,mode,commit,batch,snapshot):
     expected=report['evidence']
     if expected['sourceCommit']!=commit or expected['baseSnapshotFingerprint']!=digest(snapshot):return None
     if report['workloadFingerprint']!=workload_fingerprint() or report['fixtureFingerprint']!=digest(home/'.local/load-fixture.json'):return None
-    configuration=__import__('hashlib').sha256((tree_digest(home/'.local/configs')+digest(home/'compose.yaml')).encode()).hexdigest()
+    configuration=__import__('hashlib').sha256((tree_digest(home/'.local/configs')+digest(active_compose(home))).encode()).hexdigest()
     if expected['configFingerprint']!=configuration:return None
     build=json.loads((home/'.local/build-source.json').read_text(encoding='utf8'))
     if build['sourceCommit']!=commit or build['imageDigests']!={name:image for name,image in expected['imageDigests'].items() if name.startswith(('app-','web-'))}:return None
@@ -57,7 +59,7 @@ def main():
             if not runtime_path.exists() or json.loads(runtime_path.read_text(encoding='utf8')).get('mode')!='standalone':
                 run('benchmark_deployment.py','standalone','--tag',commit)
         try:
-            subprocess.run(['docker','compose','-p','tianji-opt-pre-'+mode,'-f',str(home/'compose.yaml'),'--env-file',str(home/'.env'),'up','-d','--wait','mysql','redis','rabbitmq','elasticsearch'],check=True)
+            subprocess.run(compose_command(home,'tianji-opt-pre-'+mode)+['up','-d','--wait','mysql','redis','rabbitmq','elasticsearch'],check=True)
             result=subprocess.run([sys.executable,str(script/'mixed_load.py'),'--protocol','perf-3h-v1','--snapshot',str(base/'baseline/data-v2.sql'),'--source-commit',commit,'--label','pre-'+mode,'--batch-manifest',str(base/'audit-run.json')],env=environment)
         finally:
             retire(home,'tianji-opt-pre-'+mode)

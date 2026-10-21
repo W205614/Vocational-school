@@ -5,7 +5,7 @@ from pathlib import Path
 from evidence import bind, validate, utcnow,save_report,verify_publication
 
 class EvidenceBindingTest(unittest.TestCase):
-    def test_generated_runtime_compose_requires_exact_captured_configuration(self):
+    def test_tracked_compose_edits_are_never_exempt_from_publication_checks(self):
         from unittest.mock import patch,Mock
         from config_equivalence import config_fingerprint
         with tempfile.TemporaryDirectory() as directory:
@@ -15,7 +15,7 @@ class EvidenceBindingTest(unittest.TestCase):
             def check(manifest):
                 with patch('evidence.subprocess.check_output',side_effect=['head\n','','deploy/compact/compose.yaml\n','']),patch('evidence.subprocess.run',return_value=Mock(returncode=0)):
                     return verify_publication(root,'source',deployment_manifest=manifest)
-            self.assertFalse(check(None));self.assertTrue(check(captured))
+            self.assertFalse(check(None));self.assertFalse(check(captured))
             self.assertFalse(check({**captured,'sourceCommit':'another-source'}))
             (home/'compose.yaml').write_text('image: sha256:unmeasured\n');self.assertFalse(check(captured))
 

@@ -49,4 +49,10 @@ public class OutboxStore {
     public List<Map<String,Object>> failures(int limit) {
         return jdbc.queryForList("SELECT event_id,business_key,event_type,status,attempts,last_error,created_at FROM reliability_outbox WHERE status='DEAD' ORDER BY created_at DESC LIMIT ?",Math.min(100,Math.max(1,limit)));
     }
+    public FailurePage failurePage(int pageNo,int pageSize,String identifier) {
+        String where=" WHERE status='DEAD'";var values=new ArrayList<Object>();
+        String key=FailurePage.identifier(identifier);
+        if(key!=null){where+=" AND (event_id=? OR business_key=?)";values.add(key);values.add(key);}
+        return FailurePage.query(jdbc,"event_id,business_key,event_type,status,attempts,last_error,created_at","FROM reliability_outbox",where,"created_at DESC,event_id DESC",pageNo,pageSize,values);
+    }
 }

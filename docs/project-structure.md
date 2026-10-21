@@ -61,6 +61,8 @@ Vocational-school/
 
 `.local` 是本机工作目录，并非统一的缓存目录。尤其 `deploy/compact/.local/` 中含运行数据，不能整体删除。
 
+`.local/compose.runtime.yaml` 是当前部署的生效配置，保留本机镜像身份、搜索卷和 RabbitMQ hostname；公共 `compose.yaml` 仅为可复现模板。备份、恢复、升级和配置指纹均读取统一运行配置入口，旧恢复包中的 `compose.yaml` 文件名继续兼容。
+
 | 类别 | 处理原则 |
 | --- | --- |
 | `.env`、账号 JSON、签名密钥、运行配置 | 保留并保持 Git 忽略 |

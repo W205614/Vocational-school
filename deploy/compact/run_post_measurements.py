@@ -1,4 +1,6 @@
 """Run both frozen post-fix topologies serially; derive acceptance from all four reports."""
+
+from runtime_compose import active_compose, compose_command
 import argparse
 import json
 import os
@@ -40,7 +42,7 @@ def main():
         if runtime['mode']!=mode:raise RuntimeError('Benchmark topology mismatch')
         source=json.loads((home/'.local/build-source.json').read_text(encoding='utf8'))
         project='tianji-opt-post-'+mode
-        compose=['docker','compose','-p',project,'-f',str(home/'compose.yaml'),'--env-file',str(home/'.env')]
+        compose=compose_command(home,project)
         # Explicitly stop these two owned clones before any formal round.
         subprocess.run(compose+['stop','-t','60'],check=True)
         targets.append((mode,home,offset,project,compose,source['sourceCommit']))

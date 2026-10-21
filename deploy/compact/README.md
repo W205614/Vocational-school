@@ -28,6 +28,20 @@
 
 ## 干净启动
 
+实际生效的 Compose 为本部署被忽略的 `.local/compose.runtime.yaml`；版本库中的 `compose.yaml` 仅作公共模板。所有 Python 运维入口使用统一解析器并显式指定项目目录，因此配置移入 `.local` 后，媒资、密钥及配置的相对挂载仍相对于本部署目录。
+
+旧版本升级前，先在原 checkout 保存当前生效配置；此步骤不依赖新版本脚本：
+
+```powershell
+if (Test-Path deploy/compact/.local/ops-status/resume.json) { throw '先在原版本恢复未完成的备份，再更新源码' }
+New-Item -ItemType Directory -Force deploy/compact/.local | Out-Null
+if (-not (Test-Path deploy/compact/.local/compose.runtime.yaml)) {
+    Copy-Item -LiteralPath deploy/compact/compose.yaml -Destination deploy/compact/.local/compose.runtime.yaml
+}
+```
+
+确认私有副本存在后再更新源码，保留 `.env`、`.local` 和卷。新版本直接采用该私有文件；不要把更新后的公共模板复制覆盖它。`setup.py migrate-runtime` 用于公共文件仍是旧生效配置时的解析等价核对，不适用于已将公共文件恢复为模板后的再次迁移。升级、搜索切换和备份只更新私有运行文件；旧备份包中的配置仍命名 `compose.yaml`，恢复时写入新的私有运行位置。历史 `reports/probes` 固定旧提交，只能按其原版本说明复用，不作为当前恢复验收入口。
+
 需要 Java 21、Maven、Node.js 22/npm、Python 3.12+、Docker Compose 和可用镜像源。Windows PowerShell 中请确认这些命令已加入 PATH。
 
 ```powershell

@@ -4,6 +4,8 @@ Run after core regression. Both directions require seven frozen application imag
 and their build-source manifest. Failure leaves application writes paused and records
 an independent report; the operator can rerun with the recorded rollback images.
 """
+
+from runtime_compose import active_compose, compose_command
 import argparse
 import hashlib
 import json
@@ -28,7 +30,7 @@ def checked_owner():
         labels=info['Config']['Labels']
         if labels.get('com.docker.compose.project') != PROJECT:raise RuntimeError('Container ownership mismatch')
         files=labels.get('com.docker.compose.project.config_files','').split(',')
-        if not files or any(Path(path).resolve()!=BASE/'compose.yaml' for path in files):raise RuntimeError('Compose ownership mismatch')
+        if not files or any(Path(path).resolve() not in {BASE/'compose.yaml',BASE/'.local/compose.runtime.yaml'} for path in files):raise RuntimeError('Compose ownership mismatch')
 
 
 def rebuild_facts():
@@ -87,7 +89,7 @@ def main():
     images=json.loads(args.images.read_text(encoding='utf8'))
     source=json.loads(args.source_manifest.read_text(encoding='utf8'))
     subprocess.run(['git','-C',str(ROOT),'cat-file','-e',source['sourceCommit']+'^{commit}'],check=True)
-    compose=yaml.safe_load((BASE/'compose.yaml').read_text(encoding='utf8'))
+    compose=yaml.safe_load(active_compose(BASE).read_text(encoding='utf8'))
     expected={('web-' if alias in ('student','admin') else 'app-')+alias:details['imageId'] for alias,details in images.items()}
     if expected!=source['imageDigests'] or set(expected)!={'app-'+name for name in [*GROUPS,'gateway']}|{'web-student','web-admin'}:raise RuntimeError('All seven frozen application image/source bindings are required')
     for details in images.values():
@@ -101,7 +103,7 @@ def main():
         digest=subprocess.check_output(['docker','image','inspect',tag,'--format','{{.Id}}'],text=True).strip()
     else:
         digest=available.stdout.strip()
-    old_compose=(BASE/'compose.yaml').read_bytes()
+    old_compose=active_compose(BASE).read_bytes()
     running=subprocess.check_output(COMPOSE+['ps','--status','running','--services'],text=True).splitlines()
     apps=[name for name in running if name.startswith(('app-','web-'))]
     at=utcnow();folder=LOCAL/'search-transitions'/uuid.uuid4().hex;folder.mkdir(parents=True)
@@ -125,7 +127,7 @@ def main():
         compose['volumes'][volume]={}
         compose['services']['elasticsearch'].update(image=digest,volumes=[volume+':/usr/share/elasticsearch/data'])
         for name,image in expected.items():compose['services'][name]['image']=image
-        (BASE/'compose.yaml').write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
+        active_compose(BASE).write_text(yaml.safe_dump(compose,sort_keys=False),encoding='utf8')
         run(COMPOSE+['up','-d','--wait','--no-deps','elasticsearch'],'search-new-volume')
         engine=requests.get('http://127.0.0.1:'+str(24920+OFFSET),timeout=10)
         engine.raise_for_status()

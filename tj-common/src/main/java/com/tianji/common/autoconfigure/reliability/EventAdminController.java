@@ -8,5 +8,6 @@ public class EventAdminController {
     private final OutboxStore store;
     public EventAdminController(OutboxStore store) {this.store=store;}
     @GetMapping("/failures") public List<Map<String,Object>> failures(@RequestParam(defaultValue="20") int limit) {UserContext.requireAdmin();return store.failures(limit);}
+    @GetMapping("/page") public FailurePage page(@RequestParam(defaultValue="1") int pageNo,@RequestParam(defaultValue="20") int pageSize,@RequestParam(required=false) String identifier) {UserContext.requireAdmin();return store.failurePage(pageNo,pageSize,identifier);}
     @PostMapping("/{id}/replay") public void replay(@PathVariable String id) {UserContext.requireAdmin();if(store.replay(id)!=1) throw new ConflictException("事件不是可重放的失败状态");}
 }

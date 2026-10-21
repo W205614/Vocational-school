@@ -1,4 +1,6 @@
 """Windowless Task Scheduler entry; the worker and its children share a hidden console."""
+
+from runtime_compose import active_compose, compose_command
 import argparse
 import json
 import logging
@@ -19,7 +21,7 @@ def run(home, project, port_offset, python_path):
     environment['PATH'] = str(docker_bin) + os.pathsep + environment.get('PATH', '')
     code = 1
     try:
-        if not (home / 'compose.yaml').is_file():
+        if not active_compose(home).is_file():
             raise ValueError('Existing deployment required')
         code = subprocess.run(
             [str(python_path), str(Path(__file__).with_name('maintenance.py')), 'scheduled'],

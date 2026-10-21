@@ -127,7 +127,9 @@ def resume_interrupted(runtime, local):
     path=Path(local)/'ops-status/resume.json'
     if not path.exists():return
     journal=json.loads(path.read_text(encoding='utf8'))
-    if journal.get('home')!=str(Path(local).resolve()) or journal.get('compose')!=runtime.COMPOSE:
+    from runtime_compose import equivalent_commands
+    same_command=journal.get('compose')==runtime.COMPOSE
+    if journal.get('home')!=str(Path(local).resolve()) or (not same_command and not equivalent_commands(journal.get('compose',[]),runtime.COMPOSE,Path(local).parent)):
         raise RuntimeError('Unfinished service restoration belongs to a different deployment')
     apps=journal['apps'];temporary=journal['temporary']
     if any(not name.startswith(('app-','web-')) for name in apps) or any(name not in REQUIRED for name in temporary):

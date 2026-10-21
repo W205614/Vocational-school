@@ -94,6 +94,15 @@ public class OperationStore {
         });
     }
     public List<Map<String,Object>> failures(){return jdbc.queryForList("SELECT o.operation_id,o.user_id,o.kind,o.status,o.error_code,o.error_message,o.attempts,f.last_error,f.version FROM reliability_operation o JOIN reliability_operation_failure f ON f.operation_id=o.operation_id WHERE o.status='FAILED' ORDER BY f.updated_at DESC LIMIT 100");}
+    public FailurePage failurePage(int pageNo,int pageSize,String identifier,String errorCode){
+        String where=" WHERE o.status='FAILED'";var values=new ArrayList<Object>();String key=FailurePage.identifier(identifier);
+        if(key!=null){where+=" AND (o.operation_id=? OR o.idempotency_key=?)";values.add(key);values.add(key);}
+        if(errorCode!=null && !errorCode.isBlank()){
+            if(!Set.of("BUSINESS_FAILED","RETRY_EXHAUSTED").contains(errorCode))throw new BadRequestException("失败类型无效");
+            where+=" AND o.error_code=?";values.add(errorCode);
+        }
+        return FailurePage.query(jdbc,"o.operation_id,o.user_id,o.kind,o.status,o.error_code,o.error_message,o.attempts,f.last_error,f.version,f.updated_at","FROM reliability_operation o JOIN reliability_operation_failure f ON f.operation_id=o.operation_id",where,"f.updated_at DESC,o.operation_id DESC",pageNo,pageSize,values);
+    }
     public void replayFailure(String id,long version){
         tx.executeWithoutResult(state->{
             var rows=jdbc.queryForList("SELECT o.operation_id FROM reliability_operation o JOIN reliability_operation_failure f ON f.operation_id=o.operation_id WHERE o.operation_id=? AND o.status='FAILED' AND o.error_code='RETRY_EXHAUSTED' AND f.version=? FOR UPDATE",id,version);

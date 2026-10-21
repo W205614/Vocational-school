@@ -119,10 +119,10 @@ Get-Content deploy/compact/.local/accounts.json
 
 ```powershell
 # 查看容器状态
-docker compose -p tianji-compact -f deploy/compact/compose.yaml --env-file deploy/compact/.env ps
+docker compose -p tianji-compact --project-directory deploy/compact -f deploy/compact/.local/compose.runtime.yaml --env-file deploy/compact/.env ps
 
 # 暂停（保留数据）
-docker compose -p tianji-compact -f deploy/compact/compose.yaml --env-file deploy/compact/.env stop
+docker compose -p tianji-compact --project-directory deploy/compact -f deploy/compact/.local/compose.runtime.yaml --env-file deploy/compact/.env stop
 
 # 恢复启动
 python deploy/compact/setup.py up
@@ -157,6 +157,33 @@ powershell -NoProfile -File deploy/compact/register_backup_task.ps1
 后端使用 Java 21、Spring Boot 4、Spring Cloud、MyBatis-Plus；前端使用 Vue 3、TypeScript、Vite、Element Plus、Pinia。数据与消息使用 MySQL、Redis、RabbitMQ，课程搜索使用 Elasticsearch。
 
 默认部署将原业务模块组合为 `identity`、`commerce`、`education`、`support` 四个应用，经网关为双端提供接口；业务模块仍保留各自的数据库与事务边界。
+
+```mermaid
+flowchart LR
+  Student[学生门户] --> Gateway[API 网关 / 身份与权限]
+  Admin[教师与管理工作台] --> Gateway
+  Gateway --> Identity[identity：认证 / 用户]
+  Gateway --> Commerce[commerce：交易 / 支付 / 营销]
+  Gateway --> Education[education：课程 / 学习 / 考试]
+  Gateway --> Support[support：媒资 / 搜索 / 消息]
+  Commerce --> DB[(MySQL：模块独立事务)]
+  Education --> DB
+  DB --> Outbox[事务 Outbox]
+  Outbox --> MQ[RabbitMQ]
+  MQ --> Inbox[Inbox 去重 / 有界重试 / 人工补偿]
+  Inbox --> Education
+  Inbox --> Support
+```
+
+| 设计选择 | 原因与边界 | 可演示的证据 |
+| --- | --- | --- |
+| 四个组合应用，保留模块事务边界 | 降低本机进程成本；跨模块调用仍可能失败，不依赖一个全局事务 | 部署配置、模块启动入口与独立连接池 |
+| 事务 Outbox、消费者去重、持久补偿 | 交易事实与待发事件同事务保存；消息允许重复，业务避免重复生效 | 失败分页、重放前后状态、支付退款与权益链路 |
+| 服务端授权与不可变考试快照 | 学习权益、答卷归属和评分授权由后端判断；发布后题目变化不改历史答卷 | 未授权请求拒绝、教师评分与学生历史记录 |
+| 请求上下文隔离与独立进度队列 | 慢响应不能覆盖新课程，页面交互不能阻断进度尾写 | 延迟响应测试、保存失败重试、切节续学 |
+| 私有运行配置、不可变镜像绑定、完整备份 | 公共模板可复现，升级保留本机卷与 RabbitMQ 身份 | 源码 SHA、镜像 ID、配置等价检查及隔离恢复 |
+
+面试演示可按三条路径展开：学生购课到教师评分的业务闭环；模拟接口失败后的局部重试和进度补写；管理员查询旧失败、定位模块并重放。项目既有业务与本次改造分别以 Git 记录和[批次验收报告](deploy/compact/reports/README.md)核对；不将仓库全部功能表述为个人原创贡献。
 
 | 目录 | 内容 |
 | --- | --- |

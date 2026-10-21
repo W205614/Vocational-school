@@ -1,4 +1,6 @@
 """Build immutable comparable images and generate a standalone benchmark topology."""
+
+from runtime_compose import active_compose, compose_command
 import argparse
 import hashlib
 import json
@@ -58,7 +60,7 @@ def standalone(ref='HEAD'):
     from setup import ROOT
     commit = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', ref], text=True).strip()
     if any(details.get('sourceCommit') != commit for details in images.values()): raise RuntimeError('Standalone image provenance mismatch')
-    compose = yaml.safe_load((BASE / 'compose.yaml').read_text(encoding='utf8'))
+    compose = yaml.safe_load(active_compose(BASE).read_text(encoding='utf8'))
     aliases = sorted(alias for alias in MODULES if alias != 'gateway')
     ports = {alias: PORTS['gateway'] + 100 + index for index, alias in enumerate(aliases)}
     targets = {alias: 'http://app-' + alias + ':' + str(ports[alias]) for alias in aliases}
@@ -104,7 +106,7 @@ def standalone(ref='HEAD'):
     template['cpus'] = 2
     from http_ports import listener_sysctls
     template['sysctls'] = listener_sysctls(PORTS['gateway'])
-    (BASE / 'compose.yaml').write_text(yaml.safe_dump(compose, sort_keys=False), encoding='utf8')
+    active_compose(BASE).write_text(yaml.safe_dump(compose, sort_keys=False), encoding='utf8')
     runtime = {'mode': 'standalone', 'metrics': {alias: targets[alias].replace('app-' + alias, '127.0.0.1') + '/actuator/prometheus' for alias in aliases},
                'javaServices': ['app-' + alias for alias in aliases] + ['app-gateway']}
     runtime['applyMigrations']=commit!=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','9f97d25'],text=True).strip()
@@ -119,7 +121,7 @@ def freeze_compact(tag):
     commit=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',tag],text=True).strip()
     journal=require_package(LOCAL,commit,'compact')
     if any(details.get('jarSha256')!=journal['jars'].get(alias) for alias,details in images.items() if alias not in ('student','admin')):raise RuntimeError('Compact images do not match the fresh packaged source')
-    compose = yaml.safe_load((BASE / 'compose.yaml').read_text(encoding='utf8'))
+    compose = yaml.safe_load(active_compose(BASE).read_text(encoding='utf8'))
     for alias, value in images.items():
         image = 'tianji-opt/compact-' + alias + ':' + tag
         subprocess.run(['docker', 'tag', value['imageId'], image], check=True)
@@ -130,7 +132,7 @@ def freeze_compact(tag):
         compose['services'][service]['image'] = image
         infrastructure[service] = image
     (LOCAL / 'infrastructure-images.json').write_text(json.dumps(infrastructure, indent=2), encoding='utf8')
-    (BASE / 'compose.yaml').write_text(yaml.safe_dump(compose, sort_keys=False), encoding='utf8')
+    active_compose(BASE).write_text(yaml.safe_dump(compose, sort_keys=False), encoding='utf8')
     runtime = {'mode': 'compact', 'metrics': {alias: 'http://127.0.0.1:' + str(PORTS[group]) + '/_modules/' + alias + '/actuator/prometheus' for group, aliases in GROUPS.items() for alias in aliases},
                'javaServices': ['app-' + group for group in list(GROUPS) + ['gateway']]}
     runtime['applyMigrations']=subprocess.check_output(['git','-C',str(ROOT),'rev-parse',tag],text=True).strip()!=subprocess.check_output(['git','-C',str(ROOT),'rev-parse','9f97d25'],text=True).strip()
