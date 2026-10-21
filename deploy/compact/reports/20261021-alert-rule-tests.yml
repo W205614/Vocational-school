@@ -1,0 +1,66 @@
+# Run: promtool test rules deploy/compact/reports/20261021-alert-rule-tests.yml
+# Paths are resolved relative to this fixture. All series are synthetic; no business data is written.
+rule_files:
+  - ../observability/alerts.yml
+evaluation_interval: 15s
+tests:
+  - name: retry-exhausted business operation fires after the hold interval
+    interval: 15s
+    input_series:
+      - series: 'tj_operations_retry_exhausted{job="trade"}'
+        values: '1x4'
+    alert_rule_test:
+      - eval_time: 30s
+        alertname: FailedDurableWork
+        exp_alerts:
+          - exp_labels: {job: trade, severity: warning}
+            exp_annotations:
+              summary: "Durable work requires investigation or replay"
+
+  - name: resolved retry-exhausted operation clears its alert
+    interval: 15s
+    input_series:
+      - series: 'tj_operations_retry_exhausted{job="trade"}'
+        values: '1 1 1 0 0'
+    alert_rule_test:
+      - eval_time: 30s
+        alertname: FailedDurableWork
+        exp_alerts:
+          - exp_labels: {job: trade, severity: warning}
+            exp_annotations:
+              summary: "Durable work requires investigation or replay"
+      - eval_time: 1m
+        alertname: FailedDurableWork
+        exp_alerts: []
+
+  - name: business validation failures alone do not raise a durable-work incident
+    interval: 15s
+    # ReliabilityMetrics excludes BUSINESS_FAILED from retry.exhausted (covered by its database test).
+    # This is the resulting metric snapshot even when rejected business requests exist.
+    input_series:
+      - series: 'tj_operations_retry_exhausted{job="trade"}'
+        values: '0x8'
+      - series: 'tj_events_dead{job="trade"}'
+        values: '0x8'
+      - series: 'tj_consumer_failures{job="trade"}'
+        values: '0x8'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: FailedDurableWork
+        exp_alerts: []
+
+  - name: unchanged collection success time raises stale metrics alert
+    interval: 15s
+    input_series:
+      - series: 'tj_reliability_metrics_last_success_timestamp_seconds{job="trade"}'
+        values: '0x12'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: ReliabilityMetricsStale
+        exp_alerts: []
+      - eval_time: 2m30s
+        alertname: ReliabilityMetricsStale
+        exp_alerts:
+          - exp_labels: {job: trade, severity: warning}
+            exp_annotations:
+              summary: "Reliability database metrics have not refreshed successfully"

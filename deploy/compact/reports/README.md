@@ -6,6 +6,7 @@
 
 | 日期 | 交付内容 | 记录 |
 | --- | --- | --- |
+| 2026-10-21 | 学习进度与请求竞态、教师局部失败、故障分页告警、私有配置迁移、四角色隔离验收及日常重建 | [最终交付报告](final-school-recruitment-20261021.md) · [脱敏结果](final-school-recruitment-20261021.json) |
 | 2026-10-20 | 各角色模拟使用、学生切页与改密、教师评分与答疑体验修复 | [修复与验证说明](role-experience-20261020.md) |
 | 2026-10-19 | 可信代理、零元成交／退课、支付核对、赛季分页与锁、增量升级、Windows 定时备份和本机监控 | [交付报告](stability-hardening-20261019.md) · [脱敏结果](stability-hardening-20261019.json) |
 | 2026-10-16 | 学习闭环、月度赛季奖励、双端改版、权益到期修复与完整功能／恢复／搜索回退交付 | [交付报告](learning-motivation-20261016.md) · [脱敏结果](2026-10-16-learning-motivation-summary.json) · [ES7复现](search7-8dcf8e7-reproduction.md) |
@@ -17,6 +18,8 @@
 | 持续记录 | 优化依据、失败复现与性能证据状态 | [优化记录](../OPTIMIZATION.md) · [历史交付状态](../../../docs/productionization-status.md) |
 
 ## 运行源码与交付提交
+
+2026-10-21 七个运行应用／网页镜像源码为 `8d70dc9a7f01e856f0d3b1872e17fbda16435460`；最终报告与告警测试夹具另行提交，不能据此改写镜像来源。该批次隔离角色浏览器 13 项通过，日常环境 14 容器健康，详见[最终报告](final-school-recruitment-20261021.md)。
 
 2026-10-19 的应用镜像源码为 `add8e09ec9a275c90d59b8acff4e4416d6716b4a`；本批证据与文档交付提交分别记录，最终 CI 链接在交付回复中提供。详见[本批报告](stability-hardening-20261019.md)。
 

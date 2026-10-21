@@ -30,6 +30,8 @@ python deploy/compact/upgrade_existing.py deploy --candidate <本项目.local/ca
 
 发布与备份竞争同一进程锁。增量配置工具保留原镜像引用、存储路径、数据库密码及自定义代理配置，原配置存于本机 `.local/operations-upgrade/`。仅新增数据库迁移，不改写已执行的校验和迁移。
 
+若此次更新包含监控规则，复用中的 Prometheus 不会自动重载挂载文件。日常项目执行 `docker kill --signal HUP tianji-compact-prometheus-1` 后，检查 `http://127.0.0.1:24590/api/v1/rules` 是否出现 `BusinessOperationBacklog`、`ReliabilityMetricsStale`，并核对 `/api/v1/targets` 全部在线；其他项目必须改用实际容器名和端口。此信号只要求重载配置，不删除容器或数据。不能仅凭文件已复制认定告警已生效。
+
 失败时保留数据、事件和诊断材料，不自动用旧 SQL 覆盖新增订单／评分／支付事实。需要回退时先停写并确认旧代码与当前表结构兼容；不兼容则在副本核对增量后制定数据回迁，不能删除新表或丢弃新事实。
 
 ## 备份状态、空间与计划任务

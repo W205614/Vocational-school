@@ -131,7 +131,7 @@ python deploy/compact/setup.py up
 | 遇到的问题 | 处理方式 |
 | --- | --- |
 | 命令找不到或构建失败 | 确认工具已加入 `PATH`、Docker 已启动、依赖与镜像下载可用；脚本诊断日志位于 `deploy/compact/.local/`，例如 `maven.log`、`frontend.log`、`infra.log`、`up-None.log` |
-| 页面打不开或启动失败 | 用上面的 `ps` 查看状态；检查本机端口是否被占用，端口映射见 `deploy/compact/compose.yaml`；用同一 Compose 命令将 `ps` 换成 `logs --tail 100` 查看日志 |
+| 页面打不开或启动失败 | 用上面的 `ps` 查看状态；检查本机端口是否被占用，实际端口与挂载见本机 `deploy/compact/.local/compose.runtime.yaml`；用同一 Compose 命令将 `ps` 换成 `logs --tail 100` 查看日志 |
 | 门户搜索不到课程 | 确认启动成功，并已执行两个搜索初始化与同步命令 |
 | 不知道登录账号 | 查看 `deploy/compact/.local/accounts.json`，学生与教师／管理员使用不同网页入口 |
 | 已有环境需要升级 | 先备份，再按[部署手册](deploy/compact/README.md)完成迁移、配置补全和重新构建；不要重复执行首次准备步骤 |
@@ -184,6 +184,8 @@ flowchart LR
 | 私有运行配置、不可变镜像绑定、完整备份 | 公共模板可复现，升级保留本机卷与 RabbitMQ 身份 | 源码 SHA、镜像 ID、配置等价检查及隔离恢复 |
 
 面试演示可按三条路径展开：学生购课到教师评分的业务闭环；模拟接口失败后的局部重试和进度补写；管理员查询旧失败、定位模块并重放。项目既有业务与本次改造分别以 Git 记录和[批次验收报告](deploy/compact/reports/README.md)核对；不将仓库全部功能表述为个人原创贡献。
+
+2026-10-21 最终完善包含学习进度单写队列、课程请求隔离、教师分区重试、管理端故障分页与告警、公共模板／私有运行配置分离。隔离环境四角色相关浏览器 13 项通过；已将验收镜像更新至日常部署，14 个容器健康。源码、失败复现、旧备份恢复及数据保留口径见[本次交付报告](deploy/compact/reports/final-school-recruitment-20261021.md)。
 
 | 目录 | 内容 |
 | --- | --- |
