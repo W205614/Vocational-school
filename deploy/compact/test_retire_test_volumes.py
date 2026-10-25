@@ -200,6 +200,37 @@ class TestVolumeRetirementTest(unittest.TestCase):
         plan = self.plan(verifier=verify); self.assertEqual(2, len(plan['removable']))
         self.assertEqual(self.names, self.apply(plan, verify)['removedVolumes'])
 
+    def test_old_source_raw_recovery_can_be_disposed_without_claiming_final_images(self):
+        verify = self.recovery_fixture()
+        report_path = self.local / 'recovery-result.json'
+        report = json.loads(report_path.read_text())
+        old_apps = {name: 'old-' + image for name, image in self.apps.items()}
+        report['rawRestoreProof'].update(sourceCommit='previous-source', imageDigests={**old_apps, 'mysql': 'old-mysql'})
+        self.write(report_path, report); self.proof['proofSha256'] = sha(report_path)
+        self.write(self.proof_path, self.proof)
+        self.write(self.local / 'build-source.json', {'sourceCommit': 'previous-source', 'imageDigests': old_apps})
+        plan = self.plan(verifier=verify)
+        self.assertEqual(2, len(plan['removable']))
+        self.assertEqual('source', self.proof['sourceCommit'])
+        self.assertEqual(self.names, self.apply(plan, verify)['removedVolumes'])
+
+    def test_old_source_recovery_image_mismatch_or_failed_raw_proof_is_retained(self):
+        verify = self.recovery_fixture()
+        report_path = self.local / 'recovery-result.json'
+        report = json.loads(report_path.read_text())
+        old_apps = {name: 'old-' + image for name, image in self.apps.items()}
+        report['rawRestoreProof'].update(sourceCommit='previous-source', imageDigests=old_apps)
+        self.write(report_path, report); self.proof['proofSha256'] = sha(report_path)
+        self.write(self.proof_path, self.proof)
+        wrong_apps = {**old_apps, 'app-gateway': 'different-image'}
+        self.write(self.local / 'build-source.json', {'sourceCommit': 'previous-source', 'imageDigests': wrong_apps})
+        self.assertFalse(self.plan(verifier=verify)['removable'])
+        self.write(self.local / 'build-source.json', {'sourceCommit': 'previous-source', 'imageDigests': old_apps})
+        report['rawRestoreProof']['status'] = 'FAILED'
+        self.write(report_path, report); self.proof['proofSha256'] = sha(report_path)
+        self.write(self.proof_path, self.proof)
+        self.assertFalse(self.plan(verifier=verify)['removable'])
+
     def test_clone_unique_writes_missing_history_or_failed_restore_are_never_disposable(self):
         verify = self.recovery_fixture()
         for field, bad in [('syntheticWritesOnly', False), ('sourceBackupManifestSha', '0' * 64),

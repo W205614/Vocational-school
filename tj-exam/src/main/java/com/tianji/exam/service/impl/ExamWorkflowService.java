@@ -49,17 +49,20 @@ public class ExamWorkflowService implements OperationHandler {
     }
     private Map<String,Object> start(long user,Command cmd) {
         if(cmd.lessonId()==null || cmd.paperId()==null) throw new BadRequestException("试卷和课表不能为空");
-        requireEntitlement(user,paper(cmd.paperId()),cmd.lessonId());
         // Take the guard's exclusive lock directly. INSERT IGNORE first obtains shared
         // duplicate-key locks, whose later upgrade to FOR UPDATE can deadlock.
         // Only this student's start/retake is serialized; other students remain independent.
         jdbc.update("INSERT INTO exam_start_guard(user_id,paper_id) VALUES(?,?) ON DUPLICATE KEY UPDATE user_id=user_id",user,cmd.paperId());
         jdbc.queryForObject("SELECT user_id FROM exam_start_guard WHERE user_id=? AND paper_id=? FOR UPDATE",Long.class,user,cmd.paperId());
-        // A locking read sees commits made while waiting for the student guard, even
-        // when this transaction already has a REPEATABLE READ snapshot.
-        var active=jdbc.queryForList("SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND status IN('IN_PROGRESS','WAIT_GRADING') FOR UPDATE",user,cmd.paperId());
+        // Establish the first RR snapshot only after acquiring this student's guard.
+        // Plain existence reads avoid gap locks that make different students' inserts
+        // deadlock. Concurrent START cannot change this student's attempts while the
+        // guard is held. SUBMIT/GRADE may finish an active attempt; view() locks that
+        // attempt by primary key and returns its latest state rather than creating one.
+        requireEntitlement(user,paper(cmd.paperId()),cmd.lessonId());
+        var active=jdbc.queryForList("SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND status IN('IN_PROGRESS','WAIT_GRADING')",user,cmd.paperId());
         if(!active.isEmpty()) return view(((Number)active.getFirst().get("id")).longValue(),user,false);
-        if(!jdbc.queryForList("SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND passed=1 LIMIT 1 FOR UPDATE",user,cmd.paperId()).isEmpty()) throw new BadRequestException("已通过该试卷");
+        if(!jdbc.queryForList("SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND passed=1 LIMIT 1",user,cmd.paperId()).isEmpty()) throw new BadRequestException("已通过该试卷");
         long id=IdWorker.getId();
         jdbc.update("INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id) VALUES(?,?,?,?)",id,cmd.paperId(),user,cmd.lessonId());
         return view(id,user,false);

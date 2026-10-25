@@ -120,6 +120,20 @@ class ExamReliabilityTest {
    assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM exam_start_guard WHERE user_id=? AND paper_id=?",Integer.class,entry.getKey(),paper));
   }
  }
+ @Test void startSnapshotThatSeesAnActiveAttemptReturnsItsNewlyFinishedState()throws Exception {
+  jdbc.update("INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,answer) VALUES(?,?,1,'objective',2,10,'1,2')",paper,question);
+  long attempt=start();var snapshot=new CountDownLatch(1);var resume=new CountDownLatch(1);
+  org.mockito.Mockito.when(learning.isLessonValid(paper)).thenAnswer(call->{
+   if(Thread.currentThread().getName().equals("start-after-finish")){snapshot.countDown();if(!resume.await(5,TimeUnit.SECONDS))throw new IllegalStateException("test deadline");}return paper;
+  });
+  try(var pool=Executors.newSingleThreadExecutor(r->new Thread(r,"start-after-finish"))){
+   var next=pool.submit(()->execute(user,new Command("START",paper,null,paper,null,null,null,null,null,null)));
+   try{assertTrue(snapshot.await(3,TimeUnit.SECONDS));execute(user,new Command("SUBMIT",null,attempt,null,Map.of(question,"1,2"),null,null,null,null,null));}
+   finally{resume.countDown();}
+   var result=next.get(5,TimeUnit.SECONDS);assertEquals(attempt,((Number)result.get("id")).longValue());assertEquals("FINISHED",result.get("status"));
+  }
+  assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM exam_attempt WHERE user_id=? AND paper_id=?",Integer.class,user,paper));
+ }
  @Test void duplicateSubmissionsPreserveAnswersAndEmitOnePassedEvent() throws Exception{
   jdbc.update("INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,answer,analysis) VALUES(?,?,1,'objective',2,10,'1,2','private answer explanation')",paper,question);
   long attempt=start();var command=new Command("SUBMIT",null,attempt,null,Map.of(question,"2,1"),null,null,null,null,null);

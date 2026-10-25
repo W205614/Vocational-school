@@ -189,13 +189,25 @@ def validate_proof(path, context, root, primary_home, bundle_verify=verify_bundl
     build_path = owned_path(local / 'build-source.json', root)
     build = read_json(build_path); dependencies.append({'path': str(build_path), 'sha256': sha(build_path)})
     apps = {name: image for name, image in expected['imageDigests'].items() if name.startswith(('app-', 'web-'))}
-    if build.get('sourceCommit') != expected['sourceCommit'] or build.get('imageDigests') != apps:
-        raise RuntimeError('Test application source and image bindings differ from the accepted release')
     report_path = owned_path(proof.get('proofPath', ''), root)
     report, ref = reference({'path': str(report_path), 'sha256': proof.get('proofSha256')}, root)
     dependencies.append(ref)
     if report.get('status') != 'PASSED' or report.get('failed', 0) != 0 or report.get('failures', 0) != 0 or report.get('errors', 0) != 0:
         raise RuntimeError('The recreation or recovery exercise did not pass')
+    accepted_build = build.get('sourceCommit') == expected['sourceCommit'] and build.get('imageDigests') == apps
+    # Raw recovery may intentionally execute the backed-up source, rather than an
+    # upgraded application. Bind it to its actual raw execution provenance, never
+    # rewrite the old build as the final release. The disposal authorization itself
+    # still belongs to the final accepted source via proof.sourceCommit above.
+    raw = report.get('rawRestoreProof', {})
+    raw_apps = {name: image for name, image in raw.get('imageDigests', {}).items()
+                if name.startswith(('app-', 'web-'))}
+    raw_build = (proof.get('kind') == 'recovery-clone' and bool(raw.get('sourceCommit'))
+                 and set(raw_apps) == set(apps)
+                 and build.get('sourceCommit') == raw['sourceCommit']
+                 and build.get('imageDigests') == raw_apps)
+    if not accepted_build and not raw_build:
+        raise RuntimeError('Test application bindings match neither the accepted release nor the actual raw recovery')
     if proof.get('kind') == 'fresh-synthetic':
         if 'clone' not in state or state['clone'] is not None or proof.get('sourceBackupManifestSha', 'missing') is not None:
             raise RuntimeError('Fresh synthetic proof cannot inherit an unverified database clone')
@@ -221,7 +233,6 @@ def validate_proof(path, context, root, primary_home, bundle_verify=verify_bundl
         if saved.get('quiesced') is not True:
             raise RuntimeError('A verified complete source backup is required')
         dependencies.append({'path': str(backup_manifest), 'sha256': sha(backup_manifest)})
-        raw = report.get('rawRestoreProof', {})
         if raw.get('status') != 'PASSED' or any(raw.get(key) is not True for key in
                 ('tableCountsMatched', 'tableContentChecksumsMatched', 'redisValuesAndExpiryMatched', 'brokerFileContentsMatched')):
             raise RuntimeError('Raw data, Redis and broker recovery must actually pass')
