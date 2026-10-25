@@ -14,11 +14,11 @@ test('browser purchase, real local video, discussions, exam grading and targeted
    const canvas=document.createElement('canvas');canvas.width=160;canvas.height=90;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#2563eb';ctx.fillRect(0,0,160,90);
    const stream=canvas.captureStream(10),recorder=new MediaRecorder(stream,{mimeType:'video/webm'}),chunks:Blob[]=[];
    recorder.ondataavailable=e=>chunks.push(e.data);const frames=setInterval(()=>{ctx.fillStyle=`hsl(${Date.now()%360},70%,50%)`;ctx.fillRect(0,0,160,90);},100);
-   const done=new Promise<void>(resolve=>recorder.onstop=()=>resolve());recorder.start();await new Promise(resolve=>setTimeout(resolve,2100));recorder.stop();await done;clearInterval(frames);stream.getTracks().forEach(t=>t.stop());
+   const done=new Promise<void>(resolve=>recorder.onstop=()=>resolve());recorder.start();await new Promise(resolve=>setTimeout(resolve,6100));recorder.stop();await done;clearInterval(frames);stream.getTracks().forEach(t=>t.stop());
    return Array.from(new Uint8Array(await new Blob(chunks,{type:'video/webm'}).arrayBuffer()));
   });
   await admin.getByLabel('选择本地视频').setInputFiles({name:'browser-'+fixture.marker+'.webm',mimeType:'video/webm',buffer:Buffer.from(bytes)});
-  await admin.locator('article').filter({has:admin.getByRole('heading',{name:'上传视频',exact:true})}).getByRole('spinbutton').fill('2');
+  await admin.locator('article').filter({has:admin.getByRole('heading',{name:'上传视频',exact:true})}).getByRole('spinbutton').fill('6');
   await admin.getByRole('button',{name:'上传并登记',exact:true}).click();await expect(admin.getByText('视频已持久化',{exact:true})).toBeVisible();
   const media=await admin.evaluate(()=>JSON.parse(sessionStorage.getItem('school-operations')||'[]').find((x:any)=>x.label==='登记本地视频').operation.result.id);
   execFileSync(process.env.TJ_PYTHON||'python',[process.env.TJ_MEDIA_FIXTURE_SCRIPT||'../deploy/acceptance/attach_browser_media.py',String(media)],{stdio:'pipe'});
@@ -43,11 +43,41 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   await expect(admin.getByRole('columnheader',{name:'课程',exact:true})).toBeVisible();await expect(admin.getByRole('columnheader',{name:'学员',exact:true})).toBeVisible();
   const purchasedRow=admin.locator('.el-table__row').filter({hasText:String(purchased.id)});await expect(purchasedRow).toContainText(fixture.name);await expect(purchasedRow).toContainText(learner.name);
   await page.goto('/courses/'+fixture.course);await expect(page.getByRole('heading',{name:fixture.name,exact:true})).toBeVisible();await page.getByRole('button',{name:/Browser video/}).click();
-  const video=page.locator('video');await expect(video).toBeVisible();await video.evaluate(async(element:HTMLVideoElement)=>{element.muted=true;await element.play();});
+  const video=page.locator('video');await expect(video).toBeVisible();
   const retainedPlayUrl=await video.getAttribute('src');expect(retainedPlayUrl).toBeTruthy();
   const initialBytes=await page.request.get(retainedPlayUrl!,{headers:{Range:'bytes=0-31'}});expect([200,206]).toContain(initialBytes.status());
+  const timedRecord=async()=>{const data=await api(page,'/services/learning/learning-records/course/'+fixture.course);return data.records?.find((r:any)=>String(r.sectionId)===String(fixture.video));};
+  await video.evaluate(async(element:HTMLVideoElement)=>{if(element.readyState<1)await new Promise<void>(resolve=>element.addEventListener('loadedmetadata',()=>resolve(),{once:true}));element.muted=true;element.currentTime=element.duration-.1;});
+  await expect.poll(async()=>Number((await timedRecord())?.creditedMillis||0)).toBe(0);expect((await timedRecord())?.finished).toBe(false);
+  // A real second page creates a new server session. The old player must report 409,
+  // preserve its history and offer an explicit takeover rather than counting twice.
+  const otherPage=await page.context().newPage();
+  try{
+   await login(otherPage,'student','/courses/'+fixture.course);await otherPage.getByRole('button',{name:/Browser video/}).click();await expect(otherPage.locator('video')).toBeVisible();
+   await page.bringToFront();
+   const rejected=page.waitForResponse(response=>response.url().endsWith('/playback-sessions/heartbeat')&&response.status()===409);
+   await video.evaluate(async(element:HTMLVideoElement)=>{element.currentTime=0;await element.play().catch(error=>{if(error.name!=='AbortError')throw error;});});await rejected;
+   await expect(page.getByText(/计时已在其他页面开始/)).toBeVisible();await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.paused)).toBe(true);
+  }finally{await otherPage.close();}
+  await page.bringToFront();
+  await video.evaluate((element:HTMLVideoElement)=>{element.currentTime=0;element.playbackRate=.5;});
+  await page.getByRole('button',{name:'在当前页面重新开始计时',exact:true}).click();
+  await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.currentTime),{timeout:10000}).toBeGreaterThan(.6);
+  const paused=page.waitForResponse(response=>response.url().endsWith('/playback-sessions/heartbeat')&&response.request().postDataJSON()?.state==='PAUSED'&&response.ok());
+  await video.evaluate((element:HTMLVideoElement)=>element.pause());await paused;
+  const pausedTime=Number((await timedRecord()).creditedMillis);expect(pausedTime).toBeGreaterThan(0);expect(pausedTime).toBeLessThan(5400);
+  await page.waitForTimeout(1100);expect(Number((await timedRecord()).creditedMillis)).toBe(pausedTime);
+  await video.evaluate(async(element:HTMLVideoElement)=>{element.playbackRate=2;await element.play();});
   await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.ended),{timeout:15000}).toBe(true);
-  await expect.poll(async()=>(await api(page,'/services/learning/learning-records/course/'+fixture.course)).records?.find((r:any)=>r.sectionId===fixture.video)?.finished,{timeout:15000}).toBe(true);
+  await expect.poll(async()=>(await timedRecord())?.finished,{timeout:15000}).toBe(true);
+  const completed=await timedRecord();expect(completed.completionSource).toBe('TIMED');expect(Number(completed.creditedMillis)).toBeGreaterThanOrEqual(5400);
+  await expect(page.getByLabel('学习计时')).toContainText('已完成');
+  const earned=async()=>JSON.stringify(await api(page,'/services/learning/points/today'));
+  const pointsBeforeReplay=await earned(),lessonBeforeReplay=await api(page,'/services/learning/learning-records/course/'+fixture.course);
+  await video.evaluate(async(element:HTMLVideoElement)=>{element.currentTime=0;element.playbackRate=2;await element.play();});
+  await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.ended),{timeout:15000}).toBe(true);
+  expect((await api(page,'/services/learning/learning-records/course/'+fixture.course)).learnedSections).toBe(lessonBeforeReplay.learnedSections);
+  expect(await earned()).toBe(pointsBeforeReplay);
   const note='Video note '+fixture.marker;await page.getByPlaceholder('记录私人笔记').fill(note);await page.getByRole('button',{name:'保存笔记',exact:true}).click();await expect(page.getByText('笔记已保存',{exact:true})).toBeVisible();
   await page.getByPlaceholder('问题标题').fill('Question '+fixture.marker);await page.getByPlaceholder('描述问题').fill('A persisted browser discussion');await page.getByRole('button',{name:'在当前小节提问'}).click();await page.getByRole('button',{name:'Question '+fixture.marker,exact:true}).click();await page.getByPlaceholder('写下回答').fill('A persisted answer');await page.getByRole('button',{name:'提交回答',exact:true}).click();await expect(page.getByText('A persisted answer',{exact:true})).toBeVisible();await page.getByRole('button',{name:/^赞 /}).click();await expect(page.getByRole('button',{name:/^已赞 /})).toHaveAttribute('aria-pressed','true');
   await page.reload();await page.getByRole('button',{name:/Browser video/}).click();await page.getByRole('button',{name:'查看讨论',exact:true}).click();await page.getByRole('button',{name:'Question '+fixture.marker,exact:true}).click();await expect(page.getByRole('button',{name:/^已赞 /})).toHaveAttribute('aria-pressed','true');await page.getByRole('button',{name:/^已赞 /}).click();await expect(page.getByRole('button',{name:/^赞 /})).toHaveAttribute('aria-pressed','false');

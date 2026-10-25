@@ -26,7 +26,7 @@ class GatewayAdmissionTest {
         scheduler=Schedulers.newBoundedElastic(4,16,"admission-test");
         filter=new AccountAuthFilter(mock(AuthUtil.class),new AuthProperties(),new AccessPolicy(),scheduler,new com.tianji.gateway.config.TrustedProxyIdentity(new org.springframework.mock.env.MockEnvironment()));
         capacity=(Semaphore)ReflectionTestUtils.getField(filter,"requests");
-        capacity.acquire(198);
+        capacity.acquire(158);
     }
     @AfterEach void close(){scheduler.dispose();}
     @Test void publicRoutesStripForgedIdentityAndProtocolHeaders(){
@@ -77,6 +77,17 @@ class GatewayAdmissionTest {
         while(capacity.availablePermits()!=2 && System.nanoTime()<deadline)Thread.sleep(10);
         filter.filter(exchange(),e->reactor.core.publisher.Mono.empty()).block(Duration.ofSeconds(2));
         assertEquals(2,capacity.availablePermits());
+    }
+    @Test void cancelledAndFailedMediaRequestsReleaseTheirOwnPoolWithoutUsingApiPermits()throws Exception {
+        var request=MockServerHttpRequest.get("/api/v2/services/media/local-content/video.webm")
+                .remoteAddress(new java.net.InetSocketAddress("198.51.100.7",4567)).build();
+        var body=Sinks.<Void>one();var entered=new CountDownLatch(1);
+        var stream=filter.filter(MockServerWebExchange.from(request),e->{entered.countDown();return body.asMono();}).toFuture();
+        assertTrue(entered.await(1,TimeUnit.SECONDS));assertEquals(2,capacity.availablePermits());
+        assertTrue(stream.cancel(true));
+        assertThrows(IllegalStateException.class,()->filter.filter(MockServerWebExchange.from(request),e->reactor.core.publisher.Mono.error(new IllegalStateException("output failed"))).block(Duration.ofSeconds(2)));
+        for(int i=0;i<8;i++)filter.filter(MockServerWebExchange.from(request),e->reactor.core.publisher.Mono.empty()).block(Duration.ofSeconds(2));
+        filter.filter(exchange(),e->reactor.core.publisher.Mono.empty()).block(Duration.ofSeconds(2));assertEquals(2,capacity.availablePermits());
     }
     @Test void authorizationExecutorCanAcceptTheAgreedTwoHundredUserBurst()throws Exception {
         var configuration=new com.tianji.gateway.config.AuthorizationExecutorConfiguration();

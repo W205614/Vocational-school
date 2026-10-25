@@ -34,7 +34,7 @@ public class ExamPassedListener {
             if(lesson.isEmpty()) return;
             java.time.LocalDateTime completedAt=milestones==null && event.occurredAt()==null?java.time.LocalDateTime.now(clock):businessTime(event,raw);
             jdbc.update("INSERT IGNORE INTO learning_record(id,lesson_id,section_id,user_id,moment,finished) VALUES(?,?,?,?,0,0)",IdWorker.getId(),event.lessonId(),event.sectionId(),event.userId());
-            if(jdbc.update("UPDATE learning_record SET finished=1,finish_time=? WHERE lesson_id=? AND section_id=? AND user_id=? AND finished=0",completedAt,event.lessonId(),event.sectionId(),event.userId())==1) {
+            if(jdbc.update("UPDATE learning_record SET finished=1,finish_time=?,completion_source='EXAM' WHERE lesson_id=? AND section_id=? AND user_id=? AND finished=0",completedAt,event.lessonId(),event.sectionId(),event.userId())==1) {
                 jdbc.update("UPDATE learning_lesson SET status=IF(learned_sections+1>=?,2,1),learned_sections=learned_sections+1,latest_section_id=IF(latest_learn_time IS NULL OR latest_learn_time<=?,?,latest_section_id),latest_learn_time=GREATEST(COALESCE(latest_learn_time,?),?) WHERE id=?",event.sectionCount(),completedAt,event.sectionId(),completedAt,completedAt,event.lessonId());
                 if(milestones!=null)milestones.completed(event.userId(),event.courseId(),event.sectionId(),true,completedAt);
             }

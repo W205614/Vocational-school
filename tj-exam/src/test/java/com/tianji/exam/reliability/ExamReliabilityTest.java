@@ -86,6 +86,15 @@ class ExamReliabilityTest {
   Set<Long> attempts=ConcurrentHashMap.newKeySet();try(var pool=Executors.newFixedThreadPool(20)){List<Future<?>> work=new ArrayList<>();for(int i=0;i<100;i++)work.add(pool.submit(()->attempts.add(start())));for(var task:work)task.get(30,TimeUnit.SECONDS);}
   assertEquals(1,attempts.size());assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM exam_attempt WHERE paper_id=?",Integer.class,paper));
  }
+ @Test void oneStudentGuardDoesNotBlockAnotherStudentOnSamePaper()throws Exception {
+  jdbc.update("INSERT INTO exam_start_guard(user_id,paper_id) VALUES(?,?)",user,paper);
+  var locked=new CountDownLatch(1);var release=new CountDownLatch(1);
+  try(var pool=Executors.newFixedThreadPool(2)){
+   var holder=pool.submit(()->tx.executeWithoutResult(s->{jdbc.queryForObject("SELECT user_id FROM exam_start_guard WHERE user_id=? AND paper_id=? FOR UPDATE",Long.class,user,paper);locked.countDown();try{if(!release.await(5,TimeUnit.SECONDS))throw new IllegalStateException("test deadline");}catch(InterruptedException e){Thread.currentThread().interrupt();throw new IllegalStateException(e);}}));
+   try{assertTrue(locked.await(2,TimeUnit.SECONDS));var other=pool.submit(()->execute(user+99,new Command("START",paper,null,paper,null,null,null,null,null,null)));assertNotNull(other.get(2,TimeUnit.SECONDS).get("id"));}
+   finally{release.countDown();holder.get(3,TimeUnit.SECONDS);}
+  }
+ }
  @Test void duplicateSubmissionsPreserveAnswersAndEmitOnePassedEvent() throws Exception{
   jdbc.update("INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,answer,analysis) VALUES(?,?,1,'objective',2,10,'1,2','private answer explanation')",paper,question);
   long attempt=start();var command=new Command("SUBMIT",null,attempt,null,Map.of(question,"2,1"),null,null,null,null,null);

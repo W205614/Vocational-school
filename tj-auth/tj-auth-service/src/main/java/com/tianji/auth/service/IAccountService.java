@@ -14,6 +14,8 @@ public interface IAccountService{
 
     String login(LoginFormDTO loginFormDTO, boolean isStaff);
 
+    void completeInitialPassword(com.tianji.api.dto.user.InitialPasswordDTO form);
+
     void logout();
 
     String refreshToken(String refreshToken);

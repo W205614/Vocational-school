@@ -72,4 +72,8 @@ public class LearningRecord implements Serializable {
     private LocalDateTime updateTime;
 
 
+    private Long watchedMillis;
+    private Long creditedMillis;
+    /** LEGACY, TIMED or EXAM; history is never retrospectively downgraded. */
+    private String completionSource;
 }

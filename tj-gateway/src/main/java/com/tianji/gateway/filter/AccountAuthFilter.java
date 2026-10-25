@@ -18,26 +18,19 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
     private final com.tianji.gateway.config.AccessPolicy policy;
     private final reactor.core.scheduler.Scheduler authorizationScheduler;
     private final com.tianji.gateway.config.TrustedProxyIdentity proxyIdentity;
-    private final java.util.concurrent.Semaphore requests=new java.util.concurrent.Semaphore(200,true);
+    private final com.tianji.gateway.config.GatewayTrafficLimits limits;
+    private final java.util.concurrent.Semaphore requests;
     private final AntPathMatcher matcher=new AntPathMatcher();
-    public AccountAuthFilter(AuthUtil auth,AuthProperties properties,com.tianji.gateway.config.AccessPolicy policy,@org.springframework.beans.factory.annotation.Qualifier("authorizationScheduler") reactor.core.scheduler.Scheduler authorizationScheduler,com.tianji.gateway.config.TrustedProxyIdentity proxyIdentity) {this.auth=auth;this.properties=properties;this.policy=policy;this.authorizationScheduler=authorizationScheduler;this.proxyIdentity=proxyIdentity;}
+    public AccountAuthFilter(AuthUtil auth,AuthProperties properties,com.tianji.gateway.config.AccessPolicy policy,reactor.core.scheduler.Scheduler authorizationScheduler,com.tianji.gateway.config.TrustedProxyIdentity proxyIdentity) {this(auth,properties,policy,authorizationScheduler,proxyIdentity,new com.tianji.gateway.config.GatewayTrafficLimits());}
+    @org.springframework.beans.factory.annotation.Autowired
+    public AccountAuthFilter(AuthUtil auth,AuthProperties properties,com.tianji.gateway.config.AccessPolicy policy,@org.springframework.beans.factory.annotation.Qualifier("authorizationScheduler") reactor.core.scheduler.Scheduler authorizationScheduler,com.tianji.gateway.config.TrustedProxyIdentity proxyIdentity,com.tianji.gateway.config.GatewayTrafficLimits limits) {this.auth=auth;this.properties=properties;this.policy=policy;this.authorizationScheduler=authorizationScheduler;this.proxyIdentity=proxyIdentity;this.limits=limits;this.requests=limits.apiCapacity();}
     @Override public Mono<Void> filter(ServerWebExchange exchange,GatewayFilterChain chain) {
         // Permission-cache Redis calls are blocking; never run them on Netty's event loop.
         // Acquire off Netty. using also disposes an acquisition completed after cancellation,
         // and eager cleanup releases capacity before downstream observes completion.
-        return Mono.using(this::admit,permit->Mono.defer(()->authorize(exchange,chain)),Admission::close,true)
+        boolean media=exchange.getRequest().getPath().value().matches("/api/v2/(services|admin)/media/local-content/[^/]+");
+        return Mono.using(()->limits.acquire(media,proxyIdentity.identify(exchange.getRequest()).address()),permit->Mono.defer(()->authorize(exchange,chain)),com.tianji.gateway.config.GatewayTrafficLimits.Lease::close,true)
                 .subscribeOn(authorizationScheduler);
-    }
-    private Admission admit() {
-        try {
-            if(!requests.tryAcquire(1500,java.util.concurrent.TimeUnit.MILLISECONDS))
-                throw new TooManyRequestsException("服务繁忙，请稍后重试");
-            return new Admission();
-        }catch(InterruptedException error){Thread.currentThread().interrupt();throw new TooManyRequestsException("请求等待已取消");}
-    }
-    private final class Admission {
-        private final java.util.concurrent.atomic.AtomicBoolean closed=new java.util.concurrent.atomic.AtomicBoolean();
-        private void close(){if(closed.compareAndSet(false,true))requests.release();}
     }
     private Mono<Void> authorize(ServerWebExchange exchange,GatewayFilterChain chain) {
         var client=proxyIdentity.identify(exchange.getRequest());
@@ -54,9 +47,9 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
         String ant=sanitized.getRequest().getMethod().name()+":"+path;
         if(path.startsWith("/api/v2/") && !policy.declares(sanitized.getRequest().getMethod().name(),path))throw new ForbiddenException("该接口没有授权声明");
         if(ant.startsWith("GET:/api/v2/services/media/local-content/"))return chain.filter(sanitized);
-        if(ant.equals("GET:/api/v2/public/courses") || ant.equals("GET:/api/v2/public/categories") || ant.matches("GET:/api/v2/public/courses/[0-9]{1,20}"))return chain.filter(sanitized);
-        if(ant.matches("GET:/api/v2/services/media/course-covers/[0-9a-f]{64}\\.(png|jpg)"))return chain.filter(sanitized);
-        if(ant.equals("GET:/api/v2/environment") || ant.equals("POST:/api/v2/auth/accounts/login") || ant.equals("POST:/api/v2/auth/accounts/admin/login") || ant.equals("GET:/api/v2/auth/accounts/refresh"))
+        if(ant.equals("GET:/api/v2/public/courses") || ant.equals("GET:/api/v2/public/categories") || ant.matches("GET:/api/v2/public/courses/[0-9]{1,20}")){limits.publicQuery(client.address());return chain.filter(sanitized);}
+        if(ant.matches("GET:/api/v2/services/media/course-covers/[0-9a-f]{64}\\.(png|jpg)")){limits.publicQuery(client.address());return chain.filter(sanitized);}
+        if(ant.equals("GET:/api/v2/environment") || ant.equals("POST:/api/v2/auth/accounts/password/initial") || ant.equals("POST:/api/v2/auth/accounts/login") || ant.equals("POST:/api/v2/auth/accounts/admin/login") || ant.equals("GET:/api/v2/auth/accounts/refresh"))
             return chain.filter(sanitized);
         if(properties.getExcludePath().stream().anyMatch(p->matcher.match(p,ant))) return chain.filter(sanitized);
         String token=sanitized.getRequest().getHeaders().getFirst(AUTHORIZATION_HEADER);
@@ -71,6 +64,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
                 "GET:/api/v2/services/course/course/*","GET:/api/v2/services/course/courses/*/catalogs","GET:/api/v2/services/course/categorys/list",
                 "GET:/api/v2/services/learning/lessons/**","POST:/api/v2/services/learning/lessons/plans",
                 "GET:/api/v2/services/learning/learning-records/course/*","POST:/api/v2/services/learning/learning-records",
+                "POST:/api/v2/services/learning/learning-records/playback-sessions","POST:/api/v2/services/learning/learning-records/playback-sessions/heartbeat","POST:/api/v2/services/learning/learning-records/playback-sessions/end",
                 "GET:/api/v2/services/learning/questions/**","POST:/api/v2/services/learning/questions","PUT:/api/v2/services/learning/questions/*","DELETE:/api/v2/services/learning/questions/*",
                 "GET:/api/v2/services/learning/replies/page","POST:/api/v2/services/learning/replies","GET:/api/v2/services/learning/points/today","GET:/api/v2/services/learning/boards","GET:/api/v2/services/learning/board/seasons/list",
                 "GET:/api/v2/services/trade/carts","POST:/api/v2/services/trade/carts","DELETE:/api/v2/services/trade/carts/**",
@@ -93,6 +87,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
         if(result.success()) {
             LoginUserDTO user=result.getData();
             if(user.getUserId()==null || user.getRoleId()==null) throw new UnauthorizedException("身份信息不完整");
+            limits.authenticated(user.getUserId());
             sanitized=sanitized.mutate().request(b->b.headers(h->{
                 String internal=System.getenv("TJ_INTERNAL_TOKEN");if(internal==null || internal.length()<32)throw new IllegalStateException("Gateway service identity is not configured");
                 h.set("X-Internal-Token",internal);h.set("user-session",user.getSessionId());h.set(USER_HEADER,user.getUserId().toString());h.set("user-role",user.getRoleId().toString());

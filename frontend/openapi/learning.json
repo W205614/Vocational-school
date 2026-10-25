@@ -2821,6 +2821,147 @@
         },
         "summary": "分页查询持久失败记录"
       }
+    },
+    "/api/v2/services/learning/learning-records/playback-sessions": {
+      "post": {
+        "operationId": "startPlaybackSession",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaybackTimingCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlaybackTimingView"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "requestId",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/learning-records/playback-sessions/heartbeat": {
+      "post": {
+        "operationId": "recordPlaybackHeartbeat",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaybackTimingHeartbeat"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlaybackTimingView"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "requestId",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/learning/learning-records/playback-sessions/end": {
+      "post": {
+        "operationId": "endPlaybackSession",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaybackTimingHeartbeat"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlaybackTimingView"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "requestId",
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3692,6 +3833,21 @@
             "type": "boolean",
             "default": false,
             "description": "是否完成学习，默认false"
+          },
+          "watchedMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "creditedMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "requiredMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "completionSource": {
+            "type": "string"
           }
         }
       },
@@ -3955,6 +4111,111 @@
             }
           }
         }
+      },
+      "PlaybackTimingCreate": {
+        "type": "object",
+        "properties": {
+          "lessonId": {
+            "type": "string"
+          },
+          "sectionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lessonId",
+          "sectionId"
+        ]
+      },
+      "PlaybackTimingHeartbeat": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "positionMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rate": {
+            "type": "number",
+            "minimum": 0.5,
+            "maximum": 2
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PLAYING",
+              "PAUSED",
+              "BUFFERING",
+              "HIDDEN",
+              "SEEKING",
+              "ENDED"
+            ]
+          }
+        },
+        "required": [
+          "sessionId",
+          "sequence",
+          "positionMillis",
+          "rate",
+          "state"
+        ]
+      },
+      "PlaybackTimingView": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "watchedMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "creditedMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "requiredMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "durationMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastSequence": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "finished": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "completionSource": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "sessionId",
+          "watchedMillis",
+          "creditedMillis",
+          "requiredMillis",
+          "durationMillis",
+          "lastSequence",
+          "finished",
+          "active",
+          "completionSource"
+        ]
       }
     }
   }

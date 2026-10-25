@@ -965,6 +965,13 @@ export interface components {
             errorCode?: string;
             errorMessage?: string;
         };
+        TemporaryCredentialDTO: {
+            userId: string;
+            username: string;
+            readonly temporaryPassword: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -1026,7 +1033,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: string;
+                        data: components["schemas"]["TemporaryCredentialDTO"];
                     };
                 };
             };
@@ -1152,7 +1159,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: null;
+                        data: components["schemas"]["TemporaryCredentialDTO"];
                     };
                 };
             };

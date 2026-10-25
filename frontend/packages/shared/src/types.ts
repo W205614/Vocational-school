@@ -1,4 +1,5 @@
 export type Id=string;
+export interface TemporaryCredential{userId:Id;username:string;temporaryPassword:string;expiresAt:string}
 export interface Envelope<T>{code:number;msg:string;data:T;requestId:string}
 export interface Operation<T=unknown>{operationId:Id;status:'PENDING'|'SUCCEEDED'|'FAILED';result:T|null;errorCode:string|null;errorMessage:string|null}
 export interface Page<T>{list:T[];total:number;pages?:number;pageNo?:number}

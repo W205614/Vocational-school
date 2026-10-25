@@ -50,9 +50,9 @@ public class ExamWorkflowService implements OperationHandler {
     private Map<String,Object> start(long user,Command cmd) {
         if(cmd.lessonId()==null || cmd.paperId()==null) throw new BadRequestException("试卷和课表不能为空");
         requireEntitlement(user,paper(cmd.paperId()),cmd.lessonId());
-        // The paper row serializes start/retake against all existing attempts.
-        var papers=jdbc.queryForList("SELECT id FROM exam_paper WHERE id=? FOR UPDATE",cmd.paperId());
-        if(papers.isEmpty()) throw new BadRequestException("试卷不存在");
+        // Serialize only this student's start/retake; other students do not share a paper lock.
+        jdbc.update("INSERT IGNORE INTO exam_start_guard(user_id,paper_id) VALUES(?,?)",user,cmd.paperId());
+        jdbc.queryForObject("SELECT user_id FROM exam_start_guard WHERE user_id=? AND paper_id=? FOR UPDATE",Long.class,user,cmd.paperId());
         // A locking read sees commits made while waiting for the paper lock, even
         // when this transaction already has a REPEATABLE READ snapshot.
         var active=jdbc.queryForList("SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND status IN('IN_PROGRESS','WAIT_GRADING') FOR UPDATE",user,cmd.paperId());
@@ -70,7 +70,7 @@ public class ExamWorkflowService implements OperationHandler {
         if(((Number)attempt.get("user_id")).longValue()!=user) throw new BadRequestException("考试记录不存在");
         if(!"IN_PROGRESS".equals(attempt.get("status"))) return view(cmd.attemptId(),user,false);
         if(cmd.version()!=null) {
-            var drafts=jdbc.queryForList("SELECT version FROM exam_draft WHERE attempt_id=?",cmd.attemptId());
+            var drafts=jdbc.queryForList("SELECT version FROM exam_draft WHERE attempt_id=? FOR UPDATE",cmd.attemptId());
             long version=drafts.isEmpty()?0:((Number)drafts.getFirst().get("version")).longValue();
             if(cmd.version()!=version) throw new ConflictException("草稿已在其他页面更新，请载入最新草稿后提交");
         }

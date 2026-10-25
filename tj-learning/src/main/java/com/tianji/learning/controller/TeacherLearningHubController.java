@@ -24,7 +24,15 @@ public class TeacherLearningHubController {
         summary.put("unacceptedQuestions",jdbc.queryForObject("SELECT COUNT(*) FROM interaction_question WHERE course_id=? AND hidden=0 AND accepted_reply_id IS NULL",Long.class,courseId));
         String condition="course_id=?"+(userId==null?"":" AND user_id=?");List<Object> args=new ArrayList<>(List.of(courseId));if(userId!=null)args.add(userId);
         long total=jdbc.queryForObject("SELECT COUNT(*) FROM learning_lesson WHERE "+condition,Long.class,args.toArray());args.add(page.getPageSize());args.add(page.from());
-        var rows=jdbc.queryForList("SELECT CAST(user_id AS CHAR) AS userId,learned_sections AS learnedSections,status,latest_learn_time AS latestLearnTime,expire_time AS expireTime FROM learning_lesson WHERE "+condition+" ORDER BY latest_learn_time DESC,id DESC LIMIT ? OFFSET ?",args.toArray());
+        var rows=jdbc.queryForList("SELECT id AS lessonId,CAST(user_id AS CHAR) AS userId,learned_sections AS learnedSections,status,latest_learn_time AS latestLearnTime,expire_time AS expireTime FROM learning_lesson WHERE "+condition+" ORDER BY latest_learn_time DESC,id DESC LIMIT ? OFFSET ?",args.toArray());
+        var times=new HashMap<Long,Map<String,Object>>();
+        if(!rows.isEmpty()) {
+            var ids=rows.stream().map(row->((Number)row.get("lessonId")).longValue()).toList();
+            String placeholders=String.join(",",Collections.nCopies(ids.size(),"?"));
+            for(var time:jdbc.queryForList("SELECT lesson_id,SUM(watched_millis) AS watchedMillis,SUM(credited_millis) AS creditedMillis FROM learning_record WHERE lesson_id IN ("+placeholders+") GROUP BY lesson_id",ids.toArray()))
+                times.put(((Number)time.get("lesson_id")).longValue(),time);
+        }
+        for(var row:rows){var time=times.get(((Number)row.remove("lessonId")).longValue());row.put("watchedMillis",time==null?0:time.get("watchedMillis"));row.put("creditedMillis",time==null?0:time.get("creditedMillis"));}
         var names=new HashMap<Long,String>();if(!rows.isEmpty()){var details=users.queryUserByIds(rows.stream().map(r->Long.parseLong(r.get("userId").toString())).toList());if(details!=null)details.forEach(u->names.put(u.getId(),u.getName()));}
         for(var row:rows){long student=Long.parseLong(row.get("userId").toString());row.put("name",names.getOrDefault(student,"同学 "+student));row.put("sections",sections);row.put("progressPercent",sections==0?0:Math.min(100,Math.round(((Number)row.get("learnedSections")).doubleValue()*100/sections)));}
         return Map.of("courseId",Long.toString(courseId),"courseName",course==null?"课程":Objects.requireNonNullElse(course.getName(),"课程"),"summary",summary,"list",rows,"total",total);

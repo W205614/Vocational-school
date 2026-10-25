@@ -16,6 +16,11 @@ public class UserClientFallback implements FallbackFactory<UserClient> {
     public UserClient create(Throwable cause) {
         log.error("查询用户服务出现异常", cause);
         return new UserClient() {
+            @Override public void completeInitialPassword(com.tianji.api.dto.user.InitialPasswordDTO form){
+                if(cause instanceof com.tianji.common.exceptions.BadRequestException error)throw error;
+                if(cause instanceof feign.FeignException error && error.status()>=400 && error.status()<500)throw new com.tianji.common.exceptions.BadRequestException("临时密码无效或已过期，请联系管理员重置");
+                throw new com.tianji.common.exceptions.ServiceUnavailableException("身份服务暂不可用");
+            }
             @Override public LoginUserDTO sessionIdentity(long id){if(cause instanceof feign.FeignException e && (e.status()==401 || e.status()==403))throw new com.tianji.common.exceptions.UnauthorizedException("账号身份已失效");if(cause instanceof com.tianji.common.exceptions.UnauthorizedException e)throw e;throw new com.tianji.common.exceptions.ServiceUnavailableException("身份服务暂不可用");}
 
             @Override

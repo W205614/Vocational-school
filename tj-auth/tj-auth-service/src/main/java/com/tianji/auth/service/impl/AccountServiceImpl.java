@@ -50,6 +50,7 @@ public class AccountServiceImpl implements IAccountService{
         try{detail=userClient.queryUserDetail(loginDTO,isStaff);if(detail==null)throw new BadRequestException("登录信息有误");}
         catch(BadRequestException error){protection.failed(account,ip);throw new BadRequestException("登录信息有误");}
         catch(feign.FeignException error){if(error.status()==400 || error.status()==401){protection.failed(account,ip);throw new BadRequestException("登录信息有误");}throw new com.tianji.common.exceptions.ServiceUnavailableException("身份服务暂不可用");}
+        if(Boolean.TRUE.equals(detail.getMustChangePassword())){protection.success(account);throw new com.tianji.common.exceptions.InitialPasswordRequiredException();}
         LoginUserDTO current=userClient.sessionIdentity(detail.getUserId());if(isStaff==Long.valueOf(2).equals(current.getRoleId()))throw new BadRequestException("登录入口与账号身份不匹配");detail.setAuthVersion(current.getAuthVersion());detail.setRoleId(current.getRoleId());protection.success(account);
         if (detail == null) {
             throw new BadRequestException("登录信息有误");
@@ -65,6 +66,15 @@ public class AccountServiceImpl implements IAccountService{
         loginRecordService.loginSuccess(loginDTO.getCellPhone(), detail.getUserId());
         // 4.返回结果
         return token;
+    }
+
+    @Override public void completeInitialPassword(com.tianji.api.dto.user.InitialPasswordDTO form){
+        String account=form.username().trim().toLowerCase(java.util.Locale.ROOT),ip=java.util.Objects.toString(WebUtils.getHeader("X-Client-IP"),"unknown");
+        protection.before(account,ip);
+        try{userClient.completeInitialPassword(form);}
+        catch(BadRequestException error){protection.failed(account,ip);throw error;}
+        catch(feign.FeignException error){if(error.status()>=400 && error.status()<500){protection.failed(account,ip);throw new BadRequestException("临时密码无效或已过期，请联系管理员重置");}throw new com.tianji.common.exceptions.ServiceUnavailableException("身份服务暂不可用");}
+        protection.success(account);
     }
 
     private String generateToken(LoginUserDTO detail) {

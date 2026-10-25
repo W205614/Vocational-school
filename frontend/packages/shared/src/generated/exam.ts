@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v2/exam-attempts/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 分页查询本人考试记录，权益失效后仍可读取历史 */
+        get: operations["myExamHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/exam/questions/{id}": {
         parameters: {
             query?: never;
@@ -903,6 +920,42 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    myExamHistory: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                courseId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 仅本人记录元数据，不包含答案、标准答案或其他学生信息 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 分页或课程参数无效 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 尚未登录 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     queryQuestionDetailById: {
         parameters: {
             query?: never;

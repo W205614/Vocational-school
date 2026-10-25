@@ -438,6 +438,9 @@ POST:/api/v2/admin/exam-papers
 POST:/api/v2/admin/exam/question-biz/list
 POST:/api/v2/admin/exam/questions
 POST:/api/v2/admin/learning/learning-records
+POST:/api/v2/admin/learning/learning-records/playback-sessions
+POST:/api/v2/admin/learning/learning-records/playback-sessions/end
+POST:/api/v2/admin/learning/learning-records/playback-sessions/heartbeat
 POST:/api/v2/admin/learning/lessons/plans
 POST:/api/v2/admin/learning/questions
 POST:/api/v2/admin/learning/replies
@@ -486,6 +489,7 @@ POST:/api/v2/admin/user/users
 POST:/api/v2/auth/accounts/admin/login
 POST:/api/v2/auth/accounts/login
 POST:/api/v2/auth/accounts/logout
+POST:/api/v2/auth/accounts/password/initial
 POST:/api/v2/coupon-exchanges
 POST:/api/v2/coupons/{id}/claims
 POST:/api/v2/exam-attempts/{id}/submit
@@ -507,6 +511,9 @@ POST:/api/v2/services/course/courses/upShelf
 POST:/api/v2/services/exam/question-biz/list
 POST:/api/v2/services/exam/questions
 POST:/api/v2/services/learning/learning-records
+POST:/api/v2/services/learning/learning-records/playback-sessions
+POST:/api/v2/services/learning/learning-records/playback-sessions/end
+POST:/api/v2/services/learning/learning-records/playback-sessions/heartbeat
 POST:/api/v2/services/learning/lessons/plans
 POST:/api/v2/services/learning/questions
 POST:/api/v2/services/learning/replies

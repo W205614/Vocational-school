@@ -50,6 +50,9 @@ public class User implements Serializable {
      */
     private String password;
 
+    private Boolean mustChangePassword;
+    private LocalDateTime temporaryPasswordExpiresAt;
+
     /**
      * 账户状态：0-禁用，1-正常
      */

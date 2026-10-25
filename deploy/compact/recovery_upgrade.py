@@ -164,19 +164,29 @@ def compare_broker_archives(expected, restored):
 
 def compare_redis_snapshots(expected, restored, now_ms, tolerance_ms=1000):
     def indexed(snapshot):
-        if snapshot.get('format') != 1 or not isinstance(snapshot.get('records'), list):
+        if snapshot.get('format') not in (1, 2) or not isinstance(snapshot.get('records'), list):
             raise RuntimeError('Unsupported Redis recovery snapshot')
         result = {}
         for row in snapshot['records']:
             key = (row['db'], row['key'])
+            if snapshot['format'] == 2 and (row.get('type') not in {'string','hash','set','list','zset'} or not re.fullmatch(r'[0-9a-f]{64}', str(row.get('semanticSha256', '')))):
+                raise RuntimeError('Invalid Redis semantic fingerprint')
             if key in result:
                 raise RuntimeError('Duplicate Redis recovery record')
             result[key] = row
         return result
     source, actual = indexed(expected), indexed(restored)
+    semantic = expected['format'] == restored['format'] == 2
+    reserialized = 0
     for key, row in actual.items():
         old = source.get(key)
-        if old is None or row['value'] != old['value']:
+        if old is None:
+            raise RuntimeError('Restored Redis values differ from the recovery bundle')
+        if semantic:
+            if row['type'] != old['type'] or row['semanticSha256'] != old['semanticSha256']:
+                raise RuntimeError('Restored Redis types or logical contents differ from the recovery bundle')
+            reserialized += int(row['value'] != old['value'])
+        elif row['value'] != old['value']:
             raise RuntimeError('Restored Redis values differ from the recovery bundle')
         expiry, restored_expiry = old['expiresAt'], row['expiresAt']
         if (expiry is None and restored_expiry is not None) or (expiry is not None and (restored_expiry is None or abs(expiry - restored_expiry) > tolerance_ms)):
@@ -186,4 +196,5 @@ def compare_redis_snapshots(expected, restored, now_ms, tolerance_ms=1000):
         if key not in actual and (expiry is None or expiry > now_ms + tolerance_ms):
             raise RuntimeError('A live Redis recovery record is missing')
     return {'redisRecords': len(source), 'redisRestoredRecords': len(actual), 'redisValuesAndExpiryMatched': True,
-            'redisExpiredRecordsSkipped': len(source) - len(actual)}
+            'redisExpiredRecordsSkipped': len(source) - len(actual), 'redisComparison': 'semantic' if semantic else 'dump-bytes',
+            'redisReserializedRecords': reserialized}

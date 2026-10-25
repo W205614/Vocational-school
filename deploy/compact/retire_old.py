@@ -1,8 +1,10 @@
 """Retire explicitly named legacy/test containers without deleting recovery data."""
 import argparse, datetime, json, subprocess, sys
+import yaml
 from pathlib import Path
 from setup import LOCAL, PROJECT, ROOT, COMPOSE
 from evidence import validate,manifest
+from retirement_policy import healthy_runtime
 
 sys.path.insert(0,str(ROOT/'deploy/final'))
 from final_backup import verify
@@ -33,8 +35,8 @@ def main():
  browser=json.loads((LOCAL/'browser-result.json').read_text(encoding='utf8'))
  if browser.get('status')!='PASSED' or browser.get('failed')!=0:raise RuntimeError('Browser regression must pass before retirement')
  active=inspect(output(['docker','ps','-aq','--filter','label=com.docker.compose.project='+PROJECT]).splitlines())
- if len(active)!=11 or any(c['State'].get('Health',{}).get('Status')!='healthy' for c in active):
-  raise RuntimeError('All 11 final containers must be healthy')
+ effective=yaml.safe_load(Path(COMPOSE[COMPOSE.index('-f')+1]).read_text(encoding='utf8'))
+ healthy_runtime(active,effective,PROJECT)
  ids=[]
  for project in sorted(projects):ids.extend(output(['docker','ps','-aq','--filter','label=com.docker.compose.project='+project]).splitlines())
  containers=inspect(ids)
@@ -63,7 +65,7 @@ def main():
  available=set(output(['docker','volume','ls','-q']).splitlines())
  if not volumes.issubset(available):raise RuntimeError('A retained volume is missing')
  active=inspect(output(['docker','ps','-aq','--filter','label=com.docker.compose.project='+PROJECT]).splitlines())
- if len(active)!=11 or any(c['State'].get('Health',{}).get('Status')!='healthy' for c in active):raise RuntimeError('Final deployment became unhealthy')
+ healthy_runtime(active,effective,PROJECT)
  result={'status':'PASSED','removedContainers':len(containers),'retainedVolumes':len(volumes),
          'finalContainers':len(active),'finalHealthy':len(active),'volumeDeletion':False,'imageDeletion':False,
          'projects':sorted(projects),'at':at,'backupsVerified':2}

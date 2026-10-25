@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -132,8 +131,12 @@ public class AliPayService implements IPayService {
             log.error("支付宝查询退款单状态失败，订单id：{}", orderNo, e);
             throw new CommonException("支付宝查询退款单状态失败", e);
         }
-        // 2.解析
-        if (ResponseChecker.success(response)) {
+        return parseRefundQuery(response);
+    }
+
+    /** Kept separate from network IO so channel responses can be verified offline. */
+    static RefundResponse parseRefundQuery(AlipayTradeFastpayRefundQueryResponse response) {
+        if (!ResponseChecker.success(response)) {
             // 2.1.响应结果异常
             return RefundResponse.builder().success(false).code(response.getCode()).msg(response.getMsg()).build();
         }
@@ -145,18 +148,17 @@ public class AliPayService implements IPayService {
         return RefundResponse.builder()
                 .success(true)
                 .status(refundSuccess ? 2 : 1)
-                .channel(refundSuccess ? details.get(0).fundChannel : null)
-                .amount(refundSuccess ? transferStringAmount2Int(details.get(0).getAmount()) : 0)
+                .channel(refundSuccess && !CollUtils.isEmpty(details) ? details.get(0).fundChannel : null)
+                .amount(refundSuccess && StringUtils.isNotBlank(response.getRefundAmount()) ? transferStringAmount2Int(response.getRefundAmount()) : null)
                 .build();
     }
 
 
     public static int transferStringAmount2Int(String totalAmount) {
-        return new BigDecimal(totalAmount).multiply(BigDecimal.valueOf(100)).intValue();
+        return new BigDecimal(totalAmount).movePointRight(2).intValueExact();
     }
     public static String transferAmount2String(Integer amount) {
-        BigDecimal b = new BigDecimal(amount);
-        BigDecimal result = b.divide(new BigDecimal(100), new MathContext(2, RoundingMode.HALF_UP));
-        return result.toString();
+        if(amount==null || amount<0)throw new IllegalArgumentException("金额必须是非负整数分");
+        return BigDecimal.valueOf(amount).movePointLeft(2).setScale(2,RoundingMode.UNNECESSARY).toPlainString();
     }
 }

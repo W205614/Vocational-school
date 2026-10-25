@@ -84,12 +84,6 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
                   "properties": {
                     "code": {
                       "type": "integer"
@@ -101,10 +95,15 @@
                       "type": "string"
                     },
                     "data": {
-                      "type": "string",
-                      "pattern": "^-?[0-9]+$"
+                      "$ref": "#/components/schemas/TemporaryCredentialDTO"
                     }
-                  }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "requestId",
+                    "data"
+                  ]
                 }
               }
             }
@@ -317,12 +316,6 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
                   "properties": {
                     "code": {
                       "type": "integer"
@@ -334,9 +327,15 @@
                       "type": "string"
                     },
                     "data": {
-                      "type": "null"
+                      "$ref": "#/components/schemas/TemporaryCredentialDTO"
                     }
-                  }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "requestId",
+                    "data"
+                  ]
                 }
               }
             }
@@ -2037,6 +2036,31 @@
             "type": "string"
           }
         }
+      },
+      "TemporaryCredentialDTO": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "temporaryPassword": {
+            "type": "string",
+            "readOnly": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "userId",
+          "username",
+          "temporaryPassword",
+          "expiresAt"
+        ]
       }
     }
   }

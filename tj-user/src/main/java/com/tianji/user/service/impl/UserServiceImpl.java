@@ -47,6 +47,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
+    private TemporaryCredentialService temporaryCredentials;
+    @Autowired
     private ICodeService codeService;
     @Autowired
     private AuthClient authClient;
@@ -74,19 +76,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (isStaff ^ user.getType() != UserType.STUDENT) {
             throw new BadRequestException(isStaff ? "非管理端用户" : "非学生端用户");
         }
+        if(Boolean.TRUE.equals(user.getMustChangePassword()))temporaryCredentials.requireActive(user);
         // 6.封装返回
         LoginUserDTO userDTO = new LoginUserDTO();
         userDTO.setUserId(user.getId());
         userDTO.setRoleId(handleRoleId(user));
+        userDTO.setMustChangePassword(Boolean.TRUE.equals(user.getMustChangePassword()));
         return userDTO;
     }
 
     @Override
-    public void resetPassword(Long userId) {
-        User user = new User();
-        user.setId(userId);
-        user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
-        AssertUtils.isTrue(updateById(user), USER_ID_NOT_EXISTS);
+    public com.tianji.api.dto.user.TemporaryCredentialDTO resetPassword(Long userId) {
+        return temporaryCredentials.reset(userId);
     }
 
     @Override
@@ -169,11 +170,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Override
     @Transactional
-    public Long saveUser(UserDTO userDTO) {
+    public com.tianji.api.dto.user.TemporaryCredentialDTO saveUser(UserDTO userDTO) {
         UserType type = UserType.of(userDTO.getType());
+        if(type!=UserType.STAFF && type!=UserType.TEACHER)throw new BadRequestException("此入口仅创建教师或员工");
         // 1.保存用户基本信息
         User user = new User();
-        user.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
+        String temporaryPassword=temporaryCredentials.initialize(user);
         user.setCellPhone(userDTO.getCellPhone());
         user.setUsername(userDTO.getCellPhone());
         user.setType(type);
@@ -190,7 +192,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             }
         }
         detailService.save(detail);
-        return user.getId();
+        return temporaryCredentials.receipt(user,temporaryPassword);
     }
 
     @Override
@@ -228,6 +230,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             if (user == null) {
                 throw new UnauthorizedException(USER_ID_NOT_EXISTS);
             }
+            // Temporary credentials can only be changed through the dedicated no-session setup.
+            if(Boolean.TRUE.equals(user.getMustChangePassword()))throw new com.tianji.common.exceptions.InitialPasswordRequiredException();
             // 1.3.校验密码
             if (!passwordEncoder.matches(oldPw, user.getPassword())) {
                 // 密码不一致

@@ -75,7 +75,7 @@ class LearningAdoptionAsyncTest {
         db.execute("CREATE TABLE IF NOT EXISTS schema_migration(version VARCHAR(128) PRIMARY KEY,checksum CHAR(64) NOT NULL,applied_at DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3))");
         Path migrations=root.resolve("deploy/acceptance/migrations");
         try(var paths=Files.list(migrations.resolve("common"))){for(Path file:paths.filter(p->p.getFileName().toString().matches("V.*\\.sql")).sorted().toList())migrate(db,file);}
-        for(String file:List.of("tj_learning/V008__learning_motivation.sql","tj_learning/V009__legacy_season_boundary.sql","tj_user/V002__account_security.sql"))migrate(db,migrations.resolve(file));
+        for(String file:List.of("tj_learning/V008__learning_motivation.sql","tj_learning/V009__legacy_season_boundary.sql","tj_user/V002__account_security.sql","tj_user/V003__temporary_credentials.sql"))migrate(db,migrations.resolve(file));
     }
     private static String ifAbsent(String sql){return sql.startsWith("CREATE TABLE IF NOT EXISTS")?sql:sql.replaceFirst("CREATE TABLE","CREATE TABLE IF NOT EXISTS");}
     private static void migrate(JdbcTemplate db,Path file)throws Exception {

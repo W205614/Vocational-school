@@ -19,7 +19,7 @@ import com.tianji.user.domain.vo.UserDetailVO;
 public interface IUserService extends IService<User> {
     LoginUserDTO queryUserDetail(LoginFormDTO loginDTO, boolean isStaff);
 
-    void resetPassword(Long userId);
+    com.tianji.api.dto.user.TemporaryCredentialDTO resetPassword(Long userId);
 
     UserDetailVO myInfo();
 
@@ -27,7 +27,7 @@ public interface IUserService extends IService<User> {
 
     void updatePasswordByPhone(String cellPhone, String code, String password);
 
-    Long saveUser(UserDTO userDTO);
+    com.tianji.api.dto.user.TemporaryCredentialDTO saveUser(UserDTO userDTO);
 
     void updateUser(UserDTO userDTO);
 

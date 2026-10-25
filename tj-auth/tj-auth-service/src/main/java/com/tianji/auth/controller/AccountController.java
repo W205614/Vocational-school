@@ -36,6 +36,12 @@ public class AccountController {
         return accountService.login(loginFormDTO, true);
     }
 
+    @PostMapping("/password/initial")
+    @Operation(summary = "使用临时密码设置初始密码，不创建会话")
+    public void initialPassword(@jakarta.validation.Valid @RequestBody com.tianji.api.dto.user.InitialPasswordDTO form){
+        com.tianji.common.utils.InternalAuth.requireService();accountService.completeInitialPassword(form);
+    }
+
     @Operation(summary = "退出登录")
     @PostMapping(value = "/logout")
     public void logout() {

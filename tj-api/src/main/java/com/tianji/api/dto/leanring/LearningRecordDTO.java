@@ -12,4 +12,8 @@ public class LearningRecordDTO {
     private Integer moment;
     @Schema(description = "是否完成学习，默认false")
     private Boolean finished;
+    private Long watchedMillis;
+    private Long creditedMillis;
+    /** LEGACY, TIMED or EXAM; history is never retrospectively downgraded. */
+    private String completionSource;
 }

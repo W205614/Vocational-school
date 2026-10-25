@@ -11,6 +11,7 @@ public class LoginUserDTO {
     private Boolean rememberMe;
     private String sessionId;
     private Long authVersion;
+    private Boolean mustChangePassword;
     @com.fasterxml.jackson.annotation.JsonIgnore
     private String refreshJti;
 }

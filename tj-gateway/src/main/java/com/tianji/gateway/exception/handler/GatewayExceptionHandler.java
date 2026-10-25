@@ -71,6 +71,7 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler, Ordere
         }
         // 5.设置响应结果为 JSON
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        if(response.getStatusCode()!=null && response.getStatusCode().value()==429)response.getHeaders().set("Retry-After","30");
         // 6.封装响应结果并写出
         R<Object> r = R.error(code, message);
         List<String> requestIds = response.getHeaders().get(Constant.REQUEST_ID_HEADER);

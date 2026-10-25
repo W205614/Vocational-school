@@ -49,14 +49,14 @@ public class CommonExceptionAdvice {
         String msg = e.getBindingResult().getAllErrors()
                 .stream().map(ObjectError::getDefaultMessage)
                 .collect(Collectors.joining("|"));
+        // Binding exception text/stack traces include rejected field values, including passwords.
         log.error("请求参数校验异常 -> {}", msg);
-        log.debug("", e);
         return processResponse(400, 400, msg);
     }
     @ExceptionHandler(BindException.class)
     public Object handleBindException(BindException e) {
-        log.error("请求参数绑定异常 ->BindException， {}", e.getMessage());
-        log.debug("", e);
+        log.error("请求参数绑定异常，字段：{}", e.getBindingResult().getFieldErrors().stream()
+                .map(org.springframework.validation.FieldError::getField).distinct().collect(Collectors.joining(",")));
         return processResponse(400, 400, "请求参数格式错误");
     }
 

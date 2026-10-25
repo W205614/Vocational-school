@@ -1,10 +1,14 @@
 package com.tianji.media.controller;
 import com.tianji.media.storage.local.LocalObjectStore;import com.tianji.common.utils.UserContext;import com.tianji.common.autoconfigure.reliability.OperationStore;
 import lombok.RequiredArgsConstructor;import org.springframework.web.bind.annotation.*;import org.springframework.http.*;import org.springframework.core.io.Resource;import org.springframework.web.multipart.MultipartFile;import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;import java.util.*;
-@RestController @RequiredArgsConstructor @ConditionalOnProperty(name="tj.local-storage.enabled",havingValue="true")
+@RestController @ConditionalOnProperty(name="tj.local-storage.enabled",havingValue="true")
 public class LocalMediaController {
  private final LocalObjectStore store;private final OperationStore operations;private final com.tianji.media.storage.local.LocalCourseCoverStore covers;
  private final com.tianji.api.client.learning.LearningClient learning;
+ private final com.tianji.media.storage.local.OwnerStreamLimiter streams;
+ public LocalMediaController(LocalObjectStore store,OperationStore operations,com.tianji.media.storage.local.LocalCourseCoverStore covers,com.tianji.api.client.learning.LearningClient learning){this(store,operations,covers,learning,new com.tianji.media.storage.local.OwnerStreamLimiter(2));}
+ @org.springframework.beans.factory.annotation.Autowired
+ public LocalMediaController(LocalObjectStore store,OperationStore operations,com.tianji.media.storage.local.LocalCourseCoverStore covers,com.tianji.api.client.learning.LearningClient learning,com.tianji.media.storage.local.OwnerStreamLimiter streams){this.store=store;this.operations=operations;this.covers=covers;this.learning=learning;this.streams=streams;}
  @PostMapping("/api/v2/admin/course-cover-upload") public Map<String,String> uploadCover(@RequestParam MultipartFile file)throws java.io.IOException{
   UserContext.requireAdmin();try(var input=file.getInputStream()){return Map.of("path",covers.upload(input,file.getSize()));}
  }
@@ -32,6 +36,7 @@ public class LocalMediaController {
    }finally {
     UserContext.removeUser();if(user!=null)UserContext.setUser(user);if(role!=null)UserContext.setRole(role);if(session!=null)UserContext.setSession(session);UserContext.setCallDepth(depth);
    }
+   resource=streams.wrap(resource,owner);
   }
   MediaType type=key.endsWith(".webm")?MediaType.parseMediaType("video/webm"):key.endsWith(".mp4")?MediaType.parseMediaType("video/mp4"):MediaType.APPLICATION_OCTET_STREAM;
   return ResponseEntity.ok().contentType(type).cacheControl(CacheControl.noStore()).body(resource);

@@ -66,4 +66,18 @@ class ExamDraftReliabilityTest {
   assertEquals("1,2",jdbc.queryForObject("SELECT response FROM exam_answer WHERE attempt_id=?",String.class,attempt));
   assertEquals(10,jdbc.queryForObject("SELECT score FROM exam_attempt WHERE id=?",Integer.class,attempt));
  }
+ @Test void draftSavedAfterSubmissionSnapshotMustInvalidateOldVersion()throws Exception {
+  save(0,"1");var snapshot=new CountDownLatch(1);var continueSubmit=new CountDownLatch(1);
+  org.mockito.Mockito.when(learning.isLessonValid(paper)).thenAnswer(call->{
+   if(Thread.currentThread().getName().equals("stale-submit")){snapshot.countDown();if(!continueSubmit.await(5,TimeUnit.SECONDS))throw new IllegalStateException("test deadline");}return paper;
+  });
+  try(var pool=Executors.newSingleThreadExecutor(r->new Thread(r,"stale-submit"))){
+   var submitting=pool.submit(()->submit(1));
+   try{assertTrue(snapshot.await(3,TimeUnit.SECONDS));save(1,"1,2");}
+   finally{continueSubmit.countDown();}
+   var failure=assertThrows(ExecutionException.class,()->submitting.get(5,TimeUnit.SECONDS));assertInstanceOf(ConflictException.class,failure.getCause());
+  }
+  assertEquals("IN_PROGRESS",jdbc.queryForObject("SELECT status FROM exam_attempt WHERE id=?",String.class,attempt));
+  assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM exam_answer WHERE attempt_id=?",Integer.class,attempt));
+ }
 }

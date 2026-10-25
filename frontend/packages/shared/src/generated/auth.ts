@@ -461,6 +461,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/auth/accounts/password/initial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completeInitialPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -721,6 +737,13 @@ export interface components {
             result?: unknown;
             errorCode?: string;
             errorMessage?: string;
+        };
+        InitialPasswordDTO: {
+            username: string;
+            oldPassword: string;
+            newPassword: string;
+            /** @enum {string} */
+            audience: "student" | "admin";
         };
     };
     responses: never;
@@ -1453,6 +1476,20 @@ export interface operations {
                     };
                 };
             };
+            /** @description Temporary password must be changed before a session is issued */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
         };
     };
     adminLoginByPw: {
@@ -1479,6 +1516,20 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: string;
+                    };
+                };
+            };
+            /** @description Temporary password must be changed before a session is issued */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
                     };
                 };
             };
@@ -1882,6 +1933,35 @@ export interface operations {
                             pageNo: number;
                             pageSize: number;
                         };
+                    };
+                };
+            };
+        };
+    };
+    completeInitialPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InitialPasswordDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
                     };
                 };
             };

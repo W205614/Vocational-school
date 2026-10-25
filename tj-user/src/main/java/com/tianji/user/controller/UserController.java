@@ -36,7 +36,7 @@ public class UserController {
 
     @Operation(summary = "新增用户，一般是员工或教师")
     @PostMapping
-    public Long saveUser(@Valid @RequestBody UserDTO userDTO){
+    public com.tianji.api.dto.user.TemporaryCredentialDTO saveUser(@Valid @RequestBody UserDTO userDTO){
         com.tianji.common.utils.UserContext.requireAdmin();
         userDTO.setId(null);
         return userService.saveUser(userDTO);
@@ -58,10 +58,11 @@ public class UserController {
 
     @PutMapping("/{id}/password/default")
     @Operation(summary = "重置密码")
-    public void resetPassword(
+    public com.tianji.api.dto.user.TemporaryCredentialDTO resetPassword(
             @Parameter(description = "要重置的用户的id", example = "1") @PathVariable("id") Long userId) {
         com.tianji.common.utils.UserContext.requireAdmin();
-        userService.resetPassword(userId);
+        if(java.util.Objects.equals(userId,com.tianji.common.utils.UserContext.requireUser()))throw new BadRequestException("当前账号请使用个人设置中的修改密码，避免丢失临时凭据");
+        return userService.resetPassword(userId);
     }
 
     @PutMapping("/{id}/status/{status}")

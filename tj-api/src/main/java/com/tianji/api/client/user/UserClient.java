@@ -12,6 +12,8 @@ import java.util.List;
 
 @FeignClient(value = "user-service", fallbackFactory = UserClientFallback.class)
 public interface UserClient {
+    @PostMapping("/internal/v2/users/password/initial")
+    void completeInitialPassword(@RequestBody com.tianji.api.dto.user.InitialPasswordDTO form);
     @GetMapping("/internal/v2/users/{id}/session-identity")
     LoginUserDTO sessionIdentity(@PathVariable("id") long id);
 

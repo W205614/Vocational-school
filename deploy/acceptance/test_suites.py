@@ -1,6 +1,15 @@
 """Named regression suites shared by local runners and CI."""
 
 REGRESSION_TESTS = [
+    'CredentialValidationLoggingTest',
+    'InitialPasswordAuthTest',
+    'TemporaryCredentialDatabaseTest',
+    'PlaybackTimingRuleTest',
+    'PlaybackTimingDatabaseTest',
+    'GatewayTrafficLimitsTest',
+    'GatewayQuotaRedisTest',
+    'OwnerStreamLimiterTest',
+    'AliPayAdapterTest',
     'PageQueryTest',
     'ReliabilityDatabaseTest',
     'ResponseConverterTest',

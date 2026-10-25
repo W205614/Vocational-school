@@ -75,10 +75,7 @@ public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper,
             } else recordId=((Number)rows.getFirst().get("id")).longValue();
             LearningRecord record=new LearningRecord().setId(recordId).setLessonId(lesson.getId()).setSectionId(form.getSectionId()).setMoment(moment);
             taskHandler.addLearningRecordTask(record);
-            if((long)moment*2>=duration && jdbc.update("UPDATE learning_record SET moment=GREATEST(COALESCE(moment,0),?),finished=1,finish_time=CURRENT_TIMESTAMP(3) WHERE id=? AND finished=0",moment,recordId)==1) {
-                jdbc.update("UPDATE learning_lesson SET status=CASE WHEN learned_sections+1>=? THEN 2 ELSE 1 END,learned_sections=learned_sections+1,latest_section_id=?,latest_learn_time=CURRENT_TIMESTAMP(3) WHERE id=?",course.getSectionNum(),form.getSectionId(),lesson.getId());
-                milestones.completed(user,lesson.getCourseId(),form.getSectionId(),false,LocalDateTime.now(clock));
-            }
+            // Position is resume history only. Completion belongs to server playback accounting.
         });
     }
 }
