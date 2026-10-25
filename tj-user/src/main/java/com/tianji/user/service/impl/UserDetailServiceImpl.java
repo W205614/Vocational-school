@@ -35,16 +35,18 @@ public class UserDetailServiceImpl extends ServiceImpl<UserDetailMapper, UserDet
     }
 
     @Override
-    public Page<UserDetail> queryUserDetailByPage(UserPageQuery query, UserType type) {
+    public Page<UserDetail> queryUserDetailByPage(UserPageQuery query, UserType... types) {
         // 1.分页条件
         Page<UserDetail> p = query.toMpPageDefaultSortByCreateTimeDesc();
         // 2.搜索条件
         Integer status = query.getStatus();
         String name = query.getName();
         String phone = query.getPhone();
+        var values=types==null?List.<Integer>of():java.util.Arrays.stream(types)
+                .filter(java.util.Objects::nonNull).map(UserType::getValue).toList();
         QueryWrapper<UserDetail> wrapper = new QueryWrapper<>();
         wrapper
-                .eq(type != null , "u.type", type)
+                .in(!values.isEmpty(), "u.type", values)
                 .eq(status != null, "u.status", status)
                 .eq(StringUtils.isNotBlank(phone),"u.cell_phone", phone)
                 .like(StringUtils.isNotBlank(name), "ud.name", name);

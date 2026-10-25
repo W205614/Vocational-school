@@ -22,5 +22,5 @@ public interface IUserDetailService extends IService<UserDetail> {
 
     List<UserDetail> queryByIds(List<Long> ids);
 
-    Page<UserDetail> queryUserDetailByPage(UserPageQuery pageQuery, UserType type);
+    Page<UserDetail> queryUserDetailByPage(UserPageQuery pageQuery, UserType... types);
 }

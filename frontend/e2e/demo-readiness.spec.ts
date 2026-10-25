@@ -31,6 +31,8 @@ test('demo admin creates and resets a teacher with one-time credentials and mand
  const receipt=page.getByRole('dialog',{name:'临时登录凭据（仅显示本次）',exact:true});
  await expect(receipt).toBeVisible();const temporary=(await receipt.locator('code').innerText()).trim();
  expect(temporary.length).toBeGreaterThanOrEqual(16);await expect(receipt).toContainText(phone);
+ await receipt.getByRole('button',{name:'复制临时凭据',exact:true}).click();
+ await expect(receipt).toContainText('临时凭据已复制');
  await receipt.getByRole('button',{name:'已保存并关闭',exact:true}).click();
  const context=await browser.newContext({baseURL:process.env.TJ_ADMIN_URL||'http://127.0.0.1:23501'});
  try{
@@ -64,7 +66,7 @@ test('demo student reset uses initial password flow and restores the isolated fi
   await page.goto('/login');const next='DemoStudent!'+Date.now();
   await initialPassword(page,receipt.username,receipt.temporaryPassword,next,false);
   await expect(page.getByRole('heading',{name:'我的学习',exact:true})).toBeVisible();
-  await api(page,'PUT','/services/user/users',{oldPassword:next,password:accounts.student.password});fixtureRestored=true;
+  await api(page,'PUT','/services/user/users',{type:2,oldPassword:next,password:accounts.student.password});fixtureRestored=true;
  }finally{
   try{if(fixtureReset&&!fixtureRestored){
    const recovery=await api(admin,'PUT','/admin/user/users/'+accounts.student.id+'/password/default');

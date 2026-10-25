@@ -30,7 +30,7 @@ public class StaffController {
         this.staffService = staffService;
     }
 
-    @Operation(summary = "分页查询员工信息")
+    @Operation(summary = "分页查询教师与员工信息")
     @GetMapping("page")
     public PageDTO<StaffVO> queryStaffPage(UserPageQuery pageQuery){
         return staffService.queryStaffPage(pageQuery);
