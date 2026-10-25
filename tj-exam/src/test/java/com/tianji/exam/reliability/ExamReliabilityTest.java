@@ -131,6 +131,7 @@ class ExamReliabilityTest {
    try{assertTrue(snapshot.await(3,TimeUnit.SECONDS));execute(user,new Command("SUBMIT",null,attempt,null,Map.of(question,"1,2"),null,null,null,null,null));}
    finally{resume.countDown();}
    var result=next.get(5,TimeUnit.SECONDS);assertEquals(attempt,((Number)result.get("id")).longValue());assertEquals("FINISHED",result.get("status"));
+   var answers=(List<Map<String,Object>>)result.get("answers");assertEquals(1,answers.size());assertEquals("1,2",answers.getFirst().get("response"));assertEquals(10,((Number)answers.getFirst().get("score")).intValue());
   }
   assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM exam_attempt WHERE user_id=? AND paper_id=?",Integer.class,user,paper));
  }

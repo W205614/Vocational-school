@@ -162,7 +162,9 @@ public class ExamWorkflowService implements OperationHandler {
         List<Map<String,Object>> questions=jdbc.queryForList("SELECT question_id,position,name,type,score,options"+reference+" FROM exam_paper_question WHERE paper_id=? ORDER BY position",attempt.get("paper_id"));
         for(var q:questions) {if(q.get("options")!=null) q.put("options",json.readValue(q.get("options").toString(),Object.class));}
         attempt.put("questions",questions);
-        if(!"IN_PROGRESS".equals(attempt.get("status"))) attempt.put("answers",jdbc.queryForList("SELECT question_id,response,score,feedback,version FROM exam_answer WHERE attempt_id=?",id));
+        // The attempt is a current read; its mutable answers must use the same view,
+        // even when START established an older snapshot before waiting for submission.
+        if(!"IN_PROGRESS".equals(attempt.get("status"))) attempt.put("answers",jdbc.queryForList("SELECT question_id,response,score,feedback,version FROM exam_answer WHERE attempt_id=? ORDER BY question_id FOR UPDATE",id));
         return attempt;
     }
     public static int scoreObjective(String response,String correct,int maxScore) {
