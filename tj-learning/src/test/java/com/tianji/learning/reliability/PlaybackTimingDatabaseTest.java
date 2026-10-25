@@ -117,6 +117,29 @@ class PlaybackTimingDatabaseTest {
         }
         assertEquals(5000,jdbc.queryForObject("SELECT credited_millis FROM learning_record WHERE lesson_id=?",Long.class,lesson));
     }
+    @Test void simultaneousStartsTakeTheExistingSlotWithoutSharedLockUpgradeDeadlocks()throws Exception{
+        start(); // Exercise the duplicate-key path, rather than only a fresh insert.
+        var ready=new CountDownLatch(4);var release=new CountDownLatch(1);
+        var sessions=new ArrayList<PlaybackTimingService.View>();
+        try(var pool=Executors.newFixedThreadPool(4)){
+            var work=new ArrayList<Future<PlaybackTimingService.View>>();
+            for(int index=0;index<4;index++)work.add(pool.submit(()->{
+                UserContext.setUser(user);UserContext.setRole(2L);ready.countDown();
+                try{assertTrue(release.await(5,TimeUnit.SECONDS));return start();}
+                finally{UserContext.removeUser();}
+            }));
+            assertTrue(ready.await(5,TimeUnit.SECONDS));release.countDown();
+            for(var task:work)sessions.add(task.get(15,TimeUnit.SECONDS));
+        }
+        assertEquals(4,sessions.stream().map(PlaybackTimingService.View::sessionId).distinct().count());
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM learning_playback_session WHERE user_id=?",Integer.class,user));
+        String active=jdbc.queryForObject("SELECT session_id FROM learning_playback_session WHERE user_id=?",String.class,user);
+        for(var candidate:sessions){
+            var command=beat(candidate.sessionId(),1,0,1,"PLAYING");
+            if(candidate.sessionId().equals(active))assertTrue(service.heartbeat(command,false).active());
+            else assertThrows(ConflictException.class,()->service.heartbeat(command,false));
+        }
+    }
     private static final class MutableClock extends Clock {
         private Instant value;MutableClock(Instant value){this.value=value;}void advance(long millis){value=value.plusMillis(millis);}
         @Override public ZoneId getZone(){return ZoneId.of("Asia/Shanghai");}

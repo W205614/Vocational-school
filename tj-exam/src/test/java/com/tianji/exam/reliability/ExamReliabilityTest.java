@@ -83,7 +83,12 @@ class ExamReliabilityTest {
  }
  @Test void concurrentStartsReturnOneActiveAttempt() throws Exception{
   jdbc.update("INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,answer) VALUES(?,?,1,'objective',2,10,'1,2')",paper,question);
-  Set<Long> attempts=ConcurrentHashMap.newKeySet();try(var pool=Executors.newFixedThreadPool(20)){List<Future<?>> work=new ArrayList<>();for(int i=0;i<100;i++)work.add(pool.submit(()->attempts.add(start())));for(var task:work)task.get(30,TimeUnit.SECONDS);}
+  // Existing guard + synchronized entrants exercises duplicate-key locking directly.
+  // Every call must succeed once: no deadlock catches or transaction retries here.
+  jdbc.update("INSERT INTO exam_start_guard(user_id,paper_id) VALUES(?,?)",user,paper);
+  var ready=new CyclicBarrier(6);var completed=new AtomicInteger();Set<Long> attempts=ConcurrentHashMap.newKeySet();
+  try(var pool=Executors.newFixedThreadPool(6)){List<Future<?>> work=new ArrayList<>();for(int i=0;i<6;i++)work.add(pool.submit(()->{ready.await(5,TimeUnit.SECONDS);attempts.add(start());completed.incrementAndGet();return null;}));for(var task:work)task.get(30,TimeUnit.SECONDS);}
+  assertEquals(6,completed.get());assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM exam_start_guard WHERE user_id=? AND paper_id=?",Integer.class,user,paper));
   assertEquals(1,attempts.size());assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM exam_attempt WHERE paper_id=?",Integer.class,paper));
  }
  @Test void oneStudentGuardDoesNotBlockAnotherStudentOnSamePaper()throws Exception {
@@ -93,6 +98,26 @@ class ExamReliabilityTest {
    var holder=pool.submit(()->tx.executeWithoutResult(s->{jdbc.queryForObject("SELECT user_id FROM exam_start_guard WHERE user_id=? AND paper_id=? FOR UPDATE",Long.class,user,paper);locked.countDown();try{if(!release.await(5,TimeUnit.SECONDS))throw new IllegalStateException("test deadline");}catch(InterruptedException e){Thread.currentThread().interrupt();throw new IllegalStateException(e);}}));
    try{assertTrue(locked.await(2,TimeUnit.SECONDS));var other=pool.submit(()->execute(user+99,new Command("START",paper,null,paper,null,null,null,null,null,null)));assertNotNull(other.get(2,TimeUnit.SECONDS).get("id"));}
    finally{release.countDown();holder.get(3,TimeUnit.SECONDS);}
+  }
+ }
+ @Test void differentStudentsCanStartTheSamePaperTogetherWithoutRetries()throws Exception {
+  jdbc.update("INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,answer) VALUES(?,?,1,'objective',2,10,'1,2')",paper,question);
+  var ready=new CyclicBarrier(4);Map<Long,Long> owned= new ConcurrentHashMap<>();
+  try(var pool=Executors.newFixedThreadPool(4)){
+   List<Future<?>> work=new ArrayList<>();
+   for(int i=0;i<4;i++){long actor=user+100+i;work.add(pool.submit(()->{
+    ready.await(5,TimeUnit.SECONDS);
+    var view=execute(actor,new Command("START",paper,null,paper,null,null,null,null,null,null));
+    assertEquals(actor,((Number)view.get("user_id")).longValue());
+    owned.put(actor,((Number)view.get("id")).longValue());return null;
+   }));}
+   for(var task:work)task.get(30,TimeUnit.SECONDS);
+  }
+  assertEquals(4,owned.size());assertEquals(4,new HashSet<>(owned.values()).size());
+  assertEquals(4,jdbc.queryForObject("SELECT COUNT(*) FROM exam_attempt WHERE paper_id=?",Integer.class,paper));
+  for(var entry:owned.entrySet()){
+   assertEquals(entry.getKey(),jdbc.queryForObject("SELECT user_id FROM exam_attempt WHERE id=? AND paper_id=?",Long.class,entry.getValue(),paper));
+   assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM exam_start_guard WHERE user_id=? AND paper_id=?",Integer.class,entry.getKey(),paper));
   }
  }
  @Test void duplicateSubmissionsPreserveAnswersAndEmitOnePassedEvent() throws Exception{

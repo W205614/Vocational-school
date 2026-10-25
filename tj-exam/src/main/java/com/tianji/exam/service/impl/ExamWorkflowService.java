@@ -50,10 +50,12 @@ public class ExamWorkflowService implements OperationHandler {
     private Map<String,Object> start(long user,Command cmd) {
         if(cmd.lessonId()==null || cmd.paperId()==null) throw new BadRequestException("试卷和课表不能为空");
         requireEntitlement(user,paper(cmd.paperId()),cmd.lessonId());
-        // Serialize only this student's start/retake; other students do not share a paper lock.
-        jdbc.update("INSERT IGNORE INTO exam_start_guard(user_id,paper_id) VALUES(?,?)",user,cmd.paperId());
+        // Take the guard's exclusive lock directly. INSERT IGNORE first obtains shared
+        // duplicate-key locks, whose later upgrade to FOR UPDATE can deadlock.
+        // Only this student's start/retake is serialized; other students remain independent.
+        jdbc.update("INSERT INTO exam_start_guard(user_id,paper_id) VALUES(?,?) ON DUPLICATE KEY UPDATE user_id=user_id",user,cmd.paperId());
         jdbc.queryForObject("SELECT user_id FROM exam_start_guard WHERE user_id=? AND paper_id=? FOR UPDATE",Long.class,user,cmd.paperId());
-        // A locking read sees commits made while waiting for the paper lock, even
+        // A locking read sees commits made while waiting for the student guard, even
         // when this transaction already has a REPEATABLE READ snapshot.
         var active=jdbc.queryForList("SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND status IN('IN_PROGRESS','WAIT_GRADING') FOR UPDATE",user,cmd.paperId());
         if(!active.isEmpty()) return view(((Number)active.getFirst().get("id")).longValue(),user,false);

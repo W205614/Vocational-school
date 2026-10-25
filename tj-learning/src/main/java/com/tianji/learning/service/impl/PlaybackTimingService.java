@@ -55,7 +55,9 @@ public class PlaybackTimingService {
         String id=UUID.randomUUID().toString();
         return tx.execute(status->{
             // Every timing write locks the one-user slot, then entitlement, lesson, record.
-            jdbc.update("INSERT IGNORE INTO learning_playback_session(user_id,session_id,lesson_id,course_id,section_id,duration_millis,section_count,last_seen_at) VALUES(?,?,?,?,?,?,?,?)",
+            // Acquire X directly on an existing slot. INSERT IGNORE would leave an S
+            // lock that concurrent starters could deadlock while upgrading below.
+            jdbc.update("INSERT INTO learning_playback_session(user_id,session_id,lesson_id,course_id,section_id,duration_millis,section_count,last_seen_at) VALUES(?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE user_id=user_id",
                     user,id,form.lessonId(),course,form.sectionId(),duration,metadata.getSectionNum(),now());
             jdbc.queryForMap("SELECT user_id FROM learning_playback_session WHERE user_id=? FOR UPDATE",user);
             requireLesson(user,course,form.lessonId());
