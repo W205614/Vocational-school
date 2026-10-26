@@ -29,11 +29,12 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.promotion.service.IExchangeCodeService;
 import com.tianji.promotion.service.IUserCouponService;
 import io.prometheus.client.Collector;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +51,6 @@ import java.util.stream.Collectors;
  * @since 2026-02-11
  */
 @Service
-@RequiredArgsConstructor
 public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> implements ICouponService {
 
     private final ICouponScopeService scopeService;
@@ -58,6 +58,23 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     private final IExchangeCodeService codeService;
     private final CategoryCache categoryCache;
     private final StringRedisTemplate redisTemplate;
+    private final Clock clock;
+
+    @Autowired
+    public CouponServiceImpl(ICouponScopeService scopeService, IUserCouponService userCouponService,
+            IExchangeCodeService codeService, CategoryCache categoryCache, StringRedisTemplate redisTemplate) {
+        this(scopeService, userCouponService, codeService, categoryCache, redisTemplate, Clock.systemDefaultZone());
+    }
+
+    CouponServiceImpl(ICouponScopeService scopeService, IUserCouponService userCouponService,
+            IExchangeCodeService codeService, CategoryCache categoryCache, StringRedisTemplate redisTemplate, Clock clock) {
+        this.scopeService = scopeService;
+        this.userCouponService = userCouponService;
+        this.codeService = codeService;
+        this.categoryCache = categoryCache;
+        this.redisTemplate = redisTemplate;
+        this.clock = clock;
+    }
 
     @Override
     @Transactional
@@ -122,7 +139,7 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         }
         // 3. 判断是否时立刻发放
         LocalDateTime issueBeginTime = dto.getIssueBeginTime();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         // 开始发放时间为null或者发放时间小于等于当前时间, 都代表立刻发放
         boolean isBegin = issueBeginTime == null || !issueBeginTime.isAfter(now);
         // 4. 更新优惠卷
@@ -131,7 +148,9 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         // 4.2 更新状态
         if(isBegin) {
             c.setStatus(CouponStatus.ISSUING);
-            c.setIssueBeginTime(now);
+            // DATETIME(0) rounds fractions; an immediate start must never round
+            // into the future. Keep the precise now above for the isBegin decision.
+            c.setIssueBeginTime(now.withNano(0));
         } else {
             c.setStatus(CouponStatus.UN_ISSUE);
         }

@@ -6,22 +6,30 @@ import com.tianji.promotion.domain.po.*;
 import com.tianji.promotion.mapper.*;
 import com.tianji.promotion.enums.*;
 import com.tianji.promotion.utils.CodeUtil;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class CouponClaimService implements OperationHandler {
     private static final java.util.concurrent.Semaphore[] CLAIMS=java.util.stream.IntStream.range(0,128).mapToObj(i->new java.util.concurrent.Semaphore(2)).toArray(java.util.concurrent.Semaphore[]::new);
     private final CouponMapper coupons;
     private final UserCouponMapper userCoupons;
     private final JdbcTemplate jdbc;
     private final JsonMapper json;
+    private final Clock clock;
+    @Autowired
+    public CouponClaimService(CouponMapper coupons,UserCouponMapper userCoupons,JdbcTemplate jdbc,JsonMapper json){
+        this(coupons,userCoupons,jdbc,json,Clock.systemDefaultZone());
+    }
+    CouponClaimService(CouponMapper coupons,UserCouponMapper userCoupons,JdbcTemplate jdbc,JsonMapper json,Clock clock){
+        this.coupons=coupons;this.userCoupons=userCoupons;this.jdbc=jdbc;this.json=json;this.clock=clock;
+    }
     @Override public String kind() { return "COUPON_CLAIM"; }
     public record Request(Long couponId,String code) {}
     @Override public Object execute(String id,long user,String payload) {
@@ -41,7 +49,7 @@ public class CouponClaimService implements OperationHandler {
         org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization(){@Override public void afterCompletion(int status){permit.release();}});
         // Serializing on the template row protects both global stock and per-user limit.
         Coupon coupon=coupons.selectOne(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Coupon>().eq("id",couponId).last("FOR UPDATE"));
-        LocalDateTime now=LocalDateTime.now();
+        LocalDateTime now=LocalDateTime.now(clock);
         if(coupon==null) throw new BizIllegalException("优惠券不存在");
         if(code==null && (coupon.getObtainWay()!=ObtainType.PUBLIC || coupon.getStatus()!=CouponStatus.ISSUING || now.isBefore(coupon.getIssueBeginTime()) || !now.isBefore(coupon.getIssueEndTime())))
             throw new BizIllegalException("不在优惠券领取时间内");
@@ -53,8 +61,10 @@ public class CouponClaimService implements OperationHandler {
         if(code!=null && jdbc.update("UPDATE exchange_code SET status=2,user_id=? WHERE id=? AND status=1 AND expired_time>NOW()",user,code.get("id"))!=1)
             throw new BizIllegalException("兑换码已使用或过期");
         UserCoupon uc=new UserCoupon();uc.setId(IdWorker.getId());uc.setUserId(user);uc.setCouponId(couponId);
-        LocalDateTime begin=coupon.getTermBeginTime()==null?now:coupon.getTermBeginTime();
-        LocalDateTime end=coupon.getTermBeginTime()==null?now.plusDays(coupon.getTermDays()):coupon.getTermEndTime();
+        // Match DATETIME(0) before writing: otherwise MySQL can round a newly
+        // claimed ticket into the future and reject immediate reservation/use.
+        LocalDateTime begin=coupon.getTermBeginTime()==null?now.withNano(0):coupon.getTermBeginTime();
+        LocalDateTime end=coupon.getTermBeginTime()==null?begin.plusDays(coupon.getTermDays()):coupon.getTermEndTime();
         if(end==null || !end.isAfter(now)) throw new BizIllegalException("优惠券已过期");
         uc.setTermBeginTime(begin);uc.setTermEndTime(end);uc.setStatus(UserCouponStatus.UNUSED);userCoupons.insert(uc);
         jdbc.update("UPDATE user_coupon SET claim_operation_id=? WHERE id=?",id,uc.getId());

@@ -55,6 +55,7 @@ REGRESSION_TESTS = [
     'ObjectiveScoringTest',
     'DiscountServiceTest',
     'SeasonRewardDeliveryReliabilityTest',
+    'CouponIssuePrecisionDatabaseTest',
     'PublicCourseControllerTest',
     'PublicCourseMetadataTest',
     'ProviderSettlementTest',
