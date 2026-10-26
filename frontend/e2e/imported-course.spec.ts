@@ -3,6 +3,7 @@
 import {test,expect,type Page} from '@playwright/test';
 import {accounts,home,login,api} from './helpers';
 import fs from 'node:fs';
+import path from 'node:path';
 
 if(process.env.TJ_IMPORTED_COURSE_MANIFEST)test('real imported course is discoverable and preserves learning across roles',async({page,browser},info)=>{
  test.setTimeout(180000);
@@ -62,6 +63,17 @@ if(process.env.TJ_IMPORTED_COURSE_MANIFEST)test('real imported course is discove
   const assigned=await api(teacher,'GET','/teacher/courses?pageNo=1&pageSize=100'),all=await api(admin,'GET','/admin/course/courses/page?pageNo=1&pageSize=100');const allowed=new Set(assigned.list.map((row:any)=>String(row.id)));
   expect(allowed.has(course)).toBe(true);const unrelated=all.list.find((row:any)=>!allowed.has(String(row.id)));expect(unrelated,'An existing non-assigned course is required for the authorization assertion').toBeTruthy();expect(await rawStatus(teacher,'/teacher/learning-hub?courseId='+unrelated.id+'&pageNo=1&pageSize=20')).toBe(403);
   await admin.goto('/media');for(const entry of files){await admin.getByRole('textbox',{name:'按文件名搜索',exact:true}).fill(entry.filename);await admin.getByRole('button',{name:'查询',exact:true}).click();await expect(admin.locator('.el-table__row').filter({hasText:String(manifest.state.media[entry.relativePath].id)})).toHaveCount(1);}
-  fs.writeFileSync(home+'/imported-course-result.json',JSON.stringify({status:'PASSED',realBackend:true,courseId:course,chapters:days.length,sections:files.length,guestSearchAndLoginReturn:true,freeEnrollment:true,realH264Playback:true,pausedRenewalPreserved:true,seekDoesNotCredit:true,refreshResumePosition:Math.floor(seekTarget),creditedMillis:credit,teacherAuthorizedCourse:true,teacherUnassignedCourseStatus:403,adminPublishedCatalogueCheckedViaRealApi:true,adminMediaRecordsVisible:true},null,2));
+  // This is bounded evidence for a >200 MiB source: genuine metadata, a decoded
+  // first frame and a matching 64-byte HTTP range, not full-video decoding or
+  // a 35-hour continuous-playback acceptance. Keep playback paused throughout.
+  const large=files.find(entry=>Number(entry.size)>200*1024*1024);expect(large,'A >200 MiB source is required for the large-media assertion').toBeTruthy();
+  const largeSection=String(manifest.state.catalogueIds[large.relativePath]);await page.locator('.lesson-item').filter({hasText:large.sectionTitle}).click();
+  await expect(video).toBeVisible();await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.readyState),{timeout:20000}).toBeGreaterThanOrEqual(2);await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.videoWidth),{timeout:20000}).toBeGreaterThan(0);
+  expect(await video.evaluate((element:HTMLVideoElement)=>element.paused)).toBe(true);const largeDuration=await video.evaluate((element:HTMLVideoElement)=>element.duration);expect(Number.isFinite(largeDuration)).toBe(true);expect(Math.abs(largeDuration-manifest.state.media[large.relativePath].duration)).toBeLessThan(1);
+  const largeTicket=await api(page,'GET','/services/media/medias/signature/play?sectionId='+largeSection),range=await page.request.get(new URL(largeTicket.playUrl,page.url()).toString(),{headers:{Range:'bytes=0-63'}});
+  expect(range.status()).toBe(206);expect(range.headers()['content-range']).toBe('bytes 0-63/'+large.size);const bytes=await range.body();expect(bytes).toHaveLength(64);
+  const source=await fs.promises.open(path.resolve(manifest.inventory.sourceRoot,large.relativePath),'r');const original=Buffer.alloc(64);try{const read=await source.read(original,0,64,0);expect(read.bytesRead).toBe(64);}finally{await source.close();}expect(bytes.equals(original)).toBe(true);
+  const finalLearning=await readLearning();expect(Number(finalLearning.records.find((row:any)=>String(row.sectionId)===largeSection).creditedMillis)).toBe(0);expect(Number(matchingRecord(finalLearning).creditedMillis)).toBe(credit);
+  fs.writeFileSync(home+'/imported-course-result.json',JSON.stringify({status:'PASSED',realBackend:true,courseId:course,chapters:days.length,sections:files.length,guestSearchAndLoginReturn:true,freeEnrollment:true,realH264Playback:true,pausedRenewalPreserved:true,seekDoesNotCredit:true,refreshResumePosition:Math.floor(seekTarget),creditedMillis:credit,teacherAuthorizedCourse:true,teacherUnassignedCourseStatus:403,adminPublishedCatalogueCheckedViaRealApi:true,adminMediaRecordsVisible:true,largeFileRangeAndFirstFrame:true,largeFileEvidenceScope:'64-byte range and first frame; not full decoding or long-run playback'},null,2));
  }finally{await teacherContext.close();await adminContext.close();}
 });

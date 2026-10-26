@@ -387,7 +387,7 @@ class Importer:
         self.save()
         body = {'name': options['name'], 'thirdCateId': category, 'coverUrl': options['coverUrl'],
                 'free': True, 'price': 0, 'validDuration': 0, 'purchaseEndTime': options['purchaseEnd'],
-                'introduce': f'本地真实视频课程，{len(catalogue_payload(self.files))}章{len(self.files)}节。\n导入标识：{self.marker}',
+                'introduce': f'通过真实教学录屏学习Java微服务项目开发，共{len(catalogue_payload(self.files))}章、{len(self.files)}节。<!-- {self.marker} -->',
                 'usePeople': '学习Java后端与微服务项目的自学者',
                 'detail': '使用本机已有课程视频。免费学习，无真实支付。文件来源、完整标题、哈希及真实探测时长保存在本机导入清单；内容未上传外部服务。'}
         result = self.api.request('POST', '/admin/course/courses/baseInfo/save', body=body, key='course-' + self.document['inventory']['sourceFingerprint'][:32])

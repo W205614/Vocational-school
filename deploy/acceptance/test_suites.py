@@ -51,6 +51,7 @@ REGRESSION_TESTS = [
     'LearningEntitlementRegressionTest',
     'OrderDeletionRegressionTest',
     'OrderDeletionDatabaseTest',
+    'CoursePurchaseStatisticsDatabaseTest',
     'RefundInitialStateTest',
     'SearchCompatibilityTest',
     'CallDepthPropagationTest',

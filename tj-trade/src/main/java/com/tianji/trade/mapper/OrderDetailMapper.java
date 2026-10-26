@@ -26,6 +26,7 @@ public interface OrderDetailMapper extends BaseMapper<OrderDetail> {
 
     List<IdAndNumDTO> countEnrollCourseOfStudent(@Param("ew") QueryWrapper<OrderDetail> wrapper);
 
-    @Select("SELECT SUM(real_pay_amount) FROM order_detail WHERE course_id = #{courseId}")
+    // A new/free course may have no order rows; primitive mapping must receive zero, not NULL.
+    @Select("SELECT COALESCE(SUM(real_pay_amount), 0) FROM order_detail WHERE course_id = #{courseId}")
     int countRealPayAmountByCourseId(Long courseId);
 }
