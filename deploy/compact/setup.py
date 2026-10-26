@@ -172,7 +172,7 @@ def build(package=True,group=None):
   heap='384m' if group=='gateway' else '768m'
   # Only the media-owning group needs native container/codec metadata inspection.
   media_probe='RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*\n' if group=='support' else ''
-  (folder/'Dockerfile').write_text('FROM eclipse-temurin:21-jre\nENV TZ=Asia/Shanghai\nWORKDIR /app\n'+media_probe+'RUN groupadd --non-unique --gid '+str(app_gid)+' app && useradd --non-unique --uid '+str(app_uid)+' --gid app --home /app app && mkdir -p /app/logs/csp && chown -R app:app /app/logs\nCOPY app.jar /app/app.jar\nCOPY HealthProbe.class /app/health/HealthProbe.class\nUSER app\nENTRYPOINT ["java","-Xms96m","-Xmx'+heap+'","-XX:MaxDirectMemorySize=96m","-XX:ActiveProcessorCount=2","-jar","/app/app.jar"]\n',encoding='utf8')
+  (folder/'Dockerfile').write_text('FROM eclipse-temurin:21-jre-noble@sha256:35501d3f93173b420ac9001658eb68157e813316b865087e345c187fca422c4c\nENV TZ=Asia/Shanghai\nWORKDIR /app\n'+media_probe+'RUN groupadd --non-unique --gid '+str(app_gid)+' app && useradd --non-unique --uid '+str(app_uid)+' --gid app --home /app app && mkdir -p /app/logs/csp && chown -R app:app /app/logs\nCOPY app.jar /app/app.jar\nCOPY HealthProbe.class /app/health/HealthProbe.class\nUSER app\nENTRYPOINT ["java","-Xms96m","-Xmx'+heap+'","-XX:MaxDirectMemorySize=96m","-XX:ActiveProcessorCount=2","-jar","/app/app.jar"]\n',encoding='utf8')
   retain_previous_image(group)
   image='tianji-compact/'+group+':local';run(['docker','build','--pull=false','--label','org.opencontainers.image.revision='+commit,'-t',image,str(folder)],'image-'+group)
   run(['docker','tag',image,'tianji-release/'+group+':'+commit],'tag-'+group)

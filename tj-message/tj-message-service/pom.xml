@@ -80,6 +80,25 @@
             <groupId>com.aliyun</groupId>
             <artifactId>alibabacloud-dysmsapi20170525</artifactId>
             <version>1.0.1</version>
+            <exclusions>
+                <!-- The SDK's shaded transport embeds HttpCore 5.3.1 and
+                     bypasses dependencyManagement security patches. -->
+                <exclusion><groupId>com.aliyun</groupId><artifactId>aliyun-http-apache</artifactId></exclusion>
+                <exclusion><groupId>com.aliyun</groupId><artifactId>aliyun-java-auth</artifactId></exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Use the official unshaded pair together: auth bytecode and its
+             transport must reference the same managed Apache HTTP classes. -->
+        <dependency>
+            <groupId>com.aliyun</groupId><artifactId>aliyun-java-auth</artifactId><version>0.4.2</version>
+            <exclusions><exclusion><groupId>com.aliyun</groupId><artifactId>aliyun-http-apache</artifactId></exclusion></exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.aliyun</groupId><artifactId>aliyun-http-apache</artifactId><version>0.4.2</version>
+        </dependency>
+        <!-- The upstream dependency-reduced transport POM omits these. -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId><artifactId>httpclient5</artifactId>
         </dependency>
     </dependencies>
     <build>

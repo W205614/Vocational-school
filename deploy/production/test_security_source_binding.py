@@ -1,14 +1,18 @@
 import copy
 import datetime as dt
 import hashlib
+import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
+from contextlib import redirect_stdout
 
+import build_sbom
 import security_scan
 
 
@@ -65,6 +69,42 @@ class SourceBindingTest(unittest.TestCase):
             security_scan.verify_image_source(identity, "b" * 40)
             with self.assertRaises(ValueError):
                 security_scan.verify_image_source(identity, "c" * 40)
+
+    def test_reproducible_bom_without_timestamp_gets_measured_binding_and_stale_output_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "bom.json"
+            now = dt.datetime.now(dt.timezone.utc)
+            # The CI plugin actually emitted this reproducible metadata without
+            # a timestamp. Fresh output is enriched; stale output stays blocked.
+            bom = {"bomFormat": "CycloneDX", "components": [{"name": "sample", "version": "1.0", "purl": "pkg:maven/test/sample@1.0"}],
+                "metadata": {"properties": [{"name": "cdx:reproducible", "value": "enabled"}]}}
+            path.write_text(json.dumps(bom), encoding="utf8")
+            build_sbom.bind_resolved_bom(path, "a" * 40, now, now)
+            security_scan.validate_bom(path, path.parent / "security-bom-binding.json", "a" * 40, now)
+            old = (now - dt.timedelta(days=1)).timestamp()
+            os.utime(path, (old, old))
+            with self.assertRaises(ValueError):
+                build_sbom.bind_resolved_bom(path, "a" * 40, now, now)
+
+    def test_scanner_failure_diagnostics_never_publish_stderr_or_secret_matches(self):
+        sentinel = "opaque-private-fixture-not-for-output"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            result = SimpleNamespace(returncode=-9, stderr=("secret=" + sentinel).encode())
+            with patch("security_scan.subprocess.run", return_value=result):
+                with self.assertRaises(security_scan.ScannerFailure) as caught:
+                    security_scan.scan(["fs", "--scanners", "secret", "public-source"], root / "raw.json")
+            self.assertEqual({"code": "scanner-terminated-by-signal", "exit_code": -9}, caught.exception.diagnostic)
+            output = root / "sanitized.json"
+            stdout = io.StringIO()
+            with patch("security_scan.validate_bom"), patch("security_scan.source_snapshot", return_value=root), \
+                    patch("security_scan.scan", side_effect=[caught.exception, [], []]), redirect_stdout(stdout):
+                self.assertEqual(1, security_scan.main(["source", "--commit", "a" * 40, "--output", str(output)]))
+            report = json.loads(output.read_text(encoding="utf8"))
+            self.assertEqual(-9, report["diagnostics"][0]["exit_code"])
+            self.assertNotIn(sentinel, output.read_text(encoding="utf8") + stdout.getvalue())
+            for message in ["invalid ISO timestamp " + sentinel, "secret=" + sentinel]:
+                self.assertEqual("missing-or-malformed-binding-data", security_scan.bom_diagnostic(ValueError(message)))
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 
 REGRESSION_TESTS = [
     'AliCredentialBoundaryTest',
+    'AliSmsTransportTest',
     'TencentCredentialBoundaryTest',
     'CloudMediaAccessPolicyTest',
     'ServiceRpcPolicyTest',

@@ -12,6 +12,33 @@ import subprocess
 import sys
 
 
+def bind_resolved_bom(path, commit, started, completed=None):
+    """Bind the freshly resolved reactor output, including reproducible BOMs.
+
+    CycloneDX reproducible mode intentionally omits metadata.timestamp. Record
+    our measured completion time only after checking the actual output mtime;
+    the downstream gate still requires the timestamp, source, hash and window.
+    """
+    completed = completed or dt.datetime.now(dt.timezone.utc)
+    bom = json.loads(path.read_text(encoding="utf8"))
+    components = bom.get("components", [])
+    if bom.get("bomFormat") != "CycloneDX" or not components or path.stat().st_mtime < started.timestamp() - 2:
+        raise ValueError("A freshly generated resolved BOM is required")
+    if any(not value.get("purl") or not value.get("version") for value in components):
+        raise ValueError("Unresolved runtime components cannot pass the security build")
+    metadata = bom.setdefault("metadata", {})
+    metadata["timestamp"] = completed.isoformat()
+    properties = metadata.setdefault("properties", [])
+    properties[:] = [value for value in properties if value.get("name") != "tianji:source:revision"]
+    properties.append({"name": "tianji:source:revision", "value": commit})
+    path.write_text(json.dumps(bom, indent=2) + "\n", encoding="utf8")
+    binding = {"schema": "tianji-security-sbom-v1", "commit": commit, "started_at": started.isoformat(),
+        "completed_at": completed.isoformat(), "bom_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "components": len(components), "resolved_runtime": True, "maven_exit_code": 0}
+    (path.parent / "security-bom-binding.json").write_text(json.dumps(binding, indent=2) + "\n", encoding="utf8")
+    return binding
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--commit", required=True)
@@ -30,21 +57,9 @@ def main(argv=None):
         return 1
     path = Path("target/bom.json")
     try:
-        bom = json.loads(path.read_text(encoding="utf8"))
-        components = bom.get("components", [])
-        if bom.get("bomFormat") != "CycloneDX" or not components or path.stat().st_mtime < started.timestamp() - 2:
-            raise ValueError("A freshly generated resolved BOM is required")
-        if any(not value.get("purl") or not value.get("version") for value in components):
-            raise ValueError("Unresolved runtime components cannot pass the security build")
         if subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip() != head or subprocess.run(["git", "diff", "--quiet", "HEAD", "--"]).returncode:
             raise ValueError("Source changed during the security build")
-        properties = bom.setdefault("metadata", {}).setdefault("properties", [])
-        properties.append({"name": "tianji:source:revision", "value": head})
-        path.write_text(json.dumps(bom, indent=2) + "\n", encoding="utf8")
-        binding = {"schema": "tianji-security-sbom-v1", "commit": head, "started_at": started.isoformat(),
-            "completed_at": dt.datetime.now(dt.timezone.utc).isoformat(), "bom_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-            "components": len(components), "resolved_runtime": True, "maven_exit_code": 0}
-        Path("target/security-bom-binding.json").write_text(json.dumps(binding, indent=2) + "\n", encoding="utf8")
+        bind_resolved_bom(path, head, started)
         print("Resolved runtime SBOM bound to " + head)
         return 0
     except (OSError, ValueError):

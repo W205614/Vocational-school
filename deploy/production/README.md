@@ -61,7 +61,7 @@ GRANT INSERT ON tj_media.media TO 'app_media_worker'@'<私有工作负载来源>
 
 上述 worker 权限与当前查询对应：领取／续租／结束任务、写入已处理媒资；没有 DDL、账号管理、跨库或删除权限。用应用和 worker 各自身份做一次拒绝跨库访问的上线验收。源文件／证书身份验证、真实托管连接和账号权限尚须在目标环境执行，离线工具或本机合成库测试不能替代这些证据。
 
-准备真实输入和不可变镜像引用，输入文件只填写身份与地址，密钥由受保护的 Secret 管理。Web 镜像使用本目录 `Dockerfile.web` 与 `nginx.conf.template`，不要直接替换为需要 root 的演示镜像。`NGINX_IMAGE` 构建参数必须是经过扫描的固定 digest。
+准备真实输入和不可变镜像引用，输入文件只填写身份与地址，密钥由受保护的 Secret 管理。Web 镜像使用本目录 `Dockerfile.web` 与 `nginx.conf.template`，不要直接替换为需要 root 的演示镜像。`NGINX_IMAGE` 构建参数必须是经过扫描的固定 digest。应用和 worker 的 JRE 配方固定到官方 Temurin 21 Noble 的不可变镜像索引，避免通用 `21-jre` 标签隐式更换基础发行版；升级须重新扫描实际镜像并验证原生媒体工具。该版本的 [官方 Dockerfile](https://github.com/adoptium/containers/blob/511f9356dc4d50932a0a5f8cfb0f87ed1aef4f07/21/jre/ubuntu/noble/Dockerfile) 使用 Ubuntu 24.04。
 
 ```powershell
 python -m pip install -r deploy/production/requirements.txt

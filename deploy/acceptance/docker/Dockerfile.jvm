@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre-noble@sha256:35501d3f93173b420ac9001658eb68157e813316b865087e345c187fca422c4c
 ENV TZ=Asia/Shanghai
 WORKDIR /app
 RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --home /app app && mkdir -p /app/logs/csp && chown app:app /app/logs /app/logs/csp

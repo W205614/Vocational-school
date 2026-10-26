@@ -5,7 +5,6 @@ import com.tianji.gateway.config.AccessPolicy;
 import com.tianji.gateway.config.AuthProperties;
 import com.tianji.gateway.filter.AccountAuthFilter;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -17,7 +16,6 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-@EnabledIfEnvironmentVariable(named="TJ_INTERNAL_TOKEN",matches=".+")
 class GatewayAdmissionTest {
     AccountAuthFilter filter;
     Semaphore capacity;
@@ -33,12 +31,14 @@ class GatewayAdmissionTest {
         var request=MockServerHttpRequest.get("/api/v2/environment")
                 .remoteAddress(new java.net.InetSocketAddress("198.51.100.7",4567))
                 .header("user-info","1").header("user-role","1").header("user-session","forged")
-                .header("X-Internal-Token","forged").header("X-Client-IP","203.0.113.1").header("X-Client-Proto","https")
+                .header("X-Internal-Token","forged").header("X-TJ-Service","identity").header("X-Client-IP","203.0.113.1").header("X-Client-Proto","https")
                 .header("X-Forwarded-For","203.0.113.1").header("X-Forwarded-Proto","https").header("Forwarded","for=203.0.113.1;proto=https").build();
         filter.filter(MockServerWebExchange.from(request),exchange->{
             var headers=exchange.getRequest().getHeaders();assertEquals("198.51.100.7",headers.getFirst("X-Client-IP"));assertEquals("http",headers.getFirst("X-Client-Proto"));
-            for(String header:java.util.List.of("user-info","user-role","user-session","Forwarded","X-Forwarded-For","X-Forwarded-Proto"))assertNull(headers.getFirst(header));
-            assertEquals(System.getenv("TJ_INTERNAL_TOKEN"),headers.getFirst("X-Internal-Token"));return reactor.core.publisher.Mono.empty();
+            // The authentication stage strips untrusted service identity. The relay
+            // stage supplies the resolved receiver's credential after route rewriting.
+            for(String header:java.util.List.of("user-info","user-role","user-session","X-Internal-Token","X-TJ-Service","Forwarded","X-Forwarded-For","X-Forwarded-Proto"))assertNull(headers.getFirst(header));
+            return reactor.core.publisher.Mono.empty();
         }).block(Duration.ofSeconds(2));
     }
     @Test void trustedProxyIdentityAndHttpsReachAuthAsInternalHeaders(){
@@ -46,10 +46,11 @@ class GatewayAdmissionTest {
         var trusted=new AccountAuthFilter(mock(AuthUtil.class),new AuthProperties(),new AccessPolicy(),scheduler,proxies);
         var request=MockServerHttpRequest.post("/api/v2/auth/accounts/login")
                 .remoteAddress(new java.net.InetSocketAddress("172.20.0.2",4567))
-                .header("X-Forwarded-For","203.0.113.10").header("X-Forwarded-Proto","https").header("X-Client-IP","forged").build();
+                .header("X-Forwarded-For","203.0.113.10").header("X-Forwarded-Proto","https").header("X-Client-IP","forged")
+                .header("X-Internal-Token","forged").header("X-TJ-Service","identity").build();
         trusted.filter(MockServerWebExchange.from(request),exchange->{
             var headers=exchange.getRequest().getHeaders();assertEquals("203.0.113.10",headers.getFirst("X-Client-IP"));assertEquals("https",headers.getFirst("X-Client-Proto"));
-            assertNull(headers.getFirst("X-Forwarded-For"));assertEquals(System.getenv("TJ_INTERNAL_TOKEN"),headers.getFirst("X-Internal-Token"));return reactor.core.publisher.Mono.empty();
+            assertNull(headers.getFirst("X-Forwarded-For"));assertNull(headers.getFirst("X-Internal-Token"));assertNull(headers.getFirst("X-TJ-Service"));return reactor.core.publisher.Mono.empty();
         }).block(Duration.ofSeconds(2));
     }
     private MockServerWebExchange exchange(){return MockServerWebExchange.from(MockServerHttpRequest.get("/api/v2/environment").build());}

@@ -14,6 +14,15 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.G
 
 class ServiceIdentityRelayFilterTest {
     @TempDir Path directory;
+    @Test void sharedModeAttachesItsCredentialOnlyAtRelayAndRemovesForgedCaller(){
+        String token="synthetic-shared-token-"+"x".repeat(40);
+        var identity=new ServiceIdentity(Map.of("TJ_INTERNAL_TOKEN",token));
+        var exchange=MockServerWebExchange.from(MockServerHttpRequest.post("/api/v2/auth/accounts/login").header("X-TJ-Service","identity").header("X-Internal-Token","forged"));
+        exchange.getAttributes().put(GATEWAY_REQUEST_URL_ATTR,URI.create("http://app-identity:24001/_modules/auth/accounts/login"));
+        var reached=new AtomicBoolean();new ServiceIdentityRelayFilter(identity).filter(exchange,next->{
+            assertNull(next.getRequest().getHeaders().getFirst("X-TJ-Service"));assertEquals(token,next.getRequest().getHeaders().getFirst("X-Internal-Token"));reached.set(true);return reactor.core.publisher.Mono.empty();
+        }).block();assertTrue(reached.get());
+    }
     @Test void forgedCallerIsReplacedWithOnlyTheResolvedReceiversCredential() throws Exception {
         String token="synthetic-support-edge-"+"x".repeat(40);Path file=directory.resolve("identities.json");
         Files.writeString(file,"{\"outbound\":{\"support\":\""+token+"\"},\"inbound\":{}}");
