@@ -5,6 +5,8 @@ test('full coupon discount settles without payment and approved withdrawal keeps
  test.skip(info.project.name!=='student');test.setTimeout(150000);
  const context=await browser.newContext({baseURL:process.env.TJ_ADMIN_URL||'http://127.0.0.1:23501'}),admin=await context.newPage();
  const name='Zero '+crypto.randomUUID().slice(0,8);let coupon:string|undefined;
+ const failedReads:{path:string;status:number}[]=[];
+ page.on('response',response=>{const path=new URL(response.url()).pathname;if(path.startsWith('/api/v2/')&&response.status()>=400)failedReads.push({path,status:response.status()});});
  let paymentRequests=0;page.on('request',request=>{if(request.method()==='POST' && new URL(request.url()).pathname.endsWith('/services/trade/pay/order'))paymentRequests++;});
  try {
   await login(page,'student','/courses/'+fixture.course);
@@ -13,7 +15,10 @@ test('full coupon discount settles without payment and approved withdrawal keeps
   await api(admin,'POST','/admin/promotion/coupons',{name,specific:false,discountType:3,thresholdAmount:0,discountValue:Number(quote.totalAmount),maxDiscountAmount:Number(quote.totalAmount),totalNum:2,userLimit:1,obtainWay:1},crypto.randomUUID());
   const created=await api(admin,'GET','/admin/promotion/coupons/page?name='+encodeURIComponent(name)+'&pageNo=1&pageSize=20');expect(created.list).toHaveLength(1);coupon=String(created.list[0].id);
   await api(admin,'PUT','/admin/promotion/coupons/'+coupon+'/issue',{id:coupon,issueEndTime:new Date(Date.now()+86400000).toISOString().slice(0,19),termDays:7},crypto.randomUUID());
-  await page.goto('/coupons');await page.locator('.el-table__row').filter({hasText:name}).getByRole('button',{name:'领取',exact:true}).click();await expect(page.getByRole('alert').filter({hasText:'领取成功'})).toBeVisible();
+  await page.goto('/coupons');
+  const claimResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/v2/coupons/'+coupon+'/claims'&&response.request().method()==='POST');
+  await page.locator('.el-table__row').filter({hasText:name}).getByRole('button',{name:'领取',exact:true}).click();expect((await claimResponse).status(),'real coupon claim response').toBe(202);
+  await expect(page.getByRole('alert').filter({hasText:'领取成功'})).toBeVisible({timeout:30000});
   await page.goto('/courses/'+fixture.course);await page.getByRole('button',{name:'加入购物车',exact:true}).click();await expect(page.getByText('已加入购物车',{exact:true})).toBeVisible();
   await page.goto('/cart');const line=page.locator('.el-table__row').filter({hasText:fixture.name});await expect(line).toBeVisible();await line.locator('.el-checkbox').click();
   await page.getByRole('button',{name:/确认选购 1 门课程/}).click();
@@ -41,6 +46,10 @@ test('full coupon discount settles without payment and approved withdrawal keeps
   await expect.poll(async()=>(await api(page,'GET','/orders/'+order)).status,{timeout:30000}).toBe(7);
   expect((await api(page,'GET','/services/promotion/user-coupons/page?status=2&pageNo=1&pageSize=100')).list.some((item:any)=>String(item.id)===coupon)).toBe(true);
   expect(paymentRequests).toBe(0);
+ } catch(error) {
+  console.error('Zero-order HTTP failures:',JSON.stringify(failedReads));
+  console.error('Zero-order visible errors:',JSON.stringify(await page.locator('.el-alert--error').allTextContents()));
+  throw error;
  } finally {
   if(coupon)await api(admin,'PUT','/admin/promotion/coupons/'+coupon+'/pause',undefined,crypto.randomUUID());
   await context.close();

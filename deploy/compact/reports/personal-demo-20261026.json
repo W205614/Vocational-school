@@ -91,7 +91,18 @@
       "tianji-recovery-demo-20261025-elasticsearch-1",
       "tianji-recovery-demo-20261025-redis-1",
       "tianji-recovery-demo-20261025-mysql-1",
-      "tianji-recovery-demo-20261025-rabbitmq-1"
+      "tianji-recovery-demo-20261025-rabbitmq-1",
+      "tianji-recovery-focus-20261026-web-student-1",
+      "tianji-recovery-focus-20261026-web-admin-1",
+      "tianji-recovery-focus-20261026-app-support-1",
+      "tianji-recovery-focus-20261026-app-commerce-1",
+      "tianji-recovery-focus-20261026-app-gateway-1",
+      "tianji-recovery-focus-20261026-app-identity-1",
+      "tianji-recovery-focus-20261026-app-education-1",
+      "tianji-recovery-focus-20261026-rabbitmq-1",
+      "tianji-recovery-focus-20261026-redis-1",
+      "tianji-recovery-focus-20261026-mysql-1",
+      "tianji-recovery-focus-20261026-elasticsearch-1"
     ],
     "removedImages": [
       {
@@ -353,7 +364,22 @@
     "globalImagesBefore": 107,
     "globalImagesAfter": 84,
     "globalDeltaMatchedExplicitManifest": true,
-    "globalPruneUsed": false
+    "globalPruneUsed": false,
+    "removedNetworks": 1,
+    "retirementBatches": [
+      {
+        "containers": 34,
+        "images": 23,
+        "volumes": 14,
+        "scope": "Original recovery and role-acceptance environments"
+      },
+      {
+        "containers": 11,
+        "networks": 1,
+        "volumes": 0,
+        "scope": "Later fresh-synthetic CI reproduction, infrastructure entirely on tmpfs"
+      }
+    ]
   },
   "recoveryMaterial": {
     "dataBundle": "deploy/compact/.local/backup/20261026T020839.785240Z",
@@ -393,5 +419,33 @@
     ],
     "redactionUnitTests": 4,
     "productionSourceUnchanged": true
+  },
+  "secondCI": {
+    "commit": "2e0f6b0d75639c4cadc026b0252c00829f64ed0c",
+    "runId": 40260797351,
+    "backend": "success",
+    "frontend": "success",
+    "compactBrowser": "failure",
+    "browserPassed": 64,
+    "browserFailed": 1,
+    "notApplicable": 53,
+    "failure": "Zero-order test timed out waiting for coupon-claim success; order detail was not reached in this run."
+  },
+  "focusedFollowup": {
+    "appSourceCommit": "2f18ca0087d10eb7bfc907b9719aba8e7ec4f6d5",
+    "uniqueSelectedScenarios": 3,
+    "passed": 3,
+    "failed": 0,
+    "notApplicable": 3,
+    "realBackend": true,
+    "fixture": "fresh synthetic, no primary business clone",
+    "dataStorage": "tmpfs",
+    "persistentVolumesCreated": 0,
+    "scenarios": [
+      "paid course purchase, timed playback, exam and refund prerequisite",
+      "zero-balance coupon purchase, actual settlement and approved withdrawal",
+      "temporary credential copy and mandatory setup"
+    ],
+    "change": "Require HTTP 202 claim acceptance, allow up to 30 seconds for the existing async UI success, retain explicit order-detail/refund assertions and emit noncredential HTTP/error context on failure."
   }
 }
