@@ -81,7 +81,7 @@ class UserProfilePasswordDatabaseTest {
  }
  @Test void combinedPasswordAndProfileUpdateKeepsUnspecifiedFieldsAndCannotChangeIdentityOrRole(){
   var other=detail(ids.getLast());var form=form();form.setId(ids.getLast());form.setType(1);form.setRoleId(1L);form.setName("Updated own profile");
-  update(form());var changed=detail(ids.getFirst());assertEquals("Updated own profile",changed.get("name"));assertEquals("profile0@example.test",changed.get("email"));
+  update(form);var changed=detail(ids.getFirst());assertEquals("Updated own profile",changed.get("name"));assertEquals("profile0@example.test",changed.get("email"));
   assertEquals(2,((Number)changed.get("type")).intValue());assertEquals(2L,((Number)changed.get("role_id")).longValue());
   assertEquals(other,detail(ids.getLast()));assertTrue(passwords.matches("changed-profile-password",hash()));
  }
