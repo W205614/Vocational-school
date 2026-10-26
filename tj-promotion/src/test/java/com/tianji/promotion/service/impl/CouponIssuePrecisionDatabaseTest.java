@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 @EnabledIfEnvironmentVariable(named="ACCEPTANCE_DB_PASSWORD",matches=".+")
 class CouponIssuePrecisionDatabaseTest {
     private static DriverManagerDataSource source;
-    private static final ZoneId ZONE=ZoneId.of("Asia/Shanghai");
+    private static final ZoneId ZONE=ZoneId.systemDefault();
     private static final LocalDateTime AT=LocalDateTime.of(2030,1,2,12,34,56,900_000_000);
     private static final Clock CLOCK=Clock.fixed(AT.atZone(ZONE).toInstant(),ZONE);
     private JdbcTemplate jdbc;private long couponId;
@@ -61,8 +61,9 @@ class CouponIssuePrecisionDatabaseTest {
         when(coupons.incrIssueNum(couponId)).thenAnswer(call->jdbc.update("UPDATE coupon SET issue_num=issue_num+1 WHERE id=? AND issue_num<total_num",couponId));
         doAnswer(call->{UserCoupon c=call.getArgument(0);return jdbc.update("INSERT INTO user_coupon(id,user_id,coupon_id,term_begin_time,term_end_time,status) VALUES(?,?,?,?,?,?)",c.getId(),c.getUserId(),c.getCouponId(),c.getTermBeginTime(),c.getTermEndTime(),c.getStatus().getValue());}).when(tickets).insert(any(UserCoupon.class));
     }
-    private Coupon read(){return jdbc.queryForObject("SELECT * FROM coupon WHERE id=?",(rs,n)->new Coupon().setId(rs.getLong("id")).setStatus(CouponStatus.of(rs.getInt("status"))).setObtainWay(ObtainType.PUBLIC).setTotalNum(2).setUserLimit(1).setIssueBeginTime(time(rs.getTimestamp("issue_begin_time"))).setIssueEndTime(time(rs.getTimestamp("issue_end_time"))).setTermDays(rs.getInt("term_days")).setTermBeginTime(time(rs.getTimestamp("term_begin_time"))).setTermEndTime(time(rs.getTimestamp("term_end_time"))),couponId);}
-    private static LocalDateTime time(java.sql.Timestamp value){return value==null?null:value.toLocalDateTime();}
+    // DATETIME is a wall-clock value, matching MyBatis' LocalDateTime handler.
+    // getTimestamp(...).toLocalDateTime() would apply the JVM's unrelated zone.
+    private Coupon read(){return jdbc.queryForObject("SELECT * FROM coupon WHERE id=?",(rs,n)->new Coupon().setId(rs.getLong("id")).setStatus(CouponStatus.of(rs.getInt("status"))).setObtainWay(ObtainType.PUBLIC).setTotalNum(2).setUserLimit(1).setIssueBeginTime(rs.getObject("issue_begin_time",LocalDateTime.class)).setIssueEndTime(rs.getObject("issue_end_time",LocalDateTime.class)).setTermDays(rs.getInt("term_days")).setTermBeginTime(rs.getObject("term_begin_time",LocalDateTime.class)).setTermEndTime(rs.getObject("term_end_time",LocalDateTime.class)),couponId);}
     private CouponIssueFormDTO form(){var dto=new CouponIssueFormDTO();dto.setId(couponId);dto.setIssueEndTime(AT.plusDays(1).withNano(0));dto.setTermDays(30);return dto;}
     private Object claim(){
         var json=JsonMapper.builder().build();var claims=new CouponClaimService(coupons,tickets,jdbc,json,CLOCK);
@@ -78,7 +79,7 @@ class CouponIssuePrecisionDatabaseTest {
     @Test void immediateIssueHasOneDatabaseAndCacheStartAndCanBeClaimedAtOnce(){
         issues.beginIssue(form());
         assertEquals(AT.withNano(0),read().getIssueBeginTime());
-        verify(redis.opsForHash()).putAll(anyString(),argThat(values->Objects.equals(values.get("issueBeginTime"),String.valueOf(AT.withNano(0).atZone(ZONE).toInstant().toEpochMilli()))));
+        verify(redis.opsForHash()).putAll(anyString(),argThat(values->Objects.equals(values.get("issueBeginTime"),String.valueOf(AT.withNano(0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))));
         assertNotNull(claim());
     }
     @Test void newRelativeClaimIsImmediatelyUsableForItsCompleteDayPeriod(){
