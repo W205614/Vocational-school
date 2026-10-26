@@ -14,10 +14,14 @@ import java.util.*;
 public class ProviderSettlementService {
  private final JdbcTemplate jdbc;private final OutboxStore outbox;
  @Transactional public void paid(Long number,Integer amount,LocalDateTime occurred){
+  paid(number,amount,occurred,null);
+ }
+ @Transactional public void paid(Long number,Integer amount,LocalDateTime occurred,String expectedChannel){
   if(number==null || amount==null || amount<=0)throw new BadRequestException("支付事实参数无效");
   var rows=jdbc.queryForList("SELECT * FROM pay_order WHERE pay_order_no=? FOR UPDATE",number);
   if(rows.isEmpty())throw new BadRequestException("支付单不存在");
   var order=rows.getFirst();
+  if(expectedChannel!=null && !expectedChannel.equals(order.get("pay_channel_code")))throw new BadRequestException("支付渠道不一致");
   if(((Number)order.get("amount")).intValue()!=amount)throw new BadRequestException("支付金额不一致");
   LocalDateTime time=occurred==null?LocalDateTime.now():occurred;
   if(jdbc.update("INSERT IGNORE INTO provider_payment_fact(pay_order_no,biz_order_no,amount,success_time) VALUES(?,?,?,?)",number,order.get("biz_order_no"),amount,time)==0)return;

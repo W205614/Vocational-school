@@ -1,0 +1,185 @@
+"""Run security scanners and publish only credential-free finding summaries.
+
+An unavailable database/tool or malformed report fails the gate. No default CVE
+waiver or ignore-unfixed policy is applied. Raw secret matches are never printed.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+import tempfile
+import tarfile
+import hashlib
+import os
+
+
+def summarize(report):
+    if report.get("SchemaVersion") != 2:
+        raise ValueError("Unsupported or incomplete Trivy report")
+    findings = []
+    for result in report.get("Results", []):
+        target = result.get("Target", "")
+        for value in result.get("Vulnerabilities", []):
+            if value.get("Severity") in {"HIGH", "CRITICAL"}:
+                findings.append({"kind": "vulnerability", "target": target, "id": value.get("VulnerabilityID"),
+                    "package": value.get("PkgName"), "installed": value.get("InstalledVersion"),
+                    "fixed": value.get("FixedVersion"), "severity": value["Severity"]})
+        for value in result.get("Secrets", []):
+            findings.append({"kind": "secret", "target": target, "id": value.get("RuleID"),
+                             "severity": value.get("Severity"), "line": value.get("StartLine")})
+        for value in result.get("Misconfigurations", []):
+            if value.get("Severity") in {"HIGH", "CRITICAL"} and value.get("Status") == "FAIL":
+                findings.append({"kind": "configuration", "target": target, "id": value.get("ID"), "severity": value["Severity"]})
+    return findings
+
+
+def scan(arguments, raw_file):
+    config = raw_file.parent / "scanner-policy.yml"
+    ignored = raw_file.parent / "empty-ignore.txt"
+    config.write_text("{}\n", encoding="utf8")
+    ignored.write_text("", encoding="utf8")
+    policy = ["--config", str(config), "--ignorefile", str(ignored), "--ignore-unfixed=false"]
+    if "--severity" not in arguments:
+        policy += ["--severity", "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"]
+    command = ["trivy", *arguments, *policy, "--timeout", "20m", "--format", "json", "--output", str(raw_file), "--exit-code", "0"]
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("TRIVY_") or key == "TRIVY_CACHE_DIR"}
+    result = subprocess.run(command, env=environment, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1800)
+    if result.returncode != 0 or not raw_file.is_file():
+        raise RuntimeError("Scanner or vulnerability database unavailable")
+    return summarize(json.loads(raw_file.read_text(encoding="utf8")))
+
+
+def source_snapshot(commit, directory, repository=None):
+    """Scan exactly committed source, including all tracked dotfiles.
+
+    A git archive avoids heuristic glob handling of private nested .local files,
+    untracked accounts, build artifacts and logs. It also binds secrets scanning
+    to the same immutable revision as CI rather than an accidentally dirty tree.
+    """
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repository, capture_output=True, text=True, timeout=30)
+    dirty = subprocess.run(["git", "diff", "--quiet", "HEAD", "--"], cwd=repository, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+    if head.returncode or head.stdout.strip() != commit or dirty.returncode:
+        raise RuntimeError("Tracked source changed or differs from the requested commit")
+    archive = directory.parent / "source.tar"
+    result = subprocess.run(["git", "archive", "--format=tar", "--output", str(archive), commit],
+                            cwd=repository, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+    if result.returncode:
+        raise RuntimeError("Unable to capture committed source")
+    directory.mkdir()
+    with tarfile.open(archive) as source:
+        source.extractall(directory, filter="data")
+    return directory
+
+
+def validate_bom(path, binding_path, commit, now=None):
+    now = now or dt.datetime.now(dt.timezone.utc)
+    bom = json.loads(path.read_text(encoding="utf8"))
+    binding = json.loads(binding_path.read_text(encoding="utf8"))
+    components = bom.get("components", [])
+    if bom.get("bomFormat") != "CycloneDX" or not components or any(not c.get("purl") or not c.get("version") for c in components):
+        raise ValueError("Unresolved or empty BOM")
+    if binding.get("schema") != "tianji-security-sbom-v1" or binding.get("commit") != commit or binding.get("resolved_runtime") is not True or binding.get("maven_exit_code") != 0:
+        raise ValueError("Source/build binding is absent")
+    if binding.get("bom_sha256") != hashlib.sha256(path.read_bytes()).hexdigest() or binding.get("components") != len(components):
+        raise ValueError("BOM changed after the resolved build")
+    properties = bom.get("metadata", {}).get("properties", [])
+    if not any(v.get("name") == "tianji:source:revision" and v.get("value") == commit for v in properties):
+        raise ValueError("SBOM source property is absent")
+    started = dt.datetime.fromisoformat(binding["started_at"])
+    completed = dt.datetime.fromisoformat(binding["completed_at"])
+    generated = dt.datetime.fromisoformat(bom["metadata"]["timestamp"].replace("Z", "+00:00"))
+    if any(v.tzinfo is None for v in [started, completed, generated]) or not started <= completed or not -60 <= (now - completed).total_seconds() <= 86400:
+        raise ValueError("Invalid/stale SBOM generation time")
+    if not started - dt.timedelta(minutes=1) <= generated <= completed + dt.timedelta(minutes=1):
+        raise ValueError("BOM was not generated by this build")
+    return bom
+
+
+def verify_image_source(identity, commit):
+    result = subprocess.run(["docker", "image", "inspect", identity], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, timeout=30)
+    if result.returncode:
+        raise ValueError("Candidate image is unavailable locally")
+    image = json.loads(result.stdout)[0]
+    if image.get("Id") != identity or image.get("Config", {}).get("Labels", {}).get("org.opencontainers.image.revision") != commit:
+        raise ValueError("Image source revision does not match the candidate")
+
+
+def verify_image_journal(images, directory, commit):
+    if set(images) == {"identity", "commerce", "education", "support", "gateway", "student", "admin"}:
+        package = json.loads((directory / "package-source.json").read_text(encoding="utf8"))
+        if package.get("sourceCommit") != commit or package.get("mode") != "compact":
+            raise ValueError("Images have no matching source/package journal")
+        for name in ["identity", "commerce", "education", "support", "gateway"]:
+            expected = package.get("jars", {}).get(name)
+            if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected) or images[name].get("jarSha256") != expected:
+                raise ValueError("Image artifact digest differs from packaged source")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("mode", choices=["source", "images"])
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--commit", required=True)
+    parser.add_argument("--bom", type=Path, default=Path("target/bom.json"))
+    parser.add_argument("--bom-binding", type=Path, default=Path("target/security-bom-binding.json"))
+    parser.add_argument("--images-file", type=Path)
+    parser.add_argument("--required-images", nargs="+", default=["identity", "commerce", "education", "support", "gateway", "student", "admin"])
+    args = parser.parse_args(argv)
+    if not re.fullmatch(r"[0-9a-f]{40}", args.commit):
+        parser.error("--commit must identify the exact source")
+    findings, scans, errors = [], [], []
+    with tempfile.TemporaryDirectory(prefix="tianji-security-") as raw:
+        root = Path(raw)
+        tasks = []
+        if args.mode == "source":
+            try:
+                validate_bom(args.bom, args.bom_binding, args.commit)
+            except (OSError, ValueError, KeyError, TypeError):
+                errors.append("A fresh source-bound resolved CycloneDX SBOM is required")
+            try:
+                snapshot = source_snapshot(args.commit, root / "source")
+                tasks += [("repository-secrets", ["fs", "--scanners", "secret", str(snapshot)]),
+                    ("web-python-dependencies", ["fs", "--scanners", "vuln", "--severity", "HIGH,CRITICAL",
+                        "--skip-files", "**/pom.xml", "--skip-files", "pom.xml", "--include-dev-deps", str(snapshot)])]
+            except (OSError, ValueError, RuntimeError, tarfile.TarError, subprocess.TimeoutExpired):
+                errors.append("Exact committed source snapshot is unavailable")
+            tasks.append(("maven-dependencies", ["sbom", "--severity", "HIGH,CRITICAL", str(args.bom)]))
+        else:
+            try:
+                images = json.loads(args.images_file.read_text(encoding="utf8"))
+                if set(images) != set(args.required_images):
+                    raise ValueError()
+                head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+                if head != args.commit or subprocess.run(["git", "diff", "--quiet", "HEAD", "--"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+                    raise ValueError("Images must be scanned against clean current source")
+                verify_image_journal(images, args.images_file.parent, args.commit)
+                for name, image in images.items():
+                    identity = image["imageId"]
+                    if not re.fullmatch(r"sha256:[0-9a-f]{64}", identity):
+                        raise ValueError()
+                    verify_image_source(identity, args.commit)
+                    tasks.append((name, ["image", "--image-src", "docker", "--scanners", "vuln", "--severity", "HIGH,CRITICAL", identity]))
+            except (OSError, ValueError, KeyError, TypeError, AttributeError, subprocess.TimeoutExpired):
+                errors.append("A complete actual local-image manifest is required")
+        for number, (name, arguments) in enumerate(tasks):
+            try:
+                observed = scan(arguments, root / (str(number) + ".json"))
+                findings.extend({"scan": name, **item} for item in observed)
+                scans.append(name)
+            except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired):
+                errors.append(name + ": scanner did not complete")
+    output = {"schema": "tianji-security-v1", "commit": args.commit, "observed_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "status": "PASSED" if not errors and not findings else "FAILED", "scans": scans, "errors": errors, "findings": findings}
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(output, indent=2) + "\n", encoding="utf8")
+    print(f"Security gate {output['status']}: {len(findings)} findings, {len(errors)} incomplete scans")
+    return 0 if output["status"] == "PASSED" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

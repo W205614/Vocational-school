@@ -6,6 +6,7 @@ def parse_arguments(arguments=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--modules')
     parser.add_argument('--phase', choices=['test', 'install'], default='test')
+    parser.add_argument('--compact',action='store_true',help='Include compact host startup regressions in the reactor')
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument('--tests')
     selection.add_argument('--suite', choices=['regression', 'core'])
@@ -19,6 +20,7 @@ def parse_arguments(arguments=None):
 
 def main():
  args = parse_arguments()
+ LOCAL.mkdir(parents=True,exist_ok=True)
  env=os.environ.copy()
  for line in (Path(os.environ.get('TJ_ENV_FILE',str(BASE/'.env')))).read_text().splitlines():
   if '=' in line: key,value=line.split('=',1);env[key]=value
@@ -65,7 +67,7 @@ def main():
   mysql(definition.group().replace('CREATE TABLE','CREATE TABLE IF NOT EXISTS',1),'acceptance_trade')
  apply_migrations('acceptance_trade',list((BASE/'migrations/common').glob('V*.sql')))
  mysql("CREATE TABLE IF NOT EXISTS test_counter(id INT PRIMARY KEY,value INT NOT NULL);INSERT IGNORE INTO test_counter VALUES(1,0)",'acceptance_common')
- command=[shutil.which('mvn') or 'E:/download/apache-maven-3.9.4/bin/mvn.cmd','-B',*(['-pl',args.modules,'-am'] if args.modules!='all' else []),'-Dtest='+args.tests,'-Dsurefire.failIfNoSpecifiedTests=false',args.phase]
+ command=[shutil.which('mvn') or 'E:/download/apache-maven-3.9.4/bin/mvn.cmd','-B',*(['-Pcompact'] if args.compact else []),*(['-pl',args.modules,'-am'] if args.modules!='all' else []),'-Dtest='+args.tests,'-Dsurefire.failIfNoSpecifiedTests=false',args.phase]
  with (LOCAL/'tests.log').open('w',encoding='utf8') as output:
   result=subprocess.run(command,cwd=REPO,env=env,stdout=output,stderr=subprocess.STDOUT)
  log=(LOCAL/'tests.log').read_text(encoding='utf8')

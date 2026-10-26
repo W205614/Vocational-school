@@ -14,6 +14,6 @@ class JwtSignerPrefixTest {
   var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
   var key=KeyPairGenerator.getInstance("RSA");key.initialize(2048);var bytes=Base64.getEncoder().encode(key.generateKeyPair().getPublic().getEncoded());
   server.createContext("/_modules/auth/jwks",exchange->{exchange.sendResponseHeaders(200,bytes.length);exchange.getResponseBody().write(bytes);exchange.close();});server.start();
-  try{var env=new MockEnvironment().withProperty("tj.routes.auth","http://127.0.0.1:"+server.getAddress().getPort()+"/_modules/auth");var holder=new JwtSignerHolder(mock(DiscoveryClient.class),env);holder.refresh();assertNotNull(holder.getJwtSigner());}finally{server.stop(0);}
+  try{var env=new MockEnvironment().withProperty("tj.routes.auth","http://127.0.0.1:"+server.getAddress().getPort()+"/_modules/auth");var holder=new JwtSignerHolder(mock(DiscoveryClient.class),env,new com.tianji.common.utils.ServiceIdentity(java.util.Map.of("TJ_INTERNAL_TOKEN","fixture-prefix-token-0123456789abcdef")));holder.refresh();assertNotNull(holder.getJwtSigner());}finally{server.stop(0);}
  }
 }

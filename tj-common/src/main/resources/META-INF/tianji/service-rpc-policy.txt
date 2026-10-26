@@ -1,0 +1,60 @@
+# Source-Manifest-SHA256: 63c2f29dfe0656c9c10fb954360be00d0eb0a7bb2a0ab08120b7c29ef8977456
+# Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
+# Explicit RPC contract snapshot, reviewed 2026-10-26. caller groups | HTTP method | module servlet path.
+# Authentication bootstrap and session checks are the gateway's only private RPC exceptions.
+gateway|GET|/_modules/auth/jwks
+gateway|GET|/_modules/auth/internal/v2/sessions/{id}/validate
+identity|GET|/_modules/auth/roles/{id}
+identity|GET|/_modules/auth/roles/list
+identity|POST|/_modules/user/internal/v2/users/password/initial
+identity|GET|/_modules/user/internal/v2/users/{id}/session-identity
+identity|POST|/_modules/user/users/detail/{isStaff}
+identity,commerce,education,support|GET|/_modules/user/users/ids
+identity,commerce,education,support|GET|/_modules/user/users/{id}/type
+identity,commerce,education,support|GET|/_modules/user/users/list
+identity,commerce,education,support|GET|/_modules/user/users/{id}
+# Read-only course and catalogue contracts; ownership/entitlement checks remain at their controllers.
+identity,commerce,education,support|GET|/_modules/course/catalogues/batchQuery
+identity,commerce,education,support|GET|/_modules/course/categorys/getAllOfOneLevel
+identity,commerce,education,support|GET|/_modules/course/subjects/list
+identity,commerce,education,support|GET|/_modules/course/internal/v1/course/infoByTeacherIds
+identity,commerce,education,support|GET|/_modules/course/internal/v1/course/section/{id}
+identity,commerce,education,support|GET|/_modules/course/internal/v1/course/media/useInfo
+identity,commerce,education,support|GET|/_modules/course/internal/v1/course/{id}/searchInfo
+identity,commerce,education,support|GET|/_modules/course/internal/v1/courses/simpleInfo/list
+identity,commerce,education,support|GET|/_modules/course/internal/v1/course/{id}
+education|GET|/_modules/media/internal/v2/media/{id}/duration
+identity,commerce,education,support|GET|/_modules/learning/lessons/{courseId}/count
+identity,commerce,education,support|GET|/_modules/learning/lessons/{courseId}/valid
+identity,commerce,education,support|GET|/_modules/learning/learning-records/course/{courseId}
+# Exam snapshots and writes are education-owned; teacher usage statistics are identity-owned as well.
+education|GET|/_modules/exam/internal/v1/exams/settlement-readiness
+education|POST|/_modules/exam/internal/v1/exams/learning-overview
+education|POST|/_modules/exam/question-biz/list
+education|GET|/_modules/exam/question-biz/biz/list
+education|GET|/_modules/exam/question-biz/scores
+education|GET|/_modules/exam/questions/list
+identity,education|GET|/_modules/exam/questions/numOfTeacher
+education|GET|/_modules/exam/questions/scores
+# Monetary mutations never accept a non-commerce service caller.
+commerce|GET|/_modules/pay/pay-channels/list
+commerce|POST|/_modules/pay/pay-orders
+commerce|GET|/_modules/pay/pay-orders/{bizOrderId}/status
+commerce|POST|/_modules/pay/refund-orders
+commerce|GET|/_modules/pay/refund-orders/{bizRefundOrderId}/status
+commerce|POST|/_modules/promotion/user-coupons/quote
+commerce|POST|/_modules/promotion/user-coupons/available
+commerce|POST|/_modules/promotion/user-coupons/discount
+commerce|PUT|/_modules/promotion/user-coupons/use
+commerce|PUT|/_modules/promotion/user-coupons/refund
+commerce|GET|/_modules/promotion/user-coupons/rules
+commerce|PUT|/_modules/promotion/internal/v2/coupon-reservations/{order}
+education|GET|/_modules/trade/internal/learning-entitlements/{orderId}
+identity,commerce,education,support|GET|/_modules/trade/order-details/enrollNum
+identity,commerce,education,support|GET|/_modules/trade/order-details/enrollCourse
+identity,commerce,education,support|GET|/_modules/trade/order-details/course/{id}
+identity,commerce,education,support|GET|/_modules/trade/order-details/purchaseInfo
+identity,commerce,education,support|GET|/_modules/search/courses/name
+education,support|GET|/_modules/remark/likes/list
+education|GET|/_modules/message/internal/v1/inboxes/unread-interactions
+identity|POST|/_modules/message/message

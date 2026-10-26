@@ -15,7 +15,8 @@ LOGGING = {'driver': 'local', 'options': {'max-size': '10m', 'max-file': '3'}}
 
 
 def harden(compose, offset=0):
-    result = copy.deepcopy(compose)
+    from application_layout import isolate_applications
+    result = isolate_applications(compose)
     for service in result['services'].values():
         service.setdefault('restart', 'unless-stopped')
         service['logging'] = copy.deepcopy(LOGGING)

@@ -6,8 +6,8 @@ from pathlib import Path
 from types import SimpleNamespace
 import yaml
 from setup import LOCAL,SOURCE
-sys.path.insert(0,str(SOURCE.parent/'final'))
-from redis_snapshot import transfer
+sys.path.insert(0,str(SOURCE.parent/'operations'))
+from runtime_redis_snapshot import transfer
 from recovery_upgrade import compare_redis_snapshots
 
 stamp=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d%H%M%S')

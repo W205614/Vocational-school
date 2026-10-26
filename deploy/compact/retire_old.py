@@ -6,8 +6,8 @@ from setup import LOCAL, PROJECT, ROOT, COMPOSE
 from evidence import validate,manifest
 from retirement_policy import healthy_runtime
 
-sys.path.insert(0,str(ROOT/'deploy/final'))
-from final_backup import verify
+sys.path.insert(0,str(ROOT/'deploy/operations'))
+from runtime_backup import verify
 
 def output(args):
  return subprocess.check_output(args).decode('utf8').strip()

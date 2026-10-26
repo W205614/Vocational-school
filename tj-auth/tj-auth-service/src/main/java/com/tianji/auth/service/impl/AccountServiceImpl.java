@@ -33,6 +33,8 @@ public class AccountServiceImpl implements IAccountService{
     private final ILoginRecordService loginRecordService;
     @org.springframework.beans.factory.annotation.Value("${tj.auth.cookie.require-secure:false}")
     private boolean requireSecureCookie;
+    @org.springframework.beans.factory.annotation.Autowired
+    private AdministratorMfaService administratorMfa;
 
     private com.tianji.common.utils.CookieBuilder refreshCookie() {
         // The gateway strips client headers and supplies protocol only with its service identity.
@@ -51,16 +53,23 @@ public class AccountServiceImpl implements IAccountService{
         catch(BadRequestException error){protection.failed(account,ip);throw new BadRequestException("登录信息有误");}
         catch(feign.FeignException error){if(error.status()==400 || error.status()==401){protection.failed(account,ip);throw new BadRequestException("登录信息有误");}throw new com.tianji.common.exceptions.ServiceUnavailableException("身份服务暂不可用");}
         if(Boolean.TRUE.equals(detail.getMustChangePassword())){protection.success(account);throw new com.tianji.common.exceptions.InitialPasswordRequiredException();}
-        LoginUserDTO current=userClient.sessionIdentity(detail.getUserId());if(isStaff==Long.valueOf(2).equals(current.getRoleId()))throw new BadRequestException("登录入口与账号身份不匹配");detail.setAuthVersion(current.getAuthVersion());detail.setRoleId(current.getRoleId());protection.success(account);
+        LoginUserDTO current=userClient.sessionIdentity(detail.getUserId());if(isStaff==Long.valueOf(2).equals(current.getRoleId()))throw new BadRequestException("登录入口与账号身份不匹配");detail.setAuthVersion(current.getAuthVersion());detail.setRoleId(current.getRoleId());
         if (detail == null) {
             throw new BadRequestException("登录信息有误");
         }
+        boolean mfaVerified=false;
+        if(administratorMfa!=null) {
+            try{mfaVerified=administratorMfa.verifyLogin(detail,loginDTO.getMfaCode());}
+            catch(com.tianji.common.exceptions.CommonException error){protection.failed(account,ip);throw error;}
+        }
+        protection.success(account);
 
         // 2.基于JWT生成登录token
         // 2.1.设置记住我标记
         detail.setRememberMe(loginDTO.getRememberMe());
         // 2.2.生成token
         String token = generateToken(detail);
+        if(mfaVerified)administratorMfa.markSession(detail);
 
         // 3.计入登录信息表
         loginRecordService.loginSuccess(loginDTO.getCellPhone(), detail.getUserId());

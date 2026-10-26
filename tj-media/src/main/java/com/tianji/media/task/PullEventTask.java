@@ -19,6 +19,7 @@ import java.util.Optional;
 @Slf4j
 @Component
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.platform.media",havingValue="TENCENT")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.media.vod-event-worker.enabled",havingValue="true")
 @RequiredArgsConstructor
 public class PullEventTask {
 

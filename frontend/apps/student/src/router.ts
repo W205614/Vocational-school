@@ -1,6 +1,7 @@
 import {createRouter,createWebHistory} from 'vue-router';
 const Catalog=()=>import('./views/Catalog.vue');const Course=()=>import('./views/Course.vue');const Commerce=()=>import('./views/Commerce.vue');const Personal=()=>import('./views/Personal.vue');const Exam=()=>import('./views/Exam.vue');const OperationsPanel=()=>import('../../../packages/shared/src/OperationsPanel.vue');
 export const router=createRouter({history:createWebHistory(),routes:[
+ {path:'/register',component:()=>import('./views/AccountAccess.vue')},{path:'/recover-password',component:()=>import('./views/AccountAccess.vue')},{path:'/privacy',component:()=>import('./views/Privacy.vue')},
  {path:'/',component:Catalog},{path:'/login',component:()=>import('./views/Login.vue')},{path:'/learning',component:()=>import('./views/Learning.vue')},{path:'/points',component:()=>import('./views/Points.vue')},{path:'/review',component:()=>import('./views/Review.vue')},{path:'/courses/:id',component:Course},
  ...['cart','coupons','orders'].map(mode=>({path:'/'+mode,component:Commerce,props:{mode}})),
  ...['favorites','notes','messages','settings'].map(mode=>({path:'/'+mode,component:Personal,props:{mode}})),
@@ -8,4 +9,4 @@ export const router=createRouter({history:createWebHistory(),routes:[
 ]});
 
 import {useSession} from '../../../packages/shared/src/session';
-router.beforeEach(to=>{if(!useSession().token && to.path!=='/' && to.path!=='/login' && !to.path.startsWith('/courses/'))return {path:'/login',query:{redirect:to.fullPath}};});
+router.beforeEach(to=>{if(!useSession().token && !['/','/login','/register','/recover-password','/privacy'].includes(to.path) && !to.path.startsWith('/courses/'))return {path:'/login',query:{redirect:to.fullPath}};});

@@ -1,0 +1,49 @@
+# This is an input contract, deliberately NOT deployable. Replace every REQUIRED
+# value and select actual protected Secret resources before rendering. No cloud
+# resource or supplier account is created by render.py.
+namespace: tianji-production
+commit: REQUIRED_40_CHARACTER_COMMIT
+replicas: 2
+images:
+  identity: REQUIRED_REGISTRY_IMAGE_AT_SHA256
+  commerce: REQUIRED_REGISTRY_IMAGE_AT_SHA256
+  education: REQUIRED_REGISTRY_IMAGE_AT_SHA256
+  support: REQUIRED_REGISTRY_IMAGE_AT_SHA256
+  gateway: REQUIRED_REGISTRY_IMAGE_AT_SHA256
+  student: REQUIRED_PRODUCTION_NGINX_IMAGE_AT_SHA256
+  admin: REQUIRED_PRODUCTION_NGINX_IMAGE_AT_SHA256
+  media-worker: REQUIRED_WORKER_IMAGE_AT_SHA256
+  java-agent: REQUIRED_OPERATOR_JAVA_INSTRUMENTATION_IMAGE_AT_SHA256
+mesh:
+  trust_domain: cluster.local
+  ingress_namespace: istio-system
+  ingress_service_account: istio-ingressgateway
+  ingress_selector: {istio: ingressgateway}
+public:
+  student_host: REQUIRED_STUDENT_DNS
+  admin_host: REQUIRED_ADMIN_DNS
+  tls_secret: tianji-public-tls
+  trusted_proxy_addresses: [REQUIRED_HEADLESS_INGRESS_PEER_DNS]
+managed:
+  mysql: {host: REQUIRED_MYSQL_HA_DNS, port: 3306, cidrs: [REQUIRED_PRIVATE_CIDR]}
+  redis: {host: REQUIRED_REDIS_HA_DNS, port: 6380, cidrs: [REQUIRED_PRIVATE_CIDR]}
+  rabbitmq: {host: REQUIRED_RABBIT_QUORUM_DNS, port: 5671, cidrs: [REQUIRED_PRIVATE_CIDR]}
+  elasticsearch: {host: REQUIRED_SEARCH_DNS, port: 9243, cidrs: [REQUIRED_PRIVATE_CIDR]}
+providers:
+  region: ap-shanghai
+  cos_bucket: REQUIRED_PRIVATE_BUCKET_WITH_APPID
+provider_hosts:
+  - openapi.alipay.com
+  - dysmsapi.aliyuncs.com
+  - REQUIRED_PRIVATE_BUCKET_COS_DNS
+privacy:
+  policy_version: REQUIRED_PUBLISHED_VERSION
+  policy_url: https://REQUIRED_STUDENT_DNS/privacy
+media_worker:
+  signatures_claim: maintained-clamav-signatures
+observability:
+  namespace: observability
+  service_account: prometheus
+  collector_configmap: otel-collector
+  otlp_endpoint: https://REQUIRED_OTLP_DNS
+  alert_webhook: https://REQUIRED_ONCALL_DNS/tianji

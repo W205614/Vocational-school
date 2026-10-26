@@ -28,7 +28,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
         // Permission-cache Redis calls are blocking; never run them on Netty's event loop.
         // Acquire off Netty. using also disposes an acquisition completed after cancellation,
         // and eager cleanup releases capacity before downstream observes completion.
-        boolean media=exchange.getRequest().getPath().value().matches("/api/v2/(services|admin)/media/local-content/[^/]+");
+        boolean media=exchange.getRequest().getPath().value().matches("/api/v2/(services|admin)/media/(local-content|cloud-content)/[^/]+");
         return Mono.using(()->limits.acquire(media,proxyIdentity.identify(exchange.getRequest()).address()),permit->Mono.defer(()->authorize(exchange,chain)),com.tianji.gateway.config.GatewayTrafficLimits.Lease::close,true)
                 .subscribeOn(authorizationScheduler);
     }
@@ -37,8 +37,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
         // Identity is derived exclusively from the signed token. Strip on every path, including public paths.
         ServerWebExchange sanitized=exchange.mutate().request(b->b.headers(h->{
             h.remove("user-session");h.remove("X-Client-IP");h.remove("X-Client-Proto");h.remove("Forwarded");h.remove("X-Forwarded-Proto");h.remove("X-Forwarded-Host");h.remove("X-Forwarded-Port");h.remove("X-Forwarded-For");h.remove("X-Real-IP");h.remove(USER_HEADER);h.remove("user-role");h.remove("X-User-Id");h.remove("X-Role-Id");h.remove("X-Internal-Token");h.remove("X-TJ-Call-Depth");
-            String internal=System.getenv("TJ_INTERNAL_TOKEN");if(internal==null || internal.length()<32)throw new IllegalStateException("Gateway service identity is not configured");
-            h.set("X-Internal-Token",internal);
+            h.remove("X-TJ-Service");
             h.set("X-Client-IP",client.address());h.set("X-Client-Proto",client.protocol());
         })).build();
         String path=sanitized.getRequest().getPath().value();
@@ -46,7 +45,8 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
             throw new ForbiddenException("内部接口不对外开放");
         String ant=sanitized.getRequest().getMethod().name()+":"+path;
         if(path.startsWith("/api/v2/") && !policy.declares(sanitized.getRequest().getMethod().name(),path))throw new ForbiddenException("该接口没有授权声明");
-        if(ant.startsWith("GET:/api/v2/services/media/local-content/"))return chain.filter(sanitized);
+        if(ant.startsWith("GET:/api/v2/services/media/local-content/") || ant.startsWith("GET:/api/v2/services/media/cloud-content/"))return chain.filter(sanitized);
+        if(java.util.Set.of("GET:/api/v2/public/accounts/privacy","POST:/api/v2/public/accounts/verification-codes","POST:/api/v2/public/accounts/registration","POST:/api/v2/public/accounts/password-recovery","POST:/api/v2/auth/accounts/mfa/enroll","POST:/api/v2/auth/accounts/mfa/confirm","POST:/api/v2/services/pay/notify/ali").contains(ant)){limits.publicQuery(client.address());return chain.filter(sanitized);}
         if(ant.equals("GET:/api/v2/public/courses") || ant.equals("GET:/api/v2/public/categories") || ant.matches("GET:/api/v2/public/courses/[0-9]{1,20}")){limits.publicQuery(client.address());return chain.filter(sanitized);}
         if(ant.matches("GET:/api/v2/services/media/course-covers/[0-9a-f]{64}\\.(png|jpg)")){limits.publicQuery(client.address());return chain.filter(sanitized);}
         if(ant.equals("GET:/api/v2/environment") || ant.equals("POST:/api/v2/auth/accounts/password/initial") || ant.equals("POST:/api/v2/auth/accounts/login") || ant.equals("POST:/api/v2/auth/accounts/admin/login") || ant.equals("GET:/api/v2/auth/accounts/refresh"))
@@ -72,6 +72,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
                 "GET:/api/v2/services/trade/pay/channels","POST:/api/v2/services/trade/pay/order",
                 "GET:/api/v2/services/promotion/coupons/list","GET:/api/v2/services/promotion/user-coupons/**","POST:/api/v2/services/promotion/user-coupons/available","POST:/api/v2/services/promotion/user-coupons/discount",
                 "GET:/api/v2/services/media/medias/signature/play","POST:/api/v2/services/remark/likes","GET:/api/v2/services/remark/likes/list",
+                "POST:/api/v2/services/user/account-privacy/export","POST:/api/v2/services/user/account-privacy/deletion","POST:/api/v2/services/user/account-privacy/consent",
                 "GET:/api/v2/services/user/users/me","PUT:/api/v2/services/user/users","PUT:/api/v2/services/user/students/password","GET:/api/v2/services/message/inboxes","PUT:/api/v2/services/message/inboxes/*/read");
             if(studentPaths.stream().noneMatch(pattern->matcher.match(pattern,ant))) throw new ForbiddenException("该接口不向学生开放");
         }
@@ -89,8 +90,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
             if(user.getUserId()==null || user.getRoleId()==null) throw new UnauthorizedException("身份信息不完整");
             limits.authenticated(user.getUserId());
             sanitized=sanitized.mutate().request(b->b.headers(h->{
-                String internal=System.getenv("TJ_INTERNAL_TOKEN");if(internal==null || internal.length()<32)throw new IllegalStateException("Gateway service identity is not configured");
-                h.set("X-Internal-Token",internal);h.set("user-session",user.getSessionId());h.set(USER_HEADER,user.getUserId().toString());h.set("user-role",user.getRoleId().toString());
+                h.set("user-session",user.getSessionId());h.set(USER_HEADER,user.getUserId().toString());h.set("user-role",user.getRoleId().toString());
             })).build();
         }
         return chain.filter(sanitized);

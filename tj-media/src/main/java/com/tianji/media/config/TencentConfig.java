@@ -66,6 +66,12 @@ public class TencentConfig {
         // 2.基本配置
         Region region = new Region(properties.getCos().getRegion());
         ClientConfig clientConfig = new ClientConfig(region);
+        clientConfig.setHttpProtocol(com.qcloud.cos.http.HttpProtocol.https);
+        clientConfig.setConnectionTimeout(3000);
+        clientConfig.setConnectionRequestTimeout(3000);
+        clientConfig.setSocketTimeout(15000);
+        clientConfig.setMaxConnectionsCount(16);
+        clientConfig.setMaxErrorRetry(1);
         // 3.初始化客户端
         return new COSClient(cred, clientConfig);
     }

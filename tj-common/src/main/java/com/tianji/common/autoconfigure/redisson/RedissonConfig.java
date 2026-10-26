@@ -35,6 +35,10 @@ public class RedissonConfig {
     @Bean
     @ConditionalOnMissingBean
     public RedissonClient redissonClient(DataRedisProperties properties){
+        return Redisson.create(configuration(properties));
+    }
+
+    static Config configuration(DataRedisProperties properties){
         log.debug("尝试初始化RedissonClient");
         // 1.读取Redis配置
         DataRedisProperties.Cluster cluster = properties.getCluster();
@@ -50,34 +54,37 @@ public class RedissonConfig {
         if(cluster != null && !CollectionUtil.isEmpty(cluster.getNodes())){
             // 集群模式
             config.useClusterServers()
-                    .addNodeAddress(convert(cluster.getNodes()))
+                    .addNodeAddress(convert(cluster.getNodes(),properties.getSsl().isEnabled()))
                     .setConnectTimeout(timeout)
+                    .setUsername(properties.getUsername())
                     .setPassword(password);
         }else if(sentinel != null && !StrUtil.isEmpty(sentinel.getMaster())){
             // 哨兵模式
             config.useSentinelServers()
                     .setMasterName(sentinel.getMaster())
-                    .addSentinelAddress(convert(sentinel.getNodes()))
+                    .addSentinelAddress(convert(sentinel.getNodes(),properties.getSsl().isEnabled()))
                     .setConnectTimeout(timeout)
                     .setDatabase(properties.getDatabase())
+                    .setUsername(properties.getUsername())
                     .setPassword(password);
         }else{
             // 单机模式
             config.useSingleServer()
-                    .setAddress(String.format("redis://%s:%d", properties.getHost(), properties.getPort()))
+                    .setAddress(String.format("%s%s:%d", properties.getSsl().isEnabled()?REDISS_PROTOCOL_PREFIX:REDIS_PROTOCOL_PREFIX,properties.getHost(),properties.getPort()))
                     .setConnectTimeout(timeout)
                     .setDatabase(properties.getDatabase())
+                    .setUsername(properties.getUsername())
                     .setPassword(password);
         }
         // 3.创建Redisson客户端
-        return Redisson.create(config);
+        return config;
     }
 
-    private String[] convert(List<String> nodesObject) {
+    private static String[] convert(List<String> nodesObject,boolean tls) {
         List<String> nodes = new ArrayList<>(nodesObject.size());
         for (String node : nodesObject) {
             if (!node.startsWith(REDIS_PROTOCOL_PREFIX) && !node.startsWith(REDISS_PROTOCOL_PREFIX)) {
-                nodes.add(REDIS_PROTOCOL_PREFIX + node);
+                nodes.add((tls?REDISS_PROTOCOL_PREFIX:REDIS_PROTOCOL_PREFIX) + node);
             } else {
                 nodes.add(node);
             }

@@ -1,13 +1,39 @@
 package com.tianji.gateway.config;
+
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.core.io.ClassPathResource;
 import java.util.*;
 import java.nio.charset.StandardCharsets;
+
 /** Version-controlled method/path inventory. Unknown endpoints always fail closed. */
-@Component public final class AccessPolicy {
- private final List<String> rules;
- private final AntPathMatcher matcher=new AntPathMatcher();
- public AccessPolicy(){try(var input=new ClassPathResource("access-policy.txt").getInputStream()){rules=new String(input.readAllBytes(),StandardCharsets.UTF_8).lines().filter(s->!s.isBlank()).toList();}catch(Exception e){throw new IllegalStateException("Access policy is required",e);}}
- public boolean declares(String method,String path){String key=method+":"+path;return rules.stream().anyMatch(p->{if(!matcher.match(p,key))return false;var variables=matcher.extractUriTemplateVariables(p,key);for(var v:variables.entrySet()){String name=v.getKey(),value=v.getValue();if(name.equals("key")){if(!value.matches("[a-zA-Z0-9_.-]{1,100}"))return false;continue;}if(name.equals("reason") && p.equals("PUT:/api/v2/admin/provider-payments/anomalies/{number}/{reason}")){if(!Set.of("WINDOW_EXHAUSTED","CHANNEL_UNAVAILABLE","ORDER_NUMBER_MISMATCH","AMOUNT_MISMATCH","INVALID_SUCCESS_TIME","UNKNOWN_STATUS").contains(value))return false;continue;}if(name.equals("month")){if(!value.matches("[0-9]{4}-[0-9]{2}"))return false;continue;}if(name.equals("kind")){if(!Set.of("refund","payment","sms","notice").contains(value))return false;continue;}if(name.equals("code")){if(!value.matches("[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8,10}"))return false;continue;}if(name.equals("hidden")){if(!value.matches("true|false"))return false;continue;}boolean workflow=p.contains("/learning-hub/admin/rewards/") || p.contains("/operations/") || p.contains("/events/") || p.contains("-failures/") || p.contains("/storage-cleanups/") || p.contains("/accounts/sessions/") || p.contains("/deliveries/");if(!value.matches(workflow?"[0-9a-f-]{1,36}":"[0-9]{1,20}"))return false;}return true;});}
+@Component
+public final class AccessPolicy {
+    private final List<String> rules;
+    private final AntPathMatcher matcher=new AntPathMatcher();
+    public AccessPolicy() {
+        try(var input=new ClassPathResource("access-policy.txt").getInputStream()) {
+            rules=new String(input.readAllBytes(),StandardCharsets.UTF_8).lines().filter(line->!line.isBlank()).toList();
+        } catch(Exception error) {throw new IllegalStateException("Access policy is required",error);}
+    }
+    public boolean declares(String method,String path) {
+        String key=method+":"+path;
+        return rules.stream().anyMatch(pattern->matcher.match(pattern,key) &&
+            matcher.extractUriTemplateVariables(pattern,key).entrySet().stream().allMatch(variable->valid(pattern,variable.getKey(),variable.getValue())));
+    }
+    private boolean valid(String pattern,String name,String value) {
+        if(name.equals("key"))return value.matches("[a-zA-Z0-9_.-]{1,100}");
+        if(name.equals("reason") && pattern.equals("PUT:/api/v2/admin/provider-payments/anomalies/{number}/{reason}"))
+            return Set.of("WINDOW_EXHAUSTED","CHANNEL_UNAVAILABLE","ORDER_NUMBER_MISMATCH","AMOUNT_MISMATCH","INVALID_SUCCESS_TIME","UNKNOWN_STATUS").contains(value);
+        if(name.equals("month"))return value.matches("[0-9]{4}-[0-9]{2}");
+        if(name.equals("kind"))return Set.of("refund","payment","sms","notice").contains(value);
+        if(name.equals("code"))return value.matches("[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8,10}");
+        if(name.equals("hidden"))return value.matches("true|false");
+        if(pattern.contains("/cloud-content/") || pattern.contains("/media-upload-tasks/") || pattern.contains("/account-privacy/requests/"))
+            return value.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+        boolean workflow=pattern.contains("/learning-hub/admin/rewards/") || pattern.contains("/operations/") ||
+            pattern.contains("/events/") || pattern.contains("-failures/") || pattern.contains("/storage-cleanups/") ||
+            pattern.contains("/accounts/sessions/") || pattern.contains("/deliveries/");
+        return value.matches(workflow?"[0-9a-f-]{1,36}":"[0-9]{1,20}");
+    }
 }

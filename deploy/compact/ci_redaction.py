@@ -2,7 +2,7 @@
 import re
 
 SENSITIVE_LINE = re.compile(
-    r'password|secret|authorization|cookie|private.key|LoginFormDTO|临时密码|临时登录凭据|到期时间', re.I)
+    r'password|secret|authorization|cookie|private.key|LoginFormDTO|临时密码|临时登录凭据|到期时间|验证器密钥|验证码|otpauth|MFA', re.I)
 
 
 def redact(text, private=()):
@@ -10,9 +10,10 @@ def redact(text, private=()):
         if len(value) >= 8:
             text = text.replace(value, '[REDACTED]')
     text = re.sub(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+', '[REDACTED JWT]', text)
+    text = re.sub(r'\b[A-Z2-7]{32,128}={0,6}\b', '[REDACTED AUTHENTICATOR KEY]', text)
     # Playwright can quote the complete visible credential dialog on assertion
     # failure. Those random receipts are intentionally absent from account files.
-    return '\n'.join(line for line in text.splitlines() if not SENSITIVE_LINE.search(line))
+    return '\n'.join(line for line in text.splitlines() if not SENSITIVE_LINE.search(line) and not re.fullmatch(r'\s*[0-9]{6}\s*',line))
 
 
 def excerpt(text, private=(), limit=20000):

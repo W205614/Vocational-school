@@ -124,8 +124,8 @@ def main():
                 # Their immutable image ownership remains in the captured backup,
                 # even when later builds have moved all application tags.
                 if (path.parent/'manifest.json').exists():
-                    __import__('sys').path.insert(0,str(ROOT/'deploy/final'))
-                    from final_backup import verify
+                    __import__('sys').path.insert(0,str(ROOT/'deploy/operations'))
+                    from runtime_backup import verify
                     verify(path.parent)
                     owned.update(image for image in value.values() if isinstance(image,str) and re.fullmatch(r'sha256:[0-9a-f]{64}',image))
             else:owned.update(item['imageId'] for item in value.values() if isinstance(item,dict) and 'imageId' in item)
@@ -144,7 +144,7 @@ def main():
     if selected:
         # A current complete backup replaces historical rollback tar packages.
         from backup_images import refresh
-        from final_backup import verify
+        from runtime_backup import verify
         backup=Path(json.loads((LOCAL/'ops-status/backup.json').read_text(encoding='utf8'))['lastBundle'])
         if not verify(backup).get('quiesced'):raise RuntimeError('A current complete data backup is required')
         refresh(LOCAL, PROJECT, backup)

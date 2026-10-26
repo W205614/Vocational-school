@@ -102,7 +102,8 @@ def prepare():
  infrastructure['elasticsearch']['image']='docker.elastic.co/elasticsearch/elasticsearch:9.5.5'
  infrastructure['elasticsearch']['volumes']=['compact_search_v9:/usr/share/elasticsearch/data']
  for group in list(GROUPS)+['gateway']:
-  services['app-'+group]={'image':'tianji-compact/'+group+':local','restart':'unless-stopped','env_file':['./.local/app.env'],'ports':['127.0.0.1:'+str(PORTS[group])+':'+str(PORTS[group])],'volumes':['./.local/configs:/run/compact/configs:ro','./.local/signing.jks:/run/compact/signing.jks:ro','./.local/objects:/run/objects'],'mem_limit':'1536m' if group!='gateway' else '768m','environment':{'APP_PORT':str(PORTS[group])},'command':['--spring.config.location=file:/run/compact/configs/'+group+'.yml'],'depends_on':{i:{'condition':'service_healthy'} for i in infrastructure},'healthcheck':{'test':['CMD','java','-Xms16m','-Xmx32m','-cp','/app/health','HealthProbe'],'interval':'10s','timeout':'4s','start_period':'90s','retries':30}}
+  from application_layout import application_mounts,application_dependencies
+  services['app-'+group]={'image':'tianji-compact/'+group+':local','restart':'unless-stopped','env_file':['./.local/app.env'],'ports':['127.0.0.1:'+str(PORTS[group])+':'+str(PORTS[group])],'volumes':application_mounts(group),'mem_limit':'1536m' if group!='gateway' else '768m','environment':{'APP_PORT':str(PORTS[group])},'command':['--spring.config.location=file:/run/compact/configs/'+group+'.yml'],'depends_on':application_dependencies(group),'healthcheck':{'test':['CMD','java','-Xms16m','-Xmx32m','-cp','/app/health','HealthProbe'],'interval':'10s','timeout':'4s','start_period':'90s','retries':30}}
   from http_ports import listener_sysctls
   services['app-'+group]['sysctls']=listener_sysctls(PORTS[group],internal_ports.get(group))
  for app,port in [('student',24500+OFFSET),('admin',24501+OFFSET)]:services['web-'+app]={'image':'tianji-compact/'+app+':local','environment':{'GW_UPSTREAM':'app-gateway:'+str(PORTS['gateway'])},'ports':['127.0.0.1:'+str(port)+':8080'],'mem_limit':'128m','depends_on':{'app-gateway':{'condition':'service_healthy'}}}
@@ -122,7 +123,7 @@ def initialize(clone=None,migrate_schema=True):
  if phase=='COMPLETE':print('Initialization already completed');return
  if phase=='IMPORTING' and clone:
   from zipfile import ZipFile
-  sys.path.insert(0,str(SOURCE.parent/'final'));from final_backup import verify
+  sys.path.insert(0,str(SOURCE.parent/'operations'));from runtime_backup import verify
   verify(clone)
   run(COMPOSE+['exec','-T','mysql','sh','-c','MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot'],'restore',input=(clone/'business.sql').read_bytes())
   with ZipFile(clone/'media.zip') as archive:archive.extractall(LOCAL/'objects')
@@ -173,7 +174,7 @@ def build(package=True,group=None):
   media_probe='RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*\n' if group=='support' else ''
   (folder/'Dockerfile').write_text('FROM eclipse-temurin:21-jre\nENV TZ=Asia/Shanghai\nWORKDIR /app\n'+media_probe+'RUN groupadd --non-unique --gid '+str(app_gid)+' app && useradd --non-unique --uid '+str(app_uid)+' --gid app --home /app app && mkdir -p /app/logs/csp && chown -R app:app /app/logs\nCOPY app.jar /app/app.jar\nCOPY HealthProbe.class /app/health/HealthProbe.class\nUSER app\nENTRYPOINT ["java","-Xms96m","-Xmx'+heap+'","-XX:MaxDirectMemorySize=96m","-XX:ActiveProcessorCount=2","-jar","/app/app.jar"]\n',encoding='utf8')
   retain_previous_image(group)
-  image='tianji-compact/'+group+':local';run(['docker','build','--pull=false','-t',image,str(folder)],'image-'+group)
+  image='tianji-compact/'+group+':local';run(['docker','build','--pull=false','--label','org.opencontainers.image.revision='+commit,'-t',image,str(folder)],'image-'+group)
   run(['docker','tag',image,'tianji-release/'+group+':'+commit],'tag-'+group)
   manifest[group]={'image':image,'jarSha256':hashlib.sha256(jar.read_bytes()).hexdigest(),'imageId':subprocess.check_output(['docker','image','inspect',image,'--format','{{.Id}}']).decode().strip()}
   print('Built compact '+group,flush=True)
@@ -183,7 +184,7 @@ def build(package=True,group=None):
    folder=new_web_context(LOCAL,app);shutil.copytree(ROOT/'frontend/apps'/app/'dist',folder/'dist')
    shutil.copyfile(ACC/'docker/nginx.conf.template',folder/'nginx.conf.template');shutil.copyfile(ACC/'docker/Dockerfile.web',folder/'Dockerfile')
    retain_previous_image(app)
-   run(['docker','build','--pull=false','-t','tianji-compact/'+app+':local',str(folder)],'image-'+app)
+   run(['docker','build','--pull=false','--label','org.opencontainers.image.revision='+commit,'-t','tianji-compact/'+app+':local',str(folder)],'image-'+app)
    run(['docker','tag','tianji-compact/'+app+':local','tianji-release/'+app+':'+commit],'tag-'+app)
    manifest[app]={'image':'tianji-compact/'+app+':local','imageId':subprocess.check_output(['docker','image','inspect','tianji-compact/'+app+':local','--format','{{.Id}}']).decode().strip()}
  (LOCAL/'images.json').write_text(json.dumps(manifest,indent=2),encoding='utf8')

@@ -1,0 +1,41 @@
+# Private cloud media delivery
+
+`CLOUD_COS` uses the existing Tencent COS SDK and private objects. It is separate from the legacy `TENCENT` VOD provider. No supplier account or live cloud acceptance is included in the repository.
+
+## Data and authorization flow
+
+1. An administrator creates `/api/v2/admin/media-upload-tasks` with `filename`, `size`, SHA-256 and `Idempotency-Key`. The database binds the task to that administrator and request body. The API returns a PUT URL valid for at most 15 minutes; its signature pins the object key, content type, length and private ACL. No GET URL is returned.
+2. The browser sends the bytes directly to the quarantine prefix. `/complete` checks provider metadata; it does not trust a client-supplied duration or a claim that scanning succeeded. A task is unavailable to course publication until it has a `mediaId` in `READY`.
+3. A separate worker claims a database lease, streams the immutable source version/ETag to a bounded temporary file, verifies size and SHA-256, runs ClamAV, checks the container/video codec with ffprobe, and produces H.264/AAC MP4 using bounded ffmpeg resources. MP4/H.264 and WebM/VP8/VP9 inputs are supported. No shell or network input protocol is passed to ffmpeg. All failures leave the task unpublished.
+4. Each worker attempt writes a unique output key. The winning lease atomically inserts the media row and records its object version/ETag. Repeated completion, competing workers and stale leases cannot register a second media row. Failed tasks allow at most three total processing attempts. An operator should investigate a failure before requesting `/retry`.
+5. Existing `playUrl` / `expiresAt` renewal and the native video element consume the final MP4. Every `/cloud-content/{id}` request validates the HMAC owner/course/expiry ticket and checks current course entitlement before streaming a bounded single Range from COS. The student never sees a COS GET URL. Refunds reject subsequent requests and renewal; bytes already delivered and a request already open cannot be recalled. This is access control, not DRM or proof of watching.
+
+The gateway must route the four admin upload-task endpoints to the media module, permit UUID task identifiers, and treat cloud-content GET as a signed-media request with the same resource admission as local-content. Only `CLOUD_COS` with `ENTITLEMENT_PROXY` should advertise the new cloud playback/upload capability. Legacy VOD PSIGN expiry is now bounded, but it does not provide this per-request entitlement gate; VOD CDN delivery is not the production default.
+
+## Configuration and worker package
+
+API settings: `tj.platform.media=CLOUD_COS`, `tj.cloud-media.enabled=true`, `role=api`, `delivery=ENTITLEMENT_PROXY`, `bucket`, `region`, `secret-id`, `secret-key`, and an independent random `signing-key` of at least 32 bytes. The `tj.cloud-media` prefix applies to the latter keys. Limits default to 200 MiB input, 900-second upload authorization and 600-second playback authorization. The API refuses unsupported resource limits and missing properties. The media signing key is unrelated to JWT signing or service credentials.
+
+Build the isolated worker with:
+
+```text
+mvn -B -pl tj-media -am -Pmedia-worker -DskipTests package
+```
+
+The artifact is `tj-media/target/tj-media-worker.jar`. Build `tj-media/docker/Dockerfile.worker` with that file in its context. It starts `CloudMediaWorkerApplication`, scans only cloud-worker components and exposes health on private port 8086. Its configuration uses `role=worker`; it needs only the media database and a separate COS IAM credential, not a JWT private key, media playback key or shared host storage. `worker-directory=/work/media` must be a bounded ephemeral volume; a worker processes one task at a time and two ffmpeg threads. The native-tool timeout defaults to 1800 seconds. Source/output byte limits and a lease heartbeat remain enforced independently.
+
+Mount a maintained ClamAV database read-only at `/var/lib/clamav` and set `scanner-command=/usr/bin/clamscan`. The image's scanner binary alone is insufficient. Both health and polling require `daily.cvd` or `daily.cld` updated within 48 hours by default; the scanner also validates the actual database when scanning. Signature update jobs need their own controlled egress and writable signature volume. Missing/stale signatures prevent new work, not silently bypass scanning. Use `signature-directory`, `signature-max-age-seconds`, `ffmpeg-command`, `worker-directory` and `transcode-timeout-seconds` to configure these bounds explicitly.
+
+## External acceptance required before promotion
+
+- Enable private bucket ACL, block public bucket policies and prohibit public object ACLs. Startup checks reject all group/URI ACL grants (including global AllUsers and AuthenticatedUsers), wildcard/global-group policy principals and unbounded allow policies; explicit UIN grants still require operator review. Audit bucket access points, IAM and account-level public access controls separately. Enable object versioning and encrypted storage. API and worker identities receive only the prefixes/actions they require. COS traffic uses HTTPS with bounded connection/socket pools/timeouts.
+- CORS must allow only the configured admin origin and required PUT headers (`Content-Type`, `x-cos-acl`); Content-Length is supplied by the browser for the selected File. Verify that changing length/type/ACL fails the provider signature and that anonymous GET of quarantine and ready objects is denied.
+- Apply a quarantine-prefix expiry policy after the supported processing/retry window, and run an ownership/reference-aware orphan reconciliation before retiring abandoned ready objects. Never apply an age-only deletion policy to active ready course objects. Failed/lease-lost output uploads may leave private orphan bytes; they are not served or counted as a completed publication.
+- Test a real object upload, malware rejection, scanner-unavailable failure, native codec rejection, successful processing, worker interruption, competing claims, renewal, exact 206 Range bytes and refund denial on the next request. Test bucket/version recovery and object retention with the production backup policy.
+- Do not add a public CDN cache in front of this path: cached bytes would bypass the entitlement check. A CDN requires a separately verified per-request authorization integration before enabling it.
+
+Output publication records the version/ETag returned by its own PUT, rather than a later HEAD of the key. The PUT also includes Content-MD5 as the provider transport checksum and forbids overwrite where COS supports that header. GET pins the recorded version and ETag, so overwriting the current key cannot substitute unvalidated bytes. Versioned buckets can accept another version despite the overwrite header; pinning the returned version is the protection in that case. An admin/owner-teacher preview ticket uses a separately signed `course=0` value; changing a student's course ticket to zero fails its HMAC. A genuine preview URL is a short-lived bearer credential, consistent with the existing local preview model; it is not an anti-sharing or immediate session-revocation mechanism. Course tickets continue to recheck course entitlement on every request.
+
+Offline tests exercise signed-request constraints, task ownership, byte/hash limits, lease/transaction effects and playback gates. Database tests use real isolated MySQL with fake COS/native processing. They are not evidence of live COS, malware detection, CDN revocation, throughput or high availability.
+
+Provider references: [COS presigned URLs](https://cloud.tencent.com.cn/document/product/436/36162), [VOD player signature expiry](https://intl.cloud.tencent.com/ind/document/product/266/38099).

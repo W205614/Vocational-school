@@ -22,8 +22,11 @@ public class RequestIdRelayConfiguration {
     @Bean
     public RequestInterceptor requestIdInterceptor(){
         return template -> {
-            String internal=System.getenv("TJ_INTERNAL_TOKEN");
-            if(internal!=null) template.header("X-Internal-Token",internal);
+            String target=template.feignTarget()==null?template.url():template.feignTarget().url();
+            var credential=com.tianji.common.utils.ServiceIdentity.current().outgoing(target);
+            template.removeHeader("X-Internal-Token");template.removeHeader("X-TJ-Service");
+            template.header("X-Internal-Token",credential.token());
+            if(credential.caller()!=null)template.header("X-TJ-Service",credential.caller());
             Long user=com.tianji.common.utils.UserContext.getUser();
             if(user!=null) template.header("user-info",user.toString());
             Long role=com.tianji.common.utils.UserContext.getRole();

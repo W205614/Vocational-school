@@ -117,9 +117,10 @@ services:
     ports:
     - 127.0.0.1:24001:24001
     volumes:
-    - ./.local/configs:/run/compact/configs:ro
+    - ./.local/configs/identity.yml:/run/compact/configs/identity.yml:ro
+    - ./.local/configs/auth.yml:/run/compact/configs/auth.yml:ro
+    - ./.local/configs/user.yml:/run/compact/configs/user.yml:ro
     - ./.local/signing.jks:/run/compact/signing.jks:ro
-    - ./.local/objects:/run/objects
     mem_limit: 1536m
     environment:
       APP_PORT: '24001'
@@ -131,8 +132,6 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
-        condition: service_healthy
-      elasticsearch:
         condition: service_healthy
     healthcheck:
       test:
@@ -163,9 +162,10 @@ services:
     ports:
     - 127.0.0.1:24002:24002
     volumes:
-    - ./.local/configs:/run/compact/configs:ro
-    - ./.local/signing.jks:/run/compact/signing.jks:ro
-    - ./.local/objects:/run/objects
+    - ./.local/configs/commerce.yml:/run/compact/configs/commerce.yml:ro
+    - ./.local/configs/trade.yml:/run/compact/configs/trade.yml:ro
+    - ./.local/configs/pay.yml:/run/compact/configs/pay.yml:ro
+    - ./.local/configs/promotion.yml:/run/compact/configs/promotion.yml:ro
     mem_limit: 1536m
     environment:
       APP_PORT: '24002'
@@ -177,8 +177,6 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
-        condition: service_healthy
-      elasticsearch:
         condition: service_healthy
     healthcheck:
       test:
@@ -209,9 +207,11 @@ services:
     ports:
     - 127.0.0.1:24003:24003
     volumes:
-    - ./.local/configs:/run/compact/configs:ro
-    - ./.local/signing.jks:/run/compact/signing.jks:ro
-    - ./.local/objects:/run/objects
+    - ./.local/configs/education.yml:/run/compact/configs/education.yml:ro
+    - ./.local/configs/course.yml:/run/compact/configs/course.yml:ro
+    - ./.local/configs/learning.yml:/run/compact/configs/learning.yml:ro
+    - ./.local/configs/exam.yml:/run/compact/configs/exam.yml:ro
+    - ./.local/configs/remark.yml:/run/compact/configs/remark.yml:ro
     mem_limit: 1536m
     environment:
       APP_PORT: '24003'
@@ -223,8 +223,6 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
-        condition: service_healthy
-      elasticsearch:
         condition: service_healthy
     healthcheck:
       test:
@@ -255,8 +253,11 @@ services:
     ports:
     - 127.0.0.1:24004:24004
     volumes:
-    - ./.local/configs:/run/compact/configs:ro
-    - ./.local/signing.jks:/run/compact/signing.jks:ro
+    - ./.local/configs/support.yml:/run/compact/configs/support.yml:ro
+    - ./.local/configs/media.yml:/run/compact/configs/media.yml:ro
+    - ./.local/configs/search.yml:/run/compact/configs/search.yml:ro
+    - ./.local/configs/message.yml:/run/compact/configs/message.yml:ro
+    - ./.local/configs/data.yml:/run/compact/configs/data.yml:ro
     - ./.local/objects:/run/objects
     mem_limit: 1536m
     environment:
@@ -301,23 +302,17 @@ services:
     ports:
     - 127.0.0.1:24310:24310
     volumes:
-    - ./.local/configs:/run/compact/configs:ro
-    - ./.local/signing.jks:/run/compact/signing.jks:ro
-    - ./.local/objects:/run/objects
     - ./.local/ops-status:/run/ops-status:ro
+    - ./.local/configs/gateway.yml:/run/compact/configs/gateway.yml:ro
     mem_limit: 768m
     environment:
       APP_PORT: '24310'
     command:
     - --spring.config.location=file:/run/compact/configs/gateway.yml
     depends_on:
-      mysql:
-        condition: service_healthy
       redis:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      elasticsearch:
+      app-identity:
         condition: service_healthy
     healthcheck:
       test:

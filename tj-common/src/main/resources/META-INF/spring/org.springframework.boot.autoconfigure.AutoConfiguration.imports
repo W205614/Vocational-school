@@ -7,3 +7,4 @@ com.tianji.common.autoconfigure.redisson.RedissonConfig
 com.tianji.common.autoconfigure.swagger.Knife4jConfiguration
 com.tianji.common.autoconfigure.xxljob.XxlJobConfig
 com.tianji.common.autoconfigure.reliability.ReliabilityConfiguration
+com.tianji.common.autoconfigure.production.ProductionSafetyConfiguration

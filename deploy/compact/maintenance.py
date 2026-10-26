@@ -154,8 +154,8 @@ def retain_automatic(local, bundle, verify):
 
 def perform_backup(online=False, automated=False):
     import setup
-    sys.path.insert(0, str(setup.SOURCE.parent / 'final'))
-    from final_backup import capture, quiesce, verify
+    sys.path.insert(0, str(setup.SOURCE.parent / 'operations'))
+    from runtime_backup import capture, quiesce, verify
     runtime = setup.configure_acceptance()
     with maintenance_lock(setup.LOCAL):
         resume_interrupted(runtime,setup.LOCAL)

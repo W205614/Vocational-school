@@ -5,11 +5,15 @@ import java.security.MessageDigest;
 /** Service ports must remain private. Never accept this header through the public gateway. */
 public final class InternalAuth {
     private InternalAuth() {}
+    public static boolean trusted(jakarta.servlet.http.HttpServletRequest request) {
+        if(!single(request,"X-Internal-Token") || !single(request,"X-TJ-Service"))return false;
+        return ServiceIdentity.current().accepts(request.getHeader("X-TJ-Service"),request.getHeader("X-Internal-Token"));
+    }
+    private static boolean single(jakarta.servlet.http.HttpServletRequest request,String name) {
+        var values=request.getHeaders(name);return values==null || java.util.Collections.list(values).size()<=1;
+    }
     public static void requireService() {
-        String configured=System.getenv("TJ_INTERNAL_TOKEN");
-        String presented=WebUtils.getRequest().getHeader("X-Internal-Token");
-        if(configured==null || configured.length()<32 || presented==null ||
-                !MessageDigest.isEqual(configured.getBytes(StandardCharsets.UTF_8),presented.getBytes(StandardCharsets.UTF_8)))
+        if(!trusted(WebUtils.getRequest()))
             throw new ForbiddenException("需要可信服务身份");
     }
 }

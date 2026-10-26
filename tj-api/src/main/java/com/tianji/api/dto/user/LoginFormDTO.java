@@ -23,4 +23,9 @@ public class LoginFormDTO {
     private String password;
     @Schema(description = "7天免密登录", example = "true")
     private Boolean rememberMe = false;
+    @Schema(description = "管理员验证器六位验证码；启用MFA后必填")
+    @jakarta.validation.constraints.Pattern(regexp="[0-9]{6}")
+    private String mfaCode;
+
+    @Override public String toString(){return "LoginFormDTO[type="+type+",credentials=REDACTED]";}
 }

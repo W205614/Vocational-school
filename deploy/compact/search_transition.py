@@ -112,7 +112,7 @@ def main():
             'preservedOldSearchVolume':True,'restoredBusinessBackup':False}
     try:
         if apps:run(COMPOSE+['stop','-t','60',*apps],'search-pause-apps')
-        sys.path.insert(0,str(ROOT/'deploy/final'));from final_backup import capture,verify
+        sys.path.insert(0,str(ROOT/'deploy/operations'));from runtime_backup import capture,verify
         backup=capture(configure_acceptance(),BASE,quiesced=True);verify(backup);report['backup']=str(backup)
         for name in ('images.json','build-source.json'):
             previous=LOCAL/name

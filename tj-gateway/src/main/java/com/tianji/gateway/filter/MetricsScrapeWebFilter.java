@@ -18,8 +18,9 @@ import java.util.stream.Collectors;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public final class MetricsScrapeWebFilter implements WebFilter {
     private final Supplier<String> configuredToken;
-    public MetricsScrapeWebFilter(){this(()->System.getenv("TJ_INTERNAL_TOKEN"));}
-    MetricsScrapeWebFilter(Supplier<String> configuredToken){this.configuredToken=configuredToken;}
+    private final java.util.function.BiPredicate<String,String> verifies;
+    public MetricsScrapeWebFilter(){this.configuredToken=()->null;this.verifies=com.tianji.common.utils.ServiceIdentity.current()::accepts;}
+    MetricsScrapeWebFilter(Supplier<String> configuredToken){this.configuredToken=configuredToken;this.verifies=(caller,given)->{String expected=configuredToken.get();return expected!=null && expected.length()>=32 && given!=null && MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),given.getBytes(StandardCharsets.UTF_8));};}
 
     @Override public Mono<Void> filter(ServerWebExchange exchange,WebFilterChain chain){
         String path=exchange.getRequest().getPath().pathWithinApplication().elements().stream()
@@ -27,8 +28,8 @@ public final class MetricsScrapeWebFilter implements WebFilter {
                 .collect(Collectors.joining());
         if(!path.equals("/actuator/prometheus") && !path.equals("/actuator/prometheus/"))return chain.filter(exchange);
         String expected=configuredToken.get();var values=exchange.getRequest().getHeaders().getOrEmpty("X-Internal-Token");
-        if(expected!=null && expected.length()>=32 && values.size()==1 &&
-                MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),values.getFirst().getBytes(StandardCharsets.UTF_8)))
+        var callers=exchange.getRequest().getHeaders().getOrEmpty("X-TJ-Service");
+        if(values.size()==1 && callers.size()<=1 && verifies.test(callers.isEmpty()?null:callers.getFirst(),values.getFirst()))
             return chain.filter(exchange);
         var response=exchange.getResponse();response.setStatusCode(HttpStatus.FORBIDDEN);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);

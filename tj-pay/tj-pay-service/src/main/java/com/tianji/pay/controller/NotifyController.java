@@ -33,6 +33,8 @@ public class NotifyController {
     public ResponseEntity<String> handleAliPayNotify(HttpServletRequest httpRequest){
         // 1.处理请求参数为一个Map
         Map<String, String[]> parameterMap = httpRequest.getParameterMap();
+        if(parameterMap.size()>64 || parameterMap.entrySet().stream().anyMatch(entry->entry.getKey().length()>128 || entry.getValue()==null || entry.getValue().length!=1 || entry.getValue()[0].length()>8192))
+            throw new com.tianji.common.exceptions.BadRequestException("支付通知参数无效");
         Map<String, String> request = parameterMap.entrySet().stream().collect(
                 Collectors.toMap(Map.Entry::getKey, e -> StringUtils.join(",", e.getValue())));
         // 2.处理通知

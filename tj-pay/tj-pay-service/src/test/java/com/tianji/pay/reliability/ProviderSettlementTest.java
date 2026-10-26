@@ -35,6 +35,7 @@ class ProviderSettlementTest {
  }
  @Test void invalidAmountCommitsNoFactOrEvent(){
   assertThrows(BadRequestException.class,()->tx.executeWithoutResult(s->service.paid(200L,999,LocalDateTime.now())));
+  assertThrows(BadRequestException.class,()->tx.executeWithoutResult(s->service.paid(200L,1000,LocalDateTime.now(),"wrong-channel-fixture")));
   assertEquals(0,count("provider_payment_fact"));assertEquals(0,count("reliability_outbox"));
  }
  @Test void failedRefundIsNotSuccessAndLateConflictCannotOverwriteTerminal(){

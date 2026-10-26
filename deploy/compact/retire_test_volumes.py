@@ -147,8 +147,8 @@ def check_gate(primary_home, root, docker):
 
 
 def verify_bundle(path):
-    sys.path.insert(0, str(ROOT / 'deploy' / 'final'))
-    from final_backup import verify
+    sys.path.insert(0, str(ROOT / 'deploy' / 'operations'))
+    from runtime_backup import verify
     return verify(path)
 
 

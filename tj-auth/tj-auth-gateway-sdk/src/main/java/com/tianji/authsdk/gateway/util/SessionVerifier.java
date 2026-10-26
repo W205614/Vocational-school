@@ -3,7 +3,9 @@ import cn.hutool.http.HttpRequest;import cn.hutool.json.JSONUtil;import com.tian
 import org.springframework.core.env.Environment;import org.springframework.cloud.client.discovery.DiscoveryClient;import java.util.concurrent.*;
 public class SessionVerifier {
  private final Environment environment;private final DiscoveryClient discovery;private final ConcurrentHashMap<String,Long> verified=new ConcurrentHashMap<>();private final ConcurrentHashMap<String,CompletableFuture<Void>> inFlight=new ConcurrentHashMap<>();
- public SessionVerifier(Environment environment,DiscoveryClient discovery){this.environment=environment;this.discovery=discovery;}
+ private final com.tianji.common.utils.ServiceIdentity identity;
+ public SessionVerifier(Environment environment,DiscoveryClient discovery){this(environment,discovery,com.tianji.common.utils.ServiceIdentity.current());}
+ public SessionVerifier(Environment environment,DiscoveryClient discovery,com.tianji.common.utils.ServiceIdentity identity){this.environment=environment;this.discovery=discovery;this.identity=identity;}
  public void validate(LoginUserDTO user){
   if(user.getUserId()==null || user.getUserId()<=0 || user.getRoleId()==null || user.getRoleId()<=0)throw new UnauthorizedException("身份信息无效");
   String key=user.getSessionId()+":"+user.getUserId()+":"+user.getRoleId()+":"+user.getAuthVersion();Long cached=verified.get(key);if(cached!=null && cached>System.nanoTime())return;
@@ -15,7 +17,9 @@ public class SessionVerifier {
   if(user.getSessionId()==null || !user.getSessionId().matches("[0-9a-f-]{36}") || user.getAuthVersion()==null)throw new UnauthorizedException("请重新登录");
   String key=user.getSessionId()+":"+user.getUserId()+":"+user.getRoleId()+":"+user.getAuthVersion();Long valid=verified.get(key);long now=System.nanoTime();if(valid!=null && valid>now)return;
   String base=environment.getProperty("tj.routes.auth");if(base==null){var instances=discovery.getInstances("auth-service");if(instances==null || instances.isEmpty())throw new ServiceUnavailableException("身份服务暂不可用");base=instances.getFirst().getUri().toString();}
-  try(var response=HttpRequest.get(base.replaceAll("/$","")+"/internal/v2/sessions/"+user.getSessionId()+"/validate?user="+user.getUserId()+"&role="+user.getRoleId()+"&version="+user.getAuthVersion()).header("X-Internal-Token",System.getenv("TJ_INTERNAL_TOKEN")).timeout(2500).execute()){
+  String uri=base.replaceAll("/$","")+"/internal/v2/sessions/"+user.getSessionId()+"/validate?user="+user.getUserId()+"&role="+user.getRoleId()+"&version="+user.getAuthVersion();
+  var request=AuthServiceHttp.get(uri,identity,2500);
+  try(var response=request.execute()){
    if(response.getStatus()==401 || response.getStatus()==403){verified.remove(key);throw new UnauthorizedException("登录状态已失效，请重新登录");}
    if(!response.isOk() || JSONUtil.parseObj(response.body()).getInt("code",0)!=200)throw new ServiceUnavailableException("身份校验暂不可用");
    if(verified.size()>10000)verified.entrySet().removeIf(e->e.getValue()<now);if(verified.size()<10000)verified.put(key,System.nanoTime()+TimeUnit.SECONDS.toNanos(5));

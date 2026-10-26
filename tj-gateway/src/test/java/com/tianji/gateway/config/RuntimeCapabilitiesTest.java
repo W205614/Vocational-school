@@ -18,4 +18,11 @@ class RuntimeCapabilitiesTest {
         var error=assertThrows(IllegalStateException.class,capabilities::afterPropertiesSet);assertTrue(error.getMessage().contains("cloud video player"));
         assertFalse(capabilities.media().get("cloudPlayback"));
     }
+    @Test void deliveredPrivateCosAdapterEnablesNativeCloudPlaybackOnlyWithTheProductionProfile(){
+        var env=new MockEnvironment().withProperty("tj.production.enabled","true").withProperty("tj.cloud-media.enabled","true")
+            .withProperty("tj.platform.media","CLOUD_COS").withProperty("tj.cloud-media.delivery","ENTITLEMENT_PROXY");
+        env.setActiveProfiles("production");var capabilities=new RuntimeCapabilities(env);
+        assertDoesNotThrow(capabilities::afterPropertiesSet);assertTrue(capabilities.media().get("cloudPlayback"));assertFalse(capabilities.media().get("localPlayback"));
+        env.setActiveProfiles("local-simulator");assertThrows(IllegalStateException.class,capabilities::afterPropertiesSet);
+    }
 }

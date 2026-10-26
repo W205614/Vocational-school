@@ -46,9 +46,10 @@ tj:
   jdbc:
     database: tj_pay
   pay:
-    notifyHost: https://6b9f16dd.r2.cpolar.top/ps
+    notifyHost: ${TJ_PAY_NOTIFY_HOST:}
     ali:
       appId: ${TJ_PAY_TJ_PAY_ALI_APPID:}
+      sellerId: ${TJ_PAY_ALI_SELLER_ID:}
       merchantPrivateKey: ${TJ_PAY_TJ_PAY_ALI_MERCHANTPRIVATEKEY:}
       publicKey: ${TJ_PAY_TJ_PAY_ALI_PUBLICKEY:}
     wx:

@@ -8,6 +8,7 @@ import java.time.*;import java.util.*;import java.security.*;import java.nio.cha
 @Service
 public class SessionStore {
  private final JdbcTemplate jdbc;private final TransactionTemplate tx;
+ @org.springframework.beans.factory.annotation.Value("${tj.auth.mfa.required:false}") private boolean requireMfa;
  public SessionStore(JdbcTemplate jdbc,TransactionTemplate tx){this.jdbc=jdbc;this.tx=tx;}
  public record Rotation(String jti,Instant expires){}
  private static String hash(String value){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}
@@ -21,6 +22,7 @@ public class SessionStore {
     var rows=jdbc.queryForList("SELECT *,expires_at>NOW(3) AS active,previous_until>=NOW(3) AS grace FROM auth_session WHERE session_id=? AND user_id=? AND revoked_at IS NULL FOR UPDATE",identity.getSessionId(),identity.getUserId());
     if(rows.isEmpty())throw new UnauthorizedException("登录状态已失效");
     var row=rows.getFirst();if(((Number)row.get("active")).intValue()!=1 || !Objects.equals(((Number)row.get("auth_version")).longValue(),identity.getAuthVersion()) || !Objects.equals(((Number)row.get("role_id")).longValue(),identity.getRoleId()))throw new UnauthorizedException("账号状态已变化，请重新登录");
+    if(requireMfa && Long.valueOf(1).equals(identity.getRoleId()) && !Integer.valueOf(1).equals(((Number)row.getOrDefault("mfa_verified",0)).intValue()))throw new UnauthorizedException("管理员需要重新使用验证器登录");
     String prior=identity.getRefreshJti();if(prior==null)throw new UnauthorizedException("刷新令牌无效");
     // A concurrent request or lost response can recover the same rotation for ten seconds.
     if(hash(prior).equals(row.get("previous_jti")) && row.get("grace")!=null && ((Number)row.get("grace")).intValue()==1){
@@ -33,6 +35,10 @@ public class SessionStore {
   });
  }
  public void validate(LoginUserDTO identity){
+  if(requireMfa && Long.valueOf(1).equals(identity.getRoleId())){
+   Integer verified=jdbc.queryForObject("SELECT COALESCE(MAX(mfa_verified),0) FROM auth_session WHERE session_id=? AND user_id=?",Integer.class,identity.getSessionId(),identity.getUserId());
+   if(!Integer.valueOf(1).equals(verified))throw new UnauthorizedException("管理员需要重新使用验证器登录");
+  }
   Long count=jdbc.queryForObject("SELECT COUNT(*) FROM auth_session WHERE session_id=? AND user_id=? AND role_id=? AND auth_version=? AND revoked_at IS NULL AND expires_at>NOW(3)",Long.class,identity.getSessionId(),identity.getUserId(),identity.getRoleId(),identity.getAuthVersion());
   if(count==null || count!=1)throw new UnauthorizedException("登录状态已失效");
  }

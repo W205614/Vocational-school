@@ -1,0 +1,9 @@
+# Protected operator inputs and generated credentials belong outside source.
+.local/
+secrets/
+credentials/
+settings.local.yml
+*.env
+*.jks
+*.p12
+*.key

@@ -21,6 +21,7 @@ public class CompactHost {
  public static void run(String group,String[] modules,String[] args){aliases=modules.clone();var app=new SpringApplication(CompactHost.class);app.setDefaultProperties(Map.of("spring.application.name",group+"-app","spring.config.name","compact","tj.reliability.enabled","false","spring.main.allow-bean-definition-overriding","false"));app.run(args);}
  @Bean public org.springframework.boot.web.servlet.FilterRegistrationBean<com.tianji.common.filters.RequestIdFilter> requestIds(){var bean=new org.springframework.boot.web.servlet.FilterRegistrationBean<>(new com.tianji.common.filters.RequestIdFilter());bean.setOrder(-200);return bean;}
  @Bean public ModuleRegistry moduleRegistry(){return new ModuleRegistry();}
+ @Bean public ApplicationRunner moduleStartupTasks(ModuleRegistry registry){return registry::start;}
  @Bean public ServletContextInitializer moduleInitializer(Environment host,ModuleRegistry registry){return servlet->{
   Path directory=Path.of(host.getRequiredProperty("tj.compact.config-directory"));
   for(String alias:aliases){

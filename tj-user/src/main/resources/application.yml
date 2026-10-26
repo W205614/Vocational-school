@@ -43,6 +43,7 @@ tj:
     resource:
       enable: true
       excludeLoginPaths:
+      - /api/v2/public/accounts/**
       - /students/register
       - /users/detail/{isStaff}
       - /users/list

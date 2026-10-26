@@ -105,5 +105,11 @@
         </plugins>
     </build>
 
-    <profiles><profile><id>compact</id><properties><spring-boot.repackage.skip>true</spring-boot.repackage.skip></properties></profile></profiles>
+    <profiles>
+        <profile><id>compact</id><properties><spring-boot.repackage.skip>true</spring-boot.repackage.skip></properties></profile>
+        <profile><id>media-worker</id><build><plugins><plugin>
+            <groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration><skip>false</skip><classifier>worker</classifier><mainClass>com.tianji.mediaworker.CloudMediaWorkerApplication</mainClass></configuration>
+        </plugin></plugins></build></profile>
+    </profiles>
 </project>

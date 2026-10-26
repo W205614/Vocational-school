@@ -1,6 +1,27 @@
 """Named regression suites shared by local runners and CI."""
 
 REGRESSION_TESTS = [
+    'AliCredentialBoundaryTest',
+    'TencentCredentialBoundaryTest',
+    'CloudMediaAccessPolicyTest',
+    'ServiceRpcPolicyTest',
+    'DirectedIdentityHttpTest',
+    'ServiceIdentityTest',
+    'ProductionSafetyConfigurationTest',
+    'RedissonTlsConfigurationTest',
+    'AliNotificationVerifierTest',
+    'ServiceIdentityRelayFilterTest',
+    'TotpSecretsTest',
+    'AdministratorMfaServiceTest',
+    'AdministratorMfaDatabaseTest',
+    'PublicAccountContractTest',
+    'PublicAccountDatabaseTest',
+    'AccountVerificationRedisTest',
+    'PrivateCloudMediaTest',
+    'CloudPlaybackControllerTest',
+    'CloudCourseCoverTest',
+    'CloudMediaDatabaseTest',
+
     'CredentialValidationLoggingTest',
     'StaffDirectoryDatabaseTest',
     'UserProfilePasswordDatabaseTest',
@@ -102,6 +123,8 @@ CORE_TESTS = [
 ]
 
 TRANSPORT_TESTS = [
+    'ModuleStartupTest',
+    'DirectedModuleGuardTest',
     'LocalModuleTransportTest',
     'ModuleGuardTest',
 ]

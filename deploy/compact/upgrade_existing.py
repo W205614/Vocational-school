@@ -37,8 +37,8 @@ def deploy(candidate, backup):
     candidate=Path(candidate).resolve(); backup=Path(backup).resolve()
     if not candidate.is_relative_to((setup.LOCAL/'candidates').resolve()):
         raise RuntimeError('Candidate must belong to this deployment project')
-    sys.path.insert(0,str(setup.SOURCE.parent/'final'))
-    from final_backup import verify
+    sys.path.insert(0,str(setup.SOURCE.parent/'operations'))
+    from runtime_backup import verify
     saved=verify(backup)
     if not backup.is_relative_to((setup.LOCAL/'backup').resolve()) or not saved.get('quiesced'):
         raise RuntimeError('A verified project-local full backup is required')

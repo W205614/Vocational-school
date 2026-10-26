@@ -5,6 +5,7 @@ import lombok.Getter;
 
 @Getter
 public enum Platform {
+    CLOUD_COS(5, "受控私有云媒资", "/api/v2/services/media/cloud-content/"),
     LOCAL(4, "本地模拟存储", "/api/v2/services/media/local-content/"),
     TENCENT(1, "腾讯云", "/img-tx/"),
     ALI(2, "阿里云", "/img-ali/"),

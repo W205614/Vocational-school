@@ -16,6 +16,8 @@ Vocational-school/
 ├── deploy/
 │   ├── compact/           默认部署、升级、备份恢复及报告
 │   ├── acceptance/        验收基础设施、迁移、测试与容器模板
+│   ├── production/        独立商业部署渲染、安全扫描和证据验收工具
+│   ├── operations/        当前与兼容部署共用的快照捕获和校验库
 │   └── final/             历史部署及仍被复用的备份恢复工具
 ├── docs/                  当前使用说明与历史交付证据
 ├── .github/workflows/     GitHub CI
@@ -41,8 +43,9 @@ Vocational-school/
 ### 部署目录之间的依赖
 
 - `deploy/compact/` 是默认部署。命令用途见[工具索引](../deploy/compact/TOOLS.md)。
+- `deploy/production/` 是独立生产候选部署包，要求外部集群和托管服务；其模板、静态检查或 CI 通过均不构成高可用、供应商或容量验收。四组应用保持独立模块上下文，启动任务执行完成后才就绪；生产 RPC 另受静态调用清单限制。
 - `deploy/acceptance/` 仍被当前 CI 使用；compact 也复用其模块清单、迁移、测试入口及容器模板。
-- `deploy/final/` 虽包含历史部署流程，其中的 `final_backup.py`、`redis_snapshot.py` 仍被 compact 的备份、恢复、升级等工具调用。
+- `deploy/operations/` 提供共享快照与 Redis 工具，compact 显式传入当前运行配置；`deploy/final/` 中对应文件保留为兼容入口，不再作为 compact 的配置来源。
 - `deploy/compact/reports/` 与 `docs/evidence/` 保存按批次记录的历史证据，不属于临时缓存。
 
 部分本机保留 `deploy/docker/`，这是旧 VM 向 Docker Desktop 迁移的私有材料，依赖原备份和配置，不是当前默认部署，也不应直接加入 Git。旧根目录 Jenkins `startup.sh` 及配套 `Dockerfile` 已移除；当前构建通过 `setup.py build` 完成。

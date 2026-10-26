@@ -19,9 +19,9 @@ for resource in ['container','volume']:
 upgrade=load_upgrade(upgrade_home,Path(__file__).resolve().parents[2]) if upgrade_home else None
 os.environ.update(TJ_COMPACT_HOME=str(home),TJ_COMPACT_PROJECT=args.project,TJ_COMPACT_PORT_OFFSET=str(args.offset))
 from setup import prepare,initialize,COMPOSE,LOCAL,configure_acceptance,ROOT,SOURCE,run,mysql,PORTS
-sys.path.insert(0,str(SOURCE.parent/'final'))
-from final_backup import verify,digest,table_checksums
-from redis_snapshot import transfer
+sys.path.insert(0,str(SOURCE.parent/'operations'))
+from runtime_backup import verify,digest,table_checksums
+from runtime_redis_snapshot import transfer
 manifest=verify(backup)
 if not manifest.get('quiesced') or not manifest.get('broker'):raise RuntimeError('Full recovery requires a quiescent bundle with broker bytes')
 home.mkdir(parents=True,exist_ok=True);LOCAL.mkdir(exist_ok=True)

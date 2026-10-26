@@ -1,7 +1,10 @@
+log_format tianji_safe '$request_method $uri $status $body_bytes_sent $request_time';
 server {
     listen 8080;
     server_name _;
     root /usr/share/nginx/html;
+    access_log /dev/stdout tianji_safe;
+    error_log /dev/stderr crit;
     client_max_body_size 201m;
     resolver 127.0.0.11 valid=10s ipv6=off;
     resolver_timeout 3s;

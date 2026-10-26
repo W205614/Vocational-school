@@ -63,7 +63,6 @@ public class WxPayService implements IPayService {
         String requestPath = "https://api.mch.weixin.qq.com/v3/pay/transactions/out-trade-no/" + payOrderNo;
         // 2.发送请求
         String responseJson = wxPayClient.doGetJson(requestPath, true);
-        System.out.println("responseJson = " + responseJson);
         // 3.解析响应
         JSONObject result = JsonUtils.parseObj(responseJson);
         String code = result.getStr("code");

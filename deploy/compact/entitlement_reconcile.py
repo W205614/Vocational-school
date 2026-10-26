@@ -72,7 +72,7 @@ def main():
         path.write_text(json.dumps(report,indent=2),encoding='utf8');print('Private historical difference list: '+str(path));return
     if args.audit is None:parser.error('apply requires the reviewed audit file')
     audit=json.loads(args.audit.read_text(encoding='utf8'))
-    sys.path.insert(0,str(ROOT/'deploy/final'));from final_backup import quiesce,capture,verify
+    sys.path.insert(0,str(ROOT/'deploy/operations'));from runtime_backup import quiesce,capture,verify
     runtime=configure_acceptance()
     with quiesce(runtime):
         before=state()

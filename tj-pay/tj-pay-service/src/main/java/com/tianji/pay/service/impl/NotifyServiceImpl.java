@@ -51,10 +51,10 @@ public class NotifyServiceImpl implements INotifyService {
     private final IPayOrderService payOrderService;
     private final ProviderSettlementService settlement;
     private final IRefundOrderService refundOrderService;
+    private final AliNotificationVerifier aliNotifications;
 
     @Override
     public void handleWxPayNotify(NotificationRequest request) {
-        log.info("收到微信支付通知：{}", request.getBody());
         // 1.尝试校验微信通知请求参数，安全校验
         Notification notification = checkWxNotifyRequest(request);
         if (notification == null || !StringUtils.equals(notification.getEventType(), "TRANSACTION.SUCCESS")) {
@@ -81,7 +81,6 @@ public class NotifyServiceImpl implements INotifyService {
 
     @Override
     public void handleWxPayRefundNotify(NotificationRequest request) {
-        log.info("收到微信退款通知：{}", request.getBody());
         // 1.尝试校验微信通知请求参数，安全校验
         Notification notification = checkWxNotifyRequest(request);
         if (notification == null || !StringUtils.equalsAny(
@@ -110,31 +109,8 @@ public class NotifyServiceImpl implements INotifyService {
 
     @Override
     public void handleAliPayNotify(Map<String, String> request) {
-        if(!environment.getProperty("tj.pay.ali.enabled",Boolean.class,false))throw new BadRequestException("支付宝渠道未配置");
-        log.error("收到阿里支付通知信息，request = {}", request);
-        // 1.判断是否是成功通知
-        String tradeStatus = request.get("trade_status");
-        if (!StrUtil.equals(tradeStatus, "TRADE_SUCCESS")) {
-            // 通知结果不是成功，直接结束
-            return;
-        }
-        // 2.验签
-        checkAliNotifyRequest(request);
-
-        // 3.获取用于业务校验的基本信息
-        // 3.1.交易单号
-        String out_trade_no = request.get("out_trade_no");
-        Long tradingOrderNo = StringUtils.isNumeric(out_trade_no) ? Long.valueOf(out_trade_no) : null;
-        // 3.2.订单金额，阿里返回的订单金额要乘100
-        String total_amount = request.get("total_amount");
-        Integer amount = StringUtils.isNotBlank(total_amount) ? AliPayService.transferStringAmount2Int(total_amount) : null;
-        // 3.3.订单支付时间
-        String success_time = request.get("notify_time");
-        LocalDateTime successTime = StringUtils.isBlank(success_time) ?
-                LocalDateTime.now() : DateUtils.parse(success_time, DateUtils.DEFAULT_DATE_TIME_FORMAT);
-
-        // 4.校验通知数据，主要是业务校验、幂等校验
-        settlement.paid(tradingOrderNo,amount,successTime);
+        var payment=aliNotifications.verify(request);
+        if(payment.paid())settlement.paid(payment.number(),payment.cents(),payment.occurred(),PayConstants.ALI_CHANNEL_CODE);
     }
 
 
@@ -146,21 +122,6 @@ public class NotifyServiceImpl implements INotifyService {
             return RefundStatus.SUCCESS;
         }
         return RefundStatus.UN_KNOWN;
-    }
-
-
-    private void checkAliNotifyRequest(Map<String, String> request) {
-        try {
-            Boolean isValid = Factory.Payment.Common().verifyNotify(request);
-            if (!isValid) {
-                // 通知签名有误
-                log.error("阿里支付通知回调验签失败，request = {}", request);
-                throw new BadRequestException(PayErrorInfo.INVALID_NOTIFY_PARAM);
-            }
-        } catch (Exception e) {
-            log.error("获取阿里验签工具异常", e);
-            throw new CommonException("获取阿里验签工具异常", e);
-        }
     }
 
 

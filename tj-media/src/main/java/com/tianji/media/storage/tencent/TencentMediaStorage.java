@@ -89,6 +89,7 @@ public class TencentMediaStorage implements IMediaStorage {
     @Override
     public String getPlaySignature(String fieldId, Long userId, Integer freeExpired) {
         long currentTime = System.currentTimeMillis() / 1000;
+        long ttl=Math.max(5,Math.min(600,tencentProperties.getVod().getVodValidSeconds()));
 
         HashMap<String, Object> urlAccessInfo = new HashMap<>(2);
        /* if (userId != null) {
@@ -102,6 +103,7 @@ public class TencentMediaStorage implements IMediaStorage {
                 .setPayload("appId", tencentProperties.getAppId())
                 .setPayload("fileId", fieldId)
                 .setPayload("currentTimeStamp", currentTime)
+                .setPayload("expireTimeStamp", currentTime+ttl)
                 .setPayload("pcfg", tencentProperties.getVod().getPfcg())
                 .setPayload("urlAccessInfo", urlAccessInfo)
                 .sign();

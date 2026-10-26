@@ -11,9 +11,9 @@ export const useSession=defineStore('session',()=>{
  setIdentityEvents(value=>{token.value=value;},()=>{initialPasswordRequired.value=false;if(token.value){expiredOwner=owner(token.value);sessionStorage.setItem('school-expired-owner',expiredOwner);}token.value='';sessionStorage.removeItem('school-token');expiredMessage.value='登录状态已过期，请重新登录；同一账号的考试草稿会保留。';});
  // This claim controls presentation only. The gateway verifies identity and permissions.
  const role=computed(()=>{try {const part=token.value.split('.')[1];if(!part)return 0;const claims=JSON.parse(atob(part.replace(/-/g,'+').replace(/_/g,'/')));return Number(claims.user?.roleId||0);}catch{return 0;}});
- async function login(username:string,password:string,management:boolean){
+ async function login(username:string,password:string,management:boolean,mfaCode?:string){
   initialPasswordRequired.value=false;
-  let next:string;try{next=await write<string>('/auth/accounts/'+(management?'admin/login':'login'),'POST',{type:1,username,password,rememberMe:false});}catch(error){if(error instanceof ApiError&&error.status===428)initialPasswordRequired.value=true;throw error;}
+  let next:string;try{next=await write<string>('/auth/accounts/'+(management?'admin/login':'login'),'POST',{type:1,username,password,rememberMe:false,...(mfaCode?{mfaCode}:{})});}catch(error){if(error instanceof ApiError&&error.status===428)initialPasswordRequired.value=true;throw error;}
   const previous=owner(token.value)||expiredOwner;
   if(!previous || previous!==owner(next) || admin.value!==management){useOperations().clear();clearDrafts();}
   token.value=next;admin.value=management;expiredOwner='';expiredMessage.value='';sessionStorage.removeItem('school-expired-owner');

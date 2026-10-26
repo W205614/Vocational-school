@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.8</version>
+        <version>4.0.9</version>
     </parent>
 
 
@@ -47,7 +47,11 @@
         <spring-cloud.version>2025.1.3</spring-cloud.version>
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
-        <hutool.version>5.7.17</hutool.version>
+        <hutool.version>5.8.48</hutool.version>
+        <!-- Security fixes not yet included in the Boot 4.0.9 managed patch set. -->
+        <rabbit-amqp-client.version>5.34.0</rabbit-amqp-client.version>
+        <httpcore5.version>5.4.3</httpcore5.version>
+        <jettison.version>1.5.4</jettison.version>
         <swagger.version>3.0.3</swagger.version>
         <mysql.version>9.4.0</mysql.version>
         <ali.sdk.core.version>4.6.0</ali.sdk.core.version>
@@ -59,7 +63,7 @@
         <elasticsearch-java.version>9.5.0</elasticsearch-java.version>
         <tencent.sdk.cos.version>5.6.89</tencent.sdk.cos.version>
         <tencent.sdk.vod.version>2.1.5</tencent.sdk.vod.version>
-        <xxl-job-version>2.3.1</xxl-job-version>
+        <xxl-job-version>2.4.2</xxl-job-version>
         <seata-version>1.5.1</seata-version>
     </properties>
     <!-- 对依赖包进行管理 -->
@@ -103,12 +107,27 @@
                 <groupId>com.tencentcloudapi</groupId>
                 <artifactId>tencentcloud-sdk-java</artifactId>
                 <version>${tencent.cloud.version}</version>
+                <!-- Explicit Credential(secretId,secretKey) is used. Local INI
+                     profile credential discovery is outside the supported path. -->
+                <exclusions>
+                    <exclusion><groupId>org.ini4j</groupId><artifactId>ini4j</artifactId></exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jettison</groupId>
+                <artifactId>jettison</artifactId>
+                <version>${jettison.version}</version>
             </dependency>
             <!--ali sdk-->
             <dependency>
                 <groupId>com.aliyun</groupId>
                 <artifactId>aliyun-java-sdk-core</artifactId>
                 <version>${ali.sdk.core.version}</version>
+                <!-- OSS and SMS use explicit static credentials, never the
+                     SDK's local INI profile credentials provider. -->
+                <exclusions>
+                    <exclusion><groupId>org.ini4j</groupId><artifactId>ini4j</artifactId></exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.aliyun</groupId>

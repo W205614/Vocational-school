@@ -28,6 +28,13 @@ class CiRedactionTest(unittest.TestCase):
         self.assertNotIn(temporary, value)
         self.assertEqual('ready', value)
 
+    def test_authenticator_receipts_and_bare_verification_codes_do_not_leave_public_diagnostics(self):
+        key='JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP'
+        value=redact('验证器密钥: '+key+'\n'+key+'\n验证码\n123456\nready')
+        self.assertNotIn(key,value)
+        self.assertNotIn('123456',value)
+        self.assertIn('ready',value)
+
 
 if __name__ == '__main__':
     unittest.main()

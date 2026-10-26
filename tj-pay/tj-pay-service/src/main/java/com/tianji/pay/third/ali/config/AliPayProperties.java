@@ -10,6 +10,7 @@ public class AliPayProperties {
     private String gatewayHost= "openapi.alipay.com";
     private String signType = "RSA2";
     private String appId;
+    private String sellerId;
     private String merchantPrivateKey;
     private String publicKey;
     private String encryptKey;

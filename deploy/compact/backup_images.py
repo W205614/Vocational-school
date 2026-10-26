@@ -85,8 +85,8 @@ if __name__ == '__main__':
         if args.action == 'restore': restore(setup.LOCAL)
         else:
             import sys
-            sys.path.insert(0, str(setup.SOURCE.parent / 'final'))
-            from final_backup import verify
+            sys.path.insert(0, str(setup.SOURCE.parent / 'operations'))
+            from runtime_backup import verify
             bundle = Path(json.loads((setup.LOCAL / 'ops-status/backup.json').read_text())['lastBundle'])
             if not verify(bundle).get('quiesced'): raise RuntimeError('A complete data backup is required')
             print(json.dumps(refresh(setup.LOCAL, setup.PROJECT, bundle)))

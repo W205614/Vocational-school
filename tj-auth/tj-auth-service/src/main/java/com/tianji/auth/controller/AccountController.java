@@ -22,6 +22,11 @@ public class AccountController {
 
     private final IAccountService accountService;
 
+    @ModelAttribute
+    public void preventCredentialCaching(jakarta.servlet.http.HttpServletResponse response) {
+        response.setHeader("Cache-Control","no-store");response.setHeader("Pragma","no-cache");
+    }
+
     @Operation(summary = "登录并获取token")
     @PostMapping(value = "/login")
     public String loginByPw(@jakarta.validation.Valid @RequestBody LoginFormDTO loginFormDTO) {

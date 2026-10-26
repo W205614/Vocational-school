@@ -82,11 +82,14 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
             // 1）获取签名
             String signature = mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage local
                     ?local.getCoursePlaySignature(media.getFileId(),UserContext.requireUser(),courseId)
+                    :mediaStorage instanceof com.tianji.media.cloud.CloudCosMediaStorage cloud
+                    ?cloud.courseTicket(media.getFileId(),UserContext.requireUser(),courseId)
                     :mediaStorage.getPlaySignature(media.getFileId(), UserContext.getUser(), null);
             // 2）返回
             VideoPlayVO vo = new VideoPlayVO();
             vo.setSignature(signature);
             if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage local){vo.setPlayUrl(signature);vo.setExpiresAt(local.expiresAt(signature));}
+            if(mediaStorage instanceof com.tianji.media.cloud.CloudCosMediaStorage cloud){vo.setPlayUrl(signature);vo.setExpiresAt(cloud.expiresAt(signature));vo.setProvider("CLOUD_COS");}
             vo.setFileId(media.getFileId());
             return vo;
         }
@@ -107,6 +110,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
         VideoPlayVO vo = new VideoPlayVO();
         vo.setSignature(signature);
         if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage local){vo.setPlayUrl(signature);vo.setExpiresAt(local.expiresAt(signature));}
+        if(mediaStorage instanceof com.tianji.media.cloud.CloudCosMediaStorage cloud){vo.setPlayUrl(signature);vo.setExpiresAt(cloud.expiresAt(signature));vo.setProvider("CLOUD_COS");}
         vo.setFileId(media.getFileId());
         return vo;
     }
@@ -126,6 +130,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
         VideoPlayVO vo = new VideoPlayVO();
         vo.setSignature(signature);
         if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage local){vo.setPlayUrl(signature);vo.setExpiresAt(local.expiresAt(signature));}
+        if(mediaStorage instanceof com.tianji.media.cloud.CloudCosMediaStorage cloud){vo.setPlayUrl(signature);vo.setExpiresAt(cloud.expiresAt(signature));vo.setProvider("CLOUD_COS");}
         vo.setFileId(media.getFileId());
         return vo;
     }
