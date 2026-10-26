@@ -23,8 +23,10 @@ public class AccountController {
     private final IAccountService accountService;
 
     @ModelAttribute
-    public void preventCredentialCaching(jakarta.servlet.http.HttpServletResponse response) {
-        response.setHeader("Cache-Control","no-store");response.setHeader("Pragma","no-cache");
+    public void preventCredentialCaching() {
+        // Resolving HttpServletResponse as a model-attribute argument marks MVC's
+        // shared container handled, bypassing response advice for void handlers.
+        WebUtils.setResponseHeader("Cache-Control","no-store");WebUtils.setResponseHeader("Pragma","no-cache");
     }
 
     @Operation(summary = "登录并获取token")

@@ -33,4 +33,26 @@ class InitialPasswordAuthTest {
   var form=new InitialPasswordDTO("teacher","old-secret","new-secret-password","admin");assertFalse(form.toString().contains("secret"));
   var receipt=new TemporaryCredentialDTO("42","teacher","temporary-secret",java.time.LocalDateTime.now());assertFalse(receipt.toString().contains("temporary-secret"));
  }
+ @Test void initialPasswordMvcReturnsJsonEnvelopeAndNoStoreAfterCacheHeadersAreApplied()throws Exception{
+  var accounts=mock(com.tianji.auth.service.IAccountService.class);
+  var json=new org.springframework.http.converter.json.JacksonJsonHttpMessageConverter(tools.jackson.databind.json.JsonMapper.builder().build());
+  var mvc=org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(new com.tianji.auth.controller.AccountController(accounts))
+    .setControllerAdvice(new com.tianji.common.autoconfigure.mvc.advice.WrapperResponseBodyAdvice())
+    .setMessageConverters(new com.tianji.common.autoconfigure.mvc.converter.WrapperResponseMessageConverter(json),json).build();
+  // Only the service/security dependencies are substituted; argument resolution,
+  // model attributes, void handling, advice and HTTP serialization are real MVC.
+  try(var identity=mockStatic(com.tianji.common.utils.InternalAuth.class)){
+   var response=mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/accounts/password/initial")
+     .header("x-request-from","gateway").contentType(org.springframework.http.MediaType.APPLICATION_JSON).accept(org.springframework.http.MediaType.APPLICATION_JSON)
+     .content("{\"username\":\"fixture-teacher\",\"oldPassword\":\"temporary-fixture\",\"newPassword\":\"changed-password-fixture\",\"audience\":\"admin\"}"))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Cache-Control","no-store"))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Pragma","no-cache"))
+     .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().contentTypeCompatibleWith(org.springframework.http.MediaType.APPLICATION_JSON))
+     .andReturn().getResponse();
+   var body=tools.jackson.databind.json.JsonMapper.builder().build().readTree(response.getContentAsString());
+   assertEquals(200,body.get("code").asInt());assertTrue(body.get("data").isNull());
+   verify(accounts).completeInitialPassword(new InitialPasswordDTO("fixture-teacher","temporary-fixture","changed-password-fixture","admin"));
+  }
+ }
 }
