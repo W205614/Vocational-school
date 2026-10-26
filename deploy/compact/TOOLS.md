@@ -16,6 +16,7 @@
 | `recovery_smoke.py`、`recovery_upgrade.py`、`rehearse_recovery.py` | 恢复校验、恢复后升级及演练 |
 | `search_transition.py` | 受控搜索版本迁移与回退 |
 | `retire_old.py`、`retire_images.py` | 带保护与归档校验的旧环境／镜像退役 |
+| `retire_test_volumes.py` | 按明确清单及恢复证据退役可重新创建的测试卷；先生成计划，再显式应用 |
 
 ## 变更验证与交付
 
@@ -28,6 +29,7 @@
 | `redis_roundtrip.py` | Redis 恢复验证 |
 | `check_policy.py`、`check_packaging.py` | 策略与打包检查 |
 | `build_provenance.py`、`release_gate.py` | 构建来源与交付证据约束 |
+| `demo_release_gate.py` | 单机演示交付门禁，核对本轮角色、迁移、历史与镜像证据，并明确容量未验收 |
 | `diagnose_ci.py` | CI 脱敏诊断 |
 | `test_*.py` | 工具自身的定向回归；按修改范围选择 |
 
