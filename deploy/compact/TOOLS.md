@@ -35,8 +35,8 @@
 
 前端命令见 [frontend/package.json](../../frontend/package.json)。GitHub 的 `Reliability and frontend gates` 工作流分别运行后端、前端和 compact 浏览器检查，定义见[工作流文件](../../.github/workflows/reliability.yml)。本地仅验证改动直接影响的部分，最终以所推送提交的 CI 为准。
 
-## 性能实验与历史复现
+## 性能实验与当前证据
 
 `benchmark_*.py`、`load_*.py`、`mixed_*.py`、`performance_acceptance.py`、`summarize_performance.py` 等用于专门的性能或隔离实验，协议与边界见 [OPTIMIZATION.md](OPTIMIZATION.md)，不属于首次使用所需命令。
 
-[reports/](reports/README.md) 中的探针、补丁和结果属于相应批次的复现材料。`deploy/acceptance/`、`deploy/final/` 内仍有当前工具导入的共享实现，应一起保留。
+[reports/](reports/README.md) 只列当前保留的部署与专项交付记录。旧提交专用探针、兼容补丁和过时结果已移出工作目录；当前测试、性能和恢复工具继续保留。`deploy/acceptance/`、`deploy/final/` 内仍有当前工具导入的实现和兼容入口，应一起保留。

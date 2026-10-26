@@ -11,21 +11,17 @@
 | 查找具体脚本及其用途 | [部署与运维工具索引](../deploy/compact/TOOLS.md) |
 | 自动备份、监控、稳定性维护 | [稳定性与运维说明](stability-operations.md) |
 | 消息、支付与补偿排障 | [可靠性运行手册](reliability-runbook.md) |
+| 账户、MFA 与隐私申请 | [账户安全说明](account-security.md) |
+| 独立商业部署与目标环境验收 | [生产部署说明](../deploy/production/README.md) · [商业化运行手册](commercial-ha.md) |
 
-## 历史交付与证据
+## 当前交付记录
 
-[交付报告索引](../deploy/compact/reports/README.md)按批次汇总修复、验证、运行源码与回滚记录。报告里的日期、测试数量和运行镜像只适用于对应批次；阅读文档不代表重新验证当前部署。
-
-以下文件保留原路径，便于从历史报告追溯：
-
-| 材料 | 用途 |
+| 记录 | 适用范围 |
 | --- | --- |
-| [2026-10-07 compact 实现](compact-implementation-20261007.md) | 当时的组合部署实现与边界 |
-| [2026-10-07 compact 功能验收](compact-final-functional-validation-20261007.md) | 当时的运行与业务验证 |
-| [2026-10-07 管理配置验证](admin-configuration-validation-20261007.md) | 当时的管理配置验收 |
-| [2026-10-07 前端体验验证](frontend-user-experience-validation-20261007.md) | 当时的双端体验验证 |
-| [旧部署验证](final-deployment-validation.md) | 旧 final 部署结果 |
-| [历史交付状态](productionization-status.md) | 既有交付与未验证范围 |
-| `evidence/` | 上述报告引用的脱敏 JSON 与截图 |
+| [本机部署记录](../deploy/compact/reports/current-deployment-20261026.md) | 当前七镜像来源、增量迁移、数据保留与停止状态 |
+| [商业化交付记录](commercial-implementation-20261026.md) | 商业部署代码与工具的本地测试，目标云环境仍待验收 |
+| [真实课程专项记录](../deploy/compact/reports/real-local-course-20261026.md) | 真实本地素材、时长探测与长视频续签的专项历史测试来源 |
 
-原始日志、账号、备份及本机归档保存在被 Git 忽略的本地目录；不要直接上传。
+[交付索引](../deploy/compact/reports/README.md)区分当前部署核对与专项测试来源。过时批次报告和旧结果已移出工作目录；保留的记录不会因源码更新自动变成新版本的通过证明。
+
+原始日志、账号、备份及当前必要的本机证据保存在被 Git 忽略的目录；不要直接上传。

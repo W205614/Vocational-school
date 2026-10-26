@@ -64,11 +64,11 @@ npm --prefix frontend run typecheck
 npm --prefix frontend run build
 ```
 
-公开的 v2 OpenAPI 保存到 frontend/openapi，共享生成类型在 frontend/packages/shared/src/generated。真实文件响应不包装为 JSON；Long 按字符串发布。当前界面还有人工维护字段类型，不能把类型生成当作所有 API 调用都已静态校验。最终门禁通过后可运行 export_evidence.py 导出固定白名单中的脱敏统计报告；原始日志、账户、运行配置和数据库备份继续留在 .local。
+公开的 v2 OpenAPI 保存到 frontend/openapi，共享生成类型在 frontend/packages/shared/src/generated。真实文件响应不包装为 JSON；Long 按字符串发布。当前界面还有人工维护字段类型，不能把类型生成当作所有 API 调用都已静态校验。当前交付资料见 [交付索引](../compact/reports/README.md)；原始日志、账户、运行配置和数据库备份继续留在 .local。固定旧批次的证据导出脚本已移除，不再生成旧日期目录。
 
 ## 切换和回退
 
-先阅读 ../../docs/productionization-status.md 和 ../../docs/reliability-runbook.md。迁移工具是独立验收工具，发布到真实环境应由部署流程引用同一批已校验 SQL 和校验和，替换数据库连接，独立演练备份恢复。不要把验收环境账号、模拟渠道或密钥复制到生产。
+先阅读 [可靠性运行手册](../../docs/reliability-runbook.md)；商业部署另按 [生产部署说明](../production/README.md) 操作。迁移工具是独立验收工具，发布到真实环境应由部署流程引用同一批已校验 SQL 和校验和，替换数据库连接，独立演练备份恢复。不要把验收环境账号、模拟渠道或密钥复制到生产。
 
 
 ## Linux 镜像与两端 Nginx 验收
