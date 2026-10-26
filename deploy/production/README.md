@@ -20,7 +20,7 @@ worker 使用 `tj-media/docker/Dockerfile.worker`，挂载维护中的 ClamAV si
 
 ### 托管 MySQL 初始化、升级与首个管理员
 
-数据库操作使用独立迁移账号，不能使用应用 DML 账号、`root` 或通用 `admin`。该账号需具备十二个 `tj_*` 库的建库、DDL、触发器及迁移所需 DML 权限；启动检查要求每个库都有直接 CREATE／ALTER／TRIGGER 授权，不凭角色名称推断权限。发布后不得把迁移凭据挂载给应用。准备可信 MySQL 8 客户端和仅当前操作员／SYSTEM／Administrators 可读的配置文件；Linux 权限为 `0600`。Windows 可用 `database.protect()` 为新建的专用文件收紧 ACL。初始管理员使用已有验收环境的 `bcrypt`，Windows 权限检查另需 `pywin32`；这两项安装依赖不接触云环境。配置示意如下，所有值由生产环境提供，密码仅存于该受保护文件：
+数据库操作使用独立迁移账号，不能使用应用 DML 账号、`root` 或通用 `admin`。该账号需具备十二个 `tj_*` 库的建库、DDL、触发器及迁移所需 DML 权限；启动检查要求每个库都有直接 CREATE／ALTER／TRIGGER 授权，不凭角色名称推断权限。发布后不得把迁移凭据挂载给应用。准备可信 MySQL 8 客户端和仅当前操作员／SYSTEM／Administrators 可读的配置文件；Linux 权限为 `0600`。Windows 可用 `database.protect()` 为新建的专用文件收紧 ACL。先运行 `python -m pip install -r deploy/production/requirements.txt` 安装声明的依赖，其中 `bcrypt` 用于首个管理员密码哈希，Windows 的 `pywin32` 用于权限检查；安装依赖不接触云环境。配置示意如下，所有值由生产环境提供，密码仅存于该受保护文件：
 
 ```ini
 [client]
@@ -64,7 +64,7 @@ GRANT INSERT ON tj_media.media TO 'app_media_worker'@'<私有工作负载来源>
 准备真实输入和不可变镜像引用，输入文件只填写身份与地址，密钥由受保护的 Secret 管理。Web 镜像使用本目录 `Dockerfile.web` 与 `nginx.conf.template`，不要直接替换为需要 root 的演示镜像。`NGINX_IMAGE` 构建参数必须是经过扫描的固定 digest。
 
 ```powershell
-python -m pip install PyYAML==6.0.3
+python -m pip install -r deploy/production/requirements.txt
 python deploy/production/render.py --settings <受保护的生产配置.yml> --output <新的输出目录>
 kubectl --context <候选集群> apply --dry-run=server -f <输出目录>/resources.yaml
 ```
