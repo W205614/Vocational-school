@@ -3,6 +3,7 @@
 REGRESSION_TESTS = [
     'CredentialValidationLoggingTest',
     'StaffDirectoryDatabaseTest',
+    'UserProfilePasswordDatabaseTest',
     'InitialPasswordAuthTest',
     'TemporaryCredentialDatabaseTest',
     'PlaybackTimingRuleTest',

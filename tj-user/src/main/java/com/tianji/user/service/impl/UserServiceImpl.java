@@ -210,7 +210,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 2.修改详情
         UserDetail detail = BeanUtils.toBean(userDTO, UserDetail.class);
         detail.setType(null);
-        detailService.updateById(detail);
+        updateDetailIfPresent(detail);
     }
 
     @Override
@@ -248,7 +248,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         detail.setId(currentUser);
         detail.setRoleId(null);
         detail.setType(null);
-        detailService.updateById(detail);
+        updateDetailIfPresent(detail);
+    }
+
+    private void updateDetailIfPresent(UserDetail detail) {
+        // Password/phone-only requests have no detail columns. MyBatis would otherwise
+        // generate an invalid UPDATE with an empty SET clause; null still means unchanged.
+        if (java.util.stream.Stream.of(detail.getName(), detail.getGender(), detail.getIcon(),
+                detail.getEmail(), detail.getQq(), detail.getBirthday(), detail.getJob(),
+                detail.getProvince(), detail.getCity(), detail.getDistrict(), detail.getIntro(),
+                detail.getPhoto(), detail.getRoleId(), detail.getDepId()).anyMatch(java.util.Objects::nonNull)) {
+            detailService.updateById(detail);
+        }
     }
 
     public User loginByPw(LoginFormDTO loginDTO) {
