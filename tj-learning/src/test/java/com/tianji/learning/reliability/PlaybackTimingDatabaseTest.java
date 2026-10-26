@@ -30,7 +30,7 @@ class PlaybackTimingDatabaseTest {
     private LearningEntitlementService rights;private LearningMilestoneService milestones;private PlaybackTimingService service;
     private MutableClock clock;private long user,lesson,course,section;
     @BeforeEach void setup(){
-        var source=new DriverManagerDataSource("jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_learning?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true","root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
+        var source=new DriverManagerDataSource(System.getenv().getOrDefault("ACCEPTANCE_LEARNING_DB_URL","jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/acceptance_learning?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true"),"root",System.getenv("ACCEPTANCE_DB_PASSWORD"));
         jdbc=new JdbcTemplate(source);manager=new DataSourceTransactionManager(source);user=IdWorker.getId();lesson=user+1;course=user+2;section=user+3;
         // The minimal acceptance schema omits this direct legacy-endpoint dependency.
         // Match V002__progress_integrity.sql without changing production migrations.
