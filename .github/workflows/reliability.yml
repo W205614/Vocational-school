@@ -22,7 +22,14 @@ jobs:
           python-version: '3.12'
       - run: pip install -r deploy/acceptance/requirements.txt
       - name: Install native media metadata probe
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+        shell: bash
+        run: |
+          if ! command -v ffprobe >/dev/null || ! command -v ffmpeg >/dev/null; then
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+            sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends ffmpeg
+          fi
+          ffprobe -version
+          ffmpeg -version
       - run: python deploy/acceptance/prepare.py
       - name: Start isolated Elasticsearch
         run: docker compose -p vocational-acceptance -f deploy/acceptance/compose.yaml -f deploy/acceptance/compose.extras.yaml --env-file deploy/acceptance/.env --profile search up -d --wait elasticsearch

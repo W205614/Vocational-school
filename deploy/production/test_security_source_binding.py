@@ -110,12 +110,30 @@ class SourceBindingTest(unittest.TestCase):
 
     def test_failure_keywords_and_version_are_finite_without_raw_log_values(self):
         private = "opaque-private-fixture-not-for-output"
-        stderr = ("INFO ordinary startup\nFATAL invalid severity configuration token=" + private).encode()
-        self.assertEqual(["configuration", "fatal", "invalid", "severity"], security_scan.scanner_failure_keywords(stderr))
+        stderr = ("INFO ordinary startup\nFATAL repository https token=" + private +
+            "\n    invalid severity configuration token=" + private).encode()
+        self.assertEqual(["configuration", "fatal", "https", "invalid", "repository", "severity"],
+            security_scan.scanner_failure_keywords(stderr))
         with patch("security_scan.subprocess.run", return_value=SimpleNamespace(returncode=0, stdout=b"Version: 0.76.1\n")):
             self.assertEqual("0.76.1", security_scan.scanner_version({}))
         with patch("security_scan.subprocess.run", return_value=SimpleNamespace(returncode=0, stdout=("Version: " + private).encode())):
             self.assertIsNone(security_scan.scanner_version({}))
+        throttled = ("FATAL Error remote Maven repository returned 429 Too Many Requests for https://" + private).encode()
+        self.assertEqual("maven-repository-rate-limited", security_scan.scanner_diagnostic(throttled, 1))
+        self.assertNotIn(private, json.dumps(security_scan.scanner_failure_keywords(throttled)))
+
+    def test_only_secret_scan_uses_offline_resolution_without_skipping_source(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch("security_scan.validate_bom"), patch("security_scan.source_snapshot", return_value=root), \
+                    patch("security_scan.scan", return_value=[]) as scanner, redirect_stdout(io.StringIO()):
+                self.assertEqual(0, security_scan.main(["source", "--commit", "a" * 40, "--output", str(root / "summary.json")]))
+            secret, web, maven = [call.args[0] for call in scanner.call_args_list]
+            self.assertIn("--offline-scan", secret)
+            self.assertEqual(str(root), secret[-1])
+            self.assertFalse(any(value.startswith("--skip") for value in secret))
+            self.assertNotIn("--offline-scan", web)
+            self.assertNotIn("--offline-scan", maven)
 
 
 if __name__ == "__main__":

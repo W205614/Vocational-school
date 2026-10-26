@@ -40,6 +40,8 @@ def scanner_diagnostic(stderr, exit_code):
     message = stderr.decode("utf8", errors="replace").lower()
     if exit_code < 0:
         return "scanner-terminated-by-signal"
+    if "remote maven repository returned 429" in message:
+        return "maven-repository-rate-limited"
     if "unknown flag" in message or "unknown command" in message:
         return "unsupported-scanner-option"
     if "context deadline exceeded" in message or "timeout" in message:
@@ -68,11 +70,13 @@ def scanner_failure_keywords(stderr):
         "tls", "certificate", "x509", "timeout", "deadline", "exceeded", "permission", "denied", "access", "locked",
         "lock", "corrupt", "corrupted", "eof", "checksum", "schema", "disk", "space", "memory", "allocate", "killed",
         "signal", "read-only", "readonly", "missing", "unavailable", "found", "open", "read", "write", "create",
-        "unable", "cannot", "detect", "artifact", "report", "validation", "version", "index", "content", "type"}
+        "unable", "cannot", "detect", "artifact", "report", "validation", "version", "index", "content", "type",
+        "maven", "remote", "returned", "requests", "rate", "limit", "throttled", "unauthorized", "authentication",
+        "authorization", "forbidden", "required", "proxy", "dns", "lookup", "resolve", "status"}
     message = stderr.decode("utf8", errors="replace").lower()
-    failures = [line for line in message.splitlines() if re.search(r"\b(fatal|error|panic)\b", line)]
-    # If a CLI exits before logging a level, retain only the same finite words.
-    words = set(re.findall(r"[a-z]+(?:-[a-z]+)*", "\n".join(failures) if failures else message))
+    # Wrapped Go errors may put the actual cause on an indented continuation
+    # line without a log level. Apply the finite vocabulary to the whole log.
+    words = set(re.findall(r"[a-z]+(?:-[a-z]+)*", message))
     return sorted(words & vocabulary)
 
 
@@ -230,7 +234,11 @@ def main(argv=None):
                     "reason": bom_diagnostic(error)})
             try:
                 snapshot = source_snapshot(args.commit, root / "source")
-                tasks += [("repository-secrets", ["fs", "--scanners", "secret", str(snapshot)]),
+                # Trivy also initializes POM analyzers for a secret-only fs
+                # scan. Offline resolution prevents an unrelated remote Maven
+                # 429 from aborting byte-level secret scanning; no file is
+                # skipped, and dependency scans retain their online behavior.
+                tasks += [("repository-secrets", ["fs", "--scanners", "secret", "--offline-scan", str(snapshot)]),
                     ("web-python-dependencies", ["fs", "--scanners", "vuln", "--severity", "HIGH,CRITICAL",
                         "--skip-files", "**/pom.xml", "--skip-files", "pom.xml", "--include-dev-deps", str(snapshot)])]
             except (OSError, ValueError, RuntimeError, tarfile.TarError, subprocess.TimeoutExpired):
