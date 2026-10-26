@@ -29,6 +29,9 @@ if(process.env.TJ_IMPORTED_COURSE_MANIFEST)test('real imported course is discove
   await page.getByRole('button',{name:'免费报名',exact:true}).click();await expect(page).toHaveURL(new RegExp('/login\\?redirect='));expect(new URL(page.url()).searchParams.get('redirect')).toBe('/courses/'+course);
   await page.locator('input[autocomplete="username"]').fill(accounts.student.username);await page.locator('input[autocomplete="current-password"]').fill(accounts.student.password);await page.getByRole('button',{name:'登录',exact:true}).click();await expect(page).toHaveURL(new RegExp('/courses/'+course+'$'));
   await page.getByRole('button',{name:'免费报名',exact:true}).click();await expect.poll(async()=>(await readLearning())?.id,{timeout:30000}).toBeTruthy();
+  // Enrollment rights are delivered asynchronously; follow the page's refresh
+  // instruction after the real backend has made the lesson available.
+  await page.reload();
   await expect(page.getByRole('button',{name:'继续学习',exact:true})).toBeVisible();
   const signature=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/v2/services/media/medias/signature/play');
   await page.locator('.lesson-item').filter({hasText:first.sectionTitle}).click();const ticket=(await (await signature).json()).data;expect(Number(ticket.expiresAt)-Date.now()).toBeLessThanOrEqual(12000);
