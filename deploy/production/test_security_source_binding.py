@@ -94,7 +94,9 @@ class SourceBindingTest(unittest.TestCase):
             with patch("security_scan.subprocess.run", return_value=result):
                 with self.assertRaises(security_scan.ScannerFailure) as caught:
                     security_scan.scan(["fs", "--scanners", "secret", "public-source"], root / "raw.json")
-            self.assertEqual({"code": "scanner-terminated-by-signal", "exit_code": -9}, caught.exception.diagnostic)
+            self.assertEqual("scanner-terminated-by-signal", caught.exception.diagnostic["code"])
+            self.assertEqual(-9, caught.exception.diagnostic["exit_code"])
+            self.assertEqual(["secret"], caught.exception.diagnostic["stderr_keywords"])
             output = root / "sanitized.json"
             stdout = io.StringIO()
             with patch("security_scan.validate_bom"), patch("security_scan.source_snapshot", return_value=root), \
@@ -105,6 +107,15 @@ class SourceBindingTest(unittest.TestCase):
             self.assertNotIn(sentinel, output.read_text(encoding="utf8") + stdout.getvalue())
             for message in ["invalid ISO timestamp " + sentinel, "secret=" + sentinel]:
                 self.assertEqual("missing-or-malformed-binding-data", security_scan.bom_diagnostic(ValueError(message)))
+
+    def test_failure_keywords_and_version_are_finite_without_raw_log_values(self):
+        private = "opaque-private-fixture-not-for-output"
+        stderr = ("INFO ordinary startup\nFATAL invalid severity configuration token=" + private).encode()
+        self.assertEqual(["configuration", "fatal", "invalid", "severity"], security_scan.scanner_failure_keywords(stderr))
+        with patch("security_scan.subprocess.run", return_value=SimpleNamespace(returncode=0, stdout=b"Version: 0.76.1\n")):
+            self.assertEqual("0.76.1", security_scan.scanner_version({}))
+        with patch("security_scan.subprocess.run", return_value=SimpleNamespace(returncode=0, stdout=("Version: " + private).encode())):
+            self.assertIsNone(security_scan.scanner_version({}))
 
 
 if __name__ == "__main__":

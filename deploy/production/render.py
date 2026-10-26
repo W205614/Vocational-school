@@ -149,7 +149,7 @@ def module_config(alias, s):
     cloud.update({"sentinel": {"enabled": False}, "nacos": {"config": {"enabled": False,
                   "import-check": {"enabled": False}}, "discovery": {"enabled": False}}})
     target = routes(True, OWNERS.get(alias))
-    cloud["discovery"] = {"client": {"simple": {"instances": {
+    cloud["discovery"] = {"client": {"health-indicator": {"enabled": False}, "simple": {"instances": {
         name + "-service": [{"uri": url}] for name, url in target.items()}}}}
     clients = {name: {"url": url, "connectTimeout": 1500, "readTimeout": 5000, "loggerLevel": "none"}
                for name, url in target.items()}
@@ -274,7 +274,7 @@ def host_config(group):
         "application": {"name": group + "-app"}, "autoconfigure": {"exclude": sorted(set(excludes))},
         "main": {"allow-bean-definition-overriding": False}, "lifecycle": {"timeout-per-shutdown-phase": "45s"},
         "cloud": {"sentinel": {"enabled": False}, "nacos": {"config": {"enabled": False, "import-check": {"enabled": False}},
-        "discovery": {"enabled": False}}}}, "tj": {"compact": {"config-directory": "/run/compact/configs",
+        "discovery": {"enabled": False}}, "discovery": {"client": {"health-indicator": {"enabled": False}}}}}, "tj": {"compact": {"config-directory": "/run/compact/configs",
         "internal-port": PORTS[group] + 1000}, "production": {"enabled": True, "transport": "mesh"}, "reliability": {"enabled": False}},
         "management": {"endpoints": {"web": {"exposure": {"include": "health,info,prometheus"}}}, "endpoint": {"health": {
             "probes": {"enabled": True}, "show-details": "never", "group": {"liveness": {"include": "livenessState"},
@@ -458,7 +458,8 @@ def render(settings):
     worker_config["spring"].pop("rabbitmq", None)
     worker_config["spring"].pop("data", None)
     worker_config["spring"]["cloud"] = {"sentinel": {"enabled": False}, "nacos": {
-        "config": {"enabled": False, "import-check": {"enabled": False}}, "discovery": {"enabled": False}}}
+        "config": {"enabled": False, "import-check": {"enabled": False}}, "discovery": {"enabled": False}},
+        "discovery": {"client": {"health-indicator": {"enabled": False}}}}
     worker_config["spring"]["autoconfigure"] = {"exclude": ["org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration",
         "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration", "com.tianji.common.autoconfigure.mq.MqConfig",
         "com.tianji.common.autoconfigure.redisson.RedissonConfig"]}

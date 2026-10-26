@@ -62,6 +62,9 @@ def observability(compose, offset=0):
 
 def module_defaults(alias, config):
     config = copy.deepcopy(config)
+    # Static endpoints do not emit InstanceRegisteredEvent. The discovery
+    # registration probe would otherwise stay UNKNOWN despite usable clients.
+    config.setdefault('spring', {}).setdefault('cloud', {}).setdefault('discovery', {}).setdefault('client', {})['health-indicator'] = {'enabled': False}
     if alias == 'gateway':
         config.setdefault('server', {})['forward-headers-strategy'] = 'none'
         tj = config.setdefault('tj', {})

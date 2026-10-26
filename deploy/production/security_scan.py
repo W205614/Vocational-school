@@ -57,6 +57,36 @@ def scanner_diagnostic(stderr, exit_code):
     return "scanner-execution-failed"
 
 
+def scanner_failure_keywords(stderr):
+    """Reveal only fixed generic error words, never arbitrary log tokens."""
+    vocabulary = {"fatal", "error", "panic", "failed", "failure", "invalid", "unsupported", "unknown", "severity",
+        "flag", "option", "argument", "command", "config", "configuration", "yaml", "json", "parse", "parsing",
+        "decode", "encoding", "unmarshal", "regexp", "regex", "expression", "rule", "rules", "secret", "scan",
+        "scanner", "scanners", "analyzer", "analyzers", "initialize", "initialization", "repository", "filesystem",
+        "directory", "file", "path", "walk", "symlink", "link", "cache", "database", "db", "java-db", "download",
+        "fetch", "registry", "oci", "http", "https", "request", "response", "connection", "refused", "network",
+        "tls", "certificate", "x509", "timeout", "deadline", "exceeded", "permission", "denied", "access", "locked",
+        "lock", "corrupt", "corrupted", "eof", "checksum", "schema", "disk", "space", "memory", "allocate", "killed",
+        "signal", "read-only", "readonly", "missing", "unavailable", "found", "open", "read", "write", "create",
+        "unable", "cannot", "detect", "artifact", "report", "validation", "version", "index", "content", "type"}
+    message = stderr.decode("utf8", errors="replace").lower()
+    failures = [line for line in message.splitlines() if re.search(r"\b(fatal|error|panic)\b", line)]
+    # If a CLI exits before logging a level, retain only the same finite words.
+    words = set(re.findall(r"[a-z]+(?:-[a-z]+)*", "\n".join(failures) if failures else message))
+    return sorted(words & vocabulary)
+
+
+def scanner_version(environment):
+    try:
+        version = subprocess.run(["trivy", "--version"], env=environment, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, timeout=15)
+        value = getattr(version, "stdout", b"") or b""
+        match = re.search(rb"(?m)^Version:\s*(\d+\.\d+\.\d+)\s*$", value)
+        return match.group(1).decode("ascii") if version.returncode == 0 and match else None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
 def summarize(report):
     if report.get("SchemaVersion") != 2:
         raise ValueError("Unsupported or incomplete Trivy report")
@@ -89,7 +119,12 @@ def scan(arguments, raw_file):
     environment = {key: value for key, value in os.environ.items() if not key.startswith("TRIVY_") or key == "TRIVY_CACHE_DIR"}
     result = subprocess.run(command, env=environment, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=1800)
     if result.returncode != 0:
-        raise ScannerFailure(scanner_diagnostic(result.stderr, result.returncode), result.returncode)
+        failure = ScannerFailure(scanner_diagnostic(result.stderr, result.returncode), result.returncode)
+        failure.diagnostic["stderr_keywords"] = scanner_failure_keywords(result.stderr)
+        version = scanner_version(environment)
+        if version is not None:
+            failure.diagnostic["scanner_version"] = version
+        raise failure
     if not raw_file.is_file():
         raise ScannerFailure("scanner-report-missing", result.returncode)
     try:

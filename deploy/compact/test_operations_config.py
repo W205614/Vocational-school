@@ -8,6 +8,17 @@ from runtime_compose import active_compose
 
 
 class OperationsConfigurationTest(unittest.TestCase):
+    def test_static_discovery_probe_is_disabled_for_fresh_and_upgraded_module_defaults(self):
+        original = {"spring": {"cloud": {"discovery": {"client": {"simple": {"instances": {"auth-service": [{"uri": "http://app-identity:25001/_modules/auth"}]}}}}}}}
+        before = copy.deepcopy(original)
+        for alias in ("auth", "gateway", "compact-identity"):
+            updated = module_defaults(alias, original)
+            client = updated["spring"]["cloud"]["discovery"]["client"]
+            self.assertFalse(client["health-indicator"]["enabled"])
+            self.assertEqual(before["spring"]["cloud"]["discovery"]["client"]["simple"], client["simple"])
+            self.assertEqual(updated, module_defaults(alias, updated))
+        self.assertEqual(before, original)
+
     def compose(self):
         names = ['mysql','redis','rabbitmq','elasticsearch','app-identity','app-commerce','app-education','app-support','app-gateway','web-student','web-admin']
         result = {'services': {name: {'image': 'sha256:preserved', 'environment': {'APP_PORT': str(24310 if name=='app-gateway' else 24001)}, 'volumes': []} for name in names}, 'volumes': {'original_search_volume': {}}}

@@ -6,9 +6,19 @@ import org.springframework.core.Ordered;
 import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.boot.health.contributor.*;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.cloud.client.CommonsClientAutoConfiguration;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.discovery.health.DiscoveryClientHealthIndicator;
+import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClient;
+import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryProperties;
+import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
+import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(OutputCaptureExtension.class)
 class ModuleStartupTest {
     static class First implements ApplicationRunner, Ordered {
         final List<String> calls;
@@ -49,5 +59,50 @@ class ModuleStartupTest {
     @Test void redissonUsesManagedTlsAndAclIdentityWithoutConnecting() throws Exception {
         var config=ModuleRegistry.lockConfiguration("redis.example.invalid",6380,0,"app","synthetic-password",true);
         String json=config.toJSON();assertTrue(json.contains("rediss://redis.example.invalid:6380"));assertTrue(json.contains("app"));
+    }
+    @Test void actualCommonsRegistrationProbeIsUnknownForStaticDiscoveryAndExplicitlyDisabledWithoutWeakeningDatabaseReadiness() throws Exception {
+        for(boolean disabled:List.of(false,true)){
+            var registry=new ModuleRegistry();var context=new GenericWebApplicationContext();var databaseUp=new java.util.concurrent.atomic.AtomicBoolean(true);
+            var environment=new org.springframework.mock.env.MockEnvironment().withProperty("spring.cloud.nacos.discovery.enabled","false");
+            if(disabled)environment.withProperty("spring.cloud.discovery.client.health-indicator.enabled","false");
+            context.setEnvironment(environment);
+            context.registerBean("discoveryClient",DiscoveryClient.class,()->new SimpleDiscoveryClient(new SimpleDiscoveryProperties()));
+            new AnnotatedBeanDefinitionReader(context).register(CommonsClientAutoConfiguration.class);
+            context.registerBean("dbHealthContributor",CompositeHealthContributor.class,()->CompositeHealthContributor.fromMap(Map.of("main",(HealthIndicator)()->databaseUp.get()?Health.up().build():Health.down().build())));
+            context.refresh();
+            try{
+                registry.add("fixture",context,new DispatcherServlet(context));registry.start(new DefaultApplicationArguments());
+                if(!disabled){
+                    // The real Commons5 indicator waits for InstanceRegisteredEvent;
+                    // static discovery/manual refresh intentionally emits no registration.
+                    assertEquals(Status.UNKNOWN,context.getBean(DiscoveryClientHealthIndicator.class).health().getStatus());
+                    Health health=registry.health();assertEquals(Status.DOWN,health.getStatus());
+                    assertEquals("discoveryComposite/discoveryClient",health.getDetails().get("component"));
+                    assertEquals("UNKNOWN",health.getDetails().get("componentStatus"));
+                }else{
+                    assertTrue(context.getBeansOfType(DiscoveryClientHealthIndicator.class).isEmpty());
+                    assertFalse(context.containsBean("discoveryCompositeHealthContributor"));
+                    assertEquals(Status.UP,registry.health().getStatus());databaseUp.set(false);
+                    Health health=registry.health();assertEquals(Status.DOWN,health.getStatus());assertEquals("db/main",health.getDetails().get("component"));assertEquals("DOWN",health.getDetails().get("componentStatus"));
+                }
+            }finally{registry.close();}
+        }
+    }
+    @Test void compositeDiagnosticsReportExactFailingLeafStatusWithoutDetailsOrExceptionMessages(CapturedOutput output)throws Exception{
+        var registry=new ModuleRegistry();var context=new GenericWebApplicationContext();
+        var result=new java.util.concurrent.atomic.AtomicReference<Health>(Health.unknown().withDetail("credential","synthetic-private-health-detail").build());
+        context.registerBean("dbHealthContributor",CompositeHealthContributor.class,()->CompositeHealthContributor.fromMap(Map.of("pool",CompositeHealthContributor.fromMap(Map.of("main",(HealthIndicator)()->result.get())))));
+        context.refresh();
+        try{
+            registry.add("fixture",context,new DispatcherServlet(context));registry.start(new DefaultApplicationArguments());
+            Health health=registry.health();assertEquals(Status.DOWN,health.getStatus());assertEquals(Map.of("module","fixture","component","db/pool/main","componentStatus","UNKNOWN"),health.getDetails());
+            result.set(Health.down().withDetail("credential","synthetic-private-health-detail").build());assertEquals("DOWN",registry.health().getDetails().get("componentStatus"));
+            assertTrue(output.getAll().contains("module=fixture component=db/pool/main status=UNKNOWN"));assertFalse(output.getAll().contains("synthetic-private-health-detail"));
+        }finally{registry.close();}
+        var broken=new GenericWebApplicationContext();var failingRegistry=new ModuleRegistry();
+        broken.registerBean("dbHealthIndicator",HealthIndicator.class,()->()->{throw new IllegalStateException("synthetic-private-exception-message");});broken.refresh();
+        try{failingRegistry.add("fixture",broken,new DispatcherServlet(broken));failingRegistry.start(new DefaultApplicationArguments());
+            Health health=failingRegistry.health();assertEquals(Status.DOWN,health.getStatus());assertEquals("ERROR",health.getDetails().get("componentStatus"));assertFalse(output.getAll().contains("synthetic-private-exception-message"));
+        }finally{failingRegistry.close();}
     }
 }

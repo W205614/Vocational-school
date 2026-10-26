@@ -88,6 +88,15 @@ class ProductionRenderTest(unittest.TestCase):
         self.assertTrue(self.config("search")["spring"]["elasticsearch"]["uris"].startswith("https://"))
         self.assertEqual("db,redis", auth["tj"]["compact"]["readiness"]["required"])
 
+    def test_static_workloads_disable_registration_health_probe_without_disabling_discovery(self):
+        for alias in [*render.OWNERS, "gateway", "media-worker"]:
+            discovery = self.config(alias)["spring"]["cloud"]["discovery"]
+            self.assertFalse(discovery["client"]["health-indicator"]["enabled"])
+            self.assertNotIn("enabled", discovery)
+        for group in render.GROUPS:
+            discovery = self.config(group)["spring"]["cloud"]["discovery"]
+            self.assertFalse(discovery["client"]["health-indicator"]["enabled"])
+
     def test_real_channels_and_mfa_are_explicit(self):
         self.assertFalse(self.config("pay")["tj"]["pay"]["simulated"])
         self.assertFalse(self.config("message")["tj"]["sms"]["simulated"])

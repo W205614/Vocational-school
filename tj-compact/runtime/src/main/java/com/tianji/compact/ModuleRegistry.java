@@ -6,11 +6,13 @@ import org.springframework.context.annotation.Bean;
 import java.util.*;
 import jakarta.annotation.PreDestroy;
 public final class ModuleRegistry {
+ private static final org.slf4j.Logger log=org.slf4j.LoggerFactory.getLogger(ModuleRegistry.class);
  public record Module(GenericWebApplicationContext context,DispatcherServlet servlet){}
  private final Map<String,Module> modules=new java.util.concurrent.ConcurrentHashMap<>();
  private final Map<String,org.redisson.api.RedissonClient> lockClients=new java.util.concurrent.ConcurrentHashMap<>();
  private volatile boolean started;
  private boolean startupAttempted;
+ private volatile String lastHealthFailure;
  public org.redisson.api.RedissonClient locks(org.springframework.core.env.Environment env){
   String host=env.getRequiredProperty("spring.data.redis.host");int port=env.getProperty("spring.data.redis.port",Integer.class,6379),db=env.getProperty("spring.data.redis.database",Integer.class,0);String password=env.getProperty("spring.data.redis.password");
   String username=env.getProperty("spring.data.redis.username");boolean tls=env.getProperty("spring.data.redis.ssl.enabled",Boolean.class,false);
@@ -34,28 +36,42 @@ public final class ModuleRegistry {
  public Health health(){
   if(!started)return Health.down().withDetail("startup","incomplete").build();
   var result=Health.up();var degraded=new TreeSet<String>();
-  for(var entry:modules.entrySet())try{
+  for(var entry:new TreeMap<>(modules).entrySet())try{
    var ctx=entry.getValue().context();
    String configured=ctx.getEnvironment().getProperty("tj.compact.readiness.required", "*");
    Set<String> required=new HashSet<>(Arrays.asList(configured.split(",")));
    Set<String> found=new HashSet<>();
-   for(var bean:ctx.getBeansOfType(HealthContributor.class).entrySet()){
+   for(var bean:new TreeMap<>(ctx.getBeansOfType(HealthContributor.class)).entrySet()){
     String name=bean.getKey().replaceFirst("(HealthIndicator|HealthContributor)$","");found.add(name);
     if(name.toLowerCase(Locale.ROOT).contains("readinessstate") || name.toLowerCase(Locale.ROOT).contains("livenessstate"))continue;
     if(!required.contains("*") && !required.contains(name)){degraded.add(entry.getKey()+":"+name);continue;}
-    if(!healthy(bean.getValue())){
-     if(required.contains("*") || required.contains(name))return Health.down().withDetail("module",entry.getKey()).withDetail("component",name).build();
-     degraded.add(entry.getKey()+":"+name);
-    }
+    Failure failure=failure(bean.getValue(),name);
+    if(failure!=null)return down(entry.getKey(),failure.component(),failure.status());
    }
-   if(!required.contains("*") && !found.containsAll(required))return Health.down().withDetail("module",entry.getKey()).withDetail("component","missing-required-contributor").build();
-  }catch(Exception error){return Health.down().withDetail("module",entry.getKey()).build();}
+   if(!required.contains("*") && !found.containsAll(required)){var missing=new TreeSet<>(required);missing.removeAll(found);return down(entry.getKey(),missing.first(),"MISSING");}
+  }catch(Exception error){return down(entry.getKey(),"health-contributors","ERROR");}
+  lastHealthFailure=null;
   return result.withDetail("modules",new TreeSet<>(modules.keySet())).withDetail("optionalDependencies",degraded).build();
  }
- private static boolean healthy(HealthContributor contributor){
-  if(contributor instanceof HealthIndicator indicator)return Status.UP.equals(indicator.health().getStatus());
-  if(contributor instanceof CompositeHealthContributor composite){for(var child:composite)if(!healthy(child.contributor()))return false;return true;}
-  return false;
+ private record Failure(String component,String status){}
+ private static Failure failure(HealthContributor contributor,String path){
+  try{
+   if(contributor instanceof HealthIndicator indicator){var status=indicator.health().getStatus();return Status.UP.equals(status)?null:new Failure(path,safeStatus(status.getCode()));}
+   if(contributor instanceof CompositeHealthContributor composite){
+    var children=composite.stream().sorted(Comparator.comparing(HealthContributors.Entry::name)).toList();
+    for(var child:children){var failed=failure(child.contributor(),path+"/"+child.name());if(failed!=null)return failed;}return null;
+   }
+   return new Failure(path,"UNKNOWN");
+  }catch(Exception error){return new Failure(path,"ERROR");}
  }
+ private Health down(String alias,String component,String status){
+  String module=safeName(alias),name=safeName(component),code=safeStatus(status),signature=module+":"+name+":"+code;
+  // Never log contributor details, status descriptions or exception messages:
+  // these can contain JDBC URLs, broker identities or provider credentials.
+  if(!signature.equals(lastHealthFailure)){lastHealthFailure=signature;log.warn("Compact readiness failure: module={} component={} status={}",module,name,code);}
+  return Health.down().withDetail("module",module).withDetail("component",name).withDetail("componentStatus",code).build();
+ }
+ private static String safeName(String value){return value!=null&&value.matches("[A-Za-z0-9_.:/-]{1,160}")?value:"invalid-name";}
+ private static String safeStatus(String value){return Set.of("UP","DOWN","OUT_OF_SERVICE","UNKNOWN","ERROR","MISSING").contains(value)?value:"UNRECOGNIZED";}
  @PreDestroy public void close(){started=false;RuntimeException failure=null;for(var module:modules.values())try{module.context().close();}catch(RuntimeException error){if(failure==null)failure=error;else failure.addSuppressed(error);}modules.clear();for(var client:lockClients.values())try{client.shutdown();}catch(RuntimeException error){if(failure==null)failure=error;else failure.addSuppressed(error);}lockClients.clear();if(failure!=null)throw failure;}
 }
