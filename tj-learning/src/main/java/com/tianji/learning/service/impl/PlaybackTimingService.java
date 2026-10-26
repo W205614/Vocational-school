@@ -2,6 +2,7 @@ package com.tianji.learning.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.tianji.api.client.course.CourseClient;
+import com.tianji.api.client.media.MediaClient;
 import com.tianji.common.exceptions.*;
 import com.tianji.common.utils.UserContext;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -27,15 +28,16 @@ public class PlaybackTimingService {
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final CourseClient courses;
+    private final MediaClient media;
     private final LearningEntitlementService entitlements;
     private final LearningMilestoneService milestones;
     private final Clock clock;
     private final JsonMapper json=JsonMapper.builder().build();
 
-    public PlaybackTimingService(JdbcTemplate jdbc, PlatformTransactionManager manager, CourseClient courses,
+    public PlaybackTimingService(JdbcTemplate jdbc, PlatformTransactionManager manager, CourseClient courses, MediaClient media,
                                  LearningEntitlementService entitlements, LearningMilestoneService milestones,
                                  @Qualifier("learningClock") Clock clock) {
-        this.jdbc=jdbc;this.tx=new TransactionTemplate(manager);this.courses=courses;
+        this.jdbc=jdbc;this.tx=new TransactionTemplate(manager);this.courses=courses;this.media=media;
         this.entitlements=entitlements;this.milestones=milestones;this.clock=clock;
     }
 
@@ -49,9 +51,14 @@ public class PlaybackTimingService {
         var section=courses.sectionInfo(form.sectionId());
         var metadata=courses.getCourseInfoById(course,false,false);
         if(section==null || !Objects.equals(section.getCourseId(),course) || !Integer.valueOf(2).equals(section.getType()) ||
-                section.getMediaDuration()==null || section.getMediaDuration()<=0 || metadata==null || metadata.getSectionNum()==null || metadata.getSectionNum()<1)
+                section.getMediaId()==null || metadata==null || metadata.getSectionNum()==null || metadata.getSectionNum()<1)
             throw new BadRequestException("视频小节或服务端时长无效");
-        long duration=Math.multiplyExact(section.getMediaDuration().longValue(),1000L);
+        // The catalogue's rounded display seconds must not set the completion threshold.
+        // Snapshot the registered server-probed media duration before acquiring row locks.
+        Long actualDuration=media.durationMillis(section.getMediaId());
+        if(actualDuration==null || actualDuration<1 || actualDuration>86_400_000L)
+            throw new BadRequestException("媒资实际时长无效，请联系管理员检查视频");
+        long duration=actualDuration;
         String id=UUID.randomUUID().toString();
         return tx.execute(status->{
             // Every timing write locks the one-user slot, then entitlement, lesson, record.

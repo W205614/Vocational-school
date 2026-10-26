@@ -4,6 +4,10 @@
 
 功能与架构概览见 [项目 README](../../README.md)；历史修复、各批次测试结果、镜像来源、清理清单与回滚证据集中在 [交付报告](reports/README.md)。
 
+本机真实教学视频的清单、三文件隔离演练、可重入全量导入及导入窗口关闭方法见[受控本地课程视频导入](LOCAL_COURSE_IMPORT.md)。视频字节与私有清单保存在 `.local`，不提交 Git；全新初始化不会自动获得本机素材。服务端使用 `ffprobe` 读取真实时长，`support` 构建时安装 FFmpeg 包，首次构建需要访问发行版软件仓库。脱离容器运行媒资模块时，需安装 `ffprobe` 并配置 PATH 或 `tj.local-storage.ffprobe-command`。
+
+视频暂存与探测默认分别最多 2 路（`tj.local-storage.upload-concurrency`、`probe-concurrency`，范围 1～4），单次探测默认 30 秒（`probe-timeout-seconds`，范围 1～60）；饱和返回 429，异常释放许可。签名默认 600 秒（`signature-ttl-seconds`，范围 1～600），缩短仅用于隔离过期验证。学生页面续签保留播放状态并重新检查权益，新的计时会话直接使用媒资毫秒时长，目录的整数秒仅用于展示。这些限制是本机资源保护参数，不是容量证明。
+
 2026-10-19 稳定性更新的既有部署升级、每天 03:30 自动备份、最新一份有效完整备份与当前镜像包保留、Docker 关闭时的跳过行为及本机告警见[稳定性与运维说明](../../docs/stability-operations.md)。不要对已有业务库重复执行首次初始化。
 
 ## 结构

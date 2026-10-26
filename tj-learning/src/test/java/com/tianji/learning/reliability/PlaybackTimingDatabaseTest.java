@@ -2,6 +2,7 @@ package com.tianji.learning.reliability;
 
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.tianji.api.client.course.CourseClient;
+import com.tianji.api.client.media.MediaClient;
 import com.tianji.api.dto.course.*;
 import com.tianji.common.autoconfigure.reliability.InboxStore;
 import com.tianji.common.exceptions.*;
@@ -25,7 +26,7 @@ import static org.mockito.Mockito.*;
 
 @EnabledIfEnvironmentVariable(named="ACCEPTANCE_DB_PASSWORD",matches=".+")
 class PlaybackTimingDatabaseTest {
-    private JdbcTemplate jdbc;private DataSourceTransactionManager manager;private CourseClient courses;
+    private JdbcTemplate jdbc;private DataSourceTransactionManager manager;private CourseClient courses;private MediaClient media;
     private LearningEntitlementService rights;private LearningMilestoneService milestones;private PlaybackTimingService service;
     private MutableClock clock;private long user,lesson,course,section;
     @BeforeEach void setup(){
@@ -39,10 +40,11 @@ class PlaybackTimingDatabaseTest {
         jdbc.update("INSERT INTO learning_lesson(id,user_id,course_id,status,learned_sections) VALUES(?,?,?,0,0)",lesson,user,course);
         jdbc.update("INSERT INTO learning_entitlement(order_detail_id,order_id,user_id,course_id,active) VALUES(?,?,?,?,1)",user+10,user+11,user,course);
         courses=mock(CourseClient.class);when(courses.sectionInfo(section)).thenReturn(new SectionInfoDTO(course,user+20,false,0,20,2));
+        media=mock(MediaClient.class);when(media.durationMillis(user+20)).thenReturn(20_000L);
         var metadata=new CourseFullInfoDTO();metadata.setId(course);metadata.setSectionNum(1);when(courses.getCourseInfoById(course,false,false)).thenReturn(metadata);
         rights=new LearningEntitlementService(jdbc);
         milestones=new LearningMilestoneService(jdbc,new PointsRecordServiceImpl(jdbc,new InboxStore(jdbc,new TransactionTemplate(manager)),clock),clock);
-        service=new PlaybackTimingService(jdbc,manager,courses,rights,milestones,clock);
+        service=new PlaybackTimingService(jdbc,manager,courses,media,rights,milestones,clock);
     }
     @AfterEach void cleanup(){
         try{if(jdbc!=null && lesson!=0)jdbc.update("DELETE FROM learning_progress_pending WHERE lesson_id=?",lesson);}
@@ -80,7 +82,7 @@ class PlaybackTimingDatabaseTest {
         assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM learning_playback_session WHERE user_id=?",Integer.class,user));
         UserContext.setUser(user+100);assertThrows(ConflictException.class,()->service.heartbeat(beat(current,1,3000,1,"PLAYING"),false));UserContext.setUser(user);
         service.heartbeat(beat(current,1,3000,1,"PLAYING"),false);clock.advance(2000);
-        var restarted=new PlaybackTimingService(jdbc,manager,courses,rights,milestones,clock);
+        var restarted=new PlaybackTimingService(jdbc,manager,courses,media,rights,milestones,clock);
         assertEquals(5000,restarted.heartbeat(beat(current,2,5000,1,"PLAYING"),false).creditedMillis());
         assertThrows(ConflictException.class,()->restarted.heartbeat(beat(current,4,6000,1,"PLAYING"),false));
     }
@@ -98,6 +100,22 @@ class PlaybackTimingDatabaseTest {
         service.heartbeat(beat(session.sessionId(),1,0,2,"PLAYING"),false);clock.advance(9000);service.heartbeat(beat(session.sessionId(),2,18000,2,"PLAYING"),false);
         assertEquals(1,jdbc.queryForObject("SELECT learned_sections FROM learning_lesson WHERE id=?",Integer.class,lesson));
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_milestone WHERE user_id=?",Integer.class,user));
+    }
+    @Test void fractionalRealDurationOverridesRoundedCatalogueAndCompletesWithinOnePlayback(){
+        when(courses.sectionInfo(section)).thenReturn(new SectionInfoDTO(course,user+20,false,0,2,2));
+        when(media.durationMillis(user+20)).thenReturn(1280L);
+        var session=start();assertEquals(1280,session.durationMillis());assertEquals(1152,session.requiredMillis());
+        service.heartbeat(beat(session.sessionId(),1,0,1,"PLAYING"),false);
+        clock.advance(1280);
+        var finished=service.heartbeat(beat(session.sessionId(),2,1280,1,"ENDED"),true);
+        assertTrue(finished.finished());assertEquals(1280,finished.creditedMillis());
+    }
+    @Test void invalidMediaDurationCannotCreateSessionOrFallBackToCatalogue(){
+        for(Long value:Arrays.asList(null,0L,-1L,86_400_001L)){
+            when(media.durationMillis(user+20)).thenReturn(value);
+            assertThrows(BadRequestException.class,this::start);
+        }
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM learning_playback_session WHERE user_id=?",Integer.class,user));
     }
     @Test void oldPositionEndpointCannotCompleteOrAwardAndUnsupportedSpeedIsRejected(){
         var lessons=mock(ILearningLessonService.class);when(lessons.getById(lesson)).thenReturn(new LearningLesson().setId(lesson).setUserId(user).setCourseId(course));

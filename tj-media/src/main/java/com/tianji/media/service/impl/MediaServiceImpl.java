@@ -86,7 +86,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
             // 2）返回
             VideoPlayVO vo = new VideoPlayVO();
             vo.setSignature(signature);
-            if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage)vo.setPlayUrl(signature);
+            if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage local){vo.setPlayUrl(signature);vo.setExpiresAt(local.expiresAt(signature));}
             vo.setFileId(media.getFileId());
             return vo;
         }
@@ -106,7 +106,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
         // 5.返回
         VideoPlayVO vo = new VideoPlayVO();
         vo.setSignature(signature);
-        if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage)vo.setPlayUrl(signature);
+        if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage local){vo.setPlayUrl(signature);vo.setExpiresAt(local.expiresAt(signature));}
         vo.setFileId(media.getFileId());
         return vo;
     }
@@ -125,7 +125,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
         // 3.返回
         VideoPlayVO vo = new VideoPlayVO();
         vo.setSignature(signature);
-        if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage)vo.setPlayUrl(signature);
+        if(mediaStorage instanceof com.tianji.media.storage.local.LocalMediaStorage local){vo.setPlayUrl(signature);vo.setExpiresAt(local.expiresAt(signature));}
         vo.setFileId(media.getFileId());
         return vo;
     }

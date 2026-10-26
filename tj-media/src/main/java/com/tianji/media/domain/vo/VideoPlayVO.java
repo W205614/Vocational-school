@@ -7,6 +7,8 @@ import lombok.Data;
 @Schema(description = "视频播放的签名信息")
 public class VideoPlayVO {
     private String playUrl;
+    @Schema(description = "本地播放地址到期时间，Unix epoch 毫秒；云渠道可为空")
+    private Long expiresAt;
     @Schema(description = "视频唯一标示", example = "12412534535143242")
     private String fileId;
     @Schema(description = "视频封面", example = "xxx.xxx.xxx")

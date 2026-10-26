@@ -28,6 +28,9 @@ def prepare():
   if hashlib.sha256(jar.read_bytes()).hexdigest()!=metadata['artifactSha256']:raise RuntimeError('Snapshot mismatch '+name)
   context=DIR/'build'/name;context.mkdir(parents=True,exist_ok=True)
   shutil.copyfile(jar,context/'app.jar');shutil.copyfile(BASE/'docker/Dockerfile.jvm',context/'Dockerfile');shutil.copyfile(probe/'HealthProbe.class',context/'HealthProbe.class')
+  if name=='media':
+   dockerfile=context/'Dockerfile'
+   dockerfile.write_text(dockerfile.read_text(encoding='utf8').replace('WORKDIR /app\n','WORKDIR /app\nRUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*\n'),encoding='utf8')
   for mode in ['hybrid','full']:
    target=DIR/mode;target.mkdir(exist_ok=True)
    config=rewrite(yaml.safe_load((LOCAL/(name+'-application.yml')).read_text(encoding='utf8')),mode)

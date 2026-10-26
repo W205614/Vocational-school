@@ -15,11 +15,11 @@ public class LocalMediaController {
  @GetMapping("/course-covers/{key}") public ResponseEntity<Resource> cover(@PathVariable String key){
   Resource resource=covers.read(key);return ResponseEntity.ok().contentType(key.endsWith(".png")?MediaType.IMAGE_PNG:MediaType.IMAGE_JPEG).header("X-Content-Type-Options","nosniff").cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(30)).cachePublic().immutable()).body(resource);
  }
- @PostMapping("/api/v2/admin/media-upload") public ResponseEntity<?> upload(@RequestParam MultipartFile file,@RequestParam float duration,@RequestHeader("Idempotency-Key") String key)throws java.io.IOException{
+ @PostMapping("/api/v2/admin/media-upload") public ResponseEntity<?> upload(@RequestParam MultipartFile file,@RequestParam(required=false) Float duration,@RequestHeader("Idempotency-Key") String key)throws java.io.IOException{
   UserContext.requireAdmin();if(key==null || !key.matches("[A-Za-z0-9_.:-]{1,128}"))throw new com.tianji.common.exceptions.BadRequestException("需要有效的 Idempotency-Key");String name=file.getOriginalFilename();
-  if(!Float.isFinite(duration) || duration<=0 || duration>86400 || name==null || name.length()>255 || !name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|webm)"))throw new com.tianji.common.exceptions.BadRequestException("请提供 MP4 或 WebM 视频及有效模拟时长");
-  try(var input=file.getInputStream()){var media=store.uploadMedia(name,input,file.getSize(),duration,key);
-   return ResponseEntity.accepted().body(operations.submit(UserContext.requireUser(),"LOCAL_MEDIA_CREATE",key,Map.of("fileId",media.getFileId(),"filename",name,"duration",duration)));
+  if(name==null || name.length()>255 || !name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|webm)"))throw new com.tianji.common.exceptions.BadRequestException("请提供 MP4 或 WebM 视频，时长由服务器读取");
+  try(var input=file.getInputStream()){var media=store.uploadMedia(name,input,file.getSize(),key);
+   return ResponseEntity.accepted().body(operations.submit(UserContext.requireUser(),"LOCAL_MEDIA_CREATE",key,Map.of("fileId",media.getFileId(),"filename",name,"duration",media.getDuration())));
   }
  }
  @GetMapping("/local-content/{key}") public ResponseEntity<Resource> content(@PathVariable String key,@RequestParam long expires,@RequestParam String signature,@RequestParam(required=false) Long owner,@RequestParam(required=false) Long course){

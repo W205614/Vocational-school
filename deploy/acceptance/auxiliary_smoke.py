@@ -1,5 +1,6 @@
 """Real gateway + private persistence: media bytes, durable notices and explicit SMS simulation."""
 import uuid,json,time,requests,concurrent.futures
+from pathlib import Path
 from api_smoke import call,login,wait,BASE,accounts
 from financial_smoke import eventually
 from prepare import mysql,LOCAL
@@ -32,7 +33,7 @@ def main():
  eventually(lambda:mysql("SELECT status FROM sms_delivery_task WHERE id='"+delivery+"'",'tj_message')=='DONE','simulated sms')
  assert mysql("SELECT COUNT(*) FROM simulated_sms WHERE task_id='"+delivery+"'",'tj_message')=='1'
  # Actual byte persistence and signed HTTP range, independent of transcoding claims.
- content=b'acceptance-video-byte-fixture-'+run.encode()
+ content=(Path(__file__).resolve().parents[2]/'tj-media/src/test/resources/media-probe/recorder.webm').read_bytes()
  key=uuid.uuid4().hex[:12]
  response=admin.post(BASE+'/admin/media-upload',files={'file':('fixture.webm',content,'video/webm')},data={'duration':'60'},headers={'Idempotency-Key':key},timeout=30)
  assert response.status_code==202,response.text[:500]
