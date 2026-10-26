@@ -15,6 +15,16 @@ async function learningCourse(page:Page){
  await page.route('**/api/v2/services/media/medias/signature/play?**',route=>answer(route,{playUrl:'/fixture-'+new URL(route.request().url()).searchParams.get('sectionId')+'.mp4'}));
  await page.route('**/fixture-*.mp4',route=>route.fulfill({status:200,contentType:'video/mp4',body:''}));
 }
+async function decodedMediaSnapshot(page:Page,position:number,ended=false){
+ // These contract tests own the media event snapshot, not a decoder. Their
+ // empty fixture resource has no metadata and raises MediaError in Chromium;
+ // setting currentTime alone therefore does not describe readable media.
+ // Real decoding, failed-media recovery and timing are covered separately.
+ await page.locator('video').evaluate((video:HTMLVideoElement,{position,ended})=>{
+  Object.defineProperties(video,{readyState:{configurable:true,value:HTMLMediaElement.HAVE_CURRENT_DATA},error:{configurable:true,value:null},currentTime:{configurable:true,value:position},ended:{configurable:true,value:ended}});
+  video.dispatchEvent(new Event(ended?'ended':'timeupdate'));
+ },{position,ended});
+}
 test.beforeEach(async({page},info)=>{test.skip(info.project.name!=='student');await setup(page);});
 
 test('a delayed old course never replaces the current course or its entitlement',async({page})=>{
@@ -47,7 +57,7 @@ test('a short section tail is retained after failure and retried before switchin
  await learningCourse(page);let fail=true;const writes:Record<string,unknown>[]=[];
  await page.route('**/api/v2/services/learning/learning-records',async route=>{writes.push(route.request().postDataJSON());if(fail){await route.fulfill({status:503,json:{code:503,msg:'Progress unavailable'}});return;}await answer(route,{});});
  await page.goto('/courses/11');await page.getByRole('button',{name:/Video one/}).click();await expect(page.locator('video')).toBeVisible();
- await page.locator('video').evaluate((video:HTMLVideoElement)=>{Object.defineProperty(video,'currentTime',{configurable:true,value:7});video.dispatchEvent(new Event('timeupdate'));});
+ await decodedMediaSnapshot(page,7);
  await page.getByRole('button',{name:/Video two/}).click();await expect(page.getByRole('alert').filter({hasText:'学习进度尚未保存'})).toBeVisible();
  expect(writes).toHaveLength(1);expect(writes[0]).toMatchObject({sectionId:'101',moment:7});await expect(page.locator('.lesson-workspace h2')).toHaveText('Video one');
  fail=false;await page.getByRole('button',{name:'重试保存学习进度',exact:true}).click();await expect(page.getByRole('button',{name:'重试保存学习进度',exact:true})).toHaveCount(0);
@@ -73,7 +83,7 @@ test('video completion is saved while a note operation is still running',async({
  await page.route('**/api/v2/services/learning/learning-records',route=>{writes.push(route.request().postDataJSON());return answer(route,{});});
  await page.goto('/courses/11');await page.getByRole('button',{name:/Video one/}).click();await expect(page.locator('video')).toBeVisible();
  await page.getByPlaceholder('记录私人笔记').fill('A note in flight');await page.getByRole('button',{name:'保存笔记',exact:true}).click();await started.promise;
- await page.locator('video').evaluate((video:HTMLVideoElement)=>{Object.defineProperty(video,'currentTime',{configurable:true,value:2});Object.defineProperty(video,'ended',{configurable:true,value:true});video.dispatchEvent(new Event('ended'));});
+ await decodedMediaSnapshot(page,2,true);
  await expect.poll(()=>writes.length).toBe(1);expect(writes[0]).toMatchObject({sectionId:'101',moment:2});release.resolve();await expect(page.getByText('笔记已保存',{exact:true})).toBeVisible();
 });
 
