@@ -30,7 +30,13 @@ test('full coupon discount settles without payment and approved withdrawal keeps
   await expect.poll(async()=>(await api(page,'GET','/services/promotion/user-coupons/page?status=2&pageNo=1&pageSize=100')).list.some((item:any)=>String(item.id)===coupon),{timeout:30000}).toBe(true);
   await expect.poll(async()=>(await api(page,'GET','/services/learning/learning-records/course/'+fixture.course))?.id,{timeout:30000}).toBeTruthy();
   await done.getByRole('button',{name:'关闭',exact:true}).click();await page.goto('/orders');const stored=page.locator('.el-table__row').filter({hasText:String(order)});await expect(stored).toContainText('零元成交');await expect(stored.getByRole('button',{name:'支付',exact:true})).toHaveCount(0);
-  await stored.getByRole('button',{name:'详情',exact:true}).click();await page.getByRole('button',{name:'申请退款',exact:true}).click();await page.getByPlaceholder('请说明退款原因').fill('全额抵扣订单退课，保留已使用券');await page.getByRole('button',{name:'提交退款申请',exact:true}).click();await expect(page.getByText('退款申请已提交',{exact:true})).toBeVisible();
+  await expect(page.getByRole('status').filter({hasText:'正在处理'})).toHaveCount(0);
+  const detailResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/v2/orders/'+order&&response.request().method()==='GET');
+  await stored.getByRole('button',{name:'详情',exact:true}).click();
+  const loaded=await detailResponse;expect(loaded.status(),'real zero-order detail response').toBe(200);
+  const orderDetail=(await loaded.json()).data;expect(String(orderDetail.id)).toBe(String(order));expect(orderDetail.details).toHaveLength(1);expect(orderDetail.details[0].canRefund).toBe(true);
+  const detailDialog=page.getByRole('dialog',{name:'订单详情',exact:true});await expect(detailDialog).toBeVisible();
+  await detailDialog.getByRole('button',{name:'申请退款',exact:true}).click();await page.getByPlaceholder('请说明退款原因').fill('全额抵扣订单退课，保留已使用券');await page.getByRole('button',{name:'提交退款申请',exact:true}).click();await expect(page.getByText('退款申请已提交',{exact:true})).toBeVisible();
   await admin.goto('/refunds');const refund=admin.locator('.el-table__row').filter({hasText:String(order)});await refund.getByRole('button',{name:'同意退款',exact:true}).click();await admin.getByRole('button',{name:'确定',exact:true}).click();await expect(admin.getByText('同意退款已完成',{exact:true})).toBeVisible();
   await expect.poll(async()=>(await api(page,'GET','/orders/'+order)).status,{timeout:30000}).toBe(7);
   expect((await api(page,'GET','/services/promotion/user-coupons/page?status=2&pageNo=1&pageSize=100')).list.some((item:any)=>String(item.id)===coupon)).toBe(true);

@@ -374,5 +374,24 @@
     "long-running production stability",
     "cross-host disaster recovery or high availability"
   ],
-  "githubCI": "Verify backend, frontend and compact-browser on the final documentation commit; exact SHA and run link are supplied in the final delivery response."
+  "githubCI": "Final delivery commit includes test/CI-diagnostic corrections only; verify backend, frontend and compact-browser on that exact SHA. Exact run link is supplied in the final response.",
+  "localReleaseGatePublication": "12af5ee4ff9579fe76de8914f8bc4d1a21c9e2fa",
+  "firstCI": {
+    "commit": "12af5ee4ff9579fe76de8914f8bc4d1a21c9e2fa",
+    "runId": 40259071774,
+    "backend": "success",
+    "frontend": "success",
+    "compactBrowser": "failure",
+    "browserPassed": 63,
+    "browserFailed": 2,
+    "notApplicable": 53,
+    "diagnosticArtifactRemovedAfterPrivatePreservation": true,
+    "corrections": [
+      "native browser clipboard permission for receipt-copy test",
+      "explicit zero-order detail HTTP and dialog-readiness assertions",
+      "redact temporary credential UI quotes before truncating CI excerpts"
+    ],
+    "redactionUnitTests": 4,
+    "productionSourceUnchanged": true
+  }
 }

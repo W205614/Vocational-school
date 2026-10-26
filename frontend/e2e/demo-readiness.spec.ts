@@ -21,6 +21,7 @@ async function initialPassword(page:Page,username:string,temporary:string,next:s
 test('demo admin creates and resets a teacher with one-time credentials and mandatory password setup',async({page,browser},info)=>{
  test.skip(info.project.name!=='admin');test.setTimeout(120000);
  await login(page,'admin','/staff');
+ await page.context().grantPermissions(['clipboard-write'],{origin:new URL(page.url()).origin});
  const suffix=Date.now().toString().slice(-8),phone='139'+suffix,name='Demo teacher '+suffix;
  await page.getByRole('button',{name:'新增',exact:true}).click();
  const form=page.getByRole('dialog',{name:'新增记录',exact:true});
@@ -32,7 +33,7 @@ test('demo admin creates and resets a teacher with one-time credentials and mand
  await expect(receipt).toBeVisible();const temporary=(await receipt.locator('code').innerText()).trim();
  expect(temporary.length).toBeGreaterThanOrEqual(16);await expect(receipt).toContainText(phone);
  await receipt.getByRole('button',{name:'复制临时凭据',exact:true}).click();
- await expect(receipt).toContainText('临时凭据已复制');
+ await expect(receipt.getByRole('alert').filter({hasText:'临时凭据已复制'})).toBeVisible();
  await receipt.getByRole('button',{name:'已保存并关闭',exact:true}).click();
  const context=await browser.newContext({baseURL:process.env.TJ_ADMIN_URL||'http://127.0.0.1:23501'});
  try{
