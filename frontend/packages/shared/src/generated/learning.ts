@@ -386,23 +386,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/services/learning/lessons/lessons/{courseId}/count": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 统计课程学习人数 */
-        get: operations["countLearningLessonByCourse"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/services/learning/learning-records/course/{courseId}": {
         parameters: {
             query?: never;
@@ -2617,34 +2600,6 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: components["schemas"]["LearningLessonVO"];
-                    };
-                };
-            };
-        };
-    };
-    countLearningLessonByCourse: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                courseId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        /** Format: int32 */
-                        data: number;
                     };
                 };
             };

@@ -1758,59 +1758,6 @@
         }
       }
     },
-    "/api/v2/services/learning/lessons/lessons/{courseId}/count": {
-      "get": {
-        "tags": [
-          "我的课表相关接口"
-        ],
-        "summary": "统计课程学习人数",
-        "operationId": "countLearningLessonByCourse",
-        "parameters": [
-          {
-            "name": "courseId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^-?[0-9]+$"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "integer",
-                      "format": "int32"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v2/services/learning/learning-records/course/{courseId}": {
       "get": {
         "tags": [

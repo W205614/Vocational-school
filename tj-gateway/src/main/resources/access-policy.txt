@@ -146,7 +146,6 @@ GET:/api/v2/admin/learning/admin/replies/{id}
 GET:/api/v2/admin/learning/board/seasons/list
 GET:/api/v2/admin/learning/boards
 GET:/api/v2/admin/learning/learning-records/course/{courseId}
-GET:/api/v2/admin/learning/lessons/lessons/{courseId}/count
 GET:/api/v2/admin/learning/lessons/now
 GET:/api/v2/admin/learning/lessons/page
 GET:/api/v2/admin/learning/lessons/plans
@@ -326,7 +325,6 @@ GET:/api/v2/services/learning/admin/replies/{id}
 GET:/api/v2/services/learning/board/seasons/list
 GET:/api/v2/services/learning/boards
 GET:/api/v2/services/learning/learning-records/course/{courseId}
-GET:/api/v2/services/learning/lessons/lessons/{courseId}/count
 GET:/api/v2/services/learning/lessons/now
 GET:/api/v2/services/learning/lessons/page
 GET:/api/v2/services/learning/lessons/plans

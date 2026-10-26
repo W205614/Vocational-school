@@ -54,9 +54,13 @@ public class LearningLessonController {
         return lessonService.isLessonStatus(courseId);
     }
 
-    @GetMapping("/lessons/{courseId}/count")
+    @io.swagger.v3.oas.annotations.Hidden
+    @GetMapping({"/{courseId}/count", "/lessons/{courseId}/count"})
     @Operation(summary = "统计课程学习人数")
     public Integer countLearningLessonByCourse(@PathVariable("courseId") Long courseId){
+        com.tianji.common.utils.InternalAuth.requireService();
+        if(com.tianji.common.utils.WebUtils.isGatewayRequest())throw new com.tianji.common.exceptions.ForbiddenException("课程学习人数统计仅供内部服务调用");
+        if(courseId==null || courseId<=0)throw new com.tianji.common.exceptions.BadRequestException("无效的课程编号");
         return lessonService.countLearningLessonByCourse(courseId);
     }
 

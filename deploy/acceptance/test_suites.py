@@ -22,6 +22,7 @@ REGRESSION_TESTS = [
     'LearningMotivationReliabilityTest',
     'MybatisPaginationConfigurationTest',
     'LearningLessonPaginationTest',
+    'LearningLessonCountDatabaseTest',
     'LearningReminderTest',
     'LearningAdoptionAsyncTest',
     'LearningExamReminderTest',
