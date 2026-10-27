@@ -39,9 +39,4 @@ public class StudentController {
         studentService.saveStudent(studentFormDTO);
     }
 
-    @Operation(summary = "修改学员密码")
-    @PutMapping("/password")
-    public void updateMyPassword(@RequestBody StudentFormDTO studentFormDTO) {
-        studentService.updateMyPassword(studentFormDTO);
-    }
 }

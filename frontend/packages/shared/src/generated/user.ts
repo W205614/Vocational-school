@@ -69,23 +69,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/services/user/students/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** 修改学员密码 */
-        put: operations["updateMyPassword"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/services/user/students/register": {
         parameters: {
             query?: never;
@@ -1160,35 +1143,6 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: components["schemas"]["TemporaryCredentialDTO"];
-                    };
-                };
-            };
-        };
-    };
-    updateMyPassword: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StudentFormDTO"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: null;
                     };
                 };
             };

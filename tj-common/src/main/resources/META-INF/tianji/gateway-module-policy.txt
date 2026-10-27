@@ -1,4 +1,4 @@
-# Source-Manifest-SHA256: 9510e724e447911abc4b1fa28c4cba5b1d22983b192955b4763344771743f428
+# Source-Manifest-SHA256: e77e1395e20b8c0b26ab5f48b0033a42312e0b46b521f6c415f5595c7333f790
 # Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
 # Reviewed static module targets for the gateway API inventory, 2026-10-26.
 # Derived once from the reviewed v2 route mappings; no runtime Feign/policy auto-grant.
@@ -435,7 +435,6 @@ gateway|PUT|/_modules/trade/orders/{id}/cancel
 gateway|PUT|/_modules/trade/refund-apply/approval
 gateway|PUT|/_modules/trade/refund-apply/cancel
 gateway|PUT|/_modules/user/account-privacy/requests/{id}
-gateway|PUT|/_modules/user/students/password
 gateway|PUT|/_modules/user/users
 gateway|PUT|/_modules/user/users/{id}
 gateway|PUT|/_modules/user/users/{id}/password/default

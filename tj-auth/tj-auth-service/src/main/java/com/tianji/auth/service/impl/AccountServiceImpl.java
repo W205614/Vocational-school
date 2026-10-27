@@ -53,16 +53,24 @@ public class AccountServiceImpl implements IAccountService{
         catch(BadRequestException error){protection.failed(account,ip);throw new BadRequestException("登录信息有误");}
         catch(feign.FeignException error){if(error.status()==400 || error.status()==401){protection.failed(account,ip);throw new BadRequestException("登录信息有误");}throw new com.tianji.common.exceptions.ServiceUnavailableException("身份服务暂不可用");}
         if(Boolean.TRUE.equals(detail.getMustChangePassword())){protection.success(account);throw new com.tianji.common.exceptions.InitialPasswordRequiredException();}
-        LoginUserDTO current=userClient.sessionIdentity(detail.getUserId());if(isStaff==Long.valueOf(2).equals(current.getRoleId()))throw new BadRequestException("登录入口与账号身份不匹配");detail.setAuthVersion(current.getAuthVersion());detail.setRoleId(current.getRoleId());
-        if (detail == null) {
-            throw new BadRequestException("登录信息有误");
-        }
+        LoginUserDTO current=userClient.sessionIdentity(detail.getUserId());
+        // Never upgrade a previously checked credential to a later account version.
+        if(current==null || detail.getAuthVersion()==null || current.getAuthVersion()==null
+                || !java.util.Objects.equals(detail.getUserId(),current.getUserId())
+                || !java.util.Objects.equals(detail.getAuthVersion(),current.getAuthVersion())
+                || !java.util.Objects.equals(detail.getRoleId(),current.getRoleId()))
+            throw new com.tianji.common.exceptions.UnauthorizedException("账号身份已变化，请重新登录");
+        if(isStaff==Long.valueOf(2).equals(current.getRoleId()))throw new BadRequestException("登录入口与账号身份不匹配");
         boolean mfaVerified=false;
         if(administratorMfa!=null) {
             try{mfaVerified=administratorMfa.verifyLogin(detail,loginDTO.getMfaCode());}
             catch(com.tianji.common.exceptions.CommonException error){protection.failed(account,ip);throw error;}
         }
         protection.success(account);
+
+        // Persist authentication acceptance before issuing any session/token/cookie.
+        // This record confirms credential verification, not delivery of the HTTP response.
+        loginRecordService.loginSuccess(loginDTO.getCellPhone(), detail.getUserId());
 
         // 2.基于JWT生成登录token
         // 2.1.设置记住我标记
@@ -71,8 +79,6 @@ public class AccountServiceImpl implements IAccountService{
         String token = generateToken(detail);
         if(mfaVerified)administratorMfa.markSession(detail);
 
-        // 3.计入登录信息表
-        loginRecordService.loginSuccess(loginDTO.getCellPhone(), detail.getUserId());
         // 4.返回结果
         return token;
     }

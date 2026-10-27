@@ -60,13 +60,6 @@ public class StudentServiceImpl implements IStudentService {
     }
 
     @Override
-    public void updateMyPassword(StudentFormDTO studentFormDTO) {
-        userService.updatePasswordByPhone(
-                studentFormDTO.getCellPhone(), studentFormDTO.getCode(), studentFormDTO.getPassword()
-        );
-    }
-
-    @Override
     public PageDTO<StudentPageVo> queryStudentPage(UserPageQuery query) {
         // 1.分页条件
         Page<UserDetail> page  =  detailService.queryUserDetailByPage(query, UserType.STUDENT);

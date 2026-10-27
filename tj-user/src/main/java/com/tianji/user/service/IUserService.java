@@ -25,8 +25,6 @@ public interface IUserService extends IService<User> {
 
     void addUserByPhone(User user, String code);
 
-    void updatePasswordByPhone(String cellPhone, String code, String password);
-
     com.tianji.api.dto.user.TemporaryCredentialDTO saveUser(UserDTO userDTO);
 
     void updateUser(UserDTO userDTO);

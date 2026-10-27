@@ -4,14 +4,17 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tianji.auth.domain.po.LoginRecord;
 import com.tianji.auth.mapper.LoginRecordMapper;
 import com.tianji.auth.service.ILoginRecordService;
-import com.tianji.common.utils.MarkedRunnable;
+import com.tianji.common.autoconfigure.reliability.OperationHandler;
+import com.tianji.common.autoconfigure.reliability.OperationStore;
 import com.tianji.common.utils.WebUtils;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * <p>
@@ -22,30 +25,38 @@ import java.util.concurrent.ThreadPoolExecutor;
  * @since 2022-07-12
  */
 @Service
-public class LoginRecordServiceImpl extends ServiceImpl<LoginRecordMapper, LoginRecord> implements ILoginRecordService {
+public class LoginRecordServiceImpl extends ServiceImpl<LoginRecordMapper, LoginRecord> implements ILoginRecordService, OperationHandler {
+    private final OperationStore operations;
+    private final JsonMapper json;
 
-    private static final Executor WRITE_RECORD_EXECUTOR;
-
-    static {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        //配置核心线程数
-        executor.setCorePoolSize(20);
-        //配置最大线程数
-        executor.setMaxPoolSize(40);
-        //配置队列大小
-        executor.setQueueCapacity(99999);
-        //配置线程池中的线程的名称前缀
-        executor.setThreadNamePrefix("login-record-write-worker-");
-        // 设置拒绝策略：放弃任务
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
-        //执行初始化
-        executor.initialize();
-        WRITE_RECORD_EXECUTOR = executor;
+    public LoginRecordServiceImpl(OperationStore operations, JsonMapper json) {
+        this.operations = operations;
+        this.json = json;
     }
 
     @Override
     public void saveAsync(LoginRecord record) {
-        WRITE_RECORD_EXECUTOR.execute(new MarkedRunnable(() -> save(record)));
+        if(record.getUserId()==null || record.getUserId()<=0 || record.getLoginTime()==null)
+            throw new IllegalArgumentException("A login record requires its verified owner and time");
+        // Admission is durable before returning. The existing Spring-managed,
+        // bounded operation executor only holds work that can be claimed again.
+        LoginRecord snapshot=json.readValue(json.writeValueAsString(record),LoginRecord.class);
+        snapshot.setId(null);
+        operations.submit(snapshot.getUserId(),kind(),UUID.randomUUID().toString(),snapshot);
+    }
+
+    @Override public String kind() {return "AUTH_LOGIN_RECORD";}
+
+    @Override public Object execute(String operationId,long userId,String payload) {
+        // OperationStore commits this insert and SUCCEEDED under the same lease
+        // and transaction. A retry after an uncertain commit cannot insert twice.
+        if(!TransactionSynchronizationManager.isActualTransactionActive())
+            throw new IllegalStateException("Login record delivery requires the operation transaction");
+        LoginRecord record=json.readValue(payload,LoginRecord.class);
+        if(!Objects.equals(record.getUserId(),userId))throw new IllegalArgumentException("Login record owner differs");
+        record.setId(null);
+        if(!save(record))throw new IllegalStateException("Login record insert was not acknowledged");
+        return Map.of("recorded",true);
     }
 
     @Override

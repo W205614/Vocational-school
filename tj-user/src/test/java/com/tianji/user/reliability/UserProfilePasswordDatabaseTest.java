@@ -49,7 +49,7 @@ class UserProfilePasswordDatabaseTest {
    var definition=Pattern.compile("CREATE TABLE `"+table+"` \\(.*?\\) ENGINE=.*?;",Pattern.DOTALL).matcher(schema);
    assertTrue(definition.find());jdbc.execute(definition.group().replaceFirst("CREATE TABLE","CREATE TABLE IF NOT EXISTS"));
   }
-  for(var field:Map.of("must_change_password","TINYINT NOT NULL DEFAULT 0","temporary_password_expires_at","DATETIME(3) NULL").entrySet())
+  for(var field:Map.of("must_change_password","TINYINT NOT NULL DEFAULT 0","temporary_password_expires_at","DATETIME(3) NULL","auth_version","BIGINT NOT NULL DEFAULT 0").entrySet())
    if(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='user' AND column_name=?",Integer.class,field.getKey())==0)
     jdbc.execute("ALTER TABLE `user` ADD COLUMN "+field.getKey()+" "+field.getValue());
   for(int n=0;n<2;n++){
@@ -84,5 +84,22 @@ class UserProfilePasswordDatabaseTest {
   update(form);var changed=detail(ids.getFirst());assertEquals("Updated own profile",changed.get("name"));assertEquals("profile0@example.test",changed.get("email"));
   assertEquals(2,((Number)changed.get("type")).intValue());assertEquals(2L,((Number)changed.get("role_id")).longValue());
   assertEquals(other,detail(ids.getLast()));assertTrue(passwords.matches("changed-profile-password",hash()));
+ }
+ @Test void credentialVersionComesFromThePasswordRowRatherThanALaterIdentityRead(){
+  long id=ids.getFirst();jdbc.update("UPDATE `user` SET auth_version=7 WHERE id=?",id);
+  var checking=org.mockito.Mockito.spy(passwords);
+  org.mockito.Mockito.doAnswer(call->{
+   // Commit a reset after the real mapper has read the credential row, while
+   // verification of that row is still in progress.
+   boolean accepted=passwords.matches(call.getArgument(0),call.getArgument(1));
+   jdbc.update("UPDATE `user` SET password=?,auth_version=8 WHERE id=?",passwords.encode("reset-profile-password"),id);
+   return accepted;
+  }).when(checking).matches(org.mockito.ArgumentMatchers.any(CharSequence.class),org.mockito.ArgumentMatchers.anyString());
+  ReflectionTestUtils.setField(users,"passwordEncoder",checking);
+  var form=new com.tianji.api.dto.user.LoginFormDTO();form.setType(1);form.setUsername("profile-"+id);form.setPassword("original-profile-password");
+  var verified=users.queryUserDetail(form,false);
+  assertEquals(7L,verified.getAuthVersion());assertEquals(2L,verified.getRoleId());assertEquals(2,verified.getUserType());
+  assertEquals(8L,jdbc.queryForObject("SELECT auth_version FROM `user` WHERE id=?",Long.class,id));
+  assertTrue(passwords.matches("reset-profile-password",hash()));
  }
 }

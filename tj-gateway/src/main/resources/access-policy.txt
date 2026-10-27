@@ -587,7 +587,6 @@ PUT:/api/v2/admin/provider-payments/anomalies/{number}/{reason}
 PUT:/api/v2/admin/trade/orders/{id}/cancel
 PUT:/api/v2/admin/trade/refund-apply/approval
 PUT:/api/v2/admin/trade/refund-apply/cancel
-PUT:/api/v2/admin/user/students/password
 PUT:/api/v2/admin/user/users
 PUT:/api/v2/admin/user/users/{id}
 PUT:/api/v2/admin/user/users/{id}/password/default
@@ -620,7 +619,6 @@ PUT:/api/v2/services/promotion/user-coupons/use
 PUT:/api/v2/services/trade/orders/{id}/cancel
 PUT:/api/v2/services/trade/refund-apply/approval
 PUT:/api/v2/services/trade/refund-apply/cancel
-PUT:/api/v2/services/user/students/password
 PUT:/api/v2/services/user/users
 PUT:/api/v2/services/user/users/{id}
 PUT:/api/v2/services/user/users/{id}/password/default

@@ -73,7 +73,7 @@ public class AccountAuthFilter implements GlobalFilter,Ordered {
                 "GET:/api/v2/services/promotion/coupons/list","GET:/api/v2/services/promotion/user-coupons/**","POST:/api/v2/services/promotion/user-coupons/available","POST:/api/v2/services/promotion/user-coupons/discount",
                 "GET:/api/v2/services/media/medias/signature/play","POST:/api/v2/services/remark/likes","GET:/api/v2/services/remark/likes/list",
                 "POST:/api/v2/services/user/account-privacy/export","POST:/api/v2/services/user/account-privacy/deletion","POST:/api/v2/services/user/account-privacy/consent",
-                "GET:/api/v2/services/user/users/me","PUT:/api/v2/services/user/users","PUT:/api/v2/services/user/students/password","GET:/api/v2/services/message/inboxes","PUT:/api/v2/services/message/inboxes/*/read");
+                "GET:/api/v2/services/user/users/me","PUT:/api/v2/services/user/users","GET:/api/v2/services/message/inboxes","PUT:/api/v2/services/message/inboxes/*/read");
             if(studentPaths.stream().noneMatch(pattern->matcher.match(pattern,ant))) throw new ForbiddenException("该接口不向学生开放");
         }
         if(path.startsWith("/api/v2/teacher/") && (!result.success() || !java.util.Set.of(1L,3L).contains(result.getData().getRoleId())))

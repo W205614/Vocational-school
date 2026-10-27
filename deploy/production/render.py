@@ -517,7 +517,15 @@ def render(settings):
             "credentialName": s["public"]["tls_secret"], "minProtocolVersion": "TLSV1_2"}, "hosts": hosts}]}))
     for portal in ["student", "admin"]:
         docs.append(object_("VirtualService", portal, ns, {"hosts": [s["public"][portal + "_host"]], "gateways": [gateway],
-            "http": [{"match": [{"uri": {"prefix": "/api/"}}], "route": [{"destination": {"host": "app-gateway", "port": {"number": 24310}}}], "timeout": "30s"},
+            # A media response can transfer much longer than an ordinary API
+            # call. Exempt only the existing signed GET endpoint, still through
+            # gateway authorization and owner stream admission. Envoy's bounded
+            # stream_idle_timeout remains an ingress deployment requirement;
+            # idleTimeout is not a valid VirtualService HTTPRoute field.
+            "http": [{"name": "cloud-media-stream", "match": [{"method": {"exact": "GET"},
+                "uri": {"regex": r"^/api/v2/services/media/cloud-content/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"}}],
+                "route": [{"destination": {"host": "app-gateway", "port": {"number": 24310}}}], "timeout": "0s"},
+                {"match": [{"uri": {"prefix": "/api/"}}], "route": [{"destination": {"host": "app-gateway", "port": {"number": 24310}}}], "timeout": "30s"},
                 {"route": [{"destination": {"host": "web-" + portal, "port": {"number": 8080}}}]}]}))
     return docs, secret_contract
 

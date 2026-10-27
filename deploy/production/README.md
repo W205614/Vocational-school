@@ -97,3 +97,7 @@ python deploy/production/acceptance.py --package <输出目录> --evidence <私�
 ```
 
 preflight 只读检查实际副本、跨区分布、镜像、Secret 键、sidecar 和 agent 注入；不证明故障切换或容量。外部验收证据格式与演练步骤见 [商业化运行手册](../../docs/commercial-ha.md)。缺失、失败、跳过、过期、SHA/配置不符或附件哈希变化均使验收 BLOCKED。验收工具只能检查提交证据的一致性，不能自动证明附件来源真实。
+
+## 云视频入口超时
+
+两个门户的云视频 `GET /api/v2/services/media/cloud-content/{id}` 优先通过独立入口路由，关闭该响应的总时长限制（`timeout: 0s`），仍经网关和媒体服务校验签名、权益及每用户播放连接上限；其他 API 保留30秒总超时。目标入口必须保留有界的 Envoy `stream_idle_timeout`（默认5分钟），并核对连接／待处理请求限制；不得把它关闭为无限空闲。Istio `VirtualService.HTTPRoute` 不支持 `idleTimeout`，渲染器不生成该无效字段。部署后用持续超过30秒的合法 Range 响应及空闲连接验证生效行为；静态契约测试不代表云入口已验收。语义见 [Istio HTTPRoute](https://istio.io/latest/docs/reference/config/networking/virtual-service/#HTTPRoute) 与 [Envoy 超时说明](https://www.envoyproxy.io/docs/envoy/latest/faq/configuration/timeouts)。

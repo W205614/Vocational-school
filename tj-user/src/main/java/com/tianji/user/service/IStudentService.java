@@ -17,7 +17,5 @@ public interface IStudentService {
 
     void saveStudent(StudentFormDTO studentFormDTO);
 
-    void updateMyPassword(StudentFormDTO studentFormDTO);
-
     PageDTO<StudentPageVo> queryStudentPage(UserPageQuery pageQuery);
 }

@@ -50,6 +50,11 @@ public class User implements Serializable {
      */
     private String password;
 
+    /** Read with the verified credential only; the database triggers own version updates. */
+    @TableField(select = false, insertStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.NEVER,
+            updateStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.NEVER)
+    private Long authVersion;
+
     private Boolean mustChangePassword;
     private LocalDateTime temporaryPasswordExpiresAt;
 

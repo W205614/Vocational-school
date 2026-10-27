@@ -27,6 +27,15 @@ class GatewayAdmissionTest {
         capacity.acquire(158);
     }
     @AfterEach void close(){scheduler.dispose();}
+    @Test void retiredPasswordAliasesAreRejectedBeforeAnyIdentityCanReachTheService(){
+        for(String audience:new String[]{"services","admin"}){
+            var request=MockServerHttpRequest.put("/api/v2/"+audience+"/user/students/password")
+                    .header("Authorization","Bearer fixture").build();
+            assertThrows(com.tianji.common.exceptions.ForbiddenException.class,()->filter.filter(MockServerWebExchange.from(request),exchange->{
+                fail("Retired password route reached the user service");return reactor.core.publisher.Mono.empty();
+            }).block(Duration.ofSeconds(2)));
+        }
+    }
     @Test void publicRoutesStripForgedIdentityAndProtocolHeaders(){
         var request=MockServerHttpRequest.get("/api/v2/environment")
                 .remoteAddress(new java.net.InetSocketAddress("198.51.100.7",4567))

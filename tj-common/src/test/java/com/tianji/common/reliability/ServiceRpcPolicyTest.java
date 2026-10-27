@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class ServiceRpcPolicyTest {
     private final ServiceRpcPolicy policy=new ServiceRpcPolicy();
+    @Test void noServiceIdentityCanReopenTheRetiredPhonePasswordRoute(){
+        for(String caller:java.util.List.of("gateway","identity","commerce","education","support"))
+            assertFalse(policy.allows(caller,"PUT","/_modules/user/students/password"));
+    }
     @Test void peerCredentialCannotReachAdministrativeOrUnlistedEndpoints(){
         assertFalse(policy.allows("support","PUT","/_modules/user/users/42/password/default"));
         assertFalse(policy.allows("support","GET","/_modules/user/account-privacy/requests"));

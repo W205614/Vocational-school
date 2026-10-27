@@ -1,7 +1,9 @@
 import copy
 from pathlib import Path
+import re
 import tempfile
 import unittest
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -117,6 +119,68 @@ class ProductionRenderTest(unittest.TestCase):
         pod = next(v for v in self.resources_of("Deployment") if v["metadata"]["name"] == "media-worker")["spec"]["template"]["spec"]
         self.assertEqual("4Gi", next(v for v in pod["volumes"] if v["name"] == "work")["emptyDir"]["sizeLimit"])
         self.assertTrue(next(v for v in pod["volumes"] if v["name"] == "signatures")["persistentVolumeClaim"]["readOnly"])
+
+    def test_cloud_media_gets_streaming_timeout_before_the_general_api_route(self):
+        portals = self.resources_of("VirtualService")
+        self.assertEqual({"student", "admin"}, {v["metadata"]["name"] for v in portals})
+        for portal in portals:
+            with self.subTest(portal=portal["metadata"]["name"]):
+                self.assertEqual(3, len(portal["spec"]["http"]))
+                stream, api, web = portal["spec"]["http"]
+                self.assertEqual("cloud-media-stream", stream["name"])
+                self.assertEqual("0s", stream["timeout"])
+                self.assertEqual([{"method": {"exact": "GET"}, "uri": {
+                    "regex": r"^/api/v2/services/media/cloud-content/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"}}], stream["match"])
+                expected = [{"destination": {"host": "app-gateway", "port": {"number": 24310}}}]
+                self.assertEqual(expected, stream["route"])
+                self.assertEqual(expected, api["route"])
+                self.assertEqual("30s", api["timeout"])
+                self.assertEqual([{"uri": {"prefix": "/api/"}}], api["match"])
+                self.assertEqual("web-" + portal["metadata"]["name"], web["route"][0]["destination"]["host"])
+                # idleTimeout is not an HTTPRoute field. Stream idleness remains
+                # bounded by the ingress HTTP connection manager, not an invalid
+                # VirtualService field or a broad timeout exception.
+                self.assertNotIn("idleTimeout", stream)
+        policy = self.resources_of("DestinationRule")[0]["spec"]["trafficPolicy"]
+        self.assertEqual(128, policy["connectionPool"]["tcp"]["maxConnections"])
+        self.assertEqual(64, policy["connectionPool"]["http"]["http1MaxPendingRequests"])
+
+    def test_only_exact_cloud_media_gets_receive_the_timeout_exception(self):
+        media = "/api/v2/services/media/cloud-content/01234567-89ab-cdef-0123-456789abcdef"
+
+        def select(routes, method, target):
+            # URI matching is over the path; signed query parameters do not
+            # change which Istio route is selected.
+            path = urlsplit(target).path
+            for route in routes:
+                for match in route.get("match", [{}]):
+                    if "method" in match and match["method"].get("exact") != method:
+                        continue
+                    uri = match.get("uri", {})
+                    if "regex" in uri and re.fullmatch(uri["regex"], path) is None:
+                        continue
+                    if "prefix" in uri and not path.startswith(uri["prefix"]):
+                        continue
+                    return route
+            self.fail("No route selected")
+
+        for portal in self.resources_of("VirtualService"):
+            routes = portal["spec"]["http"]
+            for target in [media, media + "?owner=1&course=2&expires=123&signature=synthetic"]:
+                with self.subTest(portal=portal["metadata"]["name"], target=target):
+                    self.assertEqual("0s", select(routes, "GET", target)["timeout"])
+            for method, target in [("POST", media), ("PUT", media), ("HEAD", media),
+                                   ("GET", media + "/extra"), ("GET", media + ".mp4"),
+                                   ("GET", "/api/v2/services/media/cloud-content/"),
+                                   ("GET", "/api/v2/services/media/cloud-content/not-an-id"),
+                                   ("GET", "/api/v2/services/media/cloud-content/" + "-" * 36),
+                                   ("GET", "/api/v2/services/media/cloud-content/" + "a" * 36),
+                                   ("GET", "/api/v2/services/media/cloud-content/0123456-789ab-cdef-0123-456789abcdef"),
+                                   ("GET", "/api/v2/services/media/cloud-upload"),
+                                   ("GET", "/api/v2/services/media/cloud-content-elsewhere/" + "a" * 36),
+                                   ("GET", "/api/v2/services/trade/orders")]:
+                with self.subTest(portal=portal["metadata"]["name"], method=method, target=target):
+                    self.assertEqual("30s", select(routes, method, target)["timeout"])
 
     def test_unconfigured_deployments_fail_closed(self):
         mutations = [lambda s: s["images"].update(identity="registry.acme.test/identity:latest"),

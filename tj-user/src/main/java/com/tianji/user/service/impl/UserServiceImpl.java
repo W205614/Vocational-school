@@ -81,6 +81,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         LoginUserDTO userDTO = new LoginUserDTO();
         userDTO.setUserId(user.getId());
         userDTO.setRoleId(handleRoleId(user));
+        userDTO.setAuthVersion(user.getAuthVersion());
+        userDTO.setUserType(user.getType().getValue());
         userDTO.setMustChangePassword(Boolean.TRUE.equals(user.getMustChangePassword()));
         return userDTO;
     }
@@ -136,23 +138,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 4.新增
         user.setUsername(user.getCellPhone());
         save(user);
-    }
-
-    @Override
-    public void updatePasswordByPhone(String cellPhone, String code, String password) {
-        // 1.验证码校验
-        codeService.verifyCode(cellPhone, code);
-        // 2.查询用户
-        User oldUser = lambdaQuery().eq(User::getCellPhone, cellPhone).one();
-        if (oldUser == null) {
-            // 手机号不存在
-            throw new BadRequestException(PHONE_NOT_EXISTS);
-        }
-        // 2.修改密码
-        User user = new User();
-        user.setId(oldUser.getId());
-        user.setPassword(passwordEncoder.encode(password));
-        updateById(user);
     }
 
     public void updatePhoneById(Long id, String cellPhone) {
@@ -271,6 +256,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         // 2.根据用户名或手机号查询
         User user = lambdaQuery()
+                .select(User::getId, User::getUsername, User::getCellPhone, User::getPassword,
+                        User::getType, User::getStatus, User::getMustChangePassword,
+                        User::getTemporaryPasswordExpiresAt, User::getAuthVersion)
                 .eq(StrUtil.isNotBlank(username), User::getUsername, username)
                 .eq(StrUtil.isNotBlank(cellPhone), User::getCellPhone, cellPhone)
                 .one();
@@ -308,7 +296,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 1.校验验证码
         codeService.verifyCode(phone, code);
         // 2.根据手机号查询
-        User user = lambdaQuery().eq(User::getCellPhone, phone).one();
+        User user = lambdaQuery()
+                .select(User::getId, User::getUsername, User::getCellPhone, User::getPassword,
+                        User::getType, User::getStatus, User::getMustChangePassword,
+                        User::getTemporaryPasswordExpiresAt, User::getAuthVersion)
+                .eq(User::getCellPhone, phone).one();
         if (user == null) {
             throw new BadRequestException(PHONE_NOT_EXISTS);
         }

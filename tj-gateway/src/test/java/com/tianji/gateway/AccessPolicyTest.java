@@ -3,6 +3,11 @@ import com.tianji.gateway.config.AccessPolicy;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class AccessPolicyTest {
+ @Test void retiredStudentPasswordAliasesHaveNoExternalGrant(){
+  var policy=new AccessPolicy();
+  for(String audience:new String[]{"services","admin"})
+   assertFalse(policy.declares("PUT","/api/v2/"+audience+"/user/students/password"));
+ }
  @Test void learningCourseHeadcountsRemainPrivateServiceEndpoints(){
   var policy=new AccessPolicy();
   for(String audience:new String[]{"services","admin"})for(String route:new String[]{"lessons/42/count","lessons/lessons/42/count"})

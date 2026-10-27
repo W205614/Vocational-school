@@ -343,57 +343,6 @@
         }
       }
     },
-    "/api/v2/services/user/students/password": {
-      "put": {
-        "tags": [
-          "用户管理接口"
-        ],
-        "summary": "修改学员密码",
-        "operationId": "updateMyPassword",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StudentFormDTO"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "null"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v2/services/user/students/register": {
       "post": {
         "tags": [
