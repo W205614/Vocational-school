@@ -161,16 +161,9 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
     @Override
     public void deleteCartByUserAndCourseIds(Long userId, List<Long> courseIds) {
         log.debug("尝试从购物车删除用户已购买的课程，用户id：{}，课程id：{}", userId, courseIds);
-        try {
-            if(CollUtils.isEmpty(courseIds) || userId == null){
-                return;
-            }
-            remove(new LambdaQueryWrapper<Cart>()
-                    .eq(Cart::getUserId, userId)
-                    .in(Cart::getCourseId, courseIds)
-            );
-        } catch (Exception e) {
-            log.error("从购物车删除用户已购买的课程发生异常，用户id：{}，课程id：{}", userId, courseIds, e);
-        }
+        remove(new LambdaQueryWrapper<Cart>()
+                .eq(Cart::getUserId, userId)
+                .in(Cart::getCourseId, courseIds)
+        );
     }
 }

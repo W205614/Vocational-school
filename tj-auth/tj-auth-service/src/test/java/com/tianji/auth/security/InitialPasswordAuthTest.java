@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 class InitialPasswordAuthTest {
  private LoginProtection protection;private UserClient users;private SessionStore sessions;private JwtTool tokens;private ILoginRecordService records;private AccountServiceImpl service;
- @BeforeEach void setup(){protection=mock(LoginProtection.class);users=mock(UserClient.class);sessions=mock(SessionStore.class);tokens=mock(JwtTool.class);records=mock(ILoginRecordService.class);service=new AccountServiceImpl(protection,sessions,tokens,users,records);var request=new MockHttpServletRequest();request.addHeader("X-Client-IP","127.0.0.1");RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));}
+ @BeforeEach void setup(){protection=mock(LoginProtection.class);users=mock(UserClient.class);sessions=mock(SessionStore.class);tokens=mock(JwtTool.class);records=mock(ILoginRecordService.class);service=new AccountServiceImpl(protection,sessions,tokens,users,records,mock(AdministratorMfaService.class));var request=new MockHttpServletRequest();request.addHeader("X-Client-IP","127.0.0.1");RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));}
  @AfterEach void cleanup(){RequestContextHolder.resetRequestAttributes();}
  @Test void temporaryLoginIssuesNeitherTokenNorRefreshSession(){
   var form=new LoginFormDTO();form.setType(1);form.setUsername("teacher");form.setPassword("temporary-fixture");

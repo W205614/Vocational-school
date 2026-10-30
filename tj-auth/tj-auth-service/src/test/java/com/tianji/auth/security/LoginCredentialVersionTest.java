@@ -11,7 +11,6 @@ import com.tianji.common.utils.InternalAuth;
 import org.junit.jupiter.api.*;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.mock.web.*;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.context.request.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -19,10 +18,12 @@ import static org.mockito.Mockito.*;
 class LoginCredentialVersionTest {
     private UserClient users;private JwtTool tokens;private SessionStore sessions;
     private ILoginRecordService records;private AccountServiceImpl service;private LoginFormDTO form;
+    private AdministratorMfaService mfa;
     private MockHttpServletResponse response;
     @BeforeEach void setup(){
         users=mock(UserClient.class);tokens=mock(JwtTool.class);sessions=mock(SessionStore.class);records=mock(ILoginRecordService.class);
-        service=new AccountServiceImpl(mock(LoginProtection.class),sessions,tokens,users,records);
+        mfa=mock(AdministratorMfaService.class);
+        service=new AccountServiceImpl(mock(LoginProtection.class),sessions,tokens,users,records,mfa);
         form=new LoginFormDTO();form.setType(1);form.setUsername("credential-version-fixture");form.setPassword("old-password-fixture");
         var request=new MockHttpServletRequest();request.addHeader("X-Client-IP","127.0.0.1");response=new MockHttpServletResponse();
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request,response));
@@ -55,10 +56,11 @@ class LoginCredentialVersionTest {
         }
         var order=inOrder(records,tokens);order.verify(records).loginSuccess(null,42L);order.verify(tokens).createRefreshToken(verified);order.verify(tokens).createToken(verified);
         assertEquals(7L,verified.getAuthVersion());assertFalse(response.getHeaders("Set-Cookie").isEmpty());
+        verify(mfa).verifyLogin(verified,null);
     }
     @Test void durableRecordFailureCannotCreateTokensCookiesOrAnMfaSession(){
         var verified=identity(7L,1);when(users.queryUserDetail(form,true)).thenReturn(verified);when(users.sessionIdentity(42L)).thenReturn(identity(7L,1));
-        var mfa=mock(AdministratorMfaService.class);when(mfa.verifyLogin(verified,null)).thenReturn(true);ReflectionTestUtils.setField(service,"administratorMfa",mfa);
+        when(mfa.verifyLogin(verified,null)).thenReturn(true);
         doThrow(new DataAccessResourceFailureException("fixture unavailable")).when(records).loginSuccess(null,42L);
         assertThrows(DataAccessResourceFailureException.class,()->service.login(form,true));
         verifyNoInteractions(tokens,sessions);verify(mfa,never()).markSession(any());assertTrue(response.getHeaders("Set-Cookie").isEmpty());

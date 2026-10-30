@@ -33,8 +33,7 @@ public class AccountServiceImpl implements IAccountService{
     private final ILoginRecordService loginRecordService;
     @org.springframework.beans.factory.annotation.Value("${tj.auth.cookie.require-secure:false}")
     private boolean requireSecureCookie;
-    @org.springframework.beans.factory.annotation.Autowired
-    private AdministratorMfaService administratorMfa;
+    private final AdministratorMfaService administratorMfa;
 
     private com.tianji.common.utils.CookieBuilder refreshCookie() {
         // The gateway strips client headers and supplies protocol only with its service identity.
@@ -61,11 +60,9 @@ public class AccountServiceImpl implements IAccountService{
                 || !java.util.Objects.equals(detail.getRoleId(),current.getRoleId()))
             throw new com.tianji.common.exceptions.UnauthorizedException("账号身份已变化，请重新登录");
         if(isStaff==Long.valueOf(2).equals(current.getRoleId()))throw new BadRequestException("登录入口与账号身份不匹配");
-        boolean mfaVerified=false;
-        if(administratorMfa!=null) {
-            try{mfaVerified=administratorMfa.verifyLogin(detail,loginDTO.getMfaCode());}
-            catch(com.tianji.common.exceptions.CommonException error){protection.failed(account,ip);throw error;}
-        }
+        boolean mfaVerified;
+        try{mfaVerified=administratorMfa.verifyLogin(detail,loginDTO.getMfaCode());}
+        catch(com.tianji.common.exceptions.CommonException error){protection.failed(account,ip);throw error;}
         protection.success(account);
 
         // Persist authentication acceptance before issuing any session/token/cookie.

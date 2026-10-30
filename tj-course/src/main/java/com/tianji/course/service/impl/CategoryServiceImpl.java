@@ -36,9 +36,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -64,9 +62,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 
     @Autowired
     private ICourseDraftService courseDraftService;
-
-    @Resource(name = "taskExecutor")
-    private Executor taskExecutor;
 
     @Override
     public List<CategoryVO> list(CategoryListDTO categoryListDTO) {
@@ -286,13 +281,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
             //5.2更新关联分类状态
             baseMapper.update(updateCategory, updateWrapper);
         }
-        //6.课程分类禁用触发课程批量下架
+        // 分类和课程共用事务，不能异步下架后提前返回成功。
         if (categoryDisableOrEnableDTO.getStatus() == CommonStatus.DISABLE.getValue()) {
-            Long userId = UserContext.getUser();
-            taskExecutor.execute(() -> {
-                batchDownShelfCourse(category.getId(), category.getLevel(), userId);
-            });
-
+            batchDownShelfCourse(category.getId(), category.getLevel());
         }
     }
 
@@ -550,9 +541,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
      * @return
      */
     private List<CategoryVO> fiter(List<CategoryVO> categoryVOList, CategoryListDTO categoryListDTO) {
-        if (CollUtils.isEmpty(categoryVOList)) {
-            return new ArrayList<>();
-        }
         return categoryVOList.stream().
                 filter(categoryVO -> filter(categoryVO, categoryListDTO))
                 .collect(Collectors.toList());
@@ -600,26 +588,13 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         return pass || CollUtils.isNotEmpty(categoryVO.getChildren());
     }
 
-    private void batchDownShelfCourse(Long categoryId, Integer level, Long userId) {
-        //1.多线程下设置操作用户id
-        UserContext.setUser(userId);
-        //2.查询需要下架的课程
+    private void batchDownShelfCourse(Long categoryId, Integer level) {
         List<Course> courses = courseService.queryByCategoryIdAndLevel(categoryId, level);
-        if (CollUtils.isEmpty(courses)) {
-            return;
-        }
-        //3.遍历下架课程
         for (Course course : courses) {
-            //4.判断状态是否可以下架
             if (!CourseStatus.SHELF.equals(course.getStatus())) {
                 continue;
             }
-            try {
-                //5.课程下架
-                courseDraftService.downShelf(course.getId());
-            } catch (Exception e) {
-                log.error("课程下架异常");
-            }
+            courseDraftService.downShelf(course.getId());
         }
     }
 

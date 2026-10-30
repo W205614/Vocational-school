@@ -48,7 +48,7 @@ Vocational-school/
 - `deploy/operations/` 提供共享快照与 Redis 工具，compact 显式传入当前运行配置；`deploy/final/` 中对应文件保留为兼容入口，不再作为 compact 的配置来源。
 - `deploy/compact/reports/` 保存当前部署与仍适用的专项交付记录；过时批次报告、旧 `docs/evidence/` 和固定旧提交的探针已按本次清理范围移出工作目录，当前测试与恢复工具继续保留。
 
-部分本机保留 `deploy/docker/`，这是旧 VM 向 Docker Desktop 迁移的私有材料，依赖原备份和配置，不是当前默认部署，也不应直接加入 Git。旧根目录 Jenkins `startup.sh` 及配套 `Dockerfile` 已移除；当前构建通过 `setup.py build` 完成。
+旧 VM 向 Docker Desktop 迁移目录 `deploy/docker/` 属于已退役的本机迁移材料，不是当前部署依赖，不加入 Git；本次整理将其移入回收站。旧根目录 Jenkins `startup.sh` 及配套 `Dockerfile` 已移除；当前构建通过 `setup.py build` 完成。
 
 ## 推荐阅读顺序
 

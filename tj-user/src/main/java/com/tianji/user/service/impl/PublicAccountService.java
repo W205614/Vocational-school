@@ -39,7 +39,7 @@ public class PublicAccountService {
         verification.issue(phone,purpose,ip);
     }
     public void register(Registration form){
-        requireEnabled();validatePassword(form.password());AccountVerificationService.validate(form.phone(),"REGISTER");
+        requireEnabled();validatePassword(form.password());
         if(!form.consent() || !policyVersion.equals(form.policyVersion()))throw new BadRequestException("请阅读并同意当前隐私规则");
         verification.consume(form.phone(),"REGISTER",form.code());
         try{tx.executeWithoutResult(status->{
@@ -49,7 +49,7 @@ public class PublicAccountService {
         });}catch(org.springframework.dao.DuplicateKeyException error){throw new BadRequestException("无法完成注册，请检查资料或使用密码找回");}
     }
     public void recover(Recovery form){
-        requireEnabled();validatePassword(form.newPassword());AccountVerificationService.validate(form.phone(),"RECOVER");
+        requireEnabled();validatePassword(form.newPassword());
         verification.consume(form.phone(),"RECOVER",form.code());
         // Do not disclose existence; frozen/deactivated accounts cannot be reactivated by recovery.
         // Password changes increment auth_version through the existing database trigger.

@@ -42,4 +42,12 @@ class PublicAccountContractTest {
         assertFalse(new PublicAccountService.Registration("13800010001","123456","secret-password","v",true).toString().contains("secret"));
         assertFalse(new PublicAccountService.Recovery("13800010001","123456","secret-password").toString().contains("secret"));
     }
+    @Test void invalidPhonesAreRejectedByRealVerificationBeforeStorageAccess(){
+        var redis=mock(org.springframework.data.redis.core.StringRedisTemplate.class);
+        var verification=new AccountVerificationService(redis,mock(com.tianji.message.api.client.AsyncSmsClient.class));
+        var accounts=new PublicAccountService(jdbc,new TransactionTemplate(),passwords,verification,new MockEnvironment().withProperty("tj.accounts.public.enabled","true"));
+        assertThrows(BadRequestException.class,()->accounts.register(new PublicAccountService.Registration("not-phone","123456","fixture-password","2026-10-26",true)));
+        assertThrows(BadRequestException.class,()->accounts.recover(new PublicAccountService.Recovery("not-phone","123456","fixture-password")));
+        verifyNoInteractions(redis,jdbc,passwords);
+    }
 }

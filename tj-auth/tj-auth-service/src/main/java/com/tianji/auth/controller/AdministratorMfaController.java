@@ -33,6 +33,13 @@ public class AdministratorMfaController {
             var current=users.sessionIdentity(user.getUserId());
             if(current==null || !Long.valueOf(1).equals(current.getRoleId()))throw new ForbiddenException("仅管理员可设置验证器");
             return current.getUserId();
-        }catch(RuntimeException error){protection.failed(account,ip);throw new BadRequestException("无法完成验证器设置，请检查账号及凭据");}
+        }catch(BadRequestException | UnauthorizedException | ForbiddenException error){
+            protection.failed(account,ip);throw new BadRequestException("无法完成验证器设置，请检查账号及凭据");
+        }catch(feign.FeignException error){
+            if(error.status()==400 || error.status()==401 || error.status()==403){
+                protection.failed(account,ip);throw new BadRequestException("无法完成验证器设置，请检查账号及凭据");
+            }
+            throw new ServiceUnavailableException("身份服务暂不可用");
+        }
     }
 }

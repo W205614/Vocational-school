@@ -22,7 +22,7 @@
 
 真实课程、长视频续签、时长解析及相关新课程缺陷修复的功能证据与执行边界见[真实本地课程交付记录](deploy/compact/reports/real-local-course-20261026.md)。
 
-本机七个应用／网页镜像已更新至源码 `f4ba96d`，此次重建没有新增数据库迁移。随后针对学生登录、真实视频播放、MySQL 学习进度持久化与刷新续播的窄范围验证通过，14 个容器已恢复停止；镜像来源、数据保留及恢复材料边界见[当前部署记录](deploy/compact/reports/current-deployment-20261026.md)。这不代表当前版本重新通过全部业务验收；此前三项迁移和课程专项测试仍按各自版本记录。
+本机当前构建来源与镜像 ID 以 `deploy/compact/.local/package-source.json` 和 `images.json` 为准，容器启停与本轮验证结果记录在本机 `.local/defense-fixes-20261030/`。此前学生登录、真实视频播放、MySQL 学习进度持久化与刷新续播的窄范围验证见[历史部署记录](deploy/compact/reports/current-deployment-20261026.md)，不作为新版本重新执行的证明。
 
 [快速部署](#快速部署) · [首次使用](#首次使用) · [界面预览](#界面预览) · [项目结构](docs/project-structure.md) · [更多文档](#更多文档)
 
@@ -162,7 +162,9 @@ python deploy/compact/setup.py up
 
 ### 本机自动备份
 
-Windows 下可注册每日北京时间 **03:30** 的完整备份任务：
+本机自动备份已按用户要求停用，不保留本地数据库恢复包或镜像离线包。当前数据库卷、媒资与必要配置继续保留；它们是运行数据，不是独立备份。
+
+以下为明确重新启用后的工具行为。Windows 下可注册每日北京时间 **03:30** 的完整备份任务：
 
 ```powershell
 powershell -NoProfile -File deploy/compact/register_backup_task.ps1

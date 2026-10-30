@@ -1,6 +1,7 @@
 package com.tianji.auth.security;
 
 import com.tianji.auth.service.impl.AccountServiceImpl;
+import com.tianji.auth.service.impl.AdministratorMfaService;
 import com.tianji.auth.service.impl.LoginProtection;
 import com.tianji.auth.service.impl.SessionStore;
 import com.tianji.auth.service.ILoginRecordService;
@@ -22,7 +23,7 @@ class RefreshCookieSecurityTest {
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
     @BeforeEach void setup(){
-        service=new AccountServiceImpl(mock(LoginProtection.class),mock(SessionStore.class),mock(JwtTool.class),mock(UserClient.class),mock(ILoginRecordService.class));
+        service=new AccountServiceImpl(mock(LoginProtection.class),mock(SessionStore.class),mock(JwtTool.class),mock(UserClient.class),mock(ILoginRecordService.class),mock(AdministratorMfaService.class));
         request=new MockHttpServletRequest();response=new MockHttpServletResponse();
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request,response));
     }

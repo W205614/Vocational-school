@@ -66,6 +66,16 @@ class ZeroAmountPurchaseDatabaseTest {
         jdbc.update("DELETE FROM `order` WHERE id=?",order);
     }
     int events(String key) {return jdbc.queryForObject("SELECT COUNT(*) FROM reliability_outbox WHERE business_key=?",Integer.class,key);}
+    @Test void cartCleanupFailureRollsBackOrderDetailsAndSettlementEvent(){
+        var cart=(com.tianji.trade.service.ICartService)ReflectionTestUtils.getField(orders,"cartService");
+        var failure=new org.springframework.dao.DataAccessResourceFailureException("fixture cart unavailable");
+        doThrow(failure).when(cart).deleteCartByUserAndCourseIds(7L,List.of(course));
+        assertSame(failure,assertThrows(org.springframework.dao.DataAccessResourceFailureException.class,()->orders.placeOrder(request)));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM `order` WHERE id=?",Integer.class,order));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM order_detail WHERE order_id=?",Integer.class,order));
+        assertEquals(0,events("order:"+order+":paid"));
+        assertEquals("ACTIVE",jdbc.queryForObject("SELECT status FROM order_creation WHERE order_id=?",String.class,order));
+    }
     @Test void fullDiscountCreatesPaidOrderAndOneSharedCouponAndEntitlementEvent() {
         var result=orders.placeOrder(request);assertEquals(2,result.getStatus());assertEquals(0,result.getPayAmount());
         assertEquals(2,orders.placeOrder(request).getStatus());
