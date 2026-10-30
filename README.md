@@ -22,7 +22,7 @@
 
 真实课程、长视频续签、时长解析及相关新课程缺陷修复的功能证据与执行边界见[真实本地课程交付记录](deploy/compact/reports/real-local-course-20261026.md)。
 
-本机当前构建来源与镜像 ID 以 `deploy/compact/.local/package-source.json` 和 `images.json` 为准，容器启停与本轮验证结果记录在本机 `.local/permission-snapshot-20261030/`。此前学生登录、真实视频播放、MySQL 学习进度持久化与刷新续播的窄范围验证见[历史部署记录](deploy/compact/reports/current-deployment-20261026.md)，不作为新版本重新执行的证明。
+本机当前构建来源与镜像 ID 以 `deploy/compact/.local/package-source.json` 和 `images.json` 为准，容器启停与本轮安全维护结果记录在本机 `.local/nacos-security-20261030/`，页面及主要流程验证记录在 `.local/nacos-daily-check-20261030/`。此前学生登录、真实视频播放、MySQL 学习进度持久化与刷新续播的窄范围验证见[历史部署记录](deploy/compact/reports/current-deployment-20261026.md)，不作为新版本重新执行的证明。
 
 [快速部署](#快速部署) · [首次使用](#首次使用) · [界面预览](#界面预览) · [项目结构](docs/project-structure.md) · [更多文档](#更多文档)
 

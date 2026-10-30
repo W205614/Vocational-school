@@ -17,6 +17,9 @@
     </properties>
 
     <dependencies>
+        <dependency><groupId>com.alibaba.nacos</groupId><artifactId>nacos-client</artifactId><classifier>pure</classifier></dependency>
+        <dependency><groupId>com.alibaba.nacos</groupId><artifactId>nacos-api</artifactId></dependency>
+        <dependency><groupId>com.alibaba.nacos</groupId><artifactId>nacos-common</artifactId></dependency>
 <dependency><groupId>com.tianji</groupId><artifactId>tj-auth-resource-sdk</artifactId><version>1.0.0</version></dependency>
 <dependency><groupId>org.springdoc</groupId><artifactId>springdoc-openapi-starter-webmvc-ui</artifactId></dependency>
         <dependency>

@@ -49,6 +49,7 @@
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
         <hutool.version>5.8.48</hutool.version>
         <guava.version>33.7.2-jre</guava.version>
+        <nacos.version>3.1.1</nacos.version>
         <!-- Security fixes not yet included in the Boot 4.0.9 managed patch set. -->
         <rabbit-amqp-client.version>5.34.0</rabbit-amqp-client.version>
         <httpcore5.version>5.4.3</httpcore5.version>
@@ -70,6 +71,29 @@
     <!-- 对依赖包进行管理 -->
     <dependencyManagement>
         <dependencies>
+            <!-- The default SDK shades Guava, bypassing the managed security version. -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <exclusions><exclusion><groupId>com.alibaba.nacos</groupId><artifactId>nacos-client</artifactId></exclusion></exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <exclusions><exclusion><groupId>com.alibaba.nacos</groupId><artifactId>nacos-client</artifactId></exclusion></exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId><artifactId>nacos-client</artifactId>
+                <version>${nacos.version}</version><classifier>pure</classifier>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId><artifactId>nacos-api</artifactId><version>${nacos.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId><artifactId>nacos-common</artifactId><version>${nacos.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
@@ -220,7 +244,7 @@
     <build><pluginManagement><plugins><plugin>
         <groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
-            <!-- Compact and worker configurations disable Nacos; its client embeds vulnerable shaded Guava. -->
+            <!-- Compact and worker configurations disable Nacos and do not package its SDK. -->
             <excludeGroupIds>com.alibaba.nacos</excludeGroupIds>
             <excludes>
                 <exclude><groupId>com.alibaba.cloud</groupId><artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId></exclude>

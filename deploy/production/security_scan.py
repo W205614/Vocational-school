@@ -216,6 +216,7 @@ def main(argv=None):
     parser.add_argument("--commit", required=True)
     parser.add_argument("--bom", type=Path, default=Path("target/bom.json"))
     parser.add_argument("--bom-binding", type=Path, default=Path("target/security-bom-binding.json"))
+    parser.add_argument("--standalone-jar", type=Path)
     parser.add_argument("--images-file", type=Path)
     parser.add_argument("--required-images", nargs="+", default=["identity", "commerce", "education", "support", "gateway", "student", "admin"])
     args = parser.parse_args(argv)
@@ -244,6 +245,11 @@ def main(argv=None):
             except (OSError, ValueError, RuntimeError, tarfile.TarError, subprocess.TimeoutExpired):
                 errors.append("Exact committed source snapshot is unavailable")
             tasks.append(("maven-dependencies", ["sbom", "--severity", "HIGH,CRITICAL", str(args.bom)]))
+            if args.standalone_jar is not None:
+                if args.standalone_jar.is_file():
+                    tasks.append(("standalone-nacos-runtime", ["fs", "--scanners", "vuln", "--severity", "HIGH,CRITICAL", str(args.standalone_jar)]))
+                else:
+                    errors.append("Standalone runtime artifact is unavailable")
         else:
             try:
                 images = json.loads(args.images_file.read_text(encoding="utf8"))

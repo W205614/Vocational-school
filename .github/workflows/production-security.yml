@@ -23,8 +23,12 @@ jobs:
         run: python deploy/production/build_sbom.py --commit '${{ github.sha }}'
       - uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
         with: {version: v0.76.1, cache: true}
+      - name: Verify standalone Nacos runtime packaging
+        run: |
+          mvn -B -pl tj-gateway -am -Dtest=NacosSdkRuntimeTest -Dsurefire.failIfNoSpecifiedTests=false package
+          python deploy/production/check_nacos_runtime.py tj-gateway/target/tj-gateway.jar
       - name: Gate dependency vulnerabilities and repository secrets
-        run: python deploy/production/security_scan.py source --commit '${{ github.sha }}' --output .local/security-source.json
+        run: python deploy/production/security_scan.py source --commit '${{ github.sha }}' --standalone-jar tj-gateway/target/tj-gateway.jar --output .local/security-source.json
       - name: Build isolated media worker artifact
         run: mvn -B -pl tj-media -am -Pcompact,media-worker -DskipTests package
       - name: Build and scan worker container

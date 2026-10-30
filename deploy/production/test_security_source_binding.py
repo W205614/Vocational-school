@@ -122,6 +122,21 @@ class SourceBindingTest(unittest.TestCase):
         self.assertEqual("maven-repository-rate-limited", security_scan.scanner_diagnostic(throttled, 1))
         self.assertNotIn(private, json.dumps(security_scan.scanner_failure_keywords(throttled)))
 
+    def test_standalone_artifact_is_scanned_and_missing_artifact_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            artifact = root / "standalone.jar"
+            output = root / "summary.json"
+            arguments = ["source", "--commit", "a" * 40, "--output", str(output), "--standalone-jar", str(artifact)]
+            with patch("security_scan.validate_bom"), patch("security_scan.source_snapshot", return_value=root), \
+                    patch("security_scan.scan", return_value=[]) as scanner, redirect_stdout(io.StringIO()):
+                self.assertEqual(1, security_scan.main(arguments))
+                self.assertIn("Standalone runtime artifact is unavailable", json.loads(output.read_text())["errors"])
+                artifact.write_bytes(b"fixture")
+                self.assertEqual(0, security_scan.main(arguments))
+                self.assertEqual(["fs", "--scanners", "vuln", "--severity", "HIGH,CRITICAL", str(artifact)], scanner.call_args.args[0])
+                self.assertIn("standalone-nacos-runtime", json.loads(output.read_text())["scans"])
+
     def test_only_secret_scan_uses_offline_resolution_without_skipping_source(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
