@@ -25,6 +25,7 @@ jobs:
         with: {version: v0.76.1, cache: true}
       - name: Verify standalone Nacos runtime packaging
         run: |
+          python deploy/production/check_nacos_runtime.py --compact tj-gateway/target/tj-gateway.jar tj-compact/*/target/*-app.jar
           mvn -B -pl tj-gateway -am -Dtest=NacosSdkRuntimeTest -Dsurefire.failIfNoSpecifiedTests=false package
           python deploy/production/check_nacos_runtime.py tj-gateway/target/tj-gateway.jar
       - name: Gate dependency vulnerabilities and repository secrets

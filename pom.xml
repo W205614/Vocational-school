@@ -244,8 +244,8 @@
     <build><pluginManagement><plugins><plugin>
         <groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
-            <!-- Compact and worker configurations disable Nacos and do not package its SDK. -->
-            <excludeGroupIds>com.alibaba.nacos</excludeGroupIds>
+            <!-- Compact and worker disable Nacos, including its external gRPC transport. -->
+            <excludeGroupIds>com.alibaba.nacos,io.grpc,com.google.api.grpc,com.google.protobuf,io.perfmark</excludeGroupIds>
             <excludes>
                 <exclude><groupId>com.alibaba.cloud</groupId><artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId></exclude>
                 <exclude><groupId>com.alibaba.cloud</groupId><artifactId>spring-alibaba-nacos-config</artifactId></exclude>
