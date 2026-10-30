@@ -216,5 +216,17 @@
             </plugins>
         </pluginManagement>
     </build>
-<profiles><profile><id>compact</id><modules><module>tj-compact</module></modules></profile></profiles>
+<profiles><profile><id>compact</id><modules><module>tj-compact</module></modules>
+    <build><pluginManagement><plugins><plugin>
+        <groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+            <!-- Compact and worker configurations disable Nacos; its client embeds vulnerable shaded Guava. -->
+            <excludeGroupIds>com.alibaba.nacos</excludeGroupIds>
+            <excludes>
+                <exclude><groupId>com.alibaba.cloud</groupId><artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId></exclude>
+                <exclude><groupId>com.alibaba.cloud</groupId><artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId></exclude>
+            </excludes>
+        </configuration>
+    </plugin></plugins></pluginManagement></build>
+</profile></profiles>
 </project>

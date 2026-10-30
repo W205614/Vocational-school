@@ -1,7 +1,7 @@
 FROM eclipse-temurin:21-jre-noble@sha256:35501d3f93173b420ac9001658eb68157e813316b865087e345c187fca422c4c
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg clamav curl && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y --no-install-recommends libbrotli1 ffmpeg clamav curl && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 app && useradd --uid 10001 --gid app --home /app app \
     && mkdir -p /app /work/media && chown app:app /app /work/media
 WORKDIR /app
