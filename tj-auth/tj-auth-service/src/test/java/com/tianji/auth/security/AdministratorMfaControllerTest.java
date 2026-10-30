@@ -69,4 +69,12 @@ class AdministratorMfaControllerTest {
         when(users.queryUserDetail(form,true)).thenReturn(user);when(users.sessionIdentity(42)).thenReturn(user);
         assertThrows(BadRequestException.class,()->controller.enroll(form));verifyNoInteractions(mfa);
     }
+    @Test void confirmationCountsInvalidCodesButNotAnUnavailableMfaComponent(){
+        var user=new LoginUserDTO();user.setUserId(42L);user.setRoleId(1L);
+        when(users.queryUserDetail(form,true)).thenReturn(user);when(users.sessionIdentity(42)).thenReturn(user);
+        doThrow(new ServiceUnavailableException("MFA not configured")).when(mfa).confirm(42,null);
+        assertThrows(ServiceUnavailableException.class,()->controller.confirm(form));verify(protection,never()).failed(anyString(),anyString());
+        doThrow(new BadRequestException("invalid code")).when(mfa).confirm(42,null);
+        assertThrows(BadRequestException.class,()->controller.confirm(form));verify(protection).failed("fixture-admin","127.0.0.1");
+    }
 }

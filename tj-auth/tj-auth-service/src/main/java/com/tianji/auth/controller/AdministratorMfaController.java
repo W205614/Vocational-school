@@ -19,7 +19,7 @@ public class AdministratorMfaController {
     @PostMapping("/confirm") public void confirm(@jakarta.validation.Valid @RequestBody LoginFormDTO form){
         long user=administrator(form);
         try{mfa.confirm(user,form.getMfaCode());protection.success(account(form));}
-        catch(CommonException error){protection.failed(account(form),Objects.toString(WebUtils.getHeader("X-Client-IP"),"unknown"));throw error;}
+        catch(BadRequestException | UnauthorizedException | ForbiddenException error){protection.failed(account(form),Objects.toString(WebUtils.getHeader("X-Client-IP"),"unknown"));throw error;}
     }
     private static String account(LoginFormDTO form){return Objects.toString(form.getUsername(),"").trim().toLowerCase(Locale.ROOT);}
     private long administrator(LoginFormDTO form){
