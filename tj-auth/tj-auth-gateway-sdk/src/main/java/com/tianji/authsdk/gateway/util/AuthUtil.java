@@ -31,10 +31,10 @@ import static com.tianji.auth.common.constants.JwtConstants.*;
 
 @Slf4j
 public class AuthUtil {
-    private record Snapshot(int version, Map<String,Set<Long>> permissions) {}
-    private volatile Snapshot snapshot=new Snapshot(-1,Map.of());
-    private volatile long refreshedAt;
-    public boolean isReady(){return snapshot.version()>=0 && System.nanoTime()-refreshedAt<java.util.concurrent.TimeUnit.SECONDS.toNanos(60);}
+    private record Snapshot(int version, Map<String,Set<Long>> permissions, long refreshedAt) {}
+    private volatile Snapshot snapshot=new Snapshot(-1,Map.of(),0);
+    public boolean isReady(){return isReady(snapshot);}
+    private static boolean isReady(Snapshot current){return current.version()>=0 && System.nanoTime()-current.refreshedAt()<java.util.concurrent.TimeUnit.SECONDS.toNanos(60);}
 
     private final SessionVerifier verifier;
     private final AntPathMatcher antPathMatcher = new AntPathMatcher();
@@ -92,7 +92,7 @@ public class AuthUtil {
     public void checkAuth(String antPath, R<LoginUserDTO> r) {checkAuth(antPath,r,false);}
     public void checkAuth(String antPath, R<LoginUserDTO> r,boolean explicitlyDeclared) {
         Snapshot current=snapshot;
-        if(!isReady()) throw new com.tianji.common.exceptions.ServiceUnavailableException("权限配置尚未就绪或已过期");
+        if(!isReady(current)) throw new com.tianji.common.exceptions.ServiceUnavailableException("权限配置尚未就绪或已过期");
         String match=current.permissions().keySet().stream()
                 .filter(p->antPathMatcher.match(p,antPath))
                 .min(antPathMatcher.getPatternComparator(antPath)).orElse(null);
@@ -115,7 +115,7 @@ public class AuthUtil {
     private int currentVersion() {
         String version = stringRedisTemplate.opsForValue().get(AUTH_PRIVILEGE_VERSION_KEY);
         if(StrUtil.isEmpty(version)){
-            snapshot=new Snapshot(-1,Map.of());
+            snapshot=new Snapshot(-1,Map.of(),0);
             throw new com.tianji.common.exceptions.ServiceUnavailableException("权限快照尚未发布");
         }
         return Integer.parseInt(version);
@@ -125,7 +125,8 @@ public class AuthUtil {
     @Scheduled(fixedDelay = 20000)
     public void refreshTask() {
         int version=currentVersion();
-        if(version==snapshot.version()){refreshedAt=System.nanoTime();return;}
+        Snapshot current=snapshot;
+        if(version==current.version()){snapshot=new Snapshot(version,current.permissions(),System.nanoTime());return;}
         List<PrivilegeRoleDTO> loaded=loadPrivileges();
         Map<String,Set<Long>> map=new HashMap<>();
         for(PrivilegeRoleDTO p:loaded) {
@@ -134,6 +135,6 @@ public class AuthUtil {
         }
         // Do not publish a snapshot across a concurrent Redis configuration update.
         if(version!=currentVersion()) return;
-        snapshot=new Snapshot(version,Map.copyOf(map));refreshedAt=System.nanoTime();
+        snapshot=new Snapshot(version,Map.copyOf(map),System.nanoTime());
     }
 }

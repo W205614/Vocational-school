@@ -10,6 +10,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import java.util.List;
+import java.util.concurrent.*;
 import static com.tianji.auth.common.constants.JwtConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -34,6 +35,32 @@ class PermissionSnapshotRedisTest {
   publish();auth.refreshTask();assertTrue(auth.isReady());
   assertThrows(ForbiddenException.class,()->auth.checkAuth("GET:/restricted",identity(2),true));
   assertDoesNotThrow(()->auth.checkAuth("GET:/restricted",identity(1),true));
+ }
+ @Test void unchangedVersionRefreshKeepsReadinessAndRoleRestrictions(){
+  publish();auth.refreshTask();auth.refreshTask();assertTrue(auth.isReady());
+  assertThrows(ForbiddenException.class,()->auth.checkAuth("GET:/restricted",identity(2),true));
+  assertDoesNotThrow(()->auth.checkAuth("GET:/restricted",identity(1),true));
+ }
+ @Test void publicationDuringReadinessCannotAuthorizeAnUnreadyCapturedSnapshot()throws Exception{
+  var readinessEntered=new CompletableFuture<Void>();var published=new CompletableFuture<Void>();
+  auth=new AuthUtil(mock(JwtSignerHolder.class),redis,mock(SessionVerifier.class)){
+   @Override public boolean isReady(){
+    // Pause the former authorization callback until the real snapshot publication completes.
+    readinessEntered.complete(null);published.orTimeout(5,TimeUnit.SECONDS).join();return super.isReady();
+   }
+  };
+  try(var requests=Executors.newSingleThreadExecutor()){
+   var decision=CompletableFuture.supplyAsync(()->{
+    try{auth.checkAuth("GET:/restricted",identity(2),true);return null;}
+    catch(CommonException denied){return denied;}
+   },requests);
+   try{
+    CompletableFuture.anyOf(readinessEntered,decision).get(5,TimeUnit.SECONDS);
+    publish();auth.refreshTask();
+   }finally{published.complete(null);}
+   assertInstanceOf(ServiceUnavailableException.class,decision.get(5,TimeUnit.SECONDS));
+   assertThrows(ForbiddenException.class,()->auth.checkAuth("GET:/restricted",identity(2),true));
+  }
  }
  @Test void lostVersionInvalidatesAnExistingSnapshotImmediately(){
   publish();auth.refreshTask();redis.delete(List.of(AUTH_PRIVILEGE_KEY,AUTH_PRIVILEGE_VERSION_KEY));
