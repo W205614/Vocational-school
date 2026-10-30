@@ -69,7 +69,7 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
         rolePrivilegeService.save(rolePrivilege);
 
         // 4.添加缓存
-        privilegeCache.cacheSinglePrivilege(p, CollUtils.singletonSet(ADMIN_ROLE_ID));
+        privilegeCache.publishChange();
     }
 
     @Override
@@ -81,7 +81,7 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
         // 删除角色权限关联
         rolePrivilegeService.removeByPrivilegeId(id);
         // 删除缓存
-        privilegeCache.removePrivilegeCacheById(id);
+        privilegeCache.publishChange();
     }
 
     @Override
@@ -149,7 +149,7 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
         // 4.写入数据库
         if(!rolePrivileges.isEmpty())rolePrivilegeService.saveBatch(rolePrivileges);
         // 5.重置缓存
-        privilegeCache.initPrivilegesCache(listPrivilegeRoles());
+        privilegeCache.publishChange();
     }
 
     @Override
@@ -160,7 +160,7 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
         // 1.删除
         rolePrivilegeService.deleteRolePrivileges(roleId, privilegeIds);
         // 2.移除对应角色权限缓存
-        privilegeCache.initPrivilegesCache(listPrivilegeRoles());
+        privilegeCache.publishChange();
     }
 
     @Override @Transactional
@@ -168,7 +168,7 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
         privilegeCache.lockMutation();
         if(getById(privilege.getId())==null)throw new com.tianji.common.exceptions.BadRequestException("权限不存在");
         if(lambdaQuery().eq(Privilege::getMethod,privilege.getMethod()).eq(Privilege::getUri,privilege.getUri()).ne(Privilege::getId,privilege.getId()).exists())throw new CommonException(PRIVILEGE_EXISTS);
-        updateById(privilege);privilegeCache.initPrivilegesCache(listPrivilegeRoles());
+        updateById(privilege);privilegeCache.publishChange();
     }
     private List<Long> checkedIds(List<Long> ids){
         if(ids==null || ids.isEmpty() || ids.size()>100 || ids.stream().anyMatch(id->id==null || id<=0))throw new com.tianji.common.exceptions.BadRequestException("一次需指定 1 至 100 个权限");

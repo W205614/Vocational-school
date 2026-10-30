@@ -43,7 +43,7 @@ public class InterestsServiceImpl extends ServiceImpl<InterestsMapper, Interests
         // 2.封装数据
         Interests interests = new Interests();
         interests.setId(userId);
-        interests.setInterests(CollUtils.join(interestedIds, ","));
+        interests.setInterests(ids);
         // 3.保存
         saveOrUpdate(interests);
     }
@@ -66,16 +66,7 @@ public class InterestsServiceImpl extends ServiceImpl<InterestsMapper, Interests
             return CollUtils.emptyList();
         }
         // 3.获取分类信息
-        String[] ids = interests.getInterests().split(",");
-        if (ids.length == 0) {
-            return CollUtils.emptyList();
-        }
-        try {
-            // 4.转换并返回
-            return Arrays.stream(ids).map(Long::valueOf).collect(Collectors.toList());
-        } catch (Exception e) {
-            // 5.数据转换异常，返回空
-            return CollUtils.emptyList();
-        }
+        String[] ids = interests.getInterests().split(",", -1);
+        return Arrays.stream(ids).map(Long::valueOf).collect(Collectors.toList());
     }
 }

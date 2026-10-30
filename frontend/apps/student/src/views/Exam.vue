@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {questionOptions} from '../../../../packages/shared/src/questionOptions';
 import {ref,computed,onMounted,onBeforeUnmount,watch} from 'vue';import {ElMessageBox} from 'element-plus';import {useExamDraft} from '../composables/examDraft';import {useRoute} from 'vue-router';import {ApiError,get} from '../../../../packages/shared/src/client';import {enrolledCourseOptions} from '../../../../packages/shared/src/courseOptions';import {useOperations} from '../../../../packages/shared/src/operations';import {useTask,examStatus,type Row} from '../../../../packages/shared/src/ui';import Status from '../../../../packages/shared/src/Status.vue';
 const route=useRoute(),courseId=ref(String(route.query.courseId||'')),course=ref<Row>(),lessons=ref<Row[]>([]),papers=ref<Row[]>([]),attempt=ref<Row>(),responses=ref<Record<string,string>>({}),backupOpen=ref(false),submitOpen=ref(false),task=useTask(),ops=useOperations();
 const answered=computed(()=>attempt.value?.questions?.filter((q:Row)=>responses.value[q.question_id]?.trim()).length||0);
@@ -13,7 +14,7 @@ const historyTime=(value:unknown)=>value?String(value).replace('T',' '):'—';
 const activeLesson=(lesson:Row)=>Number(lesson.status)!==3 && (!lesson.expireTime || new Date(lesson.expireTime).getTime()>Date.now());
 const selectedLesson=computed(()=>lessons.value.find(lesson=>String(lesson.courseId)===courseId.value));
 const lessonLabel=(lesson:Row)=>(lesson.courseName||'已报名课程')+(activeLesson(lesson)?'':'（权益已失效）');
-async function showAttempt(value:Row){attempt.value=value;if(value.status==='IN_PROGRESS')await savedDraft.restore(value);else {responses.value=Object.fromEntries((value.answers||[]).map((a:Row)=>[String(a.question_id),a.response||'']));await savedDraft.restore(value);}}
+async function showAttempt(value:Row){for(const question of value.questions)question.options=questionOptions(question.options);attempt.value=value;if(value.status==='IN_PROGRESS')await savedDraft.restore(value);else {responses.value=Object.fromEntries((value.answers||[]).map((a:Row)=>[String(a.question_id),a.response||'']));await savedDraft.restore(value);}}
 async function loadLatestDraft(){try{await ElMessageBox.confirm('当前未同步答案会另存为本机备份，再载入服务器上的最新草稿。是否继续？','载入最新草稿',{confirmButtonText:'载入最新草稿',cancelButtonText:'保留本机答案'});await task.run(savedDraft.loadLatest);}catch{}}
 const choicesAbort=new AbortController();onBeforeUnmount(()=>choicesAbort.abort());
 async function loadCourseChoices(){return task.run(async()=>{try{const all=await enrolledCourseOptions(choicesAbort.signal);if(choicesAbort.signal.aborted)return false;lessons.value=all;return true;}catch(error){if(!choicesAbort.signal.aborted)throw error;return false;}});}
@@ -32,7 +33,7 @@ async function refresh(){if(attempt.value)await task.run(async()=>{await showAtt
 async function submit(){await task.run(async()=>{if(!attempt.value)return;if(readOnly.value)throw new Error('学习权益已失效，答卷仅供查看');if(!await savedDraft.sync())throw new Error('草稿尚未同步或发生冲突，请先处理草稿后提交');const operation=await ops.begin('exam','提交考试','/exam-attempts/'+attempt.value.id+'/submit',{answers:responses.value,version:savedDraft.version.value});if(operation.status==='SUCCEEDED'){await showAttempt(await get<Row>('/exam-attempts/'+attempt.value.id));submitOpen.value=false;}else task.message.value='答卷正在提交，请在操作记录中查看结果';});}
 watch(()=>route.query.courseId,async value=>{courseId.value=String(value||'');await chooseCourse();});
 onMounted(async()=>{if(!courseId.value)courseId.value=sessionStorage.getItem('school-active-exam-course')||'';if(!await loadCourseChoices()||choicesAbort.signal.aborted)return;if(courseId.value)await load();await loadHistory();await restore();});
-function options(question:Row):string[]{if(Array.isArray(question.options) && question.options.length)return question.options;try{const parsed=JSON.parse(question.options||'[]');if(Array.isArray(parsed)&&parsed.length)return parsed;}catch{}return Number(question.type)===4?['正确','错误']:[];}
+function options(question:Row):string[]{return question.options.length?question.options:Number(question.type)===4?['正确','错误']:[];}
 function checked(question:Row):string[]{return (responses.value[question.question_id]||'').split(',').filter(Boolean);}
 function selectMultiple(question:Row,values:unknown){responses.value[question.question_id]=(values as string[]).join(',');}
 </script>

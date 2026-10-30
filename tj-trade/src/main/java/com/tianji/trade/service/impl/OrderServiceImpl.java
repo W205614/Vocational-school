@@ -89,7 +89,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         deadline=com.tianji.common.utils.JdbcTime.localDateTime(creation.get("expires_at"));
         if(!"ACTIVE".equals(creation.get("status")) || !deadline.isAfter(LocalDateTime.now())) throw new BadRequestException("订单创建已超时，请重新确认");
         List<CourseSimpleInfoDTO> courseInfos=getOnShelfCourse(request.getCourseIds());
-        if(courseInfos==null || courseInfos.size()!=request.getCourseIds().size()) throw new BadRequestException("课程信息不完整");
+        if(courseInfos.size()!=request.getCourseIds().size()) throw new BadRequestException("课程信息不完整");
         long sum=courseInfos.stream().mapToLong(CourseSimpleInfoDTO::getPrice).sum();
         if(sum<0 || sum>Integer.MAX_VALUE) throw new BadRequestException("订单金额无效");
         Order order=new Order().setId(request.getOrderId()).setUserId(user).setTotalAmount((int)sum).setDiscountAmount(0)

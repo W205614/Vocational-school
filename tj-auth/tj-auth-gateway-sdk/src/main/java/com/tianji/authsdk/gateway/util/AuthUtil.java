@@ -115,7 +115,8 @@ public class AuthUtil {
     private int currentVersion() {
         String version = stringRedisTemplate.opsForValue().get(AUTH_PRIVILEGE_VERSION_KEY);
         if(StrUtil.isEmpty(version)){
-            return 0;
+            snapshot=new Snapshot(-1,Map.of());
+            throw new com.tianji.common.exceptions.ServiceUnavailableException("权限快照尚未发布");
         }
         return Integer.parseInt(version);
     }

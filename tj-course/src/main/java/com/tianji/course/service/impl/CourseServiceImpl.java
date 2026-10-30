@@ -243,9 +243,6 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         Long userId = UserContext.getUser();
         // 2.查询课程详情
         CourseFullInfoDTO course = getInfoById(courseId, true, true);
-        if (course == null) {
-            return null;
-        }
         // 3.组织VO
         CourseAndSectionVO vo = new CourseAndSectionVO();
         vo.setId(courseId);
@@ -274,9 +271,6 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         }
         vo.setChapters(chapters);
         // 6.查询学习进度
-        if (learningClient == null) {
-            return vo;
-        }
         // 6.1.查询学习记录
         LearningLessonDTO lessonDTO = learningClient.queryLearningRecordByCourse(courseId);
         if (lessonDTO == null) {

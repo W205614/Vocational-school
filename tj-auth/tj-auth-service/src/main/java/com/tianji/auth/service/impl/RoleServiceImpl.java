@@ -51,6 +51,6 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements IR
         roleMenuService.removeByRoleId(id);
         rolePrivilegeService.removeByRoleId(id);
         // 3.清理缓存
-        privilegeCache.removeCacheByRoleId(id);
+        privilegeCache.publishChange();
     }
 }
