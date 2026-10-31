@@ -1,6 +1,6 @@
 # 本机合并部署与验收
 
-本手册说明本机部署、回归、备份恢复与性能工具的操作。默认运行组为 `tianji-compact`，共 11 个业务／基础设施容器和 3 个本机监控容器，使用合成演示数据与模拟支付，所有入口绑定 `127.0.0.1`。既有数据、配置及媒资保留。当前构建来源见本机 `.local/package-source.json`、`.local/images.json`，最近安全维护与启停结果见仓库根目录 `.local/nacos-security-20261030/`，页面及主要流程验证见 `.local/nacos-daily-check-20261030/`；[历史部署记录](reports/current-deployment-20261026.md)不作为新版本重新验证的证明。外部旧生产正式导入及割接尚未验收，其他项目不在操作范围。
+本手册说明本机部署、回归、备份恢复与性能工具的操作。默认运行组为 `tianji-compact`，共 11 个业务／基础设施容器和 3 个本机监控容器，使用合成演示数据与模拟支付，所有入口绑定 `127.0.0.1`。既有数据、配置及媒资保留。当前构建来源见本机 `.local/package-source.json`、`.local/images.json`，部署与各轮验证来源见[交付索引](reports/README.md)；[历史部署记录](reports/current-deployment-20261026.md)不作为新版本重新验证的证明。外部旧生产正式导入及割接尚未验收，其他项目不在操作范围。
 
 功能与架构概览见 [项目 README](../../README.md)；当前部署、真实课程专项和商业化代码的证据范围集中在 [交付索引](reports/README.md)。
 
@@ -65,7 +65,7 @@ Linux 构建使用当前非 root 用户的 UID/GID 创建镜像用户，匹配�
 
 升级现有库时通过 `python deploy/compact/setup.py migrate` 执行版本化增量迁移。新赛季自动创建月份记录，沿用统一的持久积分事实、榜单投影和最终快照，不为新增月份动态建表，也不要求每月运行迁移。旧月份只读，迁移不补造历史积分或奖励；运行账号仍没有建表权限。数据库触发器更新账号安全版本；改密、禁用或修改角色后，网关最长缓存 5 秒，旧会话随后失效。刷新必须携带 `audience=student` 或 `audience=admin`，会话可独立撤销。
 
-已有部署升级时，在完成停写备份、提交源码及迁移后，启动新版应用前运行：
+通用受控升级要求先完成停写备份、提交源码及迁移，再于启动新版应用前运行下列配置补全。当前备份保持停用；2026-10-31 用户明确授权的本机无备份更新单独留证，不修改 `upgrade_existing.py deploy` 对有效完整备份的强制要求，详见[本机升级说明](../../docs/stability-operations.md#升级已有部署)。
 
 ```powershell
 python deploy/compact/client_contexts.py
@@ -79,6 +79,8 @@ python deploy/compact/client_contexts.py
 
 ## 回归
 
+以下完整回归会创建合成账号、订单及学习记录，应在独立验收副本或临时 CI 中执行；本机日常更新只运行本轮指定的窄范围验证。
+
 ```powershell
 python deploy/compact/check_policy.py
 python deploy/compact/run_backend_tests.py
@@ -91,9 +93,15 @@ python deploy/compact/security_smoke.py
 # 安全测试会短暂限制生成的学生账号，等待 32 秒再运行浏览器。
 Start-Sleep -Seconds 32
 cd frontend
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 cd ..
+$env:TJ_BROWSER_ENGINE='chromium'
 python deploy/compact/run_browser.py
+$env:TJ_BROWSER_ENGINE='firefox'
+python deploy/compact/run_browser.py
+$env:TJ_BROWSER_ENGINE='webkit'
+python deploy/compact/run_browser.py
+$env:TJ_BROWSER_ENGINE='chromium'
 python deploy/compact/audit_smoke.py
 ```
 
@@ -105,11 +113,13 @@ python deploy/compact/audit_smoke.py
 
 独立恢复先核对原备份内容与原账号历史，再使用独立合成账号验证新增业务，保留所有历史记录。复习掌握状态的接口使用布尔值，版本号按原值回传；浏览器覆盖未掌握→已掌握→重新复习，并核对跨设备读取和原考试成绩不变。当前保留记录的测试来源与边界见 [交付索引](reports/README.md)。
 
-CI 的 `backend`、`frontend`、`compact-browser` 分别验证后端与部署工具、双端类型／单元／构建、合并启动及实际浏览器流程。高级回归在临时环境创建合成历史展示及待发请求，真实应用完成考试、学习事件、扣库存发券和回执；不直接伪造发券成功。自然月结算另由可控时钟及真实数据库边界测试验证，不修改主机时间。
+CI 的 `backend`、`frontend`、`compact-browser` 分别验证后端与部署工具、双端类型／单元／构建、合并启动及实际浏览器流程。Chromium 执行完整浏览器回归；Firefox、WebKit 各运行学生和管理端的核心流程，使用真实隔离后端验证会话续期、模拟支付与权益、笔记持久化和角色访问，并检查390像素布局。WebKit 桌面仿真不等同于真实 iOS／iPadOS 或系统 Safari 验收。三引擎报告分别写入 `.local/browser-result.json`、`browser-result-firefox.json`、`browser-result-webkit.json`，不相互覆盖。高级回归在临时环境创建合成历史展示及待发请求，真实应用完成考试、学习事件、扣库存发券和回执；不直接伪造发券成功。自然月结算另由可控时钟及真实数据库边界测试验证，不修改主机时间。
 
-当前镜像源码与核对范围见[本机部署记录](reports/current-deployment-20261026.md)。CI 按最终推送提交的准确 SHA 核对，不以动态分支页面或旧版本结果代替。
+当前镜像源码与核对范围见[交付索引](reports/README.md)，不能从历史部署记录推定当前镜像版本。CI 按最终推送提交的准确 SHA 核对，不以动态分支页面或旧版本结果代替。
 
 ## 备份与独立恢复
+
+当前备份、恢复指针及相应计划任务保持停用，没有有效本地恢复集或镜像离线包。下列命令仅说明未来明确重新启用备份并取得有效恢复材料后的工具行为，本轮更新不执行这些命令。
 
 ```powershell
 python deploy/compact/backup.py
@@ -129,7 +139,7 @@ python deploy/compact/redis_roundtrip.py
 
 ## 性能验证
 
-单机演示默认将普通 API 与视频传输分别限制为 160／16 个并发请求，媒体每可信客户端 IP 最多 4 路、签名校验后每位学生最多 2 路。普通接口使用 Redis 原子请求额度，登录业务按身份、游客查询按可信 IP 计算，超限返回 429 和重试提示；登录失败保护另行生效。这些是可调整的资源保护参数，不是吞吐或容量测试结果。
+默认每个网关将普通 API 与视频传输分别限制为 160／16 个并发请求，每个网关的媒体请求按可信客户端 IP 最多4路。签名校验后的每位学生最多2路播放连接由 Redis 原子租约在媒体副本间共享，默认租约60秒、每10秒续租；正常关闭释放许可，续租失败关闭源流，进程退出后的额度随租约到期回收。Redis 无法核验额度时拒绝新流，不退回进程内独立计数。普通接口也使用 Redis 原子请求额度，登录业务按身份、游客查询按可信 IP 计算，超限返回429和重试提示；登录失败保护另行生效。这些是资源保护参数，不是吞吐或容量测试结果。
 
 `demo_release_gate.py` 用于核对受影响后端测试、角色体验、恢复及增量迁移、历史数据保留和镜像来源，并明确记录性能未验收。运行此工具需要对应批次的实际证据；本次文件与资源清理没有重新执行这些业务验收，也不沿用旧门禁结果作为当前通过证明。
 
@@ -186,7 +196,7 @@ python deploy/compact/load_test.py --users 50 --seconds 60
 
 图片保留本次8dc原始捕图像素与哈希，未修改DOM数值、遮罩或后期修图；不将历史截图重新标注为最新版本。门户功能片段明确标为“界面示例”；积分图截取日历与本人赛季摘要，管理图截取赛季聚合数据及真实奖励空态，排除账号栏。合成演示不代表真实学员规模或教学效果。
 
-升级前先完成停写备份及校验，提交生产源码并构建七个应用／网页镜像。可以将旧备份恢复到独立副本，先核对原始内容，再运行增量迁移和新版本验收：
+以下是具备有效完整备份时的隔离升级演练：先完成停写备份及校验，提交生产源码并构建七个应用／网页镜像，再将备份恢复到独立副本，核对原始内容后运行增量迁移和新版本验收。当前备份停用，本轮不创建恢复副本：
 
 ```powershell
 python deploy/compact/restore.py <完整备份目录> --home .local/upgrade-rehearsal-<唯一标识> --project tianji-recovery-upgrade-<唯一标识> --offset 1000 --upgrade-from deploy/compact
@@ -198,8 +208,14 @@ python deploy/compact/restore.py <完整备份目录> --home .local/upgrade-rehe
 
 ## 当前交付记录
 
-本机七个应用／网页镜像来源为 `f4ba96d01344e35b20fcf782771d883d6d12d183`。此次重建没有新增数据库迁移，31 个业务配置文件与 381 个媒资文件内容哈希保留；随后学生登录、真实视频播放、MySQL 学习进度持久化及刷新续播的窄范围验证通过，结束后 14 个容器均已停止。此前三项迁移属于 `57f7570` 升级阶段，不计为本次重新执行。
+2026-10-31 本机七个应用／网页镜像已更新至源码 `c796f6709f1e17b7f933f5cda840f0350d550c48`，来源与镜像标识见本机 `.local/package-source.json`、`.local/images.json`。私有 Compose 仅替换七个镜像 SHA 标识，其余字节保留；七个基础／监控容器身份、七个数据／监控卷、34份配置文件及385个媒资文件（11,866,348,646字节）均按原内容核对保留。`565fba9` 至本次源码没有新增数据库迁移文件，历史迁移不计为本轮新增执行。
 
-当前完整数据包与镜像包已通过内容、归档和全部 14 个服务镜像绑定核对，匹配上述源码，仅保留一份有效完整备份。实际路径以本机 `.local/current-runtime-backup/recovery.json` 的 `dataBundle` 为准。旧恢复材料与可重建扫描副本共九项已移入回收站；本轮没有删除 Docker 镜像或卷，没有新增恢复演练或业务测试，原 14 个容器的标识、镜像、挂载、端口及停止状态保留。详见[本机部署记录](reports/current-deployment-20261026.md)。
+更新前后对204张表核对行数和校验和，并对23张关键表的2,288条原记录逐项核对，未发现原记录缺失或内容变化。窄验证新增的合成学习及审计记录继续保留，合成账号、会话和临时权益已退役；这不表示全库没有写入。
+
+本轮学生登录HTTP 200；1080p视频实际播放9.016248秒、解码274帧，206 Range抽样字节与源文件一致；学习进度在MySQL保存为9秒，累计观看与折算时长均为9,072毫秒，刷新后从9秒续播。该结果只覆盖登录、实际播放和进度持久化／续播，没有重新执行全面业务或容量验收。七个应用／网页镜像来源及14个容器健康曾完成核对，验证后14个容器全部恢复停止。
+
+部署证据在仓库根目录 `.local/daily-deploy-20261031/` 的 `publication.json`、`healthy.json`、`narrow-result.json`、`preservation.json`、`stopped.json`。源码维护及隔离验证另存于 `.local/runtime-maintenance-20261031/`；后续文档提交与这批镜像的源码来源分别记录。备份计划任务仍为Disabled／false，旧完整数据包、镜像离线包和恢复指针已经退役，当前没有有效本地恢复集；保留的业务数据卷、课程视频和必要配置是运行资产。
+
+验证结束后，仅清理本项目已替换的七个旧镜像、上一轮两个停止的临时测试容器及其一个网络，没有删除数据卷；当前七个卷和日常网络保留。约1.31 GiB的可再生构建文件移入Windows回收站，未清空回收站，不将其记作已释放的宿主磁盘空间。逐项记录见同一私有目录中的 `docker-cleanup.json` 和 `recycled-builds-*.json`；其他项目、共享基础镜像及归属不明资源未操作。
 
 [真实课程专项](reports/real-local-course-20261026.md)保留原源码与分次测试来源；[商业化交付记录](../../docs/commercial-implementation-20261026.md)说明代码、工具的本地验证和目标云环境待验收范围。两者均不因镜像更新自动成为当前版本的全面业务验收。旧批次报告、旧专用探针与过时回滚材料已按本次清理范围移出工作目录，当前测试、恢复和性能工具继续保留。
