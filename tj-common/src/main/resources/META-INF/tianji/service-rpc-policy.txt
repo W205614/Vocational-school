@@ -1,6 +1,6 @@
-# Source-Manifest-SHA256: 63c2f29dfe0656c9c10fb954360be00d0eb0a7bb2a0ab08120b7c29ef8977456
+# Source-Manifest-SHA256: de79a359231f335f60cc02fae62997bd9a5df19330728da32d7f72c53d46eaba
 # Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
-# Explicit RPC contract snapshot, reviewed 2026-10-26. caller groups | HTTP method | module servlet path.
+# Explicit RPC contract snapshot, reviewed 2026-10-31. caller groups | HTTP method | module servlet path.
 # Authentication bootstrap and session checks are the gateway's only private RPC exceptions.
 gateway|GET|/_modules/auth/jwks
 gateway|GET|/_modules/auth/internal/v2/sessions/{id}/validate

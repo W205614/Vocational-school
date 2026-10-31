@@ -4,6 +4,10 @@
 namespace: tianji-production
 commit: REQUIRED_40_CHARACTER_COMMIT
 replicas: 2
+signing:
+  active_alias: tianji
+  verification_aliases: [] # Receiver-first overlap: explicitly list other public certificates in signing.jks.
+mfa_rotation: false # A rotation also requires the two extra identity-credentials keys described in README.
 images:
   identity: REQUIRED_REGISTRY_IMAGE_AT_SHA256
   commerce: REQUIRED_REGISTRY_IMAGE_AT_SHA256

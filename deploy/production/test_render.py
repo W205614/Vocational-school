@@ -107,6 +107,23 @@ class ProductionRenderTest(unittest.TestCase):
         self.assertTrue(self.config("user")["tj"]["accounts"]["public"]["enabled"])
         self.assertEqual("provider", self.config("user")["tj"]["accounts"]["public"]["sms-delivery-mode"])
 
+    def test_key_rotation_is_explicit_and_does_not_publish_secret_values(self):
+        settings = fixture()
+        settings["signing"] = {"active_alias": "next", "verification_aliases": ["previous"]}
+        settings["mfa_rotation"] = True
+        resources, secrets = render.render(settings)
+        auth = next(yaml.safe_load(v["data"]["auth.yml"]) for v in resources
+                    if v["kind"] == "ConfigMap" and "auth.yml" in v["data"])
+        self.assertEqual("next", auth["encrypt"]["key-store"]["alias"])
+        self.assertEqual("previous", auth["tj"]["auth"]["jwt"]["verification-aliases"])
+        self.assertIn("TJ_AUTH_MFA_DECRYPTION_KEYS", secrets["identity-credentials"])
+        self.assertIn("TJ_AUTH_MFA_LEGACY_KEY_ID", secrets["identity-credentials"])
+        self.assertNotIn("TJ_AUTH_MFA_DECRYPTION_KEYS", self.secrets["identity-credentials"])
+        for aliases in (["next"], ["previous", "previous"], ["bad,alias"]):
+            with self.subTest(aliases=aliases):
+                settings["signing"]["verification_aliases"] = aliases
+                with self.assertRaises(render.ConfigurationError): render.render(settings)
+
     def test_cloud_media_worker_has_separate_permissions_and_bounded_storage(self):
         self.assertEqual("CLOUD_COS", self.config("media")["tj"]["platform"]["media"])
         exclusions = self.config("media")["tj"]["auth"]["resource"]["excludeLoginPaths"]

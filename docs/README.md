@@ -12,6 +12,7 @@
 | 自动备份、监控、稳定性维护 | [稳定性与运维说明](stability-operations.md) |
 | 消息、支付与补偿排障 | [可靠性运行手册](reliability-runbook.md) |
 | 账户、MFA 与隐私申请 | [账户安全说明](account-security.md) |
+| JWT 公钥重叠与 MFA 密文重加密维护 | [认证密钥维护](key-maintenance.md) |
 | 独立商业部署与目标环境验收 | [生产部署说明](../deploy/production/README.md) · [商业化运行手册](commercial-ha.md) |
 
 ## 当前交付记录

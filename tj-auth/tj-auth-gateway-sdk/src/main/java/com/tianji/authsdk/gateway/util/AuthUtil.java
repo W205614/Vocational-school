@@ -53,11 +53,12 @@ public class AuthUtil {
         if(StringUtils.isBlank(token)){
             return R.error(INVALID_TOKEN_CODE, INVALID_TOKEN);
         }
-        if(jwtSignerHolder.getJwtSigner()==null)throw new com.tianji.common.exceptions.ServiceUnavailableException("鉴权密钥尚未就绪，请稍后重试");
         JWT jwt = null;
         try {
-            jwt = JWT.of(token).setSigner(jwtSignerHolder.getJwtSigner());
-            if(!jwt.verify())return R.error(INVALID_TOKEN_CODE,INVALID_TOKEN);
+            jwt = JWT.of(token);
+            if(!jwtSignerHolder.verify(jwt))return R.error(INVALID_TOKEN_CODE,INVALID_TOKEN);
+        } catch (com.tianji.common.exceptions.ServiceUnavailableException unavailable) {
+            throw unavailable;
         } catch (Exception e) {
             return R.error(INVALID_TOKEN_CODE, INVALID_TOKEN);
         }

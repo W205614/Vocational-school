@@ -79,7 +79,7 @@ kubectl --context <候选集群> apply --dry-run=server -f <输出目录>/resour
 
 调用方向分别分配密钥；同组模块的 loopback 调用使用自己的 self edge。接收方只持有所需 inbound，发送方只持有所需 outbound，不创建全局令牌。worker 没有内部调用时使用空对象。监控调用身份为 `observability`，每个目标应用持有对应 inbound edge；Prometheus 只持有自己的 outbound edge。认证签名 JKS 只挂载到 identity。MFA 加密键是独立的 base64 32 字节密钥，不与服务令牌或媒资签名键复用。
 
-当前支持在线轮换的是**服务边令牌**：先更新接收方的旧＋新密钥窗口，再切换调用方，确认后退出旧密钥。JWT 签名 JKS／网关单公钥缓存与 MFA AES 主密钥尚不支持通用无停机轮换。不要直接滚动替换这些 Secret；其更换属于受控维护，需要密钥和相关密文数据备份、验证过的回退方案及明确的会话影响。后续 JWT 需补充 kid／JWKS 新旧公钥重叠，MFA 需补充密文密钥版本与重新加密迁移，分别验收后才能承诺相应的在线轮换。服务边令牌轮换通过不能替代这些验收。
+服务边令牌按接收方先行的新旧密钥窗口切换。JWT 已支持 kid、周期刷新的 JWK Set 与 JKS 证书白名单；渲染输入的 `signing.active_alias` 默认 `tianji`，`signing.verification_aliases` 默认空，接收方预先加载下一代证书后才能切换签名别名。MFA 旧解密键只在显式 `mfa_rotation: true` 时向 identity 增加 `TJ_AUTH_MFA_DECRYPTION_KEYS` 与 `TJ_AUTH_MFA_LEGACY_KEY_ID` 两个必需 Secret 键，默认部署不要求它们。密文批量重加密属于受控维护，不能直接覆盖 Secret 代替迁移。完整步骤见[认证密钥维护](../../docs/key-maintenance.md)；本轮不修改本机密钥、备份或实际云 Secret，真实维护和会话影响仍须目标环境验收。
 
 生产启用真实账户流程、MFA 与 provider 短信模式。支付宝商户、seller-id、签名公钥、通知域名、回调幂等和金额校验必须分别验收；本轮不执行真实支付。短信“任务已接受”不是“供应商已送达”，需要生产模板、回执和供应商凭据。隐私页面需在配置的 URL 实际发布。
 

@@ -22,7 +22,13 @@ public class AdministratorMfaService {
         required=env.getProperty("tj.auth.mfa.required",Boolean.class,false);
         String key=env.getProperty("tj.auth.mfa.encryption-key",env.getProperty("TJ_MFA_ENCRYPTION_KEY",""));
         if(required && key.isBlank())throw new IllegalStateException("Production administrator MFA requires an external encryption key");
-        secrets=key.isBlank()?null:new TotpSecrets(key);
+        String previous=env.getProperty("tj.auth.mfa.decryption-keys",env.getProperty("TJ_AUTH_MFA_DECRYPTION_KEYS","{}"));
+        Map<String,String> decryptionKeys;
+        try{decryptionKeys=new tools.jackson.databind.json.JsonMapper().readValue(previous,new tools.jackson.core.type.TypeReference<Map<String,String>>(){});}
+        catch(RuntimeException invalid){throw new IllegalArgumentException("MFA decryption keys must be a JSON object of encoded AES keys");}
+        if(decryptionKeys==null)throw new IllegalArgumentException("MFA decryption keys must be a JSON object");
+        if(key.isBlank() && !decryptionKeys.isEmpty())throw new IllegalStateException("MFA decryption keys require an active encryption key");
+        secrets=key.isBlank()?null:new TotpSecrets(key,decryptionKeys,env.getProperty("tj.auth.mfa.legacy-key-id",env.getProperty("TJ_AUTH_MFA_LEGACY_KEY_ID")));
     }
     public record Enrollment(String secret,String provisioningUri) {
         @Override public String toString(){return "Enrollment[secret=REDACTED,provisioningUri=REDACTED]";}

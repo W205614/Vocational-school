@@ -63,6 +63,8 @@ def check_run(run, minimum_samples=100):
 
 def check_configuration(report):
     protocol = report.get('protocol')
+    if protocol == 'smoke':
+        return check_smoke(report)
     if protocol not in PROTOCOLS:
         return ['unknown protocol']
     expected = schedule(protocol)
@@ -84,6 +86,36 @@ def check_configuration(report):
         if run.get('users')!=200 and (run.get('contaminated') or run.get('invariants') is not True):
             failures.append('low concurrency invariants or environment failed')
     return failures
+
+def check_smoke(report):
+    runs = report.get('runs', [])
+    if len(runs) != 1:
+        return ['smoke requires one complete measurement']
+    run = runs[0]
+    failures = []
+    if run.get('status') != 'COMPLETED':
+        failures.append('measurement incomplete')
+    if run.get('requestedSeconds', 0) < 1 or run.get('elapsedSeconds', 0) < run.get('requestedSeconds', 1):
+        failures.append('measurement shortened')
+    if run.get('invariants') is not True or run.get('queuesDrained') is not True:
+        failures.append('business invariants or queue convergence unverified')
+    if run.get('contaminated') is not False:
+        failures.append('background workload changed or unverified')
+    if run.get('telemetryErrors'):
+        failures.append('telemetry collection failed')
+    if any(count for name, count in run.get('warmup', {}).get('counts', {}).items() if not name.endswith(':ok')):
+        failures.append('warm-up correctness failed')
+    counts = run.get('counts', {})
+    if not any(count for name, count in counts.items() if name.endswith(':ok')):
+        failures.append('missing successful samples')
+    failures.extend('unexpected outcome: ' + name for name, count in counts.items() if count and not name.endswith(':ok'))
+    profiles = run.get('profiles', {})
+    if set(profiles) != set(PROFILES) or any(count < 1 for count in profiles.values()) or sum(profiles.values()) != run.get('users'):
+        failures.append('mixed workload incomplete')
+    if any(run.get('workflowCounts', {}).get(profile, 0) < 1 for profile in PROFILES):
+        failures.append('missing successful workflows')
+    return failures
+
 
 def memory_reduction(standalone, compact):
     def rss(report):

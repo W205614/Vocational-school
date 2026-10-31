@@ -63,6 +63,15 @@ def validate(settings):
     replicas = s.setdefault("replicas", 2)
     if not isinstance(replicas, int) or isinstance(replicas, bool) or replicas < 2 or replicas > 20:
         raise ConfigurationError("Production replicas must be 2..20")
+    signing = s.setdefault("signing", {"active_alias": "tianji", "verification_aliases": []})
+    aliases = signing.get("verification_aliases")
+    if (set(signing) != {"active_alias", "verification_aliases"} or not isinstance(aliases, list) or len(aliases) > 7
+            or any(not isinstance(alias, str) or not re.fullmatch(r"[a-z0-9._-]{1,64}", alias)
+                   for alias in [signing.get("active_alias"), *aliases])
+            or len(set([signing["active_alias"], *aliases])) != len(aliases) + 1):
+        raise ConfigurationError("Signing needs one active alias and at most seven distinct verification aliases")
+    if not isinstance(s.setdefault("mfa_rotation", False), bool):
+        raise ConfigurationError("mfa_rotation must explicitly be true or false")
     mesh = s["mesh"]
     if not NAME.fullmatch(mesh["ingress_namespace"]) or not NAME.fullmatch(mesh["ingress_service_account"]):
         raise ConfigurationError("An explicit mesh ingress workload identity is required")
@@ -205,9 +214,10 @@ def module_config(alias, s):
     if alias in {"course", "search"}:
         resource["excludeLoginPaths"].append("/api/v2/public/**")
     if alias == "auth":
-        c["encrypt"] = {"key-store": {"alias": "tianji", "location": "file:/run/signing/signing.jks",
+        c["encrypt"] = {"key-store": {"alias": s["signing"]["active_alias"], "location": "file:/run/signing/signing.jks",
             "password": env("SIGNING_STORE_PASSWORD"), "secret": env("SIGNING_KEY_PASSWORD")}}
         tj["auth"]["cookie"] = {"require-secure": True}
+        tj["auth"]["jwt"] = {"verification-aliases": ",".join(s["signing"]["verification_aliases"])}
         tj["auth"]["mfa"] = {"required": True}
         resource["includeLoginPaths"] = ["/menus/me", "/accounts/logout", "/accounts/sessions/**"]
     if alias == "user":
@@ -281,7 +291,7 @@ def host_config(group):
             "readiness": {"include": "readinessState,modules", "additional-path": "server:/readyz"}}}}}}
 
 
-def secret_keys(group):
+def secret_keys(group, mfa_rotation=False):
     keys = ["REDIS_USERNAME", "REDIS_PASSWORD", "OTEL_EXPORTER_OTLP_HEADERS"]
     if group != "gateway":
         keys += ["RABBIT_USERNAME", "RABBIT_PASSWORD"]
@@ -290,6 +300,8 @@ def secret_keys(group):
             keys += [alias.upper() + "_DB_USERNAME", alias.upper() + "_DB_PASSWORD"]
     if group == "identity":
         keys += ["SIGNING_STORE_PASSWORD", "SIGNING_KEY_PASSWORD", "TJ_MFA_ENCRYPTION_KEY"]
+        if mfa_rotation:
+            keys += ["TJ_AUTH_MFA_DECRYPTION_KEYS", "TJ_AUTH_MFA_LEGACY_KEY_ID"]
     if group == "commerce":
         keys += ["TJ_PAY_TJ_PAY_ALI_APPID", "TJ_PAY_TJ_PAY_ALI_MERCHANTPRIVATEKEY", "TJ_PAY_TJ_PAY_ALI_PUBLICKEY", "ALIPAY_SELLER_ID"]
     if group == "support":
@@ -374,8 +386,8 @@ def render(settings):
                     {"name": "TJ_INTERNAL_AUTH_MODE", "value": "service-tokens"},
                     {"name": "TJ_SERVICE_TOKENS_FILE", "value": "/run/secrets/service-identities.json"},
                     {"name": "TJ_PRODUCTION_TLS_MODE", "value": "mesh"}, {"name": "SPRING_PROFILES_ACTIVE", "value": "production"}]
-            envs += [{"name": key, "valueFrom": {"secretKeyRef": {"name": group + "-credentials", "key": key}}} for key in secret_keys(group)]
-            secret_contract[group + "-credentials"] = secret_keys(group)
+            envs += [{"name": key, "valueFrom": {"secretKeyRef": {"name": group + "-credentials", "key": key}}} for key in secret_keys(group, s["mfa_rotation"])]
+            secret_contract[group + "-credentials"] = secret_keys(group, s["mfa_rotation"])
             secret_contract[group + "-service-identity"] = ["service-identities.json"]
             if group == "identity":
                 volumes.append({"name": "signing", "secret": {"secretName": "identity-signing", "defaultMode": 288}})

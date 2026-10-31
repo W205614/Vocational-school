@@ -16,6 +16,10 @@
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
         <dependency><groupId>com.alibaba.nacos</groupId><artifactId>nacos-client</artifactId><classifier>pure</classifier></dependency>
         <dependency><groupId>com.alibaba.nacos</groupId><artifactId>nacos-api</artifactId></dependency>
         <dependency><groupId>com.alibaba.nacos</groupId><artifactId>nacos-common</artifactId></dependency>

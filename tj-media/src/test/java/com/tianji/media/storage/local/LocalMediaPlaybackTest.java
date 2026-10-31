@@ -29,7 +29,8 @@ class LocalMediaPlaybackTest {
  @BeforeEach void setup(){
   var env=new MockEnvironment().withProperty("tj.local-storage.directory",directory.toString());env.setActiveProfiles("acceptance");
   store=new LocalObjectStore(env,JsonMapper.builder().build());store.upload("video.webm",new ByteArrayInputStream(bytes),bytes.length);
-  learning=mock(LearningClient.class);controller=new LocalMediaController(store,mock(OperationStore.class),mock(LocalCourseCoverStore.class),learning);
+  var streams=mock(OwnerStreamLimiter.class);when(streams.wrap(any(),anyLong())).thenAnswer(call->call.getArgument(0));
+  learning=mock(LearningClient.class);controller=new LocalMediaController(store,mock(OperationStore.class),mock(LocalCourseCoverStore.class),learning,streams);
   UserContext.setUser(99L);UserContext.setRole(1L);UserContext.setSession("editor-session");UserContext.setCallDepth(2);
  }
  @AfterEach void close(){UserContext.removeUser();}

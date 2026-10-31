@@ -6,8 +6,6 @@ public class LocalMediaController {
  private final LocalObjectStore store;private final OperationStore operations;private final com.tianji.media.storage.local.LocalCourseCoverStore covers;
  private final com.tianji.api.client.learning.LearningClient learning;
  private final com.tianji.media.storage.local.OwnerStreamLimiter streams;
- public LocalMediaController(LocalObjectStore store,OperationStore operations,com.tianji.media.storage.local.LocalCourseCoverStore covers,com.tianji.api.client.learning.LearningClient learning){this(store,operations,covers,learning,new com.tianji.media.storage.local.OwnerStreamLimiter(2));}
- @org.springframework.beans.factory.annotation.Autowired
  public LocalMediaController(LocalObjectStore store,OperationStore operations,com.tianji.media.storage.local.LocalCourseCoverStore covers,com.tianji.api.client.learning.LearningClient learning,com.tianji.media.storage.local.OwnerStreamLimiter streams){this.store=store;this.operations=operations;this.covers=covers;this.learning=learning;this.streams=streams;}
  @PostMapping("/api/v2/admin/course-cover-upload") public Map<String,String> uploadCover(@RequestParam MultipartFile file)throws java.io.IOException{
   UserContext.requireAdmin();try(var input=file.getInputStream()){return Map.of("path",covers.upload(input,file.getSize()));}

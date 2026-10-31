@@ -209,7 +209,7 @@ def main():
                 observer.close()
                 for actor in actors:
                     for client in actor.clients.values(): client.close()
-        report['failures'] = check_configuration(report) if args.protocol != 'smoke' else [name for run in report['runs'] for name, value in run['counts'].items() if value and not name.endswith(':ok')]
+        report['failures'] = check_configuration(report)
         report['status'] = 'PASSED' if not report['failures'] else 'FAILED'
     except BaseException as error:
         report['status'] = 'FAILED'; report['failureType'] = type(error).__name__
