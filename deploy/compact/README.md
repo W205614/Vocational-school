@@ -216,6 +216,6 @@ python deploy/compact/restore.py <完整备份目录> --home .local/upgrade-rehe
 
 部署证据在仓库根目录 `.local/daily-deploy-20261031/` 的 `publication.json`、`healthy.json`、`narrow-result.json`、`preservation.json`、`stopped.json`。源码维护及隔离验证另存于 `.local/runtime-maintenance-20261031/`；后续文档提交与这批镜像的源码来源分别记录。备份计划任务仍为Disabled／false，旧完整数据包、镜像离线包和恢复指针已经退役，当前没有有效本地恢复集；保留的业务数据卷、课程视频和必要配置是运行资产。
 
-验证结束后，仅清理本项目已替换的七个旧镜像、上一轮两个停止的临时测试容器及其一个网络，没有删除数据卷；当前七个卷和日常网络保留。约1.31 GiB的可再生构建文件移入Windows回收站，未清空回收站，不将其记作已释放的宿主磁盘空间。逐项记录见同一私有目录中的 `docker-cleanup.json` 和 `recycled-builds-*.json`；其他项目、共享基础镜像及归属不明资源未操作。
+验证结束后，清理本项目已替换的七个旧版镜像、构建重试留下的三个无引用中间镜像，以及上一轮两个停止的临时测试容器和其一个网络，没有删除数据卷；当前七个卷和日常网络保留。约1.31 GiB的可再生构建文件移入Windows回收站，未清空回收站，不将其记作已释放的宿主磁盘空间。逐项记录见同一私有目录中的 `docker-cleanup.json` 和 `recycled-builds-*.json`；其他项目、共享基础镜像及归属不明资源未操作。
 
 [真实课程专项](reports/real-local-course-20261026.md)保留原源码与分次测试来源；[商业化交付记录](../../docs/commercial-implementation-20261026.md)说明代码、工具的本地验证和目标云环境待验收范围。两者均不因镜像更新自动成为当前版本的全面业务验收。旧批次报告、旧专用探针与过时回滚材料已按本次清理范围移出工作目录，当前测试、恢复和性能工具继续保留。
