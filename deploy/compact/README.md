@@ -77,6 +77,29 @@ python deploy/compact/client_contexts.py
 
 单批启动可用 `setup.py up --group identity`，随后 commerce、education、support、gateway。所有合并组件都应通过验收后才允许历史入口切换。
 
+## 日常启停与常见问题
+
+```powershell
+# 查看容器状态
+docker compose -p tianji-compact --project-directory deploy/compact -f deploy/compact/.local/compose.runtime.yaml --env-file deploy/compact/.env ps
+
+# 暂停（保留数据）
+docker compose -p tianji-compact --project-directory deploy/compact -f deploy/compact/.local/compose.runtime.yaml --env-file deploy/compact/.env stop
+
+# 恢复启动
+python deploy/compact/setup.py up
+```
+
+| 遇到的问题 | 处理方式 |
+| --- | --- |
+| 命令找不到或构建失败 | 确认工具已加入 `PATH`、Docker 已启动、依赖与镜像下载可用；脚本诊断日志位于 `deploy/compact/.local/`，例如 `maven.log`、`frontend.log`、`infra.log`、`up-None.log` |
+| 页面打不开或启动失败 | 用上面的 `ps` 查看状态；检查本机端口是否被占用，实际端口与挂载见本机 `deploy/compact/.local/compose.runtime.yaml`；用同一 Compose 命令将 `ps` 换成 `logs --tail 100` 查看日志 |
+| 门户搜索不到课程 | 确认启动成功，并已执行两个搜索初始化与同步命令 |
+| 不知道登录账号 | 查看 `deploy/compact/.local/accounts.json`，学生与教师／管理员使用不同网页入口 |
+| 已有环境需要升级 | 按[学习体验升级与隔离迁移演练](#学习体验升级与隔离迁移演练)完成迁移、配置补全和重新构建，遵循当前备份策略；不要重复执行首次准备步骤 |
+
+数据库等数据保存在 Docker 命名卷，上传文件在 `deploy/compact/.local/objects`。保留 `.env`、`.local` 和数据卷；**不要用 `docker compose down -v` 清理有数据的部署**。所有默认发布端口仅绑定本机回环地址，其他设备不能直接访问。
+
 ## 回归
 
 以下完整回归会创建合成账号、订单及学习记录，应在独立验收副本或临时 CI 中执行；本机日常更新只运行本轮指定的窄范围验证。

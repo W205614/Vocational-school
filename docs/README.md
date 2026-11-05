@@ -19,7 +19,8 @@
 
 | 记录 | 适用范围 |
 | --- | --- |
-| [本机部署记录](../deploy/compact/reports/current-deployment-20261026.md) | 当前七镜像来源、增量迁移、数据保留与停止状态 |
+| [2026-10-31 本机部署核验](../deploy/compact/README.md#当前交付记录) | 七镜像更新至 `c796f67` 后的数据保留、登录、播放与续播核验 |
+| [2026-10-27 历史部署核验](../deploy/compact/reports/current-deployment-20261026.md) | 对应 `f4ba96d` 的部署、迁移与进度持久化验证 |
 | [商业化交付记录](commercial-implementation-20261026.md) | 商业部署代码与工具的本地测试，目标云环境仍待验收 |
 | [真实课程专项记录](../deploy/compact/reports/real-local-course-20261026.md) | 真实本地素材、时长探测与长视频续签的专项历史测试来源 |
 

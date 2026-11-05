@@ -40,6 +40,25 @@ Vocational-school/
 | `tj-trade/`、`tj-pay/`、`tj-promotion/` | 订单、支付与退款、优惠券和促销 |
 | `tj-media/`、`tj-search/`、`tj-message/`、`tj-data/`、`tj-remark/` | 媒资、课程搜索、消息、数据与互动评价 |
 
+### 默认部署的调用关系
+
+```mermaid
+flowchart LR
+  Student[学生门户] --> Gateway[API 网关 / 身份与权限]
+  Admin[教师与管理工作台] --> Gateway
+  Gateway --> Identity[identity：认证 / 用户]
+  Gateway --> Commerce[commerce：交易 / 支付 / 营销]
+  Gateway --> Education[education：课程 / 学习 / 考试]
+  Gateway --> Support[support：媒资 / 搜索 / 消息]
+  Commerce --> DB[(MySQL：模块独立事务)]
+  Education --> DB
+  DB --> Outbox[事务 Outbox]
+  Outbox --> MQ[RabbitMQ]
+  MQ --> Inbox[Inbox 去重 / 有界重试 / 人工补偿]
+  Inbox --> Education
+  Inbox --> Support
+```
+
 ### 部署目录之间的依赖
 
 - `deploy/compact/` 是默认部署。命令用途见[工具索引](../deploy/compact/TOOLS.md)。
@@ -59,6 +78,13 @@ Vocational-school/
 5. 目标业务模块的 `controller` → `service` → `mapper`，结合 `tj-api/` 理解跨模块调用。
 6. `tj-compact/` 的应用入口与配置：理解独立业务模块如何组合运行。
 7. [部署手册](../deploy/compact/README.md)、[可靠性运行手册](reliability-runbook.md)：最后阅读运维和故障恢复。
+
+## 视频进度如何保存
+
+1. [Course.vue](../frontend/apps/student/src/views/Course.vue) 把播放事件交给 [playbackTiming.ts](../frontend/packages/shared/src/playbackTiming.ts)。页面传入两个请求函数，分别创建会话和发送心跳或结束请求；共享代码维护会话、序号和待发送样本。
+2. [PlaybackTimingController.java](../tj-learning/src/main/java/com/tianji/learning/controller/PlaybackTimingController.java) 接收 `/learning-records/playback-sessions` 下的请求，心跳和结束共用服务方法，通过 `end` 参数区分。
+3. [PlaybackTimingService.java](../tj-learning/src/main/java/com/tianji/learning/service/impl/PlaybackTimingService.java) 的 `heartbeat` 在事务内计算有效时长，更新 `learning_record` 的观看时长、折算时长和续播位置，并更新会话序号。首次达到完成门槛时更新小节状态和课程已学小节数。
+4. 前端请求时序见 [playbackTiming.test.ts](../frontend/packages/shared/src/playbackTiming.test.ts)，计时边界和数据库行为分别见 [PlaybackTimingRuleTest.java](../tj-learning/src/test/java/com/tianji/learning/reliability/PlaybackTimingRuleTest.java)、[PlaybackTimingDatabaseTest.java](../tj-learning/src/test/java/com/tianji/learning/reliability/PlaybackTimingDatabaseTest.java)。
 
 ## 本地文件的保留与清理
 
