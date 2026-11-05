@@ -13,9 +13,7 @@ public enum ObtainType implements BaseEnum {
     PUBLIC(1, "手动领取"),
     ISSUE(2, "发放兑换码"),
     ;
-    @EnumValue
-    @JsonValue
-    private final int value;
+    @EnumValue @JsonValue private final int value;
     private final String desc;
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

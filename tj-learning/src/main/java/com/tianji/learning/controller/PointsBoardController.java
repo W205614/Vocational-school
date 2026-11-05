@@ -1,6 +1,5 @@
 package com.tianji.learning.controller;
 
-
 import com.tianji.learning.domain.query.PointsBoardQuery;
 import com.tianji.learning.domain.vo.PointsBoardVO;
 import com.tianji.learning.service.IPointsBoardService;
@@ -33,5 +32,4 @@ public class PointsBoardController {
     public PointsBoardVO queryPointsBoardBySeason(PointsBoardQuery query) {
         return pointsBoardService.queryPointsBoardBySeason(query);
     }
-
 }

@@ -24,7 +24,7 @@ public class MyLockAspect implements Ordered {
         // 2. 尝试获取锁
         boolean isLock = myLock.lockStrategy().tryLock(lock, myLock);
         // 3. 判断是否成功
-        if(!isLock) {
+        if (!isLock) {
             // 3.1 失败, 快速结束
             return null;
         }

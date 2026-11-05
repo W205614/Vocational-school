@@ -8,7 +8,7 @@ public enum SmsTemplate {
     ;
     private String desc;
 
-    SmsTemplate( String desc) {
+    SmsTemplate(String desc) {
         this.desc = desc;
     }
 }

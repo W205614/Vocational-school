@@ -21,11 +21,11 @@ spring:
             loggerLevel: basic
   config:
     import:
-    - optional:nacos:shared-spring.yaml?refreshEnabled=false
-    - optional:nacos:shared-redis.yaml?refreshEnabled=false
-    - optional:nacos:shared-mybatis.yaml?refreshEnabled=false
-    - optional:nacos:shared-logs.yaml?refreshEnabled=false
-    - optional:nacos:shared-feign.yaml?refreshEnabled=false
+      - optional:nacos:shared-spring.yaml?refreshEnabled=false
+      - optional:nacos:shared-redis.yaml?refreshEnabled=false
+      - optional:nacos:shared-mybatis.yaml?refreshEnabled=false
+      - optional:nacos:shared-logs.yaml?refreshEnabled=false
+      - optional:nacos:shared-feign.yaml?refreshEnabled=false
   lifecycle:
     timeout-per-shutdown-phase: 30s
 tj:
@@ -43,14 +43,14 @@ tj:
     resource:
       enable: true
       excludeLoginPaths:
-      - /api/v2/public/accounts/**
-      - /students/register
-      - /users/detail/{isStaff}
-      - /users/list
-      - GET:/users/{id}
-      - /users/{id}/type
-      - /users/ids
-      - /users/me
+        - /api/v2/public/accounts/**
+        - /students/register
+        - /users/detail/{isStaff}
+        - /users/list
+        - GET:/users/{id}
+        - /users/{id}/type
+        - /users/ids
+        - /users/me
   jdbc:
     database: tj_user
 management:

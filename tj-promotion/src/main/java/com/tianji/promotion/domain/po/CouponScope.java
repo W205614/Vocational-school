@@ -41,6 +41,4 @@ public class CouponScope implements Serializable {
      * 优惠券作用范围的业务id，例如分类id、课程id
      */
     private Long bizId;
-
-
 }

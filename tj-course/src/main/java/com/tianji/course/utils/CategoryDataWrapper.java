@@ -12,7 +12,8 @@ import java.util.List;
  * @Date 2022/9/21 17:45
  * @Version
  **/
-public class CategoryDataWrapper implements TreeDataUtils.DataProcessor<SimpleCategoryVO, Category> {
+public class CategoryDataWrapper
+        implements TreeDataUtils.DataProcessor<SimpleCategoryVO, Category> {
 
     @Override
     public Object getParentKey(Category category) {

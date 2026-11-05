@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class IdNameDTO {
     @Schema(description = "id")
     private Long id;
+
     @Schema(description = "name")
     private String name;
 }

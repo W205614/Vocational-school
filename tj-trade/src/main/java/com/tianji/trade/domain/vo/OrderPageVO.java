@@ -1,6 +1,5 @@
 package com.tianji.trade.domain.vo;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -12,18 +11,25 @@ import java.util.List;
 public class OrderPageVO {
     @Schema(description = "订单id")
     private Long id;
+
     @Schema(description = "订单创建时间")
     private LocalDateTime createTime;
+
     @Schema(description = "订单实付金额")
     private Integer realAmount;
+
     @Schema(description = "支付渠道，ZERO表示优惠抵扣后的零元成交")
     private String payChannel;
+
     @Schema(description = "订单明细金额")
     private Integer totalAmount;
+
     @Schema(description = "订单状态1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名")
     private Integer status;
+
     @Schema(description = "订单状态描述")
     private String statusDesc;
+
     @Schema(description = "订单中课程明细")
     private List<OrderDetailVO> details;
 }

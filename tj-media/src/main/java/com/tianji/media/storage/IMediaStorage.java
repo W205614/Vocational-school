@@ -20,7 +20,7 @@ public interface IMediaStorage {
      * @param freeExpire  免费试看时长，null则表示不限制时长
      * @return 签名信息
      */
-    String getPlaySignature(String fieldId,Long userId, Integer freeExpire);
+    String getPlaySignature(String fieldId, Long userId, Integer freeExpire);
 
     /**
      * 上传文件
@@ -47,5 +47,5 @@ public interface IMediaStorage {
      * @param fileIds 多个文件标示
      * @return 文件信息列表
      */
-    List<Media> queryMediaInfos(String ... fileIds);
+    List<Media> queryMediaInfos(String... fileIds);
 }

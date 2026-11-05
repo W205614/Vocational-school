@@ -18,11 +18,12 @@ import java.util.List;
 @Data
 @Schema(description = "小节、练习和题目关系模型")
 public class CataSubjectDTO {
-        @Schema(description = "题目id")
-        @NotNull(message = CourseErrorInfo.Msg.COURSE_SUBJECT_SAVE_SUBJECT_IDS_NULL)
-        @Size(min = 1,message = CourseErrorInfo.Msg.COURSE_SUBJECT_SAVE_SUBJECT_IDS_NULL)
-        private List<Long> subjectIds;
-        @Schema(description = "小节或练习id")
-        @NotNull(message = CourseErrorInfo.Msg.COURSE_SUBJECT_SAVE_CATALOGUE_ID_NULL)
-        private Long cataId;
+    @Schema(description = "题目id")
+    @NotNull(message = CourseErrorInfo.Msg.COURSE_SUBJECT_SAVE_SUBJECT_IDS_NULL)
+    @Size(min = 1, message = CourseErrorInfo.Msg.COURSE_SUBJECT_SAVE_SUBJECT_IDS_NULL)
+    private List<Long> subjectIds;
+
+    @Schema(description = "小节或练习id")
+    @NotNull(message = CourseErrorInfo.Msg.COURSE_SUBJECT_SAVE_CATALOGUE_ID_NULL)
+    private Long cataId;
 }

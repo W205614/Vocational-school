@@ -1,5 +1,7 @@
 """Binary Redis DUMP snapshots via the container's internal port; no public credential logging."""
-import base64,json,subprocess,sys
+
+import base64, json, subprocess, sys
+
 SEMANTIC_SCRIPT = r"""
 def semantic_fingerprint(kind, values):
  import hashlib
@@ -23,7 +25,8 @@ def semantic_fingerprint(kind, values):
  return hashlib.sha256(data).hexdigest()
 """
 
-SCRIPT=r"""
+SCRIPT = (
+    r"""
 import socket,json,base64,sys,time
 s=socket.create_connection(('127.0.0.1',int(sys.argv[2])),5);f=s.makefile('rb')
 
@@ -42,7 +45,9 @@ def read():
 def cmd(*args):
  args=[a if isinstance(a,bytes) else str(a).encode() for a in args];s.sendall(b'*'+str(len(args)).encode()+b'\r\n'+b''.join(b'$'+str(len(a)).encode()+b'\r\n'+a+b'\r\n' for a in args));return read()
 encode=lambda v:base64.b64encode(v).decode()
-""" + SEMANTIC_SCRIPT + r'''
+"""
+    + SEMANTIC_SCRIPT
+    + r'''
 # Capture DUMP, absolute expiry and logical contents atomically for each key.
 CAPTURE_KEY="""
 local kind=redis.call('TYPE',KEYS[1]).ok
@@ -84,14 +89,40 @@ else:
   else:cmd('RESTORE',base64.b64decode(record['key']),expiry,base64.b64decode(record['value']),'ABSTTL')
  print('Redis binary snapshot restored')
 '''
+)
 
-def transfer(runtime,path,restore=False):
- # Only the deployment's verified loopback mapping is used.
- container=subprocess.check_output(runtime.COMPOSE+['ps','-q','redis'],timeout=30).decode().strip()
- if not container:raise RuntimeError('Redis container missing')
- mapping=subprocess.check_output(['docker','port',container,'6379/tcp'],timeout=30).decode().strip()
- if not mapping.startswith('127.0.0.1:') or '\n' in mapping:raise RuntimeError('Redis must have one loopback-only mapping')
- command=[sys.executable,'-c',SCRIPT,'restore' if restore else 'capture',mapping.rsplit(':',1)[1]]
- result=subprocess.run(command,input=path.read_bytes() if restore else None,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=300)
- if result.returncode:raise RuntimeError('Redis transfer failed; snapshot was not published')
- if not restore:path.write_bytes(result.stdout)
+
+def transfer(runtime, path, restore=False):
+    # Only the deployment's verified loopback mapping is used.
+    container = (
+        subprocess.check_output(runtime.COMPOSE + ['ps', '-q', 'redis'], timeout=30)
+        .decode()
+        .strip()
+    )
+    if not container:
+        raise RuntimeError('Redis container missing')
+    mapping = (
+        subprocess.check_output(['docker', 'port', container, '6379/tcp'], timeout=30)
+        .decode()
+        .strip()
+    )
+    if not mapping.startswith('127.0.0.1:') or '\n' in mapping:
+        raise RuntimeError('Redis must have one loopback-only mapping')
+    command = [
+        sys.executable,
+        '-c',
+        SCRIPT,
+        'restore' if restore else 'capture',
+        mapping.rsplit(':', 1)[1],
+    ]
+    result = subprocess.run(
+        command,
+        input=path.read_bytes() if restore else None,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=300,
+    )
+    if result.returncode:
+        raise RuntimeError('Redis transfer failed; snapshot was not published')
+    if not restore:
+        path.write_bytes(result.stdout)

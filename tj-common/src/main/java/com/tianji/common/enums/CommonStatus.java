@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum CommonStatus implements BaseEnum{
+public enum CommonStatus implements BaseEnum {
     DISABLE(0, "禁用"),
     ENABLE(1, "启用"),
     ;

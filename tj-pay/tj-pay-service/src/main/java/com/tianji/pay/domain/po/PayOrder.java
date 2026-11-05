@@ -134,23 +134,21 @@ public class PayOrder implements Serializable {
     /**
      * 逻辑删除
      */
-    @TableLogic
-    private Boolean deleted;
+    @TableLogic private Boolean deleted;
 
-
-    public boolean success(){
+    public boolean success() {
         return PayStatus.TRADE_SUCCESS.equalsValue(status);
     }
 
-    public boolean closed(){
+    public boolean closed() {
         return PayStatus.TRADE_CLOSED.equalsValue(status);
     }
 
-    public boolean waitBuyerPay(){
+    public boolean waitBuyerPay() {
         return PayStatus.WAIT_BUYER_PAY.equalsValue(status);
     }
 
-    public boolean notCommit(){
+    public boolean notCommit() {
         return PayStatus.NOT_COMMIT.equalsValue(status);
     }
 }

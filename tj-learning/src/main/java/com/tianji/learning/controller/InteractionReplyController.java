@@ -32,9 +32,20 @@ public class InteractionReplyController {
 
     @Operation(summary = "新增回答或评论")
     @PostMapping
-    public org.springframework.http.ResponseEntity<?> saveReply(@RequestBody @Validated ReplyDTO dto,@RequestHeader("Idempotency-Key") String key) {
-        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"DISCUSSION_CREATE",key,
-            new com.tianji.learning.service.impl.DiscussionOperationHandler.Request("REPLY",com.tianji.common.utils.UserContext.getRole(),null,dto)));
+    public org.springframework.http.ResponseEntity<?> saveReply(
+            @RequestBody @Validated ReplyDTO dto, @RequestHeader("Idempotency-Key") String key) {
+        return org.springframework.http.ResponseEntity.accepted()
+                .body(
+                        operations.submit(
+                                com.tianji.common.utils.UserContext.requireUser(),
+                                "DISCUSSION_CREATE",
+                                key,
+                                new com.tianji.learning.service.impl.DiscussionOperationHandler
+                                        .Request(
+                                        "REPLY",
+                                        com.tianji.common.utils.UserContext.getRole(),
+                                        null,
+                                        dto)));
     }
 
     @Operation(summary = "分页查询回答或评论列表")

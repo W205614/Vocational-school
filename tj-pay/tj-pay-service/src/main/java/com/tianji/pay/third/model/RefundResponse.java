@@ -11,14 +11,17 @@ import lombok.NoArgsConstructor;
 @Data
 public class RefundResponse {
     private Boolean success;
+
     /**
      * 退款渠道
      */
     private String channel;
+
     /**
      * 退款金额
      */
     private Integer amount;
+
     /**
      * 退款状态
      * @see RefundStatus
@@ -29,13 +32,15 @@ public class RefundResponse {
 
     private String msg;
 
-    public boolean refundSuccess(){
+    public boolean refundSuccess() {
         return RefundStatus.SUCCESS.equalsValue(status);
     }
-    public boolean refunding(){
+
+    public boolean refunding() {
         return RefundStatus.UN_KNOWN.equalsValue(status);
     }
-    public boolean refundFailed(){
+
+    public boolean refundFailed() {
         return RefundStatus.FAILED.equalsValue(status);
     }
 }

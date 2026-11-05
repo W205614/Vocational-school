@@ -14,10 +14,9 @@ public enum ExchangeCodeStatus implements BaseEnum {
     USED(2, "已兑换"),
     EXPIRED(3, "兑换活动已结束"),
     ;
-    @EnumValue
-    @JsonValue
-    private final int value;
+    @EnumValue @JsonValue private final int value;
     private final String desc;
+
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static ExchangeCodeStatus of(Integer value) {
         if (value == null) {

@@ -27,28 +27,47 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class AuthenticationHealthTest {
-    @Test void keyExpiryRemovesGatewayFromReadinessUntilProviderRecovers() throws Exception {
+    @Test
+    void keyExpiryRemovesGatewayFromReadinessUntilProviderRecovers() throws Exception {
         var generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(2048);
-        byte[] keys = new JwtVerificationKeys(List.of(generator.generateKeyPair().getPublic()))
-                .jwks().getBytes(StandardCharsets.UTF_8);
+        byte[] keys =
+                new JwtVerificationKeys(List.of(generator.generateKeyPair().getPublic()))
+                        .jwks()
+                        .getBytes(StandardCharsets.UTF_8);
         var status = new AtomicInteger(200);
         var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/_modules/auth/jwks", exchange -> {
-            exchange.sendResponseHeaders(status.get(), keys.length);
-            try (var output = exchange.getResponseBody()) { output.write(keys); }
-        });
+        server.createContext(
+                "/_modules/auth/jwks",
+                exchange -> {
+                    exchange.sendResponseHeaders(status.get(), keys.length);
+                    try (var output = exchange.getResponseBody()) {
+                        output.write(keys);
+                    }
+                });
         server.start();
         try {
-            var environment = new MockEnvironment().withProperty("tj.routes.auth",
-                    "http://127.0.0.1:" + server.getAddress().getPort() + "/_modules/auth");
-            var holder = new JwtSignerHolder(new SimpleDiscoveryClient(new SimpleDiscoveryProperties()),
-                    environment, new ServiceIdentity(Map.of("TJ_INTERNAL_TOKEN", "fixture-health-identity-0123456789")));
+            var environment =
+                    new MockEnvironment()
+                            .withProperty(
+                                    "tj.routes.auth",
+                                    "http://127.0.0.1:"
+                                            + server.getAddress().getPort()
+                                            + "/_modules/auth");
+            var holder =
+                    new JwtSignerHolder(
+                            new SimpleDiscoveryClient(new SimpleDiscoveryProperties()),
+                            environment,
+                            new ServiceIdentity(
+                                    Map.of(
+                                            "TJ_INTERNAL_TOKEN",
+                                            "fixture-health-identity-0123456789")));
             var clock = new AtomicLong(1);
             ReflectionTestUtils.setField(holder, "clock", (LongSupplier) clock::get);
             var permissions = mock(AuthUtil.class);
             when(permissions.isReady()).thenReturn(true);
-            var health = new AuthenticationHealth().authenticationHealthIndicator(holder, permissions);
+            var health =
+                    new AuthenticationHealth().authenticationHealthIndicator(holder, permissions);
 
             assertEquals(Status.OUT_OF_SERVICE, health.health().getStatus());
             holder.refresh();

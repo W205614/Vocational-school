@@ -17,13 +17,13 @@ public class Category3PO {
     private Long thirdCateId;
 
     public void setId(List<Long> categoryIdList) {
-        if(firstCateId != null) {
+        if (firstCateId != null) {
             categoryIdList.add(firstCateId);
         }
         if (secondCateId != null) {
             categoryIdList.add(secondCateId);
         }
-        if(thirdCateId != null) {
+        if (thirdCateId != null) {
             categoryIdList.add(thirdCateId);
         }
     }

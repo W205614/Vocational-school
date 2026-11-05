@@ -25,28 +25,32 @@ import java.util.List;
  * @since 2022-09-21
  */
 @Service
-public class CourseCataSubjectDraftServiceImpl extends ServiceImpl<CourseCataSubjectDraftMapper, CourseCataSubjectDraft> implements ICourseCataSubjectDraftService {
+public class CourseCataSubjectDraftServiceImpl
+        extends ServiceImpl<CourseCataSubjectDraftMapper, CourseCataSubjectDraft>
+        implements ICourseCataSubjectDraftService {
 
-    @Autowired
-    private ICourseCatalogueDraftService courseCatalogueDraftService;
+    @Autowired private ICourseCatalogueDraftService courseCatalogueDraftService;
 
     @Override
     @Transactional
     public void deleteNotInCataIdList(Long courseId) {
 
-        //1.获取所有课程的小节和练习
-        List<Long> cataIdList = courseCatalogueDraftService.queryCataIdsOfCourse(courseId,
-                Arrays.asList(
-                        CourseConstants.CataType.SECTION,
-                        CourseConstants.CataType.PRATICE
-                ));
-        //1.删除条件
+        // 1.获取所有课程的小节和练习
+        List<Long> cataIdList =
+                courseCatalogueDraftService.queryCataIdsOfCourse(
+                        courseId,
+                        Arrays.asList(
+                                CourseConstants.CataType.SECTION,
+                                CourseConstants.CataType.PRATICE));
+        // 1.删除条件
         LambdaUpdateWrapper<CourseCataSubjectDraft> updateWrapper =
                 Wrappers.lambdaUpdate(CourseCataSubjectDraft.class)
                         .eq(CourseCataSubjectDraft::getCourseId, courseId)
-                        .notIn(CollUtils.isNotEmpty(cataIdList),
-                                CourseCataSubjectDraft::getCataId, cataIdList);
-        //2.删除题目
+                        .notIn(
+                                CollUtils.isNotEmpty(cataIdList),
+                                CourseCataSubjectDraft::getCataId,
+                                cataIdList);
+        // 2.删除题目
         baseMapper.delete(updateWrapper);
     }
 }

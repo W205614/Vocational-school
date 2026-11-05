@@ -21,10 +21,12 @@ public class CategoryUpdateDTO {
     @Schema(description = "分类id")
     @NotNull(message = CourseErrorInfo.Msg.CATEGORY_ID_NOT_NULL)
     private Long id;
+
     @Schema(description = "名称")
     @NotNull(message = CourseErrorInfo.Msg.CATEGORY_UPDATE_NAME_NOT_NULL)
     @Size(max = 15, message = CourseErrorInfo.Msg.CATEGORY_UPDATE_NAME_SIZE)
     private String name;
+
     @Schema(description = "分类序号")
     @Max(value = 99, message = CourseErrorInfo.Msg.CATEGORY_UPDATE_INDEX_MAX_MIN)
     @Min(value = 1, message = CourseErrorInfo.Msg.CATEGORY_UPDATE_INDEX_MAX_MIN)

@@ -38,6 +38,4 @@ public class CourseSubject implements Serializable {
     private Long courseId;
 
     private Long subjectId;
-
-
 }

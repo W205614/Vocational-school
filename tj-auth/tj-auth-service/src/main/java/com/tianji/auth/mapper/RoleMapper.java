@@ -11,6 +11,4 @@ import com.tianji.auth.domain.po.Role;
  * @author 虎哥
  * @since 2022-06-16
  */
-public interface RoleMapper extends BaseMapper<Role> {
-
-}
+public interface RoleMapper extends BaseMapper<Role> {}

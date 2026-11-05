@@ -33,7 +33,6 @@ public interface ICourseService extends IService<Course> {
 
     CourseDTO getCourseDTOById(Long id);
 
-
     void delete(Long id);
 
     /**
@@ -91,6 +90,7 @@ public interface ICourseService extends IService<Course> {
      * @return 课程分页数据
      */
     PageDTO<CoursePageVO> queryForPage(CoursePageQuery coursePageQuery);
+
     /**
      * 根据课程分类id查询课程列表
      * @param categoryId 课程分类id
@@ -111,7 +111,7 @@ public interface ICourseService extends IService<Course> {
      * @param idList
      * @return
      */
-    List<Long> queryExists(List<Long> idList,List<Integer> statusList);
+    List<Long> queryExists(List<Long> idList, List<Integer> statusList);
 
     /**
      * 根据课程name模糊查询课程id列表

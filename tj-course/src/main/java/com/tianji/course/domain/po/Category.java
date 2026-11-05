@@ -68,7 +68,6 @@ public class Category implements Serializable {
      */
     private LocalDateTime updateTime;
 
-
     /**
      * 创建者
      */
@@ -79,8 +78,5 @@ public class Category implements Serializable {
      */
     private Long updater;
 
-    @TableLogic
-    private Integer deleted;
-
-
+    @TableLogic private Integer deleted;
 }

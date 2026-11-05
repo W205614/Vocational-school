@@ -1,6 +1,5 @@
 package com.tianji.user.controller;
 
-
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.user.domain.dto.StudentFormDTO;
 import com.tianji.user.domain.query.UserPageQuery;
@@ -24,12 +23,11 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "用户管理接口")
 public class StudentController {
 
-    @Autowired
-    private IStudentService studentService;
+    @Autowired private IStudentService studentService;
 
     @Operation(summary = "分页查询学生信息")
     @GetMapping("/page")
-    public PageDTO<StudentPageVo> queryStudentPage(UserPageQuery pageQuery){
+    public PageDTO<StudentPageVo> queryStudentPage(UserPageQuery pageQuery) {
         return studentService.queryStudentPage(pageQuery);
     }
 
@@ -38,5 +36,4 @@ public class StudentController {
     public void registerStudent(@RequestBody StudentFormDTO studentFormDTO) {
         studentService.saveStudent(studentFormDTO);
     }
-
 }

@@ -11,8 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author wusongsong
  * @since 2022-07-21
  */
-public interface CourseContentMapper extends BaseMapper<CourseContent> {
-
-
-
-}
+public interface CourseContentMapper extends BaseMapper<CourseContent> {}

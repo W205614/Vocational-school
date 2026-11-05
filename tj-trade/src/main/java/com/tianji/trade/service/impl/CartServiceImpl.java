@@ -65,27 +65,37 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
         if (courseInfo == null) {
             throw new BadRequestException(COURSE_NOT_EXISTS);
         }
-        if(!Integer.valueOf(2).equals(courseInfo.getStatus())) throw new BadRequestException("课程当前不可购买");
+        if (!Integer.valueOf(2).equals(courseInfo.getStatus()))
+            throw new BadRequestException("课程当前不可购买");
 
         // 5.判断是否过期
-        if (courseInfo.getPurchaseEndTime()!=null && courseInfo.getPurchaseEndTime().isBefore(LocalDateTime.now())) {
+        if (courseInfo.getPurchaseEndTime() != null
+                && courseInfo.getPurchaseEndTime().isBefore(LocalDateTime.now())) {
             // 已经过期，无法购买
             throw new BadRequestException(COURSE_EXPIRED);
         }
         // 5.写入购物车
         Cart cart = new Cart();
-        cart.setId(IdWorker.getId()); //购物车中的id
-        cart.setCourseId(courseId); //课程id
+        cart.setId(IdWorker.getId()); // 购物车中的id
+        cart.setCourseId(courseId); // 课程id
         cart.setCourseName(courseInfo.getName());
         cart.setUserId(UserContext.getUser());
         cart.setCoverUrl(courseInfo.getCoverUrl());
         cart.setPrice(courseInfo.getPrice());
-        new org.springframework.transaction.support.TransactionTemplate(transactions).executeWithoutResult(tx->{
-            jdbc.update("INSERT INTO cart_owner_guard(user_id) VALUES(?) ON DUPLICATE KEY UPDATE user_id=user_id",userId);
-            jdbc.queryForObject("SELECT user_id FROM cart_owner_guard WHERE user_id=? FOR UPDATE",Long.class,userId);
-            if(checkCourseExists(courseId,userId))return;
-            checkCartsFull(userId);save(cart);
-        });
+        new org.springframework.transaction.support.TransactionTemplate(transactions)
+                .executeWithoutResult(
+                        tx -> {
+                            jdbc.update(
+                                    "INSERT INTO cart_owner_guard(user_id) VALUES(?) ON DUPLICATE KEY UPDATE user_id=user_id",
+                                    userId);
+                            jdbc.queryForObject(
+                                    "SELECT user_id FROM cart_owner_guard WHERE user_id=? FOR UPDATE",
+                                    Long.class,
+                                    userId);
+                            if (checkCourseExists(courseId, userId)) return;
+                            checkCartsFull(userId);
+                            save(cart);
+                        });
         log.debug("加入购物车成功！用户：{}，课程：{}", userId, courseId);
     }
 
@@ -98,10 +108,12 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
     }
 
     private boolean checkCourseExists(Long courseId, Long userId) {
-        int count = Math.toIntExact(lambdaQuery()
-                .eq(Cart::getUserId, userId)
-                .eq(Cart::getCourseId, courseId)
-                .count());
+        int count =
+                Math.toIntExact(
+                        lambdaQuery()
+                                .eq(Cart::getUserId, userId)
+                                .eq(Cart::getCourseId, courseId)
+                                .count());
         return count > 0;
     }
 
@@ -117,8 +129,9 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
         // 3.查询购物车中的课程
         List<Long> courseIds = carts.stream().map(Cart::getCourseId).collect(Collectors.toList());
         List<CourseSimpleInfoDTO> courseSimpleInfos = courseClient.getSimpleInfoList(courseIds);
-        Map<Long, CourseSimpleInfoDTO> map = courseSimpleInfos.stream()
-                .collect(Collectors.toMap(CourseSimpleInfoDTO::getId, c -> c));
+        Map<Long, CourseSimpleInfoDTO> map =
+                courseSimpleInfos.stream()
+                        .collect(Collectors.toMap(CourseSimpleInfoDTO::getId, c -> c));
         // 4.组织 vo
         List<CartVO> list = new ArrayList<>(carts.size());
         for (Cart cart : carts) {
@@ -127,15 +140,23 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
             list.add(vo);
             // 4.2.获取新的课程信息
             CourseSimpleInfoDTO info = map.get(cart.getCourseId());
-            vo.setNowPrice(info==null?cart.getPrice():info.getPrice());
-            vo.setExpired(info==null || !Integer.valueOf(2).equals(info.getStatus()) || info.getPurchaseEndTime()!=null && info.getPurchaseEndTime().isBefore(LocalDateTime.now()));
-            vo.setCourseValidDate(info==null?null:info.getPurchaseEndTime());
+            vo.setNowPrice(info == null ? cart.getPrice() : info.getPrice());
+            vo.setExpired(
+                    info == null
+                            || !Integer.valueOf(2).equals(info.getStatus())
+                            || info.getPurchaseEndTime() != null
+                                    && info.getPurchaseEndTime().isBefore(LocalDateTime.now()));
+            vo.setCourseValidDate(info == null ? null : info.getPurchaseEndTime());
         }
         // 5.排序
-        return list.stream().sorted(
-                Comparator.comparing(CartVO::getExpired).reversed() // 先看是否过期，未过期的在前，已过期的在后
-                        .thenComparingLong(CartVO::getId).reversed() // 再看id，id大的是新加入的
-        ).collect(Collectors.toList());
+        return list.stream()
+                .sorted(
+                        Comparator.comparing(CartVO::getExpired)
+                                .reversed() // 先看是否过期，未过期的在前，已过期的在后
+                                .thenComparingLong(CartVO::getId)
+                                .reversed() // 再看id，id大的是新加入的
+                        )
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -143,27 +164,21 @@ public class CartServiceImpl extends ServiceImpl<CartMapper, Cart> implements IC
         // 1.获取用户
         Long userId = UserContext.getUser();
         // 2.删除
-        remove(new LambdaQueryWrapper<Cart>()
-                .eq(Cart::getId, id)
-                .eq(Cart::getUserId, userId)
-        );
+        remove(new LambdaQueryWrapper<Cart>().eq(Cart::getId, id).eq(Cart::getUserId, userId));
     }
 
     @Override
     public void deleteCartByIds(List<Long> ids) {
         Long userId = UserContext.getUser();
-        remove(new LambdaQueryWrapper<Cart>()
-                .eq(Cart::getUserId, userId)
-                .in(Cart::getId, ids)
-        );
+        remove(new LambdaQueryWrapper<Cart>().eq(Cart::getUserId, userId).in(Cart::getId, ids));
     }
 
     @Override
     public void deleteCartByUserAndCourseIds(Long userId, List<Long> courseIds) {
         log.debug("尝试从购物车删除用户已购买的课程，用户id：{}，课程id：{}", userId, courseIds);
-        remove(new LambdaQueryWrapper<Cart>()
-                .eq(Cart::getUserId, userId)
-                .in(Cart::getCourseId, courseIds)
-        );
+        remove(
+                new LambdaQueryWrapper<Cart>()
+                        .eq(Cart::getUserId, userId)
+                        .in(Cart::getCourseId, courseIds));
     }
 }

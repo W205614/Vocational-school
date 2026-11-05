@@ -12,6 +12,7 @@ public class LikedTimesDTO {
      * 点赞的业务id
      */
     private Long bizId;
+
     /**
      * 总的点赞次数
      */

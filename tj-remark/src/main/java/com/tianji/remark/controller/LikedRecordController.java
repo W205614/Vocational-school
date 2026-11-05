@@ -1,6 +1,5 @@
 package com.tianji.remark.controller;
 
-
 import com.tianji.remark.domain.dto.LikeRecordFormDTO;
 import com.tianji.remark.service.ILikedRecordService;
 import io.swagger.v3.oas.annotations.tags.Tag;

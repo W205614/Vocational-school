@@ -31,6 +31,7 @@ public class QuestionDetailVO {
 
     @Schema(description = "3级课程分类id")
     private Long cateId3;
+
     @Schema(description = "课程三级分类的名称集合")
     private List<String> categories;
 

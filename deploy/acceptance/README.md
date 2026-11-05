@@ -70,7 +70,6 @@ npm --prefix frontend run build
 
 先阅读 [可靠性运行手册](../../docs/reliability-runbook.md)；商业部署另按 [生产部署说明](../production/README.md) 操作。迁移工具是独立验收工具，发布到真实环境应由部署流程引用同一批已校验 SQL 和校验和，替换数据库连接，独立演练备份恢复。不要把验收环境账号、模拟渠道或密钥复制到生产。
 
-
 ## Linux 镜像与两端 Nginx 验收
 
 先完成后端构建、宿主机启动和两端构建，再创建固定产物的镜像。私有运行配置由已有验收配置转换，原部署不参与：
@@ -96,7 +95,6 @@ python deploy/acceptance/container_browser.py
 ```
 
 镜像基于本机已有 Temurin 21 和 Nginx 标签用于隔离验收；真实发布需要锁定经过安全审查的镜像 digest、配置及资源。不要直接将本地模拟配置作为生产配置。
-
 
 ## 释放本次临时资源
 

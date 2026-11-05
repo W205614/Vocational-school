@@ -21,8 +21,16 @@ public class SmsController {
 
     @Operation(summary = "同步发送短信")
     @PostMapping("message")
-    public org.springframework.http.ResponseEntity<?> sendMessage(@RequestBody SmsInfoDTO smsInfoDTO,@org.springframework.web.bind.annotation.RequestHeader("Idempotency-Key") String key){
+    public org.springframework.http.ResponseEntity<?> sendMessage(
+            @RequestBody SmsInfoDTO smsInfoDTO,
+            @org.springframework.web.bind.annotation.RequestHeader("Idempotency-Key") String key) {
         com.tianji.common.utils.UserContext.requireAdmin();
-        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"SMS_SEND",key,smsInfoDTO));
+        return org.springframework.http.ResponseEntity.accepted()
+                .body(
+                        operations.submit(
+                                com.tianji.common.utils.UserContext.requireUser(),
+                                "SMS_SEND",
+                                key,
+                                smsInfoDTO));
     }
 }

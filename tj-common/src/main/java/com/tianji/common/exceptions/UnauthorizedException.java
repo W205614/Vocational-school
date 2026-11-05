@@ -3,7 +3,7 @@ package com.tianji.common.exceptions;
 import lombok.Getter;
 
 @Getter
-public class UnauthorizedException extends CommonException{
+public class UnauthorizedException extends CommonException {
     private final int status = 401;
 
     public UnauthorizedException(String message) {

@@ -11,8 +11,10 @@ import lombok.EqualsAndHashCode;
 public class UserPageQuery extends PageQuery {
     @Schema(description = "账户状态")
     private Integer status;
+
     @Schema(description = "教师名称")
     private String name;
+
     @Schema(description = "手机号码")
     private String phone;
 }

@@ -11,8 +11,7 @@ public enum Platform {
     ALI(2, "阿里云", "/img-ali/"),
     QI_NIU(3, "七牛云", "/img-qn/"),
     ;
-    @EnumValue
-    private final int value;
+    @EnumValue private final int value;
     private final String desc;
     private final String path;
 

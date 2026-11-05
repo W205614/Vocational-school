@@ -15,7 +15,7 @@ public class AliConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "tj.file", name = "platform", havingValue = "ALI")
-    public OSS aliOssClient(AliProperties prop){
+    public OSS aliOssClient(AliProperties prop) {
         return new OSSClientBuilder()
                 .build(prop.getOos().getEndpoint(), prop.getAccessId(), prop.getAccessKey());
     }

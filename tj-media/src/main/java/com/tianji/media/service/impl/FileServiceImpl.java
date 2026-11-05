@@ -36,17 +36,22 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements IF
 
     private final IFileStorage fileStorage;
     private final PlatformProperties properties;
-    private final org.springframework.beans.factory.ObjectProvider<com.tianji.media.storage.local.LocalObjectStore> local;
+    private final org.springframework.beans.factory.ObjectProvider<
+                    com.tianji.media.storage.local.LocalObjectStore>
+            local;
 
     @Override
     public FileDTO uploadFile(MultipartFile file) {
-        long owner=com.tianji.common.utils.UserContext.requireUser();
-        Long role=com.tianji.common.utils.UserContext.getRole();
-        if(!Long.valueOf(1).equals(role) && !Long.valueOf(3).equals(role))throw new com.tianji.common.exceptions.ForbiddenException("需要教师或管理员权限");
-        if(file.isEmpty() || file.getSize()>20*1024*1024)throw new com.tianji.common.exceptions.BadRequestException("文件大小必须在 1 字节到 20 MiB 之间");
+        long owner = com.tianji.common.utils.UserContext.requireUser();
+        Long role = com.tianji.common.utils.UserContext.getRole();
+        if (!Long.valueOf(1).equals(role) && !Long.valueOf(3).equals(role))
+            throw new com.tianji.common.exceptions.ForbiddenException("需要教师或管理员权限");
+        if (file.isEmpty() || file.getSize() > 20 * 1024 * 1024)
+            throw new com.tianji.common.exceptions.BadRequestException("文件大小必须在 1 字节到 20 MiB 之间");
         // 1.获取文件名称
         String originalFilename = file.getOriginalFilename();
-        if(originalFilename==null || originalFilename.length()>255)throw new com.tianji.common.exceptions.BadRequestException("文件名无效");
+        if (originalFilename == null || originalFilename.length() > 255)
+            throw new com.tianji.common.exceptions.BadRequestException("文件名无效");
         // 2.生成新文件名
         String filename = generateNewFileName(originalFilename);
         // 3.获取文件流
@@ -58,8 +63,11 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements IF
         }
         // 4.上传文件
         String requestId;
-        try(inputStream){requestId=fileStorage.uploadFile(filename,inputStream,file.getSize());}
-        catch(IOException error){throw new CommonException("关闭文件流失败",error);}
+        try (inputStream) {
+            requestId = fileStorage.uploadFile(filename, inputStream, file.getSize());
+        } catch (IOException error) {
+            throw new CommonException("关闭文件流失败", error);
+        }
         // 5.写入数据库
         File fileInfo = null;
         try {
@@ -80,20 +88,27 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements IF
         FileDTO fileDTO = new FileDTO();
         fileDTO.setId(fileInfo.getId());
         fileDTO.setPath(fileInfo.getPlatform().getPath() + filename);
-        if(local.getIfAvailable()!=null)fileDTO.setPath(local.getObject().signedUrl(filename));
+        if (local.getIfAvailable() != null) fileDTO.setPath(local.getObject().signedUrl(filename));
         fileDTO.setFilename(originalFilename);
         return fileDTO;
     }
 
     @Override
     public FileDTO getFileInfo(Long id) {
-        long user=com.tianji.common.utils.UserContext.requireUser();
+        long user = com.tianji.common.utils.UserContext.requireUser();
         File file = getById(id);
         if (file == null) {
             return null;
         }
-        if(!Long.valueOf(1).equals(com.tianji.common.utils.UserContext.getRole()) && !java.util.Objects.equals(file.getCreater(),user))throw new com.tianji.common.exceptions.ForbiddenException("无权查看此文件");
-        return FileDTO.of(file.getId(),file.getFilename(),local.getIfAvailable()!=null?local.getObject().signedUrl(file.getKey()):file.getPlatform().getPath()+file.getKey());
+        if (!Long.valueOf(1).equals(com.tianji.common.utils.UserContext.getRole())
+                && !java.util.Objects.equals(file.getCreater(), user))
+            throw new com.tianji.common.exceptions.ForbiddenException("无权查看此文件");
+        return FileDTO.of(
+                file.getId(),
+                file.getFilename(),
+                local.getIfAvailable() != null
+                        ? local.getObject().signedUrl(file.getKey())
+                        : file.getPlatform().getPath() + file.getKey());
     }
 
     private String generateNewFileName(String originalFilename) {

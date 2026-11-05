@@ -20,7 +20,8 @@ import java.net.UnknownHostException;
 @Slf4j
 public class PromotionApplication {
     public static void main(String[] args) throws UnknownHostException {
-        SpringApplication app = new SpringApplicationBuilder(PromotionApplication.class).build(args);
+        SpringApplication app =
+                new SpringApplicationBuilder(PromotionApplication.class).build(args);
         Environment env = app.run(args).getEnvironment();
         StartupLogger.log(env, log);
     }

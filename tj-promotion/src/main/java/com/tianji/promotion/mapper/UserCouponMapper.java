@@ -20,5 +20,9 @@ public interface UserCouponMapper extends BaseMapper<UserCoupon> {
 
     List<Coupon> queryMyCoupons(@Param("userId") Long userId);
 
-    List<Coupon> queryCouponByUserCouponIds(@Param("userCouponIds") List<Long> userCouponIds, @Param("status") UserCouponStatus status, @Param("userId") Long userId, @Param("orderId") Long orderId);
+    List<Coupon> queryCouponByUserCouponIds(
+            @Param("userCouponIds") List<Long> userCouponIds,
+            @Param("status") UserCouponStatus status,
+            @Param("userId") Long userId,
+            @Param("orderId") Long orderId);
 }

@@ -18,9 +18,10 @@ import java.util.List;
  */
 public interface SubjectCategoryMapper extends BaseMapper<SubjectCategory> {
 
-    @Insert("<script>INSERT INTO subject_category (subject_id,first_cate_id,second_cate_id,third_cate_id) " +
-            "value <foreach collection='scs' item='sc'  separator=','>(#{sc.subjectId},#{sc.firstCateId}," +
-            "#{sc.secondCateId},#{sc.thirdCateId})</foreach></script>")
+    @Insert(
+            "<script>INSERT INTO subject_category (subject_id,first_cate_id,second_cate_id,third_cate_id) "
+                    + "value <foreach collection='scs' item='sc'  separator=','>(#{sc.subjectId},#{sc.firstCateId},"
+                    + "#{sc.secondCateId},#{sc.thirdCateId})</foreach></script>")
     int batchInsert(@Param("scs") List<SubjectCategory> subjectCategoryList);
 
     /**
@@ -30,10 +31,10 @@ public interface SubjectCategoryMapper extends BaseMapper<SubjectCategory> {
      * @param level
      * @return
      */
-    @Select("<script>select count(*) from subject_category where 1= 1 <if test='level==1'> and first_cate_id=#{categoryId} </if> " +
-            "<if test='level==2'> and second_cate_id=#{categoryId} </if>" +
-            "<if test='level==3'> and third_cate_id=#{categoryId} </if>" +
-            "</script>")
+    @Select(
+            "<script>select count(*) from subject_category where 1= 1 <if test='level==1'> and first_cate_id=#{categoryId} </if> "
+                    + "<if test='level==2'> and second_cate_id=#{categoryId} </if>"
+                    + "<if test='level==3'> and third_cate_id=#{categoryId} </if>"
+                    + "</script>")
     int countSubjectNum(@Param("categoryId") Long categoryId, @Param("level") Integer level);
-
 }

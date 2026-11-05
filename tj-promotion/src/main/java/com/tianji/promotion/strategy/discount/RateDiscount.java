@@ -16,21 +16,25 @@ public class RateDiscount implements Discount {
     }
 
     @Override
-    public int calculateDiscount(int totalAmount,  Coupon coupon) {
+    public int calculateDiscount(int totalAmount, Coupon coupon) {
         // 计算折扣，扩大100倍计算，向下取整，单位是分
-        if(coupon.getDiscountValue()==null || coupon.getDiscountValue()<1 || coupon.getDiscountValue()>100)
+        if (coupon.getDiscountValue() == null
+                || coupon.getDiscountValue() < 1
+                || coupon.getDiscountValue() > 100)
             throw new com.tianji.common.exceptions.BadRequestException("折扣比例无效");
-        int cap=coupon.getMaxDiscountAmount()==null || coupon.getMaxDiscountAmount()<=0?totalAmount:coupon.getMaxDiscountAmount();
-        return (int)Math.min(cap,(long)totalAmount*(100-coupon.getDiscountValue())/100);
+        int cap =
+                coupon.getMaxDiscountAmount() == null || coupon.getMaxDiscountAmount() <= 0
+                        ? totalAmount
+                        : coupon.getMaxDiscountAmount();
+        return (int) Math.min(cap, (long) totalAmount * (100 - coupon.getDiscountValue()) / 100);
     }
 
     @Override
-    public String getRule( Coupon coupon) {
+    public String getRule(Coupon coupon) {
         return StringUtils.format(
                 RULE_TEMPLATE,
                 NumberUtils.scaleToStr(coupon.getThresholdAmount(), 2),
                 NumberUtils.scaleToStr(coupon.getDiscountValue(), 1),
-                NumberUtils.scaleToStr(coupon.getMaxDiscountAmount(), 2)
-        );
+                NumberUtils.scaleToStr(coupon.getMaxDiscountAmount(), 2));
     }
 }

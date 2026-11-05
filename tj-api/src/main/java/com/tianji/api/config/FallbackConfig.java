@@ -11,17 +11,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class FallbackConfig {
     @Bean
-    public LearningClientFallback learningClientFallback(){
+    public LearningClientFallback learningClientFallback() {
         return new LearningClientFallback();
     }
 
     @Bean
-    public TradeClientFallback tradeClientFallback(){
+    public TradeClientFallback tradeClientFallback() {
         return new TradeClientFallback();
     }
 
     @Bean
-    public UserClientFallback userClientFallback(){
+    public UserClientFallback userClientFallback() {
         return new UserClientFallback();
     }
 

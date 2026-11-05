@@ -36,92 +36,93 @@ import java.util.List;
 @Validated
 public class CourseController {
 
-    @Autowired
-    private ICourseDraftService courseDraftService;
+    @Autowired private ICourseDraftService courseDraftService;
 
-    @Autowired
-    private ICourseCatalogueDraftService courseCatalogueDraftService;
+    @Autowired private ICourseCatalogueDraftService courseCatalogueDraftService;
 
-    @Autowired
-    private ICourseTeacherDraftService courseTeacherDraftService;
+    @Autowired private ICourseTeacherDraftService courseTeacherDraftService;
 
-    @Autowired
-    private ICourseService courseService;
+    @Autowired private ICourseService courseService;
 
-    @Autowired
-    private ICourseCatalogueService courseCatalogueService;
+    @Autowired private ICourseCatalogueService courseCatalogueService;
 
-    //todo 二期做
-//    @GetMapping("statistics")
-//    @Operation(summary = "课程数据统计")
+    // todo 二期做
+    //    @GetMapping("statistics")
+    //    @Operation(summary = "课程数据统计")
     public CourseStatisticsVO statistics() {
         return null;
     }
 
     @GetMapping("baseInfo/{id}")
     @Operation(summary = "获取课程基础信息")
-    @Parameters({@Parameter(name = "id", description = "课程id"),
-            @Parameter(name = "see", description = "是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用")})
-    public CourseBaseInfoVO baseInfo(@PathVariable("id") Long id,
-                                     @RequestParam(value = "see", required = false, defaultValue = "1") Boolean see) {
+    @Parameters({
+        @Parameter(name = "id", description = "课程id"),
+        @Parameter(name = "see", description = "是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用")
+    })
+    public CourseBaseInfoVO baseInfo(
+            @PathVariable("id") Long id,
+            @RequestParam(value = "see", required = false, defaultValue = "1") Boolean see) {
         return courseDraftService.getCourseBaseInfo(id, see);
     }
 
     @PostMapping("baseInfo/save")
     @Operation(summary = "保存课程基本信息")
     @ParamChecker
-    //校验非业务限制的字段
-    public CourseSaveVO save(@RequestBody @Validated(CourseSaveBaseGroup.class) CourseBaseInfoSaveDTO courseBaseInfoSaveDTO) {
+    // 校验非业务限制的字段
+    public CourseSaveVO save(
+            @RequestBody @Validated(CourseSaveBaseGroup.class)
+                    CourseBaseInfoSaveDTO courseBaseInfoSaveDTO) {
         return courseDraftService.save(courseBaseInfoSaveDTO);
     }
 
     @GetMapping("catas/{id}")
     @Operation(summary = "获取课程的章节")
     @Parameters({
-            @Parameter(name = "id", description = "课程id"),
-            @Parameter(name = "see", description = "是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用")
+        @Parameter(name = "id", description = "课程id"),
+        @Parameter(name = "see", description = "是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用")
     })
-    public List<CataVO> catas(@PathVariable(value = "id", required = false) Long id,
-                              @RequestParam(value = "see", required = false, defaultValue = "1") Boolean see,
-                              @RequestParam(value = "withPractice", required = false, defaultValue = "1") Boolean withPractice) {
+    public List<CataVO> catas(
+            @PathVariable(value = "id", required = false) Long id,
+            @RequestParam(value = "see", required = false, defaultValue = "1") Boolean see,
+            @RequestParam(value = "withPractice", required = false, defaultValue = "1")
+                    Boolean withPractice) {
         return courseCatalogueDraftService.queryCourseCatalogues(id, see, withPractice);
     }
 
     @PostMapping("catas/save/{id}/{step}")
     @Operation(summary = "保存章节")
     @Parameters({
-            @Parameter(name = "id", description = "课程id"),
-            @Parameter(name = "step", description = "步骤")
+        @Parameter(name = "id", description = "课程id"),
+        @Parameter(name = "step", description = "步骤")
     })
     @ParamChecker
-    public void catasSave(@RequestBody @Validated List<CataSaveDTO> cataSaveDTOS,
-                          @PathVariable("id") Long id, @PathVariable(value = "step",required = false) Integer step) {
+    public void catasSave(
+            @RequestBody @Validated List<CataSaveDTO> cataSaveDTOS,
+            @PathVariable("id") Long id,
+            @PathVariable(value = "step", required = false) Integer step) {
         courseCatalogueDraftService.save(id, cataSaveDTOS, step);
     }
 
     @PostMapping("media/save/{id}")
     @Operation(summary = "课程视频")
-    @Parameters({
-            @Parameter(name = "id", description = "课程id")
-    })
-    public void mediaSave(@PathVariable("id") Long id, @RequestBody @Valid List<CourseMediaDTO> courseMediaDTOS) {
+    @Parameters({@Parameter(name = "id", description = "课程id")})
+    public void mediaSave(
+            @PathVariable("id") Long id, @RequestBody @Valid List<CourseMediaDTO> courseMediaDTOS) {
         courseCatalogueDraftService.saveMediaInfo(id, courseMediaDTOS);
     }
 
     @PostMapping("subjects/save/{id}")
     @Operation(summary = "保存小节或练习中的题目")
-    @Parameters({
-            @Parameter(name = "id", description = "课程id")
-    })
-    public void saveSuject(@PathVariable("id") Long id, @RequestBody @Validated List<CataSubjectDTO> cataSubjectDTO) {
+    @Parameters({@Parameter(name = "id", description = "课程id")})
+    public void saveSuject(
+            @PathVariable("id") Long id,
+            @RequestBody @Validated List<CataSubjectDTO> cataSubjectDTO) {
         courseCatalogueDraftService.saveSuject(id, cataSubjectDTO);
     }
 
     @GetMapping("subjects/get/{id}")
     @Operation(summary = "获取小节或练习中的题目（用于编辑）")
-    @Parameters({
-            @Parameter(name = "id", description = "课程id")
-    })
+    @Parameters({@Parameter(name = "id", description = "课程id")})
     public List<CataSimpleSubjectVO> getSuject(@PathVariable("id") Long id) {
         return courseCatalogueDraftService.getSuject(id);
     }
@@ -129,11 +130,12 @@ public class CourseController {
     @GetMapping("teachers/{id}")
     @Operation(summary = "查询课程相关的老师信息")
     @Parameters({
-            @Parameter(name = "id", description = "课程id"),
-            @Parameter(name = "see", description = "是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用")
+        @Parameter(name = "id", description = "课程id"),
+        @Parameter(name = "see", description = "是否是用于查看页面查看数据，默认是查看,如果不是界面查看数据就是编辑页面使用")
     })
-    public List<CourseTeacherVO> teacher(@PathVariable("id") Long id,
-                                         @RequestParam(value = "see", required = false, defaultValue = "1") Boolean see) {
+    public List<CourseTeacherVO> teacher(
+            @PathVariable("id") Long id,
+            @RequestParam(value = "see", required = false, defaultValue = "1") Boolean see) {
         return courseTeacherDraftService.queryTeacherOfCourse(id, see);
     }
 
@@ -143,7 +145,6 @@ public class CourseController {
         courseTeacherDraftService.save(courseTeacherSaveDTO);
     }
 
-
     @PostMapping("upShelf")
     @Operation(summary = "课程上架")
     public void upShelf(@RequestBody @Validated CourseIdDTO courseIdDTO) {
@@ -152,7 +153,7 @@ public class CourseController {
 
     @GetMapping("checkBeforeUpShelf/{id}")
     @Operation(summary = "课程上架前校验")
-    public void checkBeforeUpShelf(@PathVariable("id") Long id){
+    public void checkBeforeUpShelf(@PathVariable("id") Long id) {
         courseDraftService.checkBeforeUpShelf(id);
     }
 
@@ -169,24 +170,21 @@ public class CourseController {
      */
     @DeleteMapping("delete/{id}")
     @Operation(summary = "课程删除")
-    @Parameters({
-            @Parameter(name = "id", description = "id")
-    })
+    @Parameters({@Parameter(name = "id", description = "id")})
     public void deleteById(@PathVariable("id") Long id) {
         courseService.delete(id);
     }
 
     @Operation(summary = "根根条件列表获取课程信息")
     @GetMapping("/simpleInfo/list")
-    public List<CourseSimpleInfoDTO> getSimpleInfoList(CourseSimpleInfoListDTO courseSimpleInfoListDTO) {
+    public List<CourseSimpleInfoDTO> getSimpleInfoList(
+            CourseSimpleInfoListDTO courseSimpleInfoListDTO) {
         return courseService.getSimpleInfoList(courseSimpleInfoListDTO);
     }
 
     @Operation(summary = "根据课程id，查询所有章节的序号")
     @GetMapping("/catas/index/list/{id}")
-    @Parameters(
-            @Parameter(name = "id", description = "课程id")
-    )
+    @Parameters(@Parameter(name = "id", description = "课程id"))
     public List<CataSimpleInfoVO> catasIndexList(@PathVariable("id") Long id) {
         return courseCatalogueService.getCatasIndexList(id);
     }
@@ -200,12 +198,12 @@ public class CourseController {
     @Operation(summary = "管理端课程搜索接口")
     @GetMapping("/page")
     public PageDTO<CoursePageVO> queryForPage(CoursePageQuery coursePageQuery) {
-        if(CourseStatus.NO_UP_SHELF.equals(coursePageQuery.getStatus()) ||
-        CourseStatus.DOWN_SHELF.equals(coursePageQuery.getStatus())){
-            //待上架已下架查询草稿
+        if (CourseStatus.NO_UP_SHELF.equals(coursePageQuery.getStatus())
+                || CourseStatus.DOWN_SHELF.equals(coursePageQuery.getStatus())) {
+            // 待上架已下架查询草稿
             return courseDraftService.queryForPage(coursePageQuery);
-        }else {
-            //已上架已完结查询正式数据
+        } else {
+            // 已上架已完结查询正式数据
             return courseService.queryForPage(coursePageQuery);
         }
     }
@@ -213,17 +211,18 @@ public class CourseController {
     @Operation(summary = "校验课程名称是否已经存在")
     @GetMapping("/checkName")
     @Parameters({
-            @Parameter(name = "id", description = "id"),
-            @Parameter(name = "name", description = "课程名称")
+        @Parameter(name = "id", description = "id"),
+        @Parameter(name = "name", description = "课程名称")
     })
-    public NameExistVO checkNameExist(@RequestParam(value = "id",required = false) Long id,
-                                      @RequestParam(value = "name") String name){
+    public NameExistVO checkNameExist(
+            @RequestParam(value = "id", required = false) Long id,
+            @RequestParam(value = "name") String name) {
         return courseService.checkName(name, id);
     }
 
     @Operation(summary = "查询课程基本信息、目录、学习进度")
     @GetMapping("/{id}/catalogs")
-    public CourseAndSectionVO queryCourseAndCatalogById(@PathVariable("id") Long courseId){
+    public CourseAndSectionVO queryCourseAndCatalogById(@PathVariable("id") Long courseId) {
         return courseService.queryCourseAndCatalogById(courseId);
     }
 }

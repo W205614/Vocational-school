@@ -20,16 +20,16 @@ public class EnumValidator implements ConstraintValidator<EnumValid, BaseEnum> {
     @Override
     public void initialize(EnumValid enumValid) {
         this.enums = enumValid.enumeration();
-        log.info("payload>>{}",ArrayUtils.toString(enumValid.payload()));
+        log.info("payload>>{}", ArrayUtils.toString(enumValid.payload()));
     }
 
     @Override
     public boolean isValid(BaseEnum em, ConstraintValidatorContext context) {
         // 不做空校验
-        if(em == null){
+        if (em == null) {
             return true;
         }
-        //没有配置枚举值不校验
+        // 没有配置枚举值不校验
         if (ArrayUtils.isEmpty(enums)) {
             return true;
         }

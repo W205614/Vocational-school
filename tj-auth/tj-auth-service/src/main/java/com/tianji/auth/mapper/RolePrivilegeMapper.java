@@ -11,6 +11,4 @@ import com.tianji.auth.domain.po.RolePrivilege;
  * @author 虎哥
  * @since 2022-06-16
  */
-public interface RolePrivilegeMapper extends BaseMapper<RolePrivilege> {
-
-}
+public interface RolePrivilegeMapper extends BaseMapper<RolePrivilege> {}

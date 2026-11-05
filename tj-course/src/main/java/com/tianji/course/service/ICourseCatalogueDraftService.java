@@ -100,5 +100,4 @@ public interface ICourseCatalogueDraftService extends IService<CourseCatalogueDr
      * @return
      */
     List<Long> queryCataIdsOfCourse(Long courseId, List<Integer> types);
-
 }

@@ -17,7 +17,8 @@ public interface CourseClient {
      * @return 老师id和老师对应的出题数和教课数
      */
     @GetMapping("/internal/v1/course/infoByTeacherIds")
-    List<SubNumAndCourseNumDTO> infoByTeacherIds(@RequestParam("teacherIds") Iterable<Long> teacherIds);
+    List<SubNumAndCourseNumDTO> infoByTeacherIds(
+            @RequestParam("teacherIds") Iterable<Long> teacherIds);
 
     /**
      * 根据小节id获取小节对应的mediaId和课程id
@@ -63,6 +64,5 @@ public interface CourseClient {
     CourseFullInfoDTO getCourseInfoById(
             @PathVariable("id") Long id,
             @RequestParam(value = "withCatalogue", required = false) boolean withCatalogue,
-            @RequestParam(value = "withTeachers", required = false) boolean withTeachers
-    );
+            @RequestParam(value = "withTeachers", required = false) boolean withTeachers);
 }

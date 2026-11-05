@@ -11,5 +11,4 @@ import com.tianji.user.domain.po.User;
  * @author 虎哥
  * @since 2022-06-28
  */
-public interface UserMapper extends BaseMapper<User> {
-}
+public interface UserMapper extends BaseMapper<User> {}

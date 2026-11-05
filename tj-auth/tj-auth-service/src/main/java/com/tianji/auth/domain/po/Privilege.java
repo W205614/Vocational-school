@@ -31,8 +31,7 @@ public class Privilege implements Serializable {
     /**
      * 主键
      */
-    @TableId
-    private Long id;
+    @TableId private Long id;
 
     /**
      * 菜单id
@@ -72,13 +71,11 @@ public class Privilege implements Serializable {
     /**
      * 创建者id
      */
-
     private Long creater;
 
     /**
      * 更新者id
      */
-
     private Long updater;
 
     /**
@@ -91,8 +88,7 @@ public class Privilege implements Serializable {
      */
     private Integer deleted;
 
-    public Privilege() {
-    }
+    public Privilege() {}
 
     public Privilege(PrivilegeDTO dto) {
         this.id = dto.getId();
@@ -103,7 +99,7 @@ public class Privilege implements Serializable {
         this.internal = dto.getInternal();
     }
 
-    public PrivilegeDTO toDTO(){
+    public PrivilegeDTO toDTO() {
         PrivilegeDTO dto = new PrivilegeDTO();
         dto.setId(id);
         dto.setMenuId(menuId);

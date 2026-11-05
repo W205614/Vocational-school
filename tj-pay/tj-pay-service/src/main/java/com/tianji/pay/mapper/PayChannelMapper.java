@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2022-08-26
  */
-public interface PayChannelMapper extends BaseMapper<PayChannel> {
-
-}
+public interface PayChannelMapper extends BaseMapper<PayChannel> {}

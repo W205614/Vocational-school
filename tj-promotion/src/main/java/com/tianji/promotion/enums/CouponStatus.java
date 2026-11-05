@@ -15,9 +15,7 @@ public enum CouponStatus implements BaseEnum {
     ISSUING(3, "发放中"),
     FINISHED(4, "发放结束"),
     PAUSE(5, "暂停");
-    @JsonValue
-    @EnumValue
-    private final int value;
+    @JsonValue @EnumValue private final int value;
     private final String desc;
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

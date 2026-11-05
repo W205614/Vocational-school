@@ -25,17 +25,17 @@ import java.util.stream.Collectors;
  * @since 2022-07-21
  */
 @Service
-public class InterestsServiceImpl extends ServiceImpl<InterestsMapper, Interests> implements IInterestsService {
+public class InterestsServiceImpl extends ServiceImpl<InterestsMapper, Interests>
+        implements IInterestsService {
 
-    @Autowired
-    private CategoryCache categoryCache;
+    @Autowired private CategoryCache categoryCache;
 
     @Override
     public void saveInterests(List<Long> interestedIds) {
         // 1.获取当前用户
         Long userId = UserContext.getUser();
         String ids = CollUtils.joinIgnoreNull(interestedIds, ",");
-        if(StringUtils.isBlank(ids)){
+        if (StringUtils.isBlank(ids)) {
             // 说明没有兴趣爱好，直接删除
             removeById(userId);
             return;

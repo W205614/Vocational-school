@@ -10,8 +10,10 @@ import java.util.Map;
 public class SmsInfoDTO {
     @Schema(description = "模板代号")
     private String templateCode;
+
     @Schema(description = "手机号码")
     private Iterable<String> phones;
+
     @Schema(description = "模板参数")
     private Map<String, String> templateParams;
 }

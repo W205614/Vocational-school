@@ -24,19 +24,31 @@ import java.util.stream.Collectors;
 public class NotifyController {
 
     private final INotifyService notifyService;
+
     /**
      * 支付宝支付的回调接口
      * @param httpRequest 回调参数
      * @return 处理结果
      */
     @PostMapping(PayConstants.ALI_CHANNEL_CODE)
-    public ResponseEntity<String> handleAliPayNotify(HttpServletRequest httpRequest){
+    public ResponseEntity<String> handleAliPayNotify(HttpServletRequest httpRequest) {
         // 1.处理请求参数为一个Map
         Map<String, String[]> parameterMap = httpRequest.getParameterMap();
-        if(parameterMap.size()>64 || parameterMap.entrySet().stream().anyMatch(entry->entry.getKey().length()>128 || entry.getValue()==null || entry.getValue().length!=1 || entry.getValue()[0].length()>8192))
+        if (parameterMap.size() > 64
+                || parameterMap.entrySet().stream()
+                        .anyMatch(
+                                entry ->
+                                        entry.getKey().length() > 128
+                                                || entry.getValue() == null
+                                                || entry.getValue().length != 1
+                                                || entry.getValue()[0].length() > 8192))
             throw new com.tianji.common.exceptions.BadRequestException("支付通知参数无效");
-        Map<String, String> request = parameterMap.entrySet().stream().collect(
-                Collectors.toMap(Map.Entry::getKey, e -> StringUtils.join(",", e.getValue())));
+        Map<String, String> request =
+                parameterMap.entrySet().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        e -> StringUtils.join(",", e.getValue())));
         // 2.处理通知
         notifyService.handleAliPayNotify(request);
         return ResponseEntity.ok("success");
@@ -47,14 +59,15 @@ public class NotifyController {
      * @return 处理结果
      */
     @PostMapping(PayConstants.WX_CHANNEL_CODE)
-    public ResponseEntity<Object> handleWxPayNotify(HttpEntity<String> httpEntity){
+    public ResponseEntity<Object> handleWxPayNotify(HttpEntity<String> httpEntity) {
         try {
             // 1.将请求信息写入 NotificationRequest
             NotificationRequest request = transformHttpEntityToNotificationRequest(httpEntity);
             // 2.处理通知
             notifyService.handleWxPayNotify(request);
-        } catch (Exception e){
-            return ResponseEntity.status(500).body(Map.of("code", "FAIL", "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("code", "FAIL", "message", e.getMessage()));
         }
         // 3.返回成功
         return ResponseEntity.ok().build();
@@ -65,21 +78,22 @@ public class NotifyController {
      * @return 处理结果
      */
     @PostMapping("/refund/" + PayConstants.WX_CHANNEL_CODE)
-    public ResponseEntity<Object> handleWxPayRefundNotify(HttpEntity<String> httpEntity){
+    public ResponseEntity<Object> handleWxPayRefundNotify(HttpEntity<String> httpEntity) {
         try {
             // 1.将请求信息写入 NotificationRequest
             NotificationRequest request = transformHttpEntityToNotificationRequest(httpEntity);
             // 2.处理通知
             notifyService.handleWxPayRefundNotify(request);
-        } catch (Exception e){
-            return ResponseEntity.status(500).body(Map.of("code", "FAIL", "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("code", "FAIL", "message", e.getMessage()));
         }
         // 3.返回成功
         return ResponseEntity.ok().build();
     }
 
-
-    private NotificationRequest transformHttpEntityToNotificationRequest(HttpEntity<String> httpEntity) {
+    private NotificationRequest transformHttpEntityToNotificationRequest(
+            HttpEntity<String> httpEntity) {
         HttpHeaders headers = httpEntity.getHeaders();
         // 1.构建通知请求信息
         return new NotificationRequest.Builder()
@@ -90,5 +104,4 @@ public class NotifyController {
                 .withBody(httpEntity.getBody())
                 .build();
     }
-
 }

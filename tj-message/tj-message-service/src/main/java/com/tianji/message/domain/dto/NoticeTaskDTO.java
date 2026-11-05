@@ -22,21 +22,30 @@ public class NoticeTaskDTO extends BaseDTO {
 
     @Schema(description = "任务id，新增时无需填写")
     private Long id;
+
     @Schema(description = "任务要发送的通知模板id")
     private Long templateId;
+
     @Schema(description = "任务名称")
     private String name;
+
     @Schema(description = "true-通知指定用户;false-全员公告。默认false")
     private Boolean partial;
+
     private java.util.List<Long> userIds;
+
     @Schema(description = "任务预期执行时间")
     private LocalDateTime pushTime;
+
     @Schema(description = "任务重复执行次数上限，0则不重复")
     private Integer maxTimes;
+
     @Schema(description = "任务重复执行时间间隔，单位是分钟")
     private Long interval;
+
     @Schema(description = "任务失效时间")
     private LocalDateTime expireTime;
+
     @Schema(description = "任务是否已经完成。默认false")
     private Boolean finished;
 }

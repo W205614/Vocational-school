@@ -15,8 +15,6 @@ import java.util.stream.Collectors;
  **/
 public class ArrayUtils extends ArrayUtil {
 
-
-
     /**
      * 将源数组转换成指定类型的列表
      *
@@ -27,8 +25,7 @@ public class ArrayUtils extends ArrayUtil {
      * @return 目标类型的集合
      */
     public static <R, T> List<T> convert(R[] originList, Class<T> targetClazz) {
-       return convert(originList, targetClazz, null);
-
+        return convert(originList, targetClazz, null);
     }
 
     /**
@@ -41,7 +38,8 @@ public class ArrayUtils extends ArrayUtil {
      * @param <T>         目标列表元素的类型
      * @return 目标类型的集合
      */
-    public static <R, T> List<T> convert(R[] originList, Class<T> targetClazz, Convert<R, T> convert) {
+    public static <R, T> List<T> convert(
+            R[] originList, Class<T> targetClazz, Convert<R, T> convert) {
         if (isEmpty(originList)) {
             return null;
         }
@@ -49,6 +47,5 @@ public class ArrayUtils extends ArrayUtil {
         return Arrays.stream(originList)
                 .map(origin -> BeanUtils.copyBean(origin, targetClazz, convert))
                 .collect(Collectors.toList());
-
     }
 }

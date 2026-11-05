@@ -68,10 +68,12 @@ public class Media implements Serializable {
      * 状态：1-上传中，2-已上传
      */
     private FileStatus status;
+
     /**
      * 媒资大小，单位字节
      */
     private Long size;
+
     /**
      * 创建时间
      */
@@ -85,13 +87,11 @@ public class Media implements Serializable {
     /**
      * 创建者
      */
-
     private Long creater;
 
     /**
      * 更新者
      */
-
     private Long updater;
 
     /**

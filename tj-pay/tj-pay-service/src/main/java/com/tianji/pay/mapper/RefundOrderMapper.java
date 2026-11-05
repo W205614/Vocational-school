@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2022-08-26
  */
-public interface RefundOrderMapper extends BaseMapper<RefundOrder> {
-
-}
+public interface RefundOrderMapper extends BaseMapper<RefundOrder> {}

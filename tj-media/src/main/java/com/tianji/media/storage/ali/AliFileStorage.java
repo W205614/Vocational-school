@@ -37,7 +37,8 @@ public class AliFileStorage implements IFileStorage {
             ObjectMetadata objectMeta = new ObjectMetadata();
             objectMeta.setContentLength(contentLength);
             // 3.请求参数
-            PutObjectRequest request = new PutObjectRequest(bucketName, key, inputStream, objectMeta);
+            PutObjectRequest request =
+                    new PutObjectRequest(bucketName, key, inputStream, objectMeta);
             // 4.上传
             PutObjectResult result = ossClient.putObject(request);
             ResponseMessage response = result.getResponse();
@@ -83,11 +84,11 @@ public class AliFileStorage implements IFileStorage {
     @Override
     public void deleteFiles(List<String> keys) {
         // 1.数据校验
-        if(CollUtils.isEmpty(keys)){
+        if (CollUtils.isEmpty(keys)) {
             return;
         }
         AssertUtils.isNotBlank(bucketName, BUCKET_NAME_IS_NULL);
-        if(keys.size() > 1000){
+        if (keys.size() > 1000) {
             throw new BadRequestException(FILE_KEY_TOO_MANY);
         }
         // 2.准备request

@@ -132,8 +132,10 @@ public class UserDetail implements Serializable {
 
     @TableField(exist = false)
     private String cellPhone;
+
     @TableField(exist = false)
     private String username;
+
     @TableField(exist = false)
     private Integer status;
 }

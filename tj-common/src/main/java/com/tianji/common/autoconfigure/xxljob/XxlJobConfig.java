@@ -11,7 +11,10 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 @ConditionalOnClass(XxlJobSpringExecutor.class)
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.xxljob.enabled",havingValue="true",matchIfMissing=true)
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "tj.xxljob.enabled",
+        havingValue = "true",
+        matchIfMissing = true)
 @EnableConfigurationProperties(XxlJobProperties.class)
 public class XxlJobConfig {
 
@@ -27,10 +30,8 @@ public class XxlJobConfig {
         if (executor != null) {
             if (executor.getAppName() != null)
                 xxlJobSpringExecutor.setAppname(executor.getAppName());
-            if (executor.getIp() != null)
-                xxlJobSpringExecutor.setIp(executor.getIp());
-            if (executor.getPort() != null)
-                xxlJobSpringExecutor.setPort(executor.getPort());
+            if (executor.getIp() != null) xxlJobSpringExecutor.setIp(executor.getIp());
+            if (executor.getPort() != null) xxlJobSpringExecutor.setPort(executor.getPort());
             if (executor.getLogPath() != null)
                 xxlJobSpringExecutor.setLogPath(executor.getLogPath());
             if (executor.getLogRetentionDays() != null)

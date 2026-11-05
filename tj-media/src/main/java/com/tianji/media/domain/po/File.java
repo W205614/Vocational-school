@@ -55,10 +55,12 @@ public class File implements Serializable {
      * 状态：1-待上传 2-已上传,未使用 3-已使用
      */
     private FileStatus status;
+
     /**
      * 状态：1-腾讯 2-阿里
      */
     private Platform platform;
+
     /**
      * 创建时间
      */
@@ -72,13 +74,11 @@ public class File implements Serializable {
     /**
      * 创建者
      */
-
     private Long creater;
 
     /**
      * 更新者
      */
-
     private Long updater;
 
     /**

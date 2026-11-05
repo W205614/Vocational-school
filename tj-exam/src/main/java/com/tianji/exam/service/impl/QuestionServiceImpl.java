@@ -43,7 +43,8 @@ import static com.tianji.exam.constants.ExamErrorInfo.QUESTION_NOT_EXISTS;
  */
 @Service
 @RequiredArgsConstructor
-public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> implements IQuestionService {
+public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question>
+        implements IQuestionService {
 
     private final IQuestionDetailService detailService;
     private final IQuestionBizService bizService;
@@ -65,11 +66,12 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         save(question);
 
         // 2.保存详情
-        QuestionDetail detail = new QuestionDetail()
-                .setId(question.getId())
-                .setAnalysis(questionDTO.getAnalysis())
-                .setAnswer(questionDTO.getAnswer())
-                .setOptions(questionDTO.getOptions());
+        QuestionDetail detail =
+                new QuestionDetail()
+                        .setId(question.getId())
+                        .setAnalysis(questionDTO.getAnalysis())
+                        .setAnswer(questionDTO.getAnswer())
+                        .setOptions(questionDTO.getOptions());
         detailService.save(detail);
     }
 
@@ -86,11 +88,12 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         updateById(question);
 
         // 2.保存详情
-        QuestionDetail detail = new QuestionDetail()
-                .setId(question.getId())
-                .setAnalysis(questionDTO.getAnalysis())
-                .setAnswer(questionDTO.getAnswer())
-                .setOptions(questionDTO.getOptions());
+        QuestionDetail detail =
+                new QuestionDetail()
+                        .setId(question.getId())
+                        .setAnalysis(questionDTO.getAnalysis())
+                        .setAnswer(questionDTO.getAnswer())
+                        .setOptions(questionDTO.getOptions());
         detailService.updateById(detail);
     }
 
@@ -110,13 +113,26 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Override
     public PageDTO<QuestionPageVO> queryQuestionByPage(QuestionPageQuery query) {
         // 1.分页搜索
-        Page<Question> page = lambdaQuery()
-                .eq(query.getDifficulty() != null, Question::getDifficulty, query.getDifficulty())
-                .eq(query.getCreater() != null, Question::getCreater, query.getCreater())
-                .in(CollUtils.isNotEmpty(query.getTypes()), Question::getType, query.getTypes())
-                .in(CollUtils.isNotEmpty(query.getCateIds()), Question::getCateId3, query.getCateIds())
-                .like(StringUtils.isNotBlank(query.getKeyword()), Question::getName, query.getKeyword())
-                .page(query.toMpPage(Constant.DATA_FIELD_NAME_UPDATE_TIME, false));
+        Page<Question> page =
+                lambdaQuery()
+                        .eq(
+                                query.getDifficulty() != null,
+                                Question::getDifficulty,
+                                query.getDifficulty())
+                        .eq(query.getCreater() != null, Question::getCreater, query.getCreater())
+                        .in(
+                                CollUtils.isNotEmpty(query.getTypes()),
+                                Question::getType,
+                                query.getTypes())
+                        .in(
+                                CollUtils.isNotEmpty(query.getCateIds()),
+                                Question::getCateId3,
+                                query.getCateIds())
+                        .like(
+                                StringUtils.isNotBlank(query.getKeyword()),
+                                Question::getName,
+                                query.getKeyword())
+                        .page(query.toMpPage(Constant.DATA_FIELD_NAME_UPDATE_TIME, false));
         // 2.判空
         List<Question> records = page.getRecords();
         if (CollUtils.isEmpty(records)) {
@@ -147,7 +163,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             UserDTO u = userMap.get(r.getUpdater());
             v.setUpdater(u == null ? "" : u.getName());
             // 4.3.分类
-            v.setCategories(categoryCache.getCategoryNameList(List.of(r.getCateId1(), r.getCateId2(), r.getCateId3())));
+            v.setCategories(
+                    categoryCache.getCategoryNameList(
+                            List.of(r.getCateId1(), r.getCateId2(), r.getCateId3())));
             // 4.4.引用次数
             v.setUseTimes(countMap.getOrDefault(r.getId(), 0));
         }
@@ -177,7 +195,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         // 4.2.用户
         v.setUpdater(u == null ? "" : u.getName());
         // 4.3.分类
-        v.setCategories(categoryCache.getCategoryNameList(List.of(q.getCateId1(), q.getCateId2(), q.getCateId3())));
+        v.setCategories(
+                categoryCache.getCategoryNameList(
+                        List.of(q.getCateId1(), q.getCateId2(), q.getCateId3())));
         // 4.4.引用次数
         v.setUseTimes(bizService.countUsedTimes(id));
         return v;
@@ -196,7 +216,8 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         if (details == null || questions.size() != details.size()) {
             throw new BadRequestException(QUESTION_NOT_EXISTS);
         }
-        Map<Long, QuestionDetail> detailMap = details.stream().collect(Collectors.toMap(QuestionDetail::getId, d -> d));
+        Map<Long, QuestionDetail> detailMap =
+                details.stream().collect(Collectors.toMap(QuestionDetail::getId, d -> d));
 
         // 3.数据转换
         List<QuestionDTO> list = new ArrayList<>(questions.size());
@@ -224,9 +245,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     @Override
     public List<QuestionDTO> queryQuestionByBizId(Long bizId) {
         // 1.查询中间表
-        List<QuestionBiz> list = bizService.lambdaQuery()
-                .eq(QuestionBiz::getBizId, bizId)
-                .list();
+        List<QuestionBiz> list = bizService.lambdaQuery().eq(QuestionBiz::getBizId, bizId).list();
         if (CollUtils.isEmpty(list)) {
             return CollUtils.emptyList();
         }
@@ -238,9 +257,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
     @Override
     public Boolean checkNameValid(String name) {
-        return lambdaQuery()
-                .eq(Question::getName, name)
-                .count()<=0;
+        return lambdaQuery().eq(Question::getName, name).count() <= 0;
     }
 
     @Override

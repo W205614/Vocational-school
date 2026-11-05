@@ -3,7 +3,7 @@ package com.tianji.common.exceptions;
 /**
  * 数据库异常
  **/
-public class DbException extends CommonException{
+public class DbException extends CommonException {
     public DbException(String message) {
         super(message);
     }

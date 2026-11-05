@@ -54,45 +54,54 @@ public class TencentMediaStorage implements IMediaStorage {
             "secretId=%s&currentTimeStamp=%d&expireTime=%d&random=%d";
     private static final String CONTEXT_TEMPLATE_WITH_PROCEDURE =
             "secretId=%s&currentTimeStamp=%d&expireTime=%d&random=%d&procedure=%s";
-    private static final String[] MEDIA_INFO_FILTERS = new String[]{"basicInfo", "metaData"};
+    private static final String[] MEDIA_INFO_FILTERS = new String[] {"basicInfo", "metaData"};
+
     @Override
     public String getUploadSignature() {
         // 1.获取加密工具
-        HMac mac = new HMac(HmacAlgorithm.HmacSHA1, tencentProperties.getSecretKey().getBytes(StandardCharsets.UTF_8));
+        HMac mac =
+                new HMac(
+                        HmacAlgorithm.HmacSHA1,
+                        tencentProperties.getSecretKey().getBytes(StandardCharsets.UTF_8));
         // 2.准备加密数据
         long now = System.currentTimeMillis() / 1000;
         long endTime = now + tencentProperties.getVod().getVodValidSeconds();
         String procedure = tencentProperties.getVod().getProcedure();
         String context;
         if (StringUtils.isBlank(procedure)) {
-            context = String.format(CONTEXT_TEMPLATE,
-                    URLEncoder.encode(tencentProperties.getSecretId(), StandardCharsets.UTF_8),
-                    now,
-                    endTime,
-                    RandomUtil.randomInt(0, Integer.MAX_VALUE)
-            );
-        }else{
-            context = String.format(CONTEXT_TEMPLATE_WITH_PROCEDURE,
-                    URLEncoder.encode(tencentProperties.getSecretId(), StandardCharsets.UTF_8),
-                    now,
-                    endTime,
-                    RandomUtil.randomInt(0, Integer.MAX_VALUE),
-                    procedure
-            );
+            context =
+                    String.format(
+                            CONTEXT_TEMPLATE,
+                            URLEncoder.encode(
+                                    tencentProperties.getSecretId(), StandardCharsets.UTF_8),
+                            now,
+                            endTime,
+                            RandomUtil.randomInt(0, Integer.MAX_VALUE));
+        } else {
+            context =
+                    String.format(
+                            CONTEXT_TEMPLATE_WITH_PROCEDURE,
+                            URLEncoder.encode(
+                                    tencentProperties.getSecretId(), StandardCharsets.UTF_8),
+                            now,
+                            endTime,
+                            RandomUtil.randomInt(0, Integer.MAX_VALUE),
+                            procedure);
         }
 
         // 3.加密返回
-        byte[] bytes = ArrayUtil.addAll(mac.digest(context), context.getBytes(StandardCharsets.UTF_8));
+        byte[] bytes =
+                ArrayUtil.addAll(mac.digest(context), context.getBytes(StandardCharsets.UTF_8));
         return Base64.encode(bytes);
     }
 
     @Override
     public String getPlaySignature(String fieldId, Long userId, Integer freeExpired) {
         long currentTime = System.currentTimeMillis() / 1000;
-        long ttl=Math.max(5,Math.min(600,tencentProperties.getVod().getVodValidSeconds()));
+        long ttl = Math.max(5, Math.min(600, tencentProperties.getVod().getVodValidSeconds()));
 
         HashMap<String, Object> urlAccessInfo = new HashMap<>(2);
-       /* if (userId != null) {
+        /* if (userId != null) {
             urlAccessInfo.put("uid", String.valueOf(userId));
         }*/
         if (freeExpired != null) {
@@ -103,14 +112,15 @@ public class TencentMediaStorage implements IMediaStorage {
                 .setPayload("appId", tencentProperties.getAppId())
                 .setPayload("fileId", fieldId)
                 .setPayload("currentTimeStamp", currentTime)
-                .setPayload("expireTimeStamp", currentTime+ttl)
+                .setPayload("expireTimeStamp", currentTime + ttl)
                 .setPayload("pcfg", tencentProperties.getVod().getPfcg())
                 .setPayload("urlAccessInfo", urlAccessInfo)
                 .sign();
     }
 
     @Override
-    public MediaUploadResult uploadFile(String filename, InputStream inputStream, long contentLength) {
+    public MediaUploadResult uploadFile(
+            String filename, InputStream inputStream, long contentLength) {
         CommitUploadResponse response = null;
         try {
             // 1.申请上传
@@ -149,22 +159,29 @@ public class TencentMediaStorage implements IMediaStorage {
 
                 throw new CommonException(MEDIA_COMMIT_UPLOAD_ERROR, e);
             }
-
         }
         throw new CommonException(MEDIA_COMMIT_UPLOAD_ERROR, err);
     }
 
-    private void handleUpload(InputStream inputStream, long contentLength, ApplyUploadResponse applyUploadResponse) {
+    private void handleUpload(
+            InputStream inputStream, long contentLength, ApplyUploadResponse applyUploadResponse) {
         // 1.整理授权上传的凭证
         COSCredentials credentials = null;
         if (applyUploadResponse.getTempCertificate() != null) {
             TempCertificate certificate = applyUploadResponse.getTempCertificate();
-            credentials = new BasicSessionCredentials(certificate.getSecretId(), certificate.getSecretKey(), certificate.getToken());
+            credentials =
+                    new BasicSessionCredentials(
+                            certificate.getSecretId(),
+                            certificate.getSecretKey(),
+                            certificate.getToken());
         } else {
-            credentials = new BasicCOSCredentials(tencentProperties.getSecretId(), tencentProperties.getSecretKey());
+            credentials =
+                    new BasicCOSCredentials(
+                            tencentProperties.getSecretId(), tencentProperties.getSecretKey());
         }
         // 2.准备上传客户端
-        ClientConfig clientConfig = new ClientConfig(new Region(applyUploadResponse.getStorageRegion()));
+        ClientConfig clientConfig =
+                new ClientConfig(new Region(applyUploadResponse.getStorageRegion()));
         clientConfig.setHttpProtocol(HttpProtocol.https);
         COSClient cosClient = new COSClient(credentials, clientConfig);
         TransferManager transferManager = new TransferManager(cosClient);
@@ -172,7 +189,12 @@ public class TencentMediaStorage implements IMediaStorage {
             // 3.开始上传
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(contentLength);
-            Upload upload = transferManager.upload(applyUploadResponse.getStorageBucket(), applyUploadResponse.getMediaStoragePath(), inputStream, metadata);
+            Upload upload =
+                    transferManager.upload(
+                            applyUploadResponse.getStorageBucket(),
+                            applyUploadResponse.getMediaStoragePath(),
+                            inputStream,
+                            metadata);
             // 4.等待上传完成
             upload.waitForCompletion();
         } catch (InterruptedException e) {
@@ -225,7 +247,7 @@ public class TencentMediaStorage implements IMediaStorage {
     }
 
     @Override
-    public List<Media> queryMediaInfos(String ... fileIds) {
+    public List<Media> queryMediaInfos(String... fileIds) {
         // 1.请求参数
         DescribeMediaInfosRequest req = new DescribeMediaInfosRequest();
         req.setFileIds(fileIds);

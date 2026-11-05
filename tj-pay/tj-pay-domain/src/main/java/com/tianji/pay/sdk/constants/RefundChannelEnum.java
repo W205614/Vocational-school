@@ -29,8 +29,8 @@ public enum RefundChannelEnum {
         this.desc = desc;
     }
 
-    public static String desc(String value){
-        if(StringUtils.isBlank(value)){
+    public static String desc(String value) {
+        if (StringUtils.isBlank(value)) {
             return "";
         }
         return RefundChannelEnum.valueOf(value).getDesc();

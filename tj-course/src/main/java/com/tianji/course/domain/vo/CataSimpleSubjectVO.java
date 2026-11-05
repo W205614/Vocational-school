@@ -18,13 +18,14 @@ import java.util.List;
 public class CataSimpleSubjectVO {
     @Schema(description = "小节或练习id")
     private Long cataId;
+
     @Schema(description = "题目id")
     private List<SubjectInfo> subjects;
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class SubjectInfo{
+    public static class SubjectInfo {
         private Long id;
         private String name;
     }

@@ -21,7 +21,9 @@ import java.security.PrivateKey;
 
 @Configuration
 @EnableConfigurationProperties(WxPayProperties.class)
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.pay.wx.enabled",havingValue="true")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "tj.pay.wx.enabled",
+        havingValue = "true")
 public class WxConfiguration {
 
     /**
@@ -31,31 +33,49 @@ public class WxConfiguration {
     public CertificatesManager certificatesManager(WxPayProperties properties)
             throws HttpCodeException, GeneralSecurityException, IOException {
         // 1.加载私钥
-        PrivateKey privateKey = PemUtil.readPemPrivateKey(
-                new ByteArrayInputStream(properties.getPrivateKey().getBytes(StandardCharsets.UTF_8)));
+        PrivateKey privateKey =
+                PemUtil.readPemPrivateKey(
+                        new ByteArrayInputStream(
+                                properties.getPrivateKey().getBytes(StandardCharsets.UTF_8)));
         // 2.签名工具
-        PrivateKeySigner privateKeySigner = new PrivateKeySigner(properties.getMchSerialNo(), privateKey);
-        WechatPay2Credentials wechatPay2Credentials = new WechatPay2Credentials(properties.getMchId(), privateKeySigner);
+        PrivateKeySigner privateKeySigner =
+                new PrivateKeySigner(properties.getMchSerialNo(), privateKey);
+        WechatPay2Credentials wechatPay2Credentials =
+                new WechatPay2Credentials(properties.getMchId(), privateKeySigner);
         // 3.平台证书管理器
         CertificatesManager certificatesManager = CertificatesManager.getInstance();
         certificatesManager.putMerchant(
-                properties.getMchId(), wechatPay2Credentials, properties.getApiV3Key().getBytes(StandardCharsets.UTF_8));
+                properties.getMchId(),
+                wechatPay2Credentials,
+                properties.getApiV3Key().getBytes(StandardCharsets.UTF_8));
         return certificatesManager;
     }
 
     @Bean
-    public CloseableHttpClient closeableHttpClient(WxPayProperties properties, CertificatesManager certificatesManager)
+    public CloseableHttpClient closeableHttpClient(
+            WxPayProperties properties, CertificatesManager certificatesManager)
             throws NotFoundException {
         // 1.加载私钥
-        PrivateKey privateKey = PemUtil.readPemPrivateKey(
-                new ByteArrayInputStream(properties.getPrivateKey().getBytes(StandardCharsets.UTF_8)));
+        PrivateKey privateKey =
+                PemUtil.readPemPrivateKey(
+                        new ByteArrayInputStream(
+                                properties.getPrivateKey().getBytes(StandardCharsets.UTF_8)));
         // 2.初始化
-        WechatPayHttpClientBuilder builder = WechatPayHttpClientBuilder.create()
-                .withMerchant(properties.getMchId(), properties.getMchSerialNo(), privateKey)
-                .withValidator(new WechatPay2Validator(certificatesManager.getVerifier(properties.getMchId())))
-                ;
+        WechatPayHttpClientBuilder builder =
+                WechatPayHttpClientBuilder.create()
+                        .withMerchant(
+                                properties.getMchId(), properties.getMchSerialNo(), privateKey)
+                        .withValidator(
+                                new WechatPay2Validator(
+                                        certificatesManager.getVerifier(properties.getMchId())));
 
         // 3.构建
-        return builder.setDefaultRequestConfig(org.apache.http.client.config.RequestConfig.custom().setConnectTimeout(1500).setConnectionRequestTimeout(1500).setSocketTimeout(5000).build()).build();
+        return builder.setDefaultRequestConfig(
+                        org.apache.http.client.config.RequestConfig.custom()
+                                .setConnectTimeout(1500)
+                                .setConnectionRequestTimeout(1500)
+                                .setSocketTimeout(5000)
+                                .build())
+                .build();
     }
 }

@@ -22,32 +22,45 @@ public class CourseFullInfoDTO {
     private String introduce;
     private String detail;
     private String usePeople;
+
     @Schema(description = "课程id")
     private Long id;
+
     @Schema(description = "课程名称")
     private String name;
+
     @Schema(description = "封面链接")
     private String coverUrl;
+
     @Schema(description = "价格")
     private Integer price;
+
     @Schema(description = "一级课程分类id")
     private Long firstCateId;
+
     @Schema(description = "二级课程分类id")
     private Long secondCateId;
+
     @Schema(description = "三级课程分类id")
     private Long thirdCateId;
+
     @Schema(description = "课程总节数")
     private Integer sectionNum;
+
     @Schema(description = "课程购买有效期结束时间")
     private LocalDateTime purchaseEndTime;
+
     @Schema(description = "课程学习有效期")
     private Integer validDuration;
+
     @Schema(description = "课程章信息")
     private List<CatalogueDTO> chapters;
+
     @Schema(description = "老师列表")
     private List<Long> teacherIds;
+
     @JsonIgnore
-    public List<Long> getCategoryIds(){
+    public List<Long> getCategoryIds() {
         return List.of(firstCateId, secondCateId, thirdCateId);
     }
 }

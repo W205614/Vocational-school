@@ -31,6 +31,4 @@ public interface ICourseTeacherService extends IService<CourseTeacher> {
      * @return 教师信息
      */
     List<Long> getTeacherIdOfCourse(Long courseId);
-
-
 }

@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.spring.service.IService;
  * @author 虎哥
  * @since 2022-09-02
  */
-public interface IQuestionDetailService extends IService<QuestionDetail> {
-
-}
+public interface IQuestionDetailService extends IService<QuestionDetail> {}

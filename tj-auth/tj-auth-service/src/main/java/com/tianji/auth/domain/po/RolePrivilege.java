@@ -40,7 +40,6 @@ public class RolePrivilege implements Serializable {
      */
     private Long privilegeId;
 
-
     public RolePrivilege(Long roleId, Long privilegeId) {
         this.roleId = roleId;
         this.privilegeId = privilegeId;

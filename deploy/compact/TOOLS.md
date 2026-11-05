@@ -4,34 +4,34 @@
 
 ## 默认部署与日常维护
 
-| 工具 | 用途 |
-| --- | --- |
-| `setup.py prepare/init/build/up` | 生成本机配置、初始化全新环境、源码构建、启动 |
-| `prepare_search.py`、`rebuild_search.py` | 搜索索引准备与数据重建 |
-| `upgrade_existing.py` | 已有部署的受控增量升级 |
-| `backup.py`、`restore.py` | 完整备份与隔离恢复；只保留最新受管有效包 |
-| `backup_images.py`、`backup_retention.py` | 当前镜像离线包复用／更新、旧受管备份回收站轮换 |
-| `maintenance.py` | 自动维护与备份状态管理；详见[稳定性与运维说明](../../docs/stability-operations.md) |
-| `register_backup_task.ps1`、`scheduled_backup.ps1` | Windows 定时任务注册与调用 |
-| `recovery_smoke.py`、`recovery_upgrade.py`、`rehearse_recovery.py` | 恢复校验、恢复后升级及演练 |
-| `search_transition.py` | 受控搜索版本迁移与回退 |
-| `retire_old.py`、`retire_images.py` | 带保护与归档校验的旧环境／镜像退役 |
-| `retire_test_volumes.py` | 按明确清单及恢复证据退役可重新创建的测试卷；先生成计划，再显式应用 |
+| 工具                                                               | 用途                                                                               |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `setup.py prepare/init/build/up`                                   | 生成本机配置、初始化全新环境、源码构建、启动                                       |
+| `prepare_search.py`、`rebuild_search.py`                           | 搜索索引准备与数据重建                                                             |
+| `upgrade_existing.py`                                              | 已有部署的受控增量升级                                                             |
+| `backup.py`、`restore.py`                                          | 完整备份与隔离恢复；只保留最新受管有效包                                           |
+| `backup_images.py`、`backup_retention.py`                          | 当前镜像离线包复用／更新、旧受管备份回收站轮换                                     |
+| `maintenance.py`                                                   | 自动维护与备份状态管理；详见[稳定性与运维说明](../../docs/stability-operations.md) |
+| `register_backup_task.ps1`、`scheduled_backup.ps1`                 | Windows 定时任务注册与调用                                                         |
+| `recovery_smoke.py`、`recovery_upgrade.py`、`rehearse_recovery.py` | 恢复校验、恢复后升级及演练                                                         |
+| `search_transition.py`                                             | 受控搜索版本迁移与回退                                                             |
+| `retire_old.py`、`retire_images.py`                                | 带保护与归档校验的旧环境／镜像退役                                                 |
+| `retire_test_volumes.py`                                           | 按明确清单及恢复证据退役可重新创建的测试卷；先生成计划，再显式应用                 |
 
 ## 变更验证与交付
 
-| 工具 | 用途 |
-| --- | --- |
-| `run_backend_tests.py`、`run_core_tests.py` | 后端测试入口 |
-| `run_transport_tests.py` | 请求上下文与传输相关验证 |
-| `run_browser.py` | 浏览器验收；使用专用夹具并写入测试数据 |
-| `security_smoke.py`、`audit_smoke.py` | 安全边界与审计验证 |
-| `redis_roundtrip.py` | Redis 恢复验证 |
-| `check_policy.py`、`check_packaging.py` | 策略与打包检查 |
-| `build_provenance.py`、`release_gate.py` | 构建来源与交付证据约束 |
-| `demo_release_gate.py` | 单机演示交付门禁，核对本轮角色、迁移、历史与镜像证据，并明确容量未验收 |
-| `diagnose_ci.py` | CI 脱敏诊断 |
-| `test_*.py` | 工具自身的定向回归；按修改范围选择 |
+| 工具                                        | 用途                                                                   |
+| ------------------------------------------- | ---------------------------------------------------------------------- |
+| `run_backend_tests.py`、`run_core_tests.py` | 后端测试入口                                                           |
+| `run_transport_tests.py`                    | 请求上下文与传输相关验证                                               |
+| `run_browser.py`                            | 浏览器验收；使用专用夹具并写入测试数据                                 |
+| `security_smoke.py`、`audit_smoke.py`       | 安全边界与审计验证                                                     |
+| `redis_roundtrip.py`                        | Redis 恢复验证                                                         |
+| `check_policy.py`、`check_packaging.py`     | 策略与打包检查                                                         |
+| `build_provenance.py`、`release_gate.py`    | 构建来源与交付证据约束                                                 |
+| `demo_release_gate.py`                      | 单机演示交付门禁，核对本轮角色、迁移、历史与镜像证据，并明确容量未验收 |
+| `diagnose_ci.py`                            | CI 脱敏诊断                                                            |
+| `test_*.py`                                 | 工具自身的定向回归；按修改范围选择                                     |
 
 前端命令见 [frontend/package.json](../../frontend/package.json)。GitHub 的 `Reliability and frontend gates` 工作流分别运行后端、前端和 compact 浏览器检查，定义见[工作流文件](../../.github/workflows/reliability.yml)。本地仅验证改动直接影响的部分，最终以所推送提交的 CI 为准。
 

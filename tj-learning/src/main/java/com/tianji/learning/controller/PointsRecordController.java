@@ -1,6 +1,5 @@
 package com.tianji.learning.controller;
 
-
 import com.tianji.learning.domain.vo.PointsStatisticsVO;
 import com.tianji.learning.service.IPointsRecordService;
 import io.swagger.v3.oas.annotations.tags.Tag;

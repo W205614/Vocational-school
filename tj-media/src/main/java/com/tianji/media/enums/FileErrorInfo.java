@@ -9,11 +9,9 @@ public interface FileErrorInfo {
 
         String FILE_UPLOAD_ERROR = "上传文件失败";
 
-
         String MEDIA_APPLY_UPLOAD_ERROR = "申请上传视频失败";
         String MEDIA_UPLOAD_ERROR = "上传视频失败";
         String MEDIA_COMMIT_UPLOAD_ERROR = "确认上传视频失败";
         String MEDIA_DELETE_ERROR = "删除视频失败";
-
     }
 }

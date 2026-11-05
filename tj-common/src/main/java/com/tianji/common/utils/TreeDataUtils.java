@@ -18,7 +18,6 @@ import java.util.Map;
 @Slf4j
 public class TreeDataUtils {
 
-
     /**
      * 遍历树状数据计算目标
      * @param data
@@ -26,15 +25,18 @@ public class TreeDataUtils {
      * @param <T>
      * @return
      */
-    public static <T> Object ergodicTreeCalculate(List<T> data, CalculateDataProcessor<T> calculateDataProcessor) {
-        if(CollUtils.isEmpty(data)){
+    public static <T> Object ergodicTreeCalculate(
+            List<T> data, CalculateDataProcessor<T> calculateDataProcessor) {
+        if (CollUtils.isEmpty(data)) {
             return null;
         }
         Object result = null;
-        for (T t :data ) {
+        for (T t : data) {
             Object tData = calculateDataProcessor.getData(t);
             List<T> childData = calculateDataProcessor.getChildData(t);
-            Object currentAllData = calculateDataProcessor.calculate(tData, ergodicTreeCalculate(childData, calculateDataProcessor));
+            Object currentAllData =
+                    calculateDataProcessor.calculate(
+                            tData, ergodicTreeCalculate(childData, calculateDataProcessor));
             calculateDataProcessor.setResult(t, currentAllData);
             result = calculateDataProcessor.calculate(result, currentAllData);
         }
@@ -53,15 +55,27 @@ public class TreeDataUtils {
      * @param <T> 目标数据类型
      * @param <R> 原始数据类型
      */
-    public static <T, R> void parseTreeToList(Object parentKey, List<R> originData,
-                                              ToListDataProcessor<T, R> dataProcessor, Class<T> clazz,
-                                              Convert<R, T> convert, List<T> targetData, Filter<R> filter) {
+    public static <T, R> void parseTreeToList(
+            Object parentKey,
+            List<R> originData,
+            ToListDataProcessor<T, R> dataProcessor,
+            Class<T> clazz,
+            Convert<R, T> convert,
+            List<T> targetData,
+            Filter<R> filter) {
         if (CollUtils.isNotEmpty(originData)) {
             for (R data : originData) {
                 T target = BeanUtils.copyBean(data, clazz, convert);
                 dataProcessor.setParent(target, parentKey);
                 targetData.add(target);
-                parseTreeToList(dataProcessor.getKey(data), dataProcessor.getChildren(data), dataProcessor, clazz, convert, targetData, filter);
+                parseTreeToList(
+                        dataProcessor.getKey(data),
+                        dataProcessor.getChildren(data),
+                        dataProcessor,
+                        clazz,
+                        convert,
+                        targetData,
+                        filter);
             }
         }
     }
@@ -77,7 +91,8 @@ public class TreeDataUtils {
      * @param <R>           原始数据的类型
      * @return 目标数据类型的树状数据
      */
-    public static <T, R> List<T> parseToTree(List<R> originData, Class<T> clazz, DataProcessor<T, R> dataProcessor) {
+    public static <T, R> List<T> parseToTree(
+            List<R> originData, Class<T> clazz, DataProcessor<T, R> dataProcessor) {
         return parseToTree(originData, clazz, null, dataProcessor, new DefaultFilter());
     }
 
@@ -92,7 +107,11 @@ public class TreeDataUtils {
      * @param <R>           原始数据的类型
      * @return 目标数据类型的树状数据
      */
-    public static <T, R> List<T> parseToTree(List<R> originData, Class<T> clazz, DataProcessor<T, R> dataProcessor, Filter<R> filter) {
+    public static <T, R> List<T> parseToTree(
+            List<R> originData,
+            Class<T> clazz,
+            DataProcessor<T, R> dataProcessor,
+            Filter<R> filter) {
         return parseToTree(originData, clazz, null, dataProcessor, filter);
     }
 
@@ -107,10 +126,13 @@ public class TreeDataUtils {
      * @param <R>           原始数据的类型
      * @return 目标数据类型的树状数据
      */
-    public static <T, R> List<T> parseToTree(List<R> originData, Class<T> clazz, Convert<R,T> convert, DataProcessor<T, R> dataProcessor) {
+    public static <T, R> List<T> parseToTree(
+            List<R> originData,
+            Class<T> clazz,
+            Convert<R, T> convert,
+            DataProcessor<T, R> dataProcessor) {
         return parseToTree(originData, clazz, convert, dataProcessor, new DefaultFilter());
     }
-
 
     /**
      * 根据数据之间的父子关系将原始数据列表转化成树型数据，并将数据转化成目标类型
@@ -123,51 +145,58 @@ public class TreeDataUtils {
      * @param <R>           原始数据的类型
      * @return 目标数据类型的树状数据
      */
-    public static <T, R> List<T> parseToTree(List<R> originData, Class<T> clazz, Convert<R, T> convert, DataProcessor<T, R> dataProcessor, Filter<R> filter) {
-        //1.原始数据为空，返回一个空列表
+    public static <T, R> List<T> parseToTree(
+            List<R> originData,
+            Class<T> clazz,
+            Convert<R, T> convert,
+            DataProcessor<T, R> dataProcessor,
+            Filter<R> filter) {
+        // 1.原始数据为空，返回一个空列表
         if (CollUtils.isEmpty(originData)) {
             return new ArrayList<>();
         }
-        //2.初始化一个map用于搭建树形关系
+        // 2.初始化一个map用于搭建树形关系
         Map<Object, T> resultMap = new HashMap<>();
-        //3.遍历数据
-        originData.stream().forEach(r -> {
-            if(!filter.filter(r)){
-                return;
-            }
-            //3.1将数据转换为指定类型的数据
-            T current = BeanUtils.copyBean(r, clazz, convert);
-            //3.2给当前数据初始化一个空的子数据列表
-            dataProcessor.setChild(current, new ArrayList<>());
-            //3.3获取当前数据的唯一key
-            Object key = dataProcessor.getKey(r);
-            //3.4从resultMap中获取当前数据，主要把已经添加的数据的子数据copy出来
-            T currentInMap = resultMap.get(key);
-            if (currentInMap != null) {
-                //3.5发现当前数据在resultMap中已经保存了，将它的子列表设置到新生成的目标数据中
-                List<T> children = dataProcessor.getChild(currentInMap);
-                dataProcessor.setChild(current, children);
-            }
+        // 3.遍历数据
+        originData.stream()
+                .forEach(
+                        r -> {
+                            if (!filter.filter(r)) {
+                                return;
+                            }
+                            // 3.1将数据转换为指定类型的数据
+                            T current = BeanUtils.copyBean(r, clazz, convert);
+                            // 3.2给当前数据初始化一个空的子数据列表
+                            dataProcessor.setChild(current, new ArrayList<>());
+                            // 3.3获取当前数据的唯一key
+                            Object key = dataProcessor.getKey(r);
+                            // 3.4从resultMap中获取当前数据，主要把已经添加的数据的子数据copy出来
+                            T currentInMap = resultMap.get(key);
+                            if (currentInMap != null) {
+                                // 3.5发现当前数据在resultMap中已经保存了，将它的子列表设置到新生成的目标数据中
+                                List<T> children = dataProcessor.getChild(currentInMap);
+                                dataProcessor.setChild(current, children);
+                            }
 
-            //3.6获取当前数据的父数据key,如果父数据不存在初始化一个空
-            Object parentKey = dataProcessor.getParentKey(r);
-            T parent = resultMap.get(parentKey);
-            //3.7初始化父数据
-            if (parent == null) {
-                parent = ReflectUtils.newInstance(clazz);
-                dataProcessor.setChild(parent, new ArrayList<>());
-            }
-            //3.8将子数据添加到父数据的子列表中
-            List<T> children = dataProcessor.getChild(parent);
-            children.add(current);
-            //3.9将父数据放入resultMap中
-            resultMap.put(parentKey, parent);
-            //3.10将子数据放入resultMap中
-            resultMap.put(dataProcessor.getKey(r), current);
-        });
-        //4.将组装好的数据取出
+                            // 3.6获取当前数据的父数据key,如果父数据不存在初始化一个空
+                            Object parentKey = dataProcessor.getParentKey(r);
+                            T parent = resultMap.get(parentKey);
+                            // 3.7初始化父数据
+                            if (parent == null) {
+                                parent = ReflectUtils.newInstance(clazz);
+                                dataProcessor.setChild(parent, new ArrayList<>());
+                            }
+                            // 3.8将子数据添加到父数据的子列表中
+                            List<T> children = dataProcessor.getChild(parent);
+                            children.add(current);
+                            // 3.9将父数据放入resultMap中
+                            resultMap.put(parentKey, parent);
+                            // 3.10将子数据放入resultMap中
+                            resultMap.put(dataProcessor.getKey(r), current);
+                        });
+        // 4.将组装好的数据取出
         T t = resultMap.get(dataProcessor.getRootKey());
-        return t== null ? null : dataProcessor.getChild(t);
+        return t == null ? null : dataProcessor.getChild(t);
     }
 
     /**
@@ -215,7 +244,6 @@ public class TreeDataUtils {
          * @param child
          */
         void setChild(T parent, List<T> child);
-
     }
 
     public interface ToListDataProcessor<T, R> {
@@ -232,7 +260,7 @@ public class TreeDataUtils {
 
         List<T> getChildData(T t);
 
-        Object calculate(Object ... datas);
+        Object calculate(Object... datas);
 
         void setResult(T t, Object result);
     }
@@ -241,13 +269,11 @@ public class TreeDataUtils {
      * 过滤器
      * @param <T>
      */
-    public interface Filter<T>{
-        default boolean filter(T t){
+    public interface Filter<T> {
+        default boolean filter(T t) {
             return true;
         }
     }
 
-    public static class DefaultFilter<T> implements Filter{
-
-    }
+    public static class DefaultFilter<T> implements Filter {}
 }

@@ -11,6 +11,4 @@ import com.tianji.auth.domain.po.RoleMenu;
  * @author 虎哥
  * @since 2022-06-16
  */
-public interface RoleMenuMapper extends BaseMapper<RoleMenu> {
-
-}
+public interface RoleMenuMapper extends BaseMapper<RoleMenu> {}

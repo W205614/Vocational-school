@@ -18,6 +18,5 @@ public class UserApplication {
         SpringApplication app = new SpringApplicationBuilder(UserApplication.class).build(args);
         Environment env = app.run(args).getEnvironment();
         StartupLogger.log(env, log);
-
     }
 }

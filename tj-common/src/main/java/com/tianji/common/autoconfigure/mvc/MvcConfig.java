@@ -1,6 +1,5 @@
 package com.tianji.common.autoconfigure.mvc;
 
-
 import com.tianji.common.autoconfigure.mvc.advice.CommonExceptionAdvice;
 import com.tianji.common.autoconfigure.mvc.advice.WrapperResponseBodyAdvice;
 import com.tianji.common.autoconfigure.mvc.converter.WrapperResponseMessageConverter;
@@ -22,25 +21,24 @@ public class MvcConfig implements WebMvcConfigurer {
      * <h1>通用的ControllerAdvice异常处理器</h1>
      */
     @Bean
-    public CommonExceptionAdvice commonExceptionAdvice(){
+    public CommonExceptionAdvice commonExceptionAdvice() {
         return new CommonExceptionAdvice();
     }
 
     @Bean
-    public RequestIdFilter requestIdFilter(){
+    public RequestIdFilter requestIdFilter() {
         return new RequestIdFilter();
     }
 
     @Bean
     @ConditionalOnMissingClass("org.springframework.cloud.gateway.filter.GlobalFilter")
     public WrapperResponseMessageConverter wrapperResponseMessageConverter(
-            tools.jackson.databind.json.JsonMapper mapper
-    ){
+            tools.jackson.databind.json.JsonMapper mapper) {
         return new WrapperResponseMessageConverter(new JacksonJsonHttpMessageConverter(mapper));
     }
 
     @Bean
-    public WrapperResponseBodyAdvice wrapperResponseBodyAdvice(){
+    public WrapperResponseBodyAdvice wrapperResponseBodyAdvice() {
         return new WrapperResponseBodyAdvice();
     }
 }

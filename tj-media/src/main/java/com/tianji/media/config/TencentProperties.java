@@ -11,8 +11,9 @@ public class TencentProperties {
     private String secretKey;
     private VodProperties vod;
     private CosProperties cos;
+
     @Data
-    public static class VodProperties{
+    public static class VodProperties {
         /*是否启用腾讯VOD*/
         private boolean enable;
         /*签名有效期*/
@@ -26,8 +27,9 @@ public class TencentProperties {
         /*播放器配置*/
         private String pfcg;
     }
+
     @Data
-    public static class CosProperties{
+    public static class CosProperties {
         /*区域*/
         private String region;
         /*存储桶*/

@@ -11,6 +11,4 @@ import com.tianji.auth.domain.po.AccountRole;
  * @author 虎哥
  * @since 2022-06-16
  */
-public interface AccountRoleMapper extends BaseMapper<AccountRole> {
-
-}
+public interface AccountRoleMapper extends BaseMapper<AccountRole> {}

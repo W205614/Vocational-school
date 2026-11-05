@@ -7,8 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum RefundStatus implements BaseEnum {
-
-
     UN_APPROVE(1, "待审批", "提交退款申请"),
     CANCEL(2, "学员取消退款", "学员取消退款"),
     AGREE(3, "同意退款", "退款审批"),
@@ -20,12 +18,12 @@ public enum RefundStatus implements BaseEnum {
     private final String desc;
     private final String progressName;
 
-    public static RefundStatus of(Integer value){
-        if(value == null){
+    public static RefundStatus of(Integer value) {
+        if (value == null) {
             return null;
         }
         for (RefundStatus status : values()) {
-            if(status.equalsValue(value)){
+            if (status.equalsValue(value)) {
                 return status;
             }
         }

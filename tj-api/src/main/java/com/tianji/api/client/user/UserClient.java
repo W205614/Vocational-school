@@ -1,6 +1,5 @@
 package com.tianji.api.client.user;
 
-
 import com.tianji.api.client.user.fallback.UserClientFallback;
 import com.tianji.api.dto.user.LoginFormDTO;
 import com.tianji.api.dto.user.UserDTO;
@@ -14,6 +13,7 @@ import java.util.List;
 public interface UserClient {
     @PostMapping("/internal/v2/users/password/initial")
     void completeInitialPassword(@RequestBody com.tianji.api.dto.user.InitialPasswordDTO form);
+
     @GetMapping("/internal/v2/users/{id}/session-identity")
     LoginUserDTO sessionIdentity(@PathVariable("id") long id);
 
@@ -32,7 +32,8 @@ public interface UserClient {
      * @return 用户详情
      */
     @PostMapping("/users/detail/{isStaff}")
-    LoginUserDTO queryUserDetail(@RequestBody LoginFormDTO loginDTO, @PathVariable("isStaff") boolean isStaff);
+    LoginUserDTO queryUserDetail(
+            @RequestBody LoginFormDTO loginDTO, @PathVariable("isStaff") boolean isStaff);
 
     /**
      * 查询用户类型
@@ -49,7 +50,6 @@ public interface UserClient {
      */
     @GetMapping("/users/list")
     List<UserDTO> queryUserByIds(@RequestParam("ids") Iterable<Long> ids);
-
 
     /**
      * 根据id查询单个学生信息

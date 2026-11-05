@@ -28,6 +28,4 @@ public class PointsBoardSeasonVO {
 
     @Schema(description = "赛季结束时间")
     private LocalDate endTime;
-
-
 }

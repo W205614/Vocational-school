@@ -18,8 +18,12 @@ import java.util.Optional;
 
 @Slf4j
 @Component
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.platform.media",havingValue="TENCENT")
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.media.vod-event-worker.enabled",havingValue="true")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "tj.platform.media",
+        havingValue = "TENCENT")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "tj.media.vod-event-worker.enabled",
+        havingValue = "true")
 @RequiredArgsConstructor
 public class PullEventTask {
 
@@ -49,8 +53,8 @@ public class PullEventTask {
                 if (PROCEDURE_EVENT.equals(eventType)) {
                     handleProcedureStateChangeEvent(ec);
                 } /*else if(UPLOAD_EVENT.equals(eventType)){
-                    handleUploadEvent(ec);
-                }*/
+                      handleUploadEvent(ec);
+                  }*/
                 ehs.add(ec.getEventHandle());
             }
             ConfirmEventsRequest confirmReq = new ConfirmEventsRequest();
@@ -58,9 +62,9 @@ public class PullEventTask {
             vodClient.ConfirmEvents(confirmReq);
             log.info("事件处理完毕");
         } catch (TencentCloudSDKException e) {
-            if(e.getMessage().equals("no event")){
+            if (e.getMessage().equals("no event")) {
                 log.debug("暂无event事件");
-            }else{
+            } else {
                 log.error("VOD事件处理异常", e);
             }
         }
@@ -91,9 +95,10 @@ public class PullEventTask {
         if (PROCEDURE_EVENT_FINISH.equals(pt.getStatus())) {
             // 3.3.2.任务流已经结束，获取视频元信息
             MediaMetaData md = pt.getMetaData();
-            Optional<MediaProcessTaskResult> optional = Arrays.stream(pt.getMediaProcessResultSet())
-                    .filter(r -> "CoverBySnapshot".equals(r.getType()))
-                    .findFirst();
+            Optional<MediaProcessTaskResult> optional =
+                    Arrays.stream(pt.getMediaProcessResultSet())
+                            .filter(r -> "CoverBySnapshot".equals(r.getType()))
+                            .findFirst();
             String coverUrl = null;
             if (optional.isPresent()) {
                 coverUrl = optional.get().getCoverBySnapshotTask().getOutput().getCoverUrl();

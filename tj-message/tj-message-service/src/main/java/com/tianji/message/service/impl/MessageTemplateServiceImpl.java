@@ -24,19 +24,19 @@ import java.util.List;
  * @since 2022-08-19
  */
 @Service
-public class MessageTemplateServiceImpl extends ServiceImpl<MessageTemplateMapper, MessageTemplate> implements IMessageTemplateService {
+public class MessageTemplateServiceImpl extends ServiceImpl<MessageTemplateMapper, MessageTemplate>
+        implements IMessageTemplateService {
 
     @Override
     public List<MessageTemplate> queryByNoticeTemplateId(Long templateId) {
-        return lambdaQuery()
-                .eq(MessageTemplate::getTemplateId, templateId)
-                .list();
+        return lambdaQuery().eq(MessageTemplate::getTemplateId, templateId).list();
     }
 
     @Override
     public Long saveMessageTemplate(MessageTemplateFormDTO messageTemplateDTO) {
         // 1.数据转换
-        MessageTemplate messageTemplate = BeanUtils.copyBean(messageTemplateDTO, MessageTemplate.class);
+        MessageTemplate messageTemplate =
+                BeanUtils.copyBean(messageTemplateDTO, MessageTemplate.class);
         // 2.新增
         save(messageTemplate);
         return messageTemplate.getId();
@@ -45,7 +45,8 @@ public class MessageTemplateServiceImpl extends ServiceImpl<MessageTemplateMappe
     @Override
     public void updateMessageTemplate(MessageTemplateFormDTO messageTemplateDTO) {
         // 1.数据转换
-        MessageTemplate messageTemplate = BeanUtils.copyBean(messageTemplateDTO, MessageTemplate.class);
+        MessageTemplate messageTemplate =
+                BeanUtils.copyBean(messageTemplateDTO, MessageTemplate.class);
         // 2.新增
         updateById(messageTemplate);
     }
@@ -55,17 +56,27 @@ public class MessageTemplateServiceImpl extends ServiceImpl<MessageTemplateMappe
         // 1.分页条件
         Page<MessageTemplate> page = query.toMpPage();
         // 2.过滤条件
-        page = lambdaQuery()
-                .eq(query.getStatus() != null, MessageTemplate::getStatus, query.getStatus())
-                .eq(query.getThirdPlatformId() != null, MessageTemplate::getPlatformCode, query.getThirdPlatformId())
-                .like(StringUtils.isNotBlank(query.getKeyword()), MessageTemplate::getName, query.getKeyword())
-                .page(page);
+        page =
+                lambdaQuery()
+                        .eq(
+                                query.getStatus() != null,
+                                MessageTemplate::getStatus,
+                                query.getStatus())
+                        .eq(
+                                query.getThirdPlatformId() != null,
+                                MessageTemplate::getPlatformCode,
+                                query.getThirdPlatformId())
+                        .like(
+                                StringUtils.isNotBlank(query.getKeyword()),
+                                MessageTemplate::getName,
+                                query.getKeyword())
+                        .page(page);
         // 3.数据转换
         return PageDTO.of(page, MessageTemplateDTO.class);
     }
 
     @Override
     public MessageTemplateDTO queryMessageTemplate(Long id) {
-        return BeanUtils.copyBean( getById(id), MessageTemplateDTO.class);
+        return BeanUtils.copyBean(getById(id), MessageTemplateDTO.class);
     }
 }

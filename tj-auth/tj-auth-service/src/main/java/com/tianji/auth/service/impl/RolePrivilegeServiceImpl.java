@@ -19,7 +19,8 @@ import java.util.List;
  * @since 2022-06-16
  */
 @Service
-public class RolePrivilegeServiceImpl extends ServiceImpl<RolePrivilegeMapper, RolePrivilege> implements IRolePrivilegeService {
+public class RolePrivilegeServiceImpl extends ServiceImpl<RolePrivilegeMapper, RolePrivilege>
+        implements IRolePrivilegeService {
 
     @Override
     public void removeByPrivilegeId(Long id) {
@@ -36,7 +37,6 @@ public class RolePrivilegeServiceImpl extends ServiceImpl<RolePrivilegeMapper, R
         remove(
                 new LambdaQueryWrapper<RolePrivilege>()
                         .eq(RolePrivilege::getRoleId, roleId)
-                        .in(RolePrivilege::getPrivilegeId, privilegeIds)
-        );
+                        .in(RolePrivilege::getPrivilegeId, privilegeIds));
     }
 }

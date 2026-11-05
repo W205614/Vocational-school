@@ -32,7 +32,8 @@ public enum LockStrategy {
     SKIP_AFTER_RETRY_TIMEOUT() {
         @Override
         public boolean tryLock(RLock lock, Lock properties) throws InterruptedException {
-            return lock.tryLock(properties.waitTime(), properties.leaseTime(), properties.timeUnit());
+            return lock.tryLock(
+                    properties.waitTime(), properties.leaseTime(), properties.timeUnit());
         }
     },
     /**
@@ -41,7 +42,9 @@ public enum LockStrategy {
     FAIL_AFTER_RETRY_TIMEOUT() {
         @Override
         public boolean tryLock(RLock lock, Lock properties) throws InterruptedException {
-            boolean success = lock.tryLock(properties.waitTime(), properties.leaseTime(), properties.timeUnit());
+            boolean success =
+                    lock.tryLock(
+                            properties.waitTime(), properties.leaseTime(), properties.timeUnit());
             if (!success) {
                 throw new RuntimeException("请求超时");
             }

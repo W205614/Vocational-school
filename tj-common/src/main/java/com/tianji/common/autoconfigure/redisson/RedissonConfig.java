@@ -28,17 +28,17 @@ public class RedissonConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    public LockAspect lockAspect(RedissonClient redissonClient){
+    public LockAspect lockAspect(RedissonClient redissonClient) {
         return new LockAspect(redissonClient);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public RedissonClient redissonClient(DataRedisProperties properties){
+    public RedissonClient redissonClient(DataRedisProperties properties) {
         return Redisson.create(configuration(properties));
     }
 
-    static Config configuration(DataRedisProperties properties){
+    static Config configuration(DataRedisProperties properties) {
         log.debug("尝试初始化RedissonClient");
         // 1.读取Redis配置
         DataRedisProperties.Cluster cluster = properties.getCluster();
@@ -46,31 +46,39 @@ public class RedissonConfig {
         String password = properties.getPassword();
         int timeout = 3000;
         Duration d = properties.getTimeout();
-        if(d != null){
+        if (d != null) {
             timeout = Long.valueOf(d.toMillis()).intValue();
         }
         // 2.设置Redisson配置
         Config config = new Config();
-        if(cluster != null && !CollectionUtil.isEmpty(cluster.getNodes())){
+        if (cluster != null && !CollectionUtil.isEmpty(cluster.getNodes())) {
             // 集群模式
             config.useClusterServers()
-                    .addNodeAddress(convert(cluster.getNodes(),properties.getSsl().isEnabled()))
+                    .addNodeAddress(convert(cluster.getNodes(), properties.getSsl().isEnabled()))
                     .setConnectTimeout(timeout)
                     .setUsername(properties.getUsername())
                     .setPassword(password);
-        }else if(sentinel != null && !StrUtil.isEmpty(sentinel.getMaster())){
+        } else if (sentinel != null && !StrUtil.isEmpty(sentinel.getMaster())) {
             // 哨兵模式
             config.useSentinelServers()
                     .setMasterName(sentinel.getMaster())
-                    .addSentinelAddress(convert(sentinel.getNodes(),properties.getSsl().isEnabled()))
+                    .addSentinelAddress(
+                            convert(sentinel.getNodes(), properties.getSsl().isEnabled()))
                     .setConnectTimeout(timeout)
                     .setDatabase(properties.getDatabase())
                     .setUsername(properties.getUsername())
                     .setPassword(password);
-        }else{
+        } else {
             // 单机模式
             config.useSingleServer()
-                    .setAddress(String.format("%s%s:%d", properties.getSsl().isEnabled()?REDISS_PROTOCOL_PREFIX:REDIS_PROTOCOL_PREFIX,properties.getHost(),properties.getPort()))
+                    .setAddress(
+                            String.format(
+                                    "%s%s:%d",
+                                    properties.getSsl().isEnabled()
+                                            ? REDISS_PROTOCOL_PREFIX
+                                            : REDIS_PROTOCOL_PREFIX,
+                                    properties.getHost(),
+                                    properties.getPort()))
                     .setConnectTimeout(timeout)
                     .setDatabase(properties.getDatabase())
                     .setUsername(properties.getUsername())
@@ -80,11 +88,12 @@ public class RedissonConfig {
         return config;
     }
 
-    private static String[] convert(List<String> nodesObject,boolean tls) {
+    private static String[] convert(List<String> nodesObject, boolean tls) {
         List<String> nodes = new ArrayList<>(nodesObject.size());
         for (String node : nodesObject) {
-            if (!node.startsWith(REDIS_PROTOCOL_PREFIX) && !node.startsWith(REDISS_PROTOCOL_PREFIX)) {
-                nodes.add((tls?REDISS_PROTOCOL_PREFIX:REDIS_PROTOCOL_PREFIX) + node);
+            if (!node.startsWith(REDIS_PROTOCOL_PREFIX)
+                    && !node.startsWith(REDISS_PROTOCOL_PREFIX)) {
+                nodes.add((tls ? REDISS_PROTOCOL_PREFIX : REDIS_PROTOCOL_PREFIX) + node);
             } else {
                 nodes.add(node);
             }

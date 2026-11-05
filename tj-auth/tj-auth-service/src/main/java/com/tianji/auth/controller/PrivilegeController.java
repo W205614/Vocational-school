@@ -1,6 +1,5 @@
 package com.tianji.auth.controller;
 
-
 import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tianji.auth.domain.dto.PrivilegeDTO;
@@ -45,7 +44,8 @@ public class PrivilegeController {
      */
     @Operation(summary = "分页查询所有权限")
     @GetMapping
-    public PageDTO<PrivilegeDTO> listAllPrivileges(PageQuery pageQuery) {com.tianji.common.utils.UserContext.requireAdmin();
+    public PageDTO<PrivilegeDTO> listAllPrivileges(PageQuery pageQuery) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         // 1.分页查询
         Page<Privilege> page = privilegesService.listPrivilegesByPage(pageQuery);
         // 2.非空判断
@@ -55,7 +55,8 @@ public class PrivilegeController {
             return new PageDTO<>(page.getTotal(), page.getPages(), Collections.emptyList());
         }
         // 3.数据转换
-        List<PrivilegeDTO> dtoList = list.stream().map(Privilege::toDTO).collect(Collectors.toList());
+        List<PrivilegeDTO> dtoList =
+                list.stream().map(Privilege::toDTO).collect(Collectors.toList());
         // 4.封装返回
         return new PageDTO<>(page.getTotal(), page.getPages(), dtoList);
     }
@@ -68,21 +69,22 @@ public class PrivilegeController {
     @Operation(summary = "查询菜单下的所有权限，作为下拉选框菜单")
     @GetMapping("options/{menuId}")
     public List<PrivilegeOptionVO> listAllPrivilegesOptionsByMenuId(
-            @Parameter(description = "菜单id", example = "1") @PathVariable("menuId") Long menuId
-    ) {com.tianji.common.utils.UserContext.requireAdmin();
+            @Parameter(description = "菜单id", example = "1") @PathVariable("menuId") Long menuId) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         // 1.查询菜单下的权限
-        List<Privilege> list = privilegesService.lambdaQuery()
-                .eq(Privilege::getMenuId, menuId)
-                .eq(Privilege::getInternal, false)
-                .list();
+        List<Privilege> list =
+                privilegesService
+                        .lambdaQuery()
+                        .eq(Privilege::getMenuId, menuId)
+                        .eq(Privilege::getInternal, false)
+                        .list();
         // 2.非空判断
         if (CollectionUtil.isEmpty(list)) {
             // 结果为空，返回空结果
             return Collections.emptyList();
         }
         // 3.数据转换
-        return list.stream()
-                .map(PrivilegeOptionVO::new).collect(Collectors.toList());
+        return list.stream().map(PrivilegeOptionVO::new).collect(Collectors.toList());
     }
 
     /**
@@ -93,9 +95,11 @@ public class PrivilegeController {
     @Operation(summary = "查询菜单下的权限列表，某个角色的权限")
     @GetMapping("/roles/{roleId}/{menuId}")
     public List<PrivilegeOptionVO> listPrivilegeByRoleId(
-            @Parameter(description = "角色id", required = true, example = "1") @PathVariable("roleId") Long roleId,
-            @Parameter(description = "菜单id", required = true, example = "1") @PathVariable("menuId") Long menuId
-    ) {com.tianji.common.utils.UserContext.requireAdmin();
+            @Parameter(description = "角色id", required = true, example = "1") @PathVariable("roleId")
+                    Long roleId,
+            @Parameter(description = "菜单id", required = true, example = "1") @PathVariable("menuId")
+                    Long menuId) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         // 1.查询角色对应的权限id
         Set<Long> privilegeIds = privilegesService.listPrivilegeByRoleId(roleId);
         if (CollectionUtil.isEmpty(privilegeIds)) {
@@ -118,7 +122,8 @@ public class PrivilegeController {
      */
     @Operation(summary = "新增权限")
     @PostMapping
-    public PrivilegeDTO savePrivilege(@Validated @RequestBody PrivilegeDTO privilegeDTO) {com.tianji.common.utils.UserContext.requireAdmin();
+    public PrivilegeDTO savePrivilege(@Validated @RequestBody PrivilegeDTO privilegeDTO) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         // 域对象转换
         Privilege privilege = new Privilege(privilegeDTO);
         // 新增
@@ -138,7 +143,9 @@ public class PrivilegeController {
     @PutMapping("{id}")
     public PrivilegeDTO updatePrivilege(
             @Validated @RequestBody PrivilegeDTO privilegeDTO,
-            @Parameter(description = "要修改的权限id", required = true, example = "1") @PathVariable("id") Long id) {com.tianji.common.utils.UserContext.requireAdmin();
+            @Parameter(description = "要修改的权限id", required = true, example = "1") @PathVariable("id")
+                    Long id) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         // 域对象转换
         Privilege privilege = new Privilege(privilegeDTO);
         privilege.setId(id);
@@ -156,7 +163,9 @@ public class PrivilegeController {
     @Operation(summary = "删除权限")
     @DeleteMapping("{id}")
     public void removePrivilegeById(
-            @Parameter(description = "要删除的权限id", required = true, example = "1") @PathVariable("id") Long id) {com.tianji.common.utils.UserContext.requireAdmin();
+            @Parameter(description = "要删除的权限id", required = true, example = "1") @PathVariable("id")
+                    Long id) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         privilegesService.removePrivilegeById(id);
     }
 
@@ -170,7 +179,8 @@ public class PrivilegeController {
     @Operation(summary = "绑定角色与API权限")
     public void bindRolePrivileges(
             @Parameter(description = "角色id", example = "1") @PathVariable("roleId") Long roleId,
-            @Parameter(description = "API权限的id集合") @RequestBody List<Long> privilegeIds) {com.tianji.common.utils.UserContext.requireAdmin();
+            @Parameter(description = "API权限的id集合") @RequestBody List<Long> privilegeIds) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         privilegesService.bindRolePrivileges(roleId, privilegeIds);
     }
 
@@ -184,11 +194,14 @@ public class PrivilegeController {
     @Operation(summary = "解除角色的API权限")
     public void deleteRolePrivileges(
             @Parameter(description = "角色id", example = "1") @PathVariable("roleId") Long roleId,
-            @Parameter(description = "API权限的id集合") @RequestBody List<Long> privilegeIds) {com.tianji.common.utils.UserContext.requireAdmin();
+            @Parameter(description = "API权限的id集合") @RequestBody List<Long> privilegeIds) {
+        com.tianji.common.utils.UserContext.requireAdmin();
         privilegesService.deleteRolePrivileges(roleId, privilegeIds);
     }
 
-
     @GetMapping("/role/{roleId}")
-    public Set<Long> roleIds(@PathVariable Long roleId){com.tianji.common.utils.UserContext.requireAdmin();return privilegesService.listPrivilegeByRoleId(roleId);}
+    public Set<Long> roleIds(@PathVariable Long roleId) {
+        com.tianji.common.utils.UserContext.requireAdmin();
+        return privilegesService.listPrivilegeByRoleId(roleId);
+    }
 }

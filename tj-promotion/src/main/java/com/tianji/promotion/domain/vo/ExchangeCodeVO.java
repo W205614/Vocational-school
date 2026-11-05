@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class ExchangeCodeVO {
     @Schema(description = "兑换码id")
     private Integer id;
+
     @Schema(description = "兑换码")
     private String code;
 }

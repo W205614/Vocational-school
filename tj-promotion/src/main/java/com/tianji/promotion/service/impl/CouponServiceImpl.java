@@ -61,13 +61,28 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     private final Clock clock;
 
     @Autowired
-    public CouponServiceImpl(ICouponScopeService scopeService, IUserCouponService userCouponService,
-            IExchangeCodeService codeService, CategoryCache categoryCache, StringRedisTemplate redisTemplate) {
-        this(scopeService, userCouponService, codeService, categoryCache, redisTemplate, Clock.systemDefaultZone());
+    public CouponServiceImpl(
+            ICouponScopeService scopeService,
+            IUserCouponService userCouponService,
+            IExchangeCodeService codeService,
+            CategoryCache categoryCache,
+            StringRedisTemplate redisTemplate) {
+        this(
+                scopeService,
+                userCouponService,
+                codeService,
+                categoryCache,
+                redisTemplate,
+                Clock.systemDefaultZone());
     }
 
-    CouponServiceImpl(ICouponScopeService scopeService, IUserCouponService userCouponService,
-            IExchangeCodeService codeService, CategoryCache categoryCache, StringRedisTemplate redisTemplate, Clock clock) {
+    CouponServiceImpl(
+            ICouponScopeService scopeService,
+            IUserCouponService userCouponService,
+            IExchangeCodeService codeService,
+            CategoryCache categoryCache,
+            StringRedisTemplate redisTemplate,
+            Clock clock) {
         this.scopeService = scopeService;
         this.userCouponService = userCouponService;
         this.codeService = codeService;
@@ -86,20 +101,26 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         // 1.2 保存
         save(coupon);
 
-        if(!dto.getSpecific()) {
+        if (!dto.getSpecific()) {
             // 没有限定范围
             return;
         }
         Long couponId = coupon.getId();
         // 2. 保存限定范围
         List<Long> scopes = dto.getScopes();
-        if(CollUtils.isEmpty(scopes)) {
+        if (CollUtils.isEmpty(scopes)) {
             throw new BadRequestException("限定范围不能为空");
         }
         // 2.1 转换po
-        List<CouponScope> list = scopes.stream()
-                .map(bizId -> new CouponScope().setBizId(bizId).setCouponId(couponId).setType(1))
-                .collect(Collectors.toList());
+        List<CouponScope> list =
+                scopes.stream()
+                        .map(
+                                bizId ->
+                                        new CouponScope()
+                                                .setBizId(bizId)
+                                                .setCouponId(couponId)
+                                                .setType(1))
+                        .collect(Collectors.toList());
         // 2.2 保存
         scopeService.saveBatch(list);
     }
@@ -110,14 +131,15 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         Integer status = query.getStatus();
         String name = query.getName();
         Integer type = query.getType();
-        Page<Coupon> page = lambdaQuery()
-                .eq(type != null, Coupon::getDiscountType, type)
-                .eq(status != null, Coupon::getStatus, status)
-                .like(StringUtils.isNotBlank(name), Coupon::getName, name)
-                .page(query.toMpPageDefaultSortByCreateTimeDesc());
+        Page<Coupon> page =
+                lambdaQuery()
+                        .eq(type != null, Coupon::getDiscountType, type)
+                        .eq(status != null, Coupon::getStatus, status)
+                        .like(StringUtils.isNotBlank(name), Coupon::getName, name)
+                        .page(query.toMpPageDefaultSortByCreateTimeDesc());
         // 2. 处理VO
         List<Coupon> records = page.getRecords();
-        if(CollUtils.isEmpty(records)) {
+        if (CollUtils.isEmpty(records)) {
             return PageDTO.empty(page);
         }
         List<CouponPageVO> list = BeanUtils.copyList(records, CouponPageVO.class);
@@ -130,11 +152,11 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     public void beginIssue(CouponIssueFormDTO dto) {
         // 1. 查询优惠卷
         Coupon coupon = getById(dto.getId());
-        if(coupon == null) {
+        if (coupon == null) {
             throw new BadRequestException("优惠卷不存在! ");
         }
         // 2. 判断优惠卷状态, 是否是暂停或待发放
-        if(coupon.getStatus() != CouponStatus.DRAFT && coupon.getStatus() != CouponStatus.PAUSE) {
+        if (coupon.getStatus() != CouponStatus.DRAFT && coupon.getStatus() != CouponStatus.PAUSE) {
             throw new BadRequestException("优惠卷状态错误! ");
         }
         // 3. 判断是否时立刻发放
@@ -146,7 +168,7 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         // 4.1 拷贝属性到PO
         Coupon c = BeanUtils.copyBean(dto, Coupon.class);
         // 4.2 更新状态
-        if(isBegin) {
+        if (isBegin) {
             c.setStatus(CouponStatus.ISSUING);
             // DATETIME(0) rounds fractions; an immediate start must never round
             // into the future. Keep the precise now above for the isBegin decision.
@@ -158,14 +180,14 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         updateById(c);
 
         // 5. 添加缓存
-        if(isBegin) {
+        if (isBegin) {
             coupon.setIssueBeginTime(c.getIssueBeginTime());
             coupon.setIssueEndTime(c.getIssueEndTime());
             cacheCouponInfo(coupon);
         }
 
         // 6. 判断是否需要生成兑换码, 优惠卷类型必须是兑换码, 优惠卷状态必须是待发放
-        if(coupon.getObtainWay() == ObtainType.ISSUE && coupon.getStatus() == CouponStatus.DRAFT) {
+        if (coupon.getObtainWay() == ObtainType.ISSUE && coupon.getStatus() == CouponStatus.DRAFT) {
             coupon.setIssueEndTime(c.getIssueEndTime());
             codeService.asyncGenerateCode(coupon);
         }
@@ -174,12 +196,16 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     private void cacheCouponInfo(Coupon coupon) {
         // 1. 组织数据
         Map<String, String> map = new HashMap<>(4);
-        map.put("issueBeginTime", String.valueOf(DateUtils.toEpochMilli(coupon.getIssueBeginTime())));
+        map.put(
+                "issueBeginTime",
+                String.valueOf(DateUtils.toEpochMilli(coupon.getIssueBeginTime())));
         map.put("issueEndTime", String.valueOf(DateUtils.toEpochMilli(coupon.getIssueEndTime())));
         map.put("totalNum", String.valueOf(coupon.getTotalNum()));
         map.put("userLimit", String.valueOf(coupon.getUserLimit()));
         // 2. 写缓存
-        redisTemplate.opsForHash().putAll(PromotionConstants.COUPON_CACHE_KEY_PREFIX + coupon.getId(), map);
+        redisTemplate
+                .opsForHash()
+                .putAll(PromotionConstants.COUPON_CACHE_KEY_PREFIX + coupon.getId(), map);
     }
 
     @Override
@@ -190,24 +216,27 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
 
         // 2. 转换VO
         CouponDetailVO vo = BeanUtils.copyBean(coupon, CouponDetailVO.class);
-        if(vo == null || !coupon.getSpecific()) {
+        if (vo == null || !coupon.getSpecific()) {
             return vo; // vo不存在或者没有在限定范围内, 直接返回
         }
 
         // 3. 查询优惠卷的限定范围
         // 表: coupon_scope 条件: coupon_id
-        List<CouponScope> scopes = scopeService.lambdaQuery().
-                eq(CouponScope::getCouponId, id)
-                .list();
-        if(CollUtils.isEmpty(scopes)) {
+        List<CouponScope> scopes =
+                scopeService.lambdaQuery().eq(CouponScope::getCouponId, id).list();
+        if (CollUtils.isEmpty(scopes)) {
             return vo;
         }
 
         // 4. 转换VO
-        List<CouponScopeVO> scopeVOS = scopes.stream()
-                .map(CouponScope::getBizId)
-                .map(cateId -> new CouponScopeVO(cateId, categoryCache.getNameByLv3Id(cateId)))
-                .collect(Collectors.toList());
+        List<CouponScopeVO> scopeVOS =
+                scopes.stream()
+                        .map(CouponScope::getBizId)
+                        .map(
+                                cateId ->
+                                        new CouponScopeVO(
+                                                cateId, categoryCache.getNameByLv3Id(cateId)))
+                        .collect(Collectors.toList());
 
         // 5. 补全CouponDetailVO的限定范围数据
         vo.setScopes(scopeVOS);
@@ -219,18 +248,18 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     public void updateCouponById(Long id, CouponFormDTO dto) {
         validateForm(dto);
         // 1. 检验优惠卷id
-        if(id == null || !id.equals(dto.getId())) {
+        if (id == null || !id.equals(dto.getId())) {
             throw new BadRequestException("非法参数或优惠卷id不一致");
         }
 
         // 2. 根据id查询优惠卷
         Coupon coupon = this.getById(id);
-        if(coupon == null) {
+        if (coupon == null) {
             throw new BadRequestException("优惠卷不存在");
         }
 
         // 3. 校验优惠卷状态, 只有待发放才可以修改
-        if(coupon.getStatus() != CouponStatus.DRAFT) {
+        if (coupon.getStatus() != CouponStatus.DRAFT) {
             throw new BizIllegalException("只有待发放的优惠卷才可以修改");
         }
 
@@ -242,21 +271,26 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
 
         // 6. 更新优惠卷的限定范围
         // 6.1 如果之前有限定范围, 先删除旧的
-        if(coupon.getSpecific()) {
+        if (coupon.getSpecific()) {
             scopeService.remove(new QueryWrapper<CouponScope>().eq("coupon_id", id));
         }
         // 6.2 判断是否需要更新限定范围
-        if(dto.getSpecific()) {
+        if (dto.getSpecific()) {
             // 6.3 检验用于更新的是否为空
             List<Long> scopes = dto.getScopes();
-            if(CollUtils.isEmpty(scopes)) {
+            if (CollUtils.isEmpty(scopes)) {
                 throw new BadRequestException("更新限定的范围, 分类id集合不能为空");
             }
             // 6.4 保存新的优惠卷的限定范围
-            List<CouponScope> couponScopeList = scopes
-                    .stream()
-                    .map(aLong -> new CouponScope().setCouponId(coupon.getId()).setBizId(aLong).setType(1))
-                    .collect(Collectors.toList());
+            List<CouponScope> couponScopeList =
+                    scopes.stream()
+                            .map(
+                                    aLong ->
+                                            new CouponScope()
+                                                    .setCouponId(coupon.getId())
+                                                    .setBizId(aLong)
+                                                    .setType(1))
+                            .collect(Collectors.toList());
             scopeService.saveBatch(couponScopeList);
         }
     }
@@ -266,12 +300,12 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     public void deleteCouponById(Long id) {
         // 1. 根据id查询优惠卷
         Coupon coupon = this.getById(id);
-        if(coupon == null) {
+        if (coupon == null) {
             throw new BadRequestException("优惠卷不存在");
         }
 
         // 2. 校验优惠卷状态, 只有待发放才可以删除
-        if(coupon.getStatus() != CouponStatus.DRAFT) {
+        if (coupon.getStatus() != CouponStatus.DRAFT) {
             throw new BizIllegalException("只有待发放的优惠卷才可以删除");
         }
 
@@ -279,7 +313,7 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         this.removeById(id);
 
         // 4. 删除优惠卷的限定范围
-        if(!coupon.getSpecific()) {
+        if (!coupon.getSpecific()) {
             return;
         }
         scopeService.remove(new QueryWrapper<CouponScope>().eq("coupon_id", id));
@@ -312,12 +346,13 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     public void pauseIssueCouponById(Long id) {
         // 1. 根据id查询优惠卷
         Coupon coupon = this.getById(id);
-        if(coupon == null) {
+        if (coupon == null) {
             throw new BadRequestException("优惠卷不存在");
         }
 
         // 2. 检验优惠卷状态, 只有未开始和发放中的才可以暂停
-        if(coupon.getStatus() != CouponStatus.UN_ISSUE && coupon.getStatus() != CouponStatus.ISSUING) {
+        if (coupon.getStatus() != CouponStatus.UN_ISSUE
+                && coupon.getStatus() != CouponStatus.ISSUING) {
             throw new BizIllegalException("只有未开始和发放中的优惠卷才可以暂停");
         }
 
@@ -335,28 +370,37 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
     @Override
     public List<CouponVO> queryIssuingCoupons() {
         // 1. 查询发放中的优惠卷
-        List<Coupon> coupons = lambdaQuery()
-                .eq(Coupon::getStatus, CouponStatus.ISSUING)
-                .eq(Coupon::getObtainWay, ObtainType.PUBLIC)
-                .list();
-        if(CollUtils.isEmpty(coupons)) {
+        List<Coupon> coupons =
+                lambdaQuery()
+                        .eq(Coupon::getStatus, CouponStatus.ISSUING)
+                        .eq(Coupon::getObtainWay, ObtainType.PUBLIC)
+                        .list();
+        if (CollUtils.isEmpty(coupons)) {
             return CollUtils.emptyList();
         }
 
         // 2. 统计当前用户已经领取的优惠卷的信息
         List<Long> couponIds = coupons.stream().map(Coupon::getId).collect(Collectors.toList());
         // 2.1 查询当前用户已经领取的优惠卷的数据
-        List<UserCoupon> userCoupons = userCouponService.lambdaQuery()
-                .eq(UserCoupon::getUserId, UserContext.getUser())
-                .in(UserCoupon::getCouponId, couponIds)
-                .list();
+        List<UserCoupon> userCoupons =
+                userCouponService
+                        .lambdaQuery()
+                        .eq(UserCoupon::getUserId, UserContext.getUser())
+                        .in(UserCoupon::getCouponId, couponIds)
+                        .list();
         // 2.2 统计当前用户对优惠卷的已经领取数量
-        Map<Long, Long> issuedMap = userCoupons.stream()
-                .collect(Collectors.groupingBy(UserCoupon::getCouponId, Collectors.counting()));
+        Map<Long, Long> issuedMap =
+                userCoupons.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        UserCoupon::getCouponId, Collectors.counting()));
         // 2.3 统计当前用户对优惠卷的已经领取并且未使用的数量
-        Map<Long, Long> unusedMap = userCoupons.stream()
-                .filter(uc -> uc.getStatus() == UserCouponStatus.UNUSED)
-                .collect(Collectors.groupingBy(UserCoupon::getCouponId, Collectors.counting()));
+        Map<Long, Long> unusedMap =
+                userCoupons.stream()
+                        .filter(uc -> uc.getStatus() == UserCouponStatus.UNUSED)
+                        .collect(
+                                Collectors.groupingBy(
+                                        UserCoupon::getCouponId, Collectors.counting()));
 
         // 3. 转换VO返回
         List<CouponVO> list = new ArrayList<>(coupons.size());
@@ -367,27 +411,37 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
             // 3.2 是否可以领取: 已经领取的数量 < 优惠卷总数量 && 当前用户已经领取的数量 < 每人限领数量
             vo.setAvailable(
                     c.getIssueNum() < c.getTotalNum()
-                    && issuedMap.getOrDefault(c.getId(), 0L) < c.getUserLimit()
-            );
+                            && issuedMap.getOrDefault(c.getId(), 0L) < c.getUserLimit());
             // 3.3 是否可以使用: 当前用户已经领取并且未使用的优惠卷数量 > 0
             vo.setReceived(unusedMap.getOrDefault(c.getId(), 0L) > 0);
         }
         return list;
     }
-    private void validateForm(CouponFormDTO dto){
-        if(dto.getSpecific()==null)dto.setSpecific(false);
-        if(dto.getThresholdAmount()==null)dto.setThresholdAmount(0);
-        if(dto.getMaxDiscountAmount()==null)dto.setMaxDiscountAmount(0);
-        if(dto.getDiscountType()==null || dto.getDiscountValue()==null || dto.getDiscountValue()<=0 ||
-            dto.getThresholdAmount()<0 || dto.getMaxDiscountAmount()<0 || dto.getTotalNum()==null || dto.getTotalNum()<1 || dto.getTotalNum()>5000 ||
-            dto.getUserLimit()==null || dto.getUserLimit()<1 || dto.getUserLimit()>10)
-            throw new BadRequestException("优惠券金额、库存或限领数量无效");
-        if(dto.getDiscountType()==com.tianji.promotion.enums.DiscountType.RATE_DISCOUNT && dto.getDiscountValue()>100)
-            throw new BadRequestException("折扣比例必须为 1 到 100");
-        if(dto.getDiscountType()==com.tianji.promotion.enums.DiscountType.PER_PRICE_DISCOUNT && dto.getThresholdAmount()<=0)
-            throw new BadRequestException("每满减门槛必须大于 0");
-        if(Boolean.TRUE.equals(dto.getSpecific()) && (dto.getScopes()==null || dto.getScopes().isEmpty() || dto.getScopes().size()>100 || dto.getScopes().stream().anyMatch(java.util.Objects::isNull)))
+
+    private void validateForm(CouponFormDTO dto) {
+        if (dto.getSpecific() == null) dto.setSpecific(false);
+        if (dto.getThresholdAmount() == null) dto.setThresholdAmount(0);
+        if (dto.getMaxDiscountAmount() == null) dto.setMaxDiscountAmount(0);
+        if (dto.getDiscountType() == null
+                || dto.getDiscountValue() == null
+                || dto.getDiscountValue() <= 0
+                || dto.getThresholdAmount() < 0
+                || dto.getMaxDiscountAmount() < 0
+                || dto.getTotalNum() == null
+                || dto.getTotalNum() < 1
+                || dto.getTotalNum() > 5000
+                || dto.getUserLimit() == null
+                || dto.getUserLimit() < 1
+                || dto.getUserLimit() > 10) throw new BadRequestException("优惠券金额、库存或限领数量无效");
+        if (dto.getDiscountType() == com.tianji.promotion.enums.DiscountType.RATE_DISCOUNT
+                && dto.getDiscountValue() > 100) throw new BadRequestException("折扣比例必须为 1 到 100");
+        if (dto.getDiscountType() == com.tianji.promotion.enums.DiscountType.PER_PRICE_DISCOUNT
+                && dto.getThresholdAmount() <= 0) throw new BadRequestException("每满减门槛必须大于 0");
+        if (Boolean.TRUE.equals(dto.getSpecific())
+                && (dto.getScopes() == null
+                        || dto.getScopes().isEmpty()
+                        || dto.getScopes().size() > 100
+                        || dto.getScopes().stream().anyMatch(java.util.Objects::isNull)))
             throw new BadRequestException("请指定 1 到 100 个有效范围");
     }
-
 }

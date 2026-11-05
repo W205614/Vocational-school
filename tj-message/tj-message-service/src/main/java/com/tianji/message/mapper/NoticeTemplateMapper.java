@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2022-08-20
  */
-public interface NoticeTemplateMapper extends BaseMapper<NoticeTemplate> {
-
-}
+public interface NoticeTemplateMapper extends BaseMapper<NoticeTemplate> {}

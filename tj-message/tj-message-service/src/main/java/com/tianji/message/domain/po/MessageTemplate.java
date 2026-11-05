@@ -64,18 +64,16 @@ public class MessageTemplate implements Serializable {
      * 短信模板状态，0-禁用，1-启用
      */
     private Integer status;
+
     /**
      * 创建人
      */
-
     private Long creater;
 
     /**
      * 更新人
      */
-
     private Long updater;
-
 
     /**
      * 创建时间
@@ -86,6 +84,4 @@ public class MessageTemplate implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
-
-
 }

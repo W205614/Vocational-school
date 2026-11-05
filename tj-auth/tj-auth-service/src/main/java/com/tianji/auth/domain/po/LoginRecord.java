@@ -67,6 +67,4 @@ public class LoginRecord implements Serializable {
      * ip地址
      */
     private String ipv4;
-
-
 }

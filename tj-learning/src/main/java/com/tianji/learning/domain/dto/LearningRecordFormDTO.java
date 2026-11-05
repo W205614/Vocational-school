@@ -14,7 +14,9 @@ public class LearningRecordFormDTO {
 
     @Schema(description = "小节类型：1-视频，2-考试")
     @NotNull(message = "小节类型不能为空")
-    @EnumValid(enumeration = {1, 2}, message = "小节类型错误，只能是：1-视频，2-考试")
+    @EnumValid(
+            enumeration = {1, 2},
+            message = "小节类型错误，只能是：1-视频，2-考试")
     private SectionType sectionType;
 
     @Schema(description = "课表id")

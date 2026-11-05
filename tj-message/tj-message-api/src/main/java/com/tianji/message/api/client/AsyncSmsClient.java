@@ -20,8 +20,12 @@ public class AsyncSmsClient {
     public void sendMessage(SmsInfoDTO info) {
         if (info == null || info.getPhones() == null || info.getTemplateCode() == null)
             throw new IllegalArgumentException("短信参数无效");
-        transactions.executeWithoutResult(status -> outbox.enqueue(
-                "sms:" + UUID.randomUUID(), MqConstants.Exchange.SMS_EXCHANGE,
-                MqConstants.Key.SMS_MESSAGE, info));
+        transactions.executeWithoutResult(
+                status ->
+                        outbox.enqueue(
+                                "sms:" + UUID.randomUUID(),
+                                MqConstants.Exchange.SMS_EXCHANGE,
+                                MqConstants.Key.SMS_MESSAGE,
+                                info));
     }
 }

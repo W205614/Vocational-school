@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2022-08-20
  */
-public interface MessageTemplateMapper extends BaseMapper<MessageTemplate> {
-
-}
+public interface MessageTemplateMapper extends BaseMapper<MessageTemplate> {}

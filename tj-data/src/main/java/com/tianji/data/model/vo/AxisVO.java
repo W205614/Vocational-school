@@ -20,38 +20,29 @@ import java.util.List;
 @Builder
 public class AxisVO {
 
-    //数值轴
+    // 数值轴
     public static final String TYPE_VALUE = "value";
-    //类目轴
+    // 类目轴
     public static final String TYPE_CATEGORY = "category";
-    //时间轴
+    // 时间轴
     public static final String TYPE_TIME = "time";
-    //对数轴
+    // 对数轴
     public static final String TYPE_LOG = "log";
 
     private String type;
-    //最大值 带单位
+    // 最大值 带单位
     private Double max;
-    //最小值 带单位
+    // 最小值 带单位
     private Double min;
-    //平均值不带单位
+    // 平均值不带单位
     private Double average;
     // 数据
     private List<?> data;
-    //interval
+    // interval
     private Double interval;
-
 
     public static AxisVO last15Day() {
 
-        return new AxisVO(
-                TYPE_CATEGORY,
-                null,
-                null,
-                null,
-                DateUtils.last15Day(),
-                null
-        );
+        return new AxisVO(TYPE_CATEGORY, null, null, null, DateUtils.last15Day(), null);
     }
-
 }

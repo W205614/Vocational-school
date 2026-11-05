@@ -1,4 +1,4 @@
-# Source-Manifest-SHA256: de79a359231f335f60cc02fae62997bd9a5df19330728da32d7f72c53d46eaba
+# Source-Manifest-SHA256: c6853f5f78b05df061bcf8264fa463a18cf832c6d5122fee53e0c814cca8a842
 # Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
 # Explicit RPC contract snapshot, reviewed 2026-10-31. caller groups | HTTP method | module servlet path.
 # Authentication bootstrap and session checks are the gateway's only private RPC exceptions.

@@ -13,9 +13,7 @@ public enum LessonStatus implements BaseEnum {
     FINISHED(2, "已学完"),
     EXPIRED(3, "已过期"),
     ;
-    @JsonValue
-    @EnumValue
-    int value;
+    @JsonValue @EnumValue int value;
     String desc;
 
     LessonStatus(int value, String desc) {
@@ -24,7 +22,7 @@ public enum LessonStatus implements BaseEnum {
     }
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    public static LessonStatus of(Integer value){
+    public static LessonStatus of(Integer value) {
         if (value == null) {
             return null;
         }

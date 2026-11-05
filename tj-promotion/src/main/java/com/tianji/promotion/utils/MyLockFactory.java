@@ -20,7 +20,8 @@ public class MyLockFactory {
         this.lockHandlers.put(RE_ENTRANT_LOCK, redissonClient::getLock);
         this.lockHandlers.put(FAIR_LOCK, redissonClient::getLock);
         this.lockHandlers.put(READ_LOCK, name -> redissonClient.getReadWriteLock(name).readLock());
-        this.lockHandlers.put(WRITE_LOCK, name -> redissonClient.getReadWriteLock(name).writeLock());
+        this.lockHandlers.put(
+                WRITE_LOCK, name -> redissonClient.getReadWriteLock(name).writeLock());
     }
 
     public RLock getLock(MyLockType lockType, String name) {

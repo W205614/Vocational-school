@@ -25,7 +25,8 @@ import java.util.UUID;
  * @since 2022-07-12
  */
 @Service
-public class LoginRecordServiceImpl extends ServiceImpl<LoginRecordMapper, LoginRecord> implements ILoginRecordService, OperationHandler {
+public class LoginRecordServiceImpl extends ServiceImpl<LoginRecordMapper, LoginRecord>
+        implements ILoginRecordService, OperationHandler {
     private final OperationStore operations;
     private final JsonMapper json;
 
@@ -36,27 +37,35 @@ public class LoginRecordServiceImpl extends ServiceImpl<LoginRecordMapper, Login
 
     @Override
     public void saveAsync(LoginRecord record) {
-        if(record.getUserId()==null || record.getUserId()<=0 || record.getLoginTime()==null)
-            throw new IllegalArgumentException("A login record requires its verified owner and time");
+        if (record.getUserId() == null || record.getUserId() <= 0 || record.getLoginTime() == null)
+            throw new IllegalArgumentException(
+                    "A login record requires its verified owner and time");
         // Admission is durable before returning. The existing Spring-managed,
         // bounded operation executor only holds work that can be claimed again.
-        LoginRecord snapshot=json.readValue(json.writeValueAsString(record),LoginRecord.class);
+        LoginRecord snapshot = json.readValue(json.writeValueAsString(record), LoginRecord.class);
         snapshot.setId(null);
-        operations.submit(snapshot.getUserId(),kind(),UUID.randomUUID().toString(),snapshot);
+        operations.submit(snapshot.getUserId(), kind(), UUID.randomUUID().toString(), snapshot);
     }
 
-    @Override public String kind() {return "AUTH_LOGIN_RECORD";}
+    @Override
+    public String kind() {
+        return "AUTH_LOGIN_RECORD";
+    }
 
-    @Override public Object execute(String operationId,long userId,String payload) {
+    @Override
+    public Object execute(String operationId, long userId, String payload) {
         // OperationStore commits this insert and SUCCEEDED under the same lease
         // and transaction. A retry after an uncertain commit cannot insert twice.
-        if(!TransactionSynchronizationManager.isActualTransactionActive())
-            throw new IllegalStateException("Login record delivery requires the operation transaction");
-        LoginRecord record=json.readValue(payload,LoginRecord.class);
-        if(!Objects.equals(record.getUserId(),userId))throw new IllegalArgumentException("Login record owner differs");
+        if (!TransactionSynchronizationManager.isActualTransactionActive())
+            throw new IllegalStateException(
+                    "Login record delivery requires the operation transaction");
+        LoginRecord record = json.readValue(payload, LoginRecord.class);
+        if (!Objects.equals(record.getUserId(), userId))
+            throw new IllegalArgumentException("Login record owner differs");
         record.setId(null);
-        if(!save(record))throw new IllegalStateException("Login record insert was not acknowledged");
-        return Map.of("recorded",true);
+        if (!save(record))
+            throw new IllegalStateException("Login record insert was not acknowledged");
+        return Map.of("recorded", true);
     }
 
     @Override

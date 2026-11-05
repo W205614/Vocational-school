@@ -21,12 +21,12 @@ spring:
             loggerLevel: basic
   config:
     import:
-    - optional:nacos:shared-spring.yaml?refreshEnabled=false
-    - optional:nacos:shared-redis.yaml?refreshEnabled=false
-    - optional:nacos:shared-mybatis.yaml?refreshEnabled=false
-    - optional:nacos:shared-logs.yaml?refreshEnabled=false
-    - optional:nacos:shared-feign.yaml?refreshEnabled=false
-    - optional:nacos:shared-mq.yaml?refreshEnabled=false
+      - optional:nacos:shared-spring.yaml?refreshEnabled=false
+      - optional:nacos:shared-redis.yaml?refreshEnabled=false
+      - optional:nacos:shared-mybatis.yaml?refreshEnabled=false
+      - optional:nacos:shared-logs.yaml?refreshEnabled=false
+      - optional:nacos:shared-feign.yaml?refreshEnabled=false
+      - optional:nacos:shared-mq.yaml?refreshEnabled=false
   lifecycle:
     timeout-per-shutdown-phase: 30s
 tj:
@@ -44,8 +44,8 @@ tj:
     resource:
       enable: true
       includeLoginPaths:
-      - /interests/**
-      - /courses/admin
+        - /interests/**
+        - /courses/admin
   jdbc:
     database: tj_search
 management:

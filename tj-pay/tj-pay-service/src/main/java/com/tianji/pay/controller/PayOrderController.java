@@ -1,6 +1,5 @@
 package com.tianji.pay.controller;
 
-
 import com.tianji.common.exceptions.BadRequestException;
 import com.tianji.pay.sdk.constants.PayErrorInfo;
 import com.tianji.pay.sdk.constants.PayType;
@@ -31,9 +30,9 @@ public class PayOrderController {
 
     @Operation(summary = "扫码支付申请支付单，返回支付url地址，用于生产二维码")
     @PostMapping
-    public String applyPayOrder(@jakarta.validation.Valid @RequestBody PayApplyDTO payApplyDTO){
+    public String applyPayOrder(@jakarta.validation.Valid @RequestBody PayApplyDTO payApplyDTO) {
         com.tianji.common.utils.InternalAuth.requireService();
-        if(!PayType.NATIVE.equalsValue(payApplyDTO.getPayType())){
+        if (!PayType.NATIVE.equalsValue(payApplyDTO.getPayType())) {
             throw new BadRequestException(PayErrorInfo.INVALID_PAY_TYPE);
         }
         return payOrderService.applyPayOrder(payApplyDTO);
@@ -42,8 +41,7 @@ public class PayOrderController {
     @Operation(summary = "根据业务端订单id查询支付结果")
     @GetMapping("/{bizOrderId}/status")
     public PayResultDTO queryPayResult(
-            @Parameter(description = "业务订单id") @PathVariable("bizOrderId") Long bizOrderId
-    ){
+            @Parameter(description = "业务订单id") @PathVariable("bizOrderId") Long bizOrderId) {
         com.tianji.common.utils.InternalAuth.requireService();
         return payOrderService.queryPayResult(bizOrderId);
     }

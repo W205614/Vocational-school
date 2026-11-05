@@ -20,8 +20,7 @@ public enum QuestionType implements BaseEnum {
         this.desc = desc;
     }
 
-
-    public static QuestionType of(Integer value){
+    public static QuestionType of(Integer value) {
         if (value == null) {
             return null;
         }

@@ -13,7 +13,8 @@ public interface IPayService {
 
     PayStatusResponse queryPayOrderStatus(String payOrderNo);
 
-    RefundResponse refundOrder(String payOrderNo, String refundOrderNo, Integer refundAmount, Integer totalAmount);
+    RefundResponse refundOrder(
+            String payOrderNo, String refundOrderNo, Integer refundAmount, Integer totalAmount);
 
     RefundResponse queryRefundStatus(String orderNo, String refundOrderNo);
 }

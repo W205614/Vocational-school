@@ -20,8 +20,10 @@ import jakarta.validation.constraints.NotNull;
 public class SubNumAndCourseNumDTO {
     @Schema(description = "老师id")
     private Long teacherId;
+
     @Schema(description = "老师负责的课程数")
     private Integer courseNum;
+
     @Schema(description = "老师出题数")
     private Integer subjectNum;
 }

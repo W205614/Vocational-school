@@ -1,6 +1,5 @@
 package com.tianji.auth.controller;
 
-
 import com.tianji.api.dto.user.LoginFormDTO;
 import com.tianji.auth.common.constants.JwtConstants;
 import com.tianji.auth.service.IAccountService;
@@ -26,7 +25,8 @@ public class AccountController {
     public void preventCredentialCaching() {
         // Resolving HttpServletResponse as a model-attribute argument marks MVC's
         // shared container handled, bypassing response advice for void handlers.
-        WebUtils.setResponseHeader("Cache-Control","no-store");WebUtils.setResponseHeader("Pragma","no-cache");
+        WebUtils.setResponseHeader("Cache-Control", "no-store");
+        WebUtils.setResponseHeader("Pragma", "no-cache");
     }
 
     @Operation(summary = "登录并获取token")
@@ -45,8 +45,11 @@ public class AccountController {
 
     @PostMapping("/password/initial")
     @Operation(summary = "使用临时密码设置初始密码，不创建会话")
-    public void initialPassword(@jakarta.validation.Valid @RequestBody com.tianji.api.dto.user.InitialPasswordDTO form){
-        com.tianji.common.utils.InternalAuth.requireService();accountService.completeInitialPassword(form);
+    public void initialPassword(
+            @jakarta.validation.Valid @RequestBody
+                    com.tianji.api.dto.user.InitialPasswordDTO form) {
+        com.tianji.common.utils.InternalAuth.requireService();
+        accountService.completeInitialPassword(form);
     }
 
     @Operation(summary = "退出登录")
@@ -59,17 +62,18 @@ public class AccountController {
     @GetMapping(value = "/refresh")
     public String refreshToken(
             @CookieValue(value = JwtConstants.REFRESH_HEADER, required = false) String studentToken,
-            @CookieValue(value = JwtConstants.ADMIN_REFRESH_HEADER, required = false) String adminToken,
-            @RequestParam(required=false) String audience
-    ) {
+            @CookieValue(value = JwtConstants.ADMIN_REFRESH_HEADER, required = false)
+                    String adminToken,
+            @RequestParam(required = false) String audience) {
         com.tianji.common.utils.InternalAuth.requireService();
         if (studentToken == null && adminToken == null) {
             throw new BadRequestException("登录超时");
         }
-        if(audience!=null) {
-            if(!java.util.Set.of("student","admin").contains(audience)) throw new BadRequestException("登录端类型无效");
-            String selected="student".equals(audience)?studentToken:adminToken;
-            if(selected==null) throw new BadRequestException("登录超时");
+        if (audience != null) {
+            if (!java.util.Set.of("student", "admin").contains(audience))
+                throw new BadRequestException("登录端类型无效");
+            String selected = "student".equals(audience) ? studentToken : adminToken;
+            if (selected == null) throw new BadRequestException("登录超时");
             return accountService.refreshToken(WebUtils.cookieBuilder().decode(selected));
         }
         String host = WebUtils.getHeader("origin");

@@ -15,9 +15,7 @@ public enum DiscountType implements BaseEnum {
     NO_THRESHOLD(3, "无门槛"),
     PRICE_DISCOUNT(4, "满减"),
     ;
-    @JsonValue
-    @EnumValue
-    private final int value;
+    @JsonValue @EnumValue private final int value;
     private final String desc;
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

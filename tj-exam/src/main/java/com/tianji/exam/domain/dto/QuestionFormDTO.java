@@ -35,7 +35,9 @@ public class QuestionFormDTO implements Serializable {
 
     @Schema(description = "题目类型，1：单选题，2：多选题，3：不定向选择题，4：判断题，5：主观题")
     @NotNull(message = "题目类型为空，请设置题目类型")
-    @EnumValid(enumeration = {1,2,3,4,5}, message = "题目类型错误")
+    @EnumValid(
+            enumeration = {1, 2, 3, 4, 5},
+            message = "题目类型错误")
     private Integer type;
 
     @Schema(description = "课程三级分类的id集合")
@@ -43,7 +45,9 @@ public class QuestionFormDTO implements Serializable {
 
     @Schema(description = "难易度，1：简单，2：中等，3：困难")
     @NotNull(message = "难度不能为空")
-    @EnumValid(enumeration = {1,2,3},message = "题目难度错误")
+    @EnumValid(
+            enumeration = {1, 2, 3},
+            message = "题目难度错误")
     private Integer difficulty;
 
     @Schema(description = "分值")

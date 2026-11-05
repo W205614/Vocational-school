@@ -11,9 +11,7 @@ public enum QuestionStatus implements BaseEnum {
     UN_CHECK(0, "未查看"),
     CHECKED(1, "已查看"),
     ;
-    @JsonValue
-    @EnumValue
-    int value;
+    @JsonValue @EnumValue int value;
     String desc;
 
     QuestionStatus(int value, String desc) {
@@ -22,7 +20,7 @@ public enum QuestionStatus implements BaseEnum {
     }
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    public static QuestionStatus of(Integer value){
+    public static QuestionStatus of(Integer value) {
         if (value == null) {
             return null;
         }

@@ -63,7 +63,9 @@ public class PayServiceImpl implements IPayService {
         Long orderId = payApply.getOrderId();
         // 1.查询订单信息
         Order order = orderService.getById(orderId);
-        if (order == null || !java.util.Objects.equals(order.getUserId(), com.tianji.common.utils.UserContext.requireUser())) {
+        if (order == null
+                || !java.util.Objects.equals(
+                        order.getUserId(), com.tianji.common.utils.UserContext.requireUser())) {
             throw new BadRequestException(ORDER_NOT_EXISTS);
         }
         // 2.判断订单状态
@@ -72,7 +74,9 @@ public class PayServiceImpl implements IPayService {
             throw new BizIllegalException(TradeErrorInfo.ORDER_ALREADY_FINISH);
         }
         // 3.判断订单是否已经超时
-        if (order.getCreateTime().plusMinutes(tradeProperties.getPayOrderTTLMinutes()).isBefore(LocalDateTime.now())) {
+        if (order.getCreateTime()
+                .plusMinutes(tradeProperties.getPayOrderTTLMinutes())
+                .isBefore(LocalDateTime.now())) {
             // 订单已经超时，无法支付
             throw new BizIllegalException(TradeErrorInfo.ORDER_OVER_TIME);
         }
@@ -81,15 +85,18 @@ public class PayServiceImpl implements IPayService {
         AssertUtils.isNotEmpty(details, ORDER_NOT_EXISTS);
 
         // 5.封装下单参数
-        PayApplyDTO payApplyDTO = PayApplyDTO.builder()
-                .bizOrderNo(orderId)
-                .amount(order.getRealAmount())
-                .orderInfo(details.get(0).getName())
-                .bizUserId(order.getUserId())
-                .payType(PayType.NATIVE.getValue())
-                .payChannelCode(payApply.getPayChannelCode())
-                .build();
-        jdbc.update("INSERT IGNORE INTO payment_reconcile(order_id,expires_at) VALUES(?,NOW()+INTERVAL 1 DAY)",orderId);
+        PayApplyDTO payApplyDTO =
+                PayApplyDTO.builder()
+                        .bizOrderNo(orderId)
+                        .amount(order.getRealAmount())
+                        .orderInfo(details.get(0).getName())
+                        .bizUserId(order.getUserId())
+                        .payType(PayType.NATIVE.getValue())
+                        .payChannelCode(payApply.getPayChannelCode())
+                        .build();
+        jdbc.update(
+                "INSERT IGNORE INTO payment_reconcile(order_id,expires_at) VALUES(?,NOW()+INTERVAL 1 DAY)",
+                orderId);
         String url = payClient.applyPayOrder(payApplyDTO);
         return url;
     }
@@ -110,16 +117,18 @@ public class PayServiceImpl implements IPayService {
         }
         // 3.查询支付状态
         PayResultDTO payResult = payClient.queryPayResult(orderId);
-        if(payResult==null)return;
+        if (payResult == null) return;
         int status = payResult.getStatus();
-        if(PayResultDTO.SUCCESS != status){
+        if (PayResultDTO.SUCCESS != status) {
             // 3.1.支付中或支付失败，需要重试查询
-            if(message.getDelayMillis().size() == 0){
+            if (message.getDelayMillis().size() == 0) {
                 // 重试次数用尽，结束
                 return;
             }
             // 发送延迟查询消息，再次查询支付状态
-            jdbc.update("INSERT IGNORE INTO payment_reconcile(order_id,expires_at) VALUES(?,NOW()+INTERVAL 1 DAY)",orderId);
+            jdbc.update(
+                    "INSERT IGNORE INTO payment_reconcile(order_id,expires_at) VALUES(?,NOW()+INTERVAL 1 DAY)",
+                    orderId);
             return;
         }
         // 3.2.支付成功

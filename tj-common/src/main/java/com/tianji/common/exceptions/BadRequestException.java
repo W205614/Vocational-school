@@ -3,7 +3,7 @@ package com.tianji.common.exceptions;
 import lombok.Getter;
 
 @Getter
-public class BadRequestException extends CommonException{
+public class BadRequestException extends CommonException {
     private final int status = 400;
 
     public BadRequestException(String message) {

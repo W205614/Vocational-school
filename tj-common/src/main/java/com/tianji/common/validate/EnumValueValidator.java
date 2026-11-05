@@ -19,16 +19,16 @@ public class EnumValueValidator implements ConstraintValidator<EnumValid, Intege
     @Override
     public void initialize(EnumValid enumValid) {
         this.enums = enumValid.enumeration();
-        log.info("payload>>{}",ArrayUtils.toString(enumValid.payload()));
+        log.info("payload>>{}", ArrayUtils.toString(enumValid.payload()));
     }
 
     @Override
     public boolean isValid(Integer value, ConstraintValidatorContext context) {
         // 不做空校验
-        if(value == null){
+        if (value == null) {
             return true;
         }
-        //没有配置枚举值不校验
+        // 没有配置枚举值不校验
         if (ArrayUtils.isEmpty(enums)) {
             return true;
         }

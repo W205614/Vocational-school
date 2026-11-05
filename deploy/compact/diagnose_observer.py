@@ -3,6 +3,7 @@
 Never a formal acceptance entry point: both the original elapsed outcomes and
 the instrumentation are retained, without excluding observation or failures.
 """
+
 import collections
 import argparse
 import json
@@ -21,7 +22,7 @@ class TimedObserver(mixed_load.Observer):
     timing_lock = threading.Lock()
 
     def __init__(self, password):
-        super().__init__(password,connections=type(self).connections)
+        super().__init__(password, connections=type(self).connections)
 
     @classmethod
     def record(cls, key, started):
@@ -55,27 +56,42 @@ if __name__ == '__main__':
     sys.argv = [sys.argv[0], *remaining]
     TimedObserver.connections = options.observer_connections
     TimedObserver.ping_each_read = not options.no_ping
-    database_count = sum(item[3] is not None and alias not in {'data', 'gateway'}
-                         for alias, item in MODULES.items())
+    database_count = sum(
+        item[3] is not None and alias not in {'data', 'gateway'}
+        for alias, item in MODULES.items()
+    )
     if database_count * 8 + TimedObserver.connections + 16 > 160:
         raise SystemExit('Diagnostic exceeds the database connection ceiling')
-    if '--protocol' not in sys.argv or sys.argv[sys.argv.index('--protocol') + 1] != 'smoke':
-        raise SystemExit('Observer instrumentation is permitted only with --protocol smoke')
+    if (
+        '--protocol' not in sys.argv
+        or sys.argv[sys.argv.index('--protocol') + 1] != 'smoke'
+    ):
+        raise SystemExit(
+            'Observer instrumentation is permitted only with --protocol smoke'
+        )
     mixed_load.Observer = TimedObserver
     directory = LOCAL / 'observer-diagnostics' / str(time.time_ns())
     directory.mkdir(parents=True)
     try:
         result = mixed_load.main()
     finally:
-        summary = {'status': 'DIAGNOSTIC', 'formalAcceptance': False,
-                   'observerConnections': TimedObserver.connections,
-                   'pingEachRead': TimedObserver.ping_each_read, 'stagesMs': {}}
+        summary = {
+            'status': 'DIAGNOSTIC',
+            'formalAcceptance': False,
+            'observerConnections': TimedObserver.connections,
+            'pingEachRead': TimedObserver.ping_each_read,
+            'stagesMs': {},
+        }
         for key, values in TimedObserver.timings.items():
             ordered = sorted(values)
             summary['stagesMs'][key] = {
-                'count': len(values), 'p50': ordered[int((len(values)-1)*.5)],
-                'p95': ordered[int((len(values)-1)*.95)], 'max': max(values),
+                'count': len(values),
+                'p50': ordered[int((len(values) - 1) * 0.5)],
+                'p95': ordered[int((len(values) - 1) * 0.95)],
+                'max': max(values),
             }
-        (directory / 'report.json').write_text(json.dumps(summary, indent=2), encoding='utf8')
+        (directory / 'report.json').write_text(
+            json.dumps(summary, indent=2), encoding='utf8'
+        )
         print('Observer diagnostic: ' + str(directory), flush=True)
     raise SystemExit(result)

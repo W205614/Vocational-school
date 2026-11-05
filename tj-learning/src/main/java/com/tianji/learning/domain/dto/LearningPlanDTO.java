@@ -14,6 +14,7 @@ public class LearningPlanDTO {
     @Schema(description = "课程表id")
     @Min(1)
     private Long courseId;
+
     @NotNull
     @Range(min = 1, max = 50)
     @Schema(description = "每周学习频率")

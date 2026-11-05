@@ -1,6 +1,5 @@
 package com.tianji.data.controller;
 
-
 import com.tianji.data.model.dto.TodayDataDTO;
 import com.tianji.data.model.vo.TodayDataVO;
 import com.tianji.data.service.TodayDataService;
@@ -21,12 +20,11 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "今日数据相关接口")
 public class TodayDataController {
 
-    @Autowired
-    private TodayDataService todayDataService;
+    @Autowired private TodayDataService todayDataService;
 
     @GetMapping("")
     @Operation(summary = "获取今日数据")
-    public TodayDataVO get(){
+    public TodayDataVO get() {
         return todayDataService.get();
     }
 

@@ -12,8 +12,10 @@ public class QuestionPageQuery extends PageQuery {
     // 用户端查询条件
     @Schema(description = "课程id")
     private Long courseId;
+
     @Schema(description = "小节id", example = "1")
     private Long sectionId;
+
     @Schema(description = "是否只查询我的问题", example = "1")
     private Boolean onlyMine;
 }

@@ -14,18 +14,19 @@ public class RoleCacheConfig {
      * 角色的caffeine缓存
      */
     @Bean
-    public Cache<Long, RoleDTO> roleCaches(){
+    public Cache<Long, RoleDTO> roleCaches() {
         return Caffeine.newBuilder()
                 .initialCapacity(1)
                 .maximumSize(10_000)
                 .expireAfterWrite(Duration.ofMinutes(30))
                 .build();
     }
+
     /**
      * 角色的缓存工具
      */
     @Bean
-    public RoleCache roleCache(Cache<Long, RoleDTO> roleCaches, AuthClient authClient){
+    public RoleCache roleCache(Cache<Long, RoleDTO> roleCaches, AuthClient authClient) {
         return new RoleCache(roleCaches, authClient);
     }
 }

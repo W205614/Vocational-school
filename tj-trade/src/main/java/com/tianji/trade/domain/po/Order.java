@@ -31,10 +31,12 @@ public class Order implements Serializable {
      */
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     private Long id;
+
     /**
      * 支付交易流水单
      */
     private Long payOrderNo;
+
     /**
      * 用户id
      */
@@ -109,20 +111,15 @@ public class Order implements Serializable {
     /**
      * 创建人
      */
-
     private Long creater;
 
     /**
      * 更新人
      */
-
     private Long updater;
 
     /**
      * 逻辑删除
      */
-    @TableLogic
-    private Integer deleted;
-
-
+    @TableLogic private Integer deleted;
 }

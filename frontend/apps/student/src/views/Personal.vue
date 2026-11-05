@@ -1,39 +1,336 @@
 <script setup lang="ts">
 import AccountPrivacyPanel from '../../../../packages/shared/src/AccountPrivacyPanel.vue';
-import {ref,watch,onMounted,onBeforeUnmount} from 'vue';import {get,write} from '../../../../packages/shared/src/client';import {enrolledCourseOptions} from '../../../../packages/shared/src/courseOptions';import {useOperations} from '../../../../packages/shared/src/operations';import {useTask,query,type Row} from '../../../../packages/shared/src/ui';import Status from '../../../../packages/shared/src/Status.vue';
-const props=defineProps<{mode:string}>(),task=useTask(),ops=useOperations(),rows=ref<Row[]>([]),total=ref(0),page=ref(1),courseId=ref(''),keyword=ref(''),editing=ref<Row>(),content=ref(''),profile=ref<Row>({}),oldPassword=ref(''),password=ref(''),courseNames=ref<Record<string,string>>({});
-const noteCourses=ref<Row[]>([]);let choicesAbort:AbortController|undefined;
-onBeforeUnmount(()=>choicesAbort?.abort());
-async function noteCourseChoices(){
- choicesAbort?.abort();const controller=new AbortController();choicesAbort=controller;
- try{const all=await enrolledCourseOptions(controller.signal);if(controller.signal.aborted||props.mode!=='notes')return;noteCourses.value=all;for(const item of all)courseNames.value[String(item.courseId)]=item.courseName||'课程已下架';}
- catch(error){if(!controller.signal.aborted)throw error;}
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { get, write } from '../../../../packages/shared/src/client';
+import { enrolledCourseOptions } from '../../../../packages/shared/src/courseOptions';
+import { useOperations } from '../../../../packages/shared/src/operations';
+import { useTask, query, type Row } from '../../../../packages/shared/src/ui';
+import Status from '../../../../packages/shared/src/Status.vue';
+const props = defineProps<{ mode: string }>(),
+  task = useTask(),
+  ops = useOperations(),
+  rows = ref<Row[]>([]),
+  total = ref(0),
+  page = ref(1),
+  courseId = ref(''),
+  keyword = ref(''),
+  editing = ref<Row>(),
+  content = ref(''),
+  profile = ref<Row>({}),
+  oldPassword = ref(''),
+  password = ref(''),
+  courseNames = ref<Record<string, string>>({});
+const noteCourses = ref<Row[]>([]);
+let choicesAbort: AbortController | undefined;
+onBeforeUnmount(() => choicesAbort?.abort());
+async function noteCourseChoices() {
+  choicesAbort?.abort();
+  const controller = new AbortController();
+  choicesAbort = controller;
+  try {
+    const all = await enrolledCourseOptions(controller.signal);
+    if (controller.signal.aborted || props.mode !== 'notes') return;
+    noteCourses.value = all;
+    for (const item of all)
+      courseNames.value[String(item.courseId)] = item.courseName || '课程已下架';
+  } catch (error) {
+    if (!controller.signal.aborted) throw error;
+  }
 }
-async function names(){
- const ids=[...new Set(rows.value.map(x=>String(x.course_id||'')).filter(x=>x&&!courseNames.value[x]))];
- let position=0;await Promise.all(Array.from({length:Math.min(4,ids.length)},async()=>{while(position<ids.length){const id=ids[position++]!;try{const value=await get<Row>('/services/course/course/'+id);courseNames.value[id]=value.name||'查看课程';}catch{courseNames.value[id]='查看课程';}}}));
+async function names() {
+  const ids = [
+    ...new Set(
+      rows.value.map((x) => String(x.course_id || '')).filter((x) => x && !courseNames.value[x]),
+    ),
+  ];
+  let position = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(4, ids.length) }, async () => {
+      while (position < ids.length) {
+        const id = ids[position++]!;
+        try {
+          const value = await get<Row>('/services/course/course/' + id);
+          courseNames.value[id] = value.name || '查看课程';
+        } catch {
+          courseNames.value[id] = '查看课程';
+        }
+      }
+    }),
+  );
 }
 
-const titles:Record<string,string>={favorites:'收藏课程',notes:'私人笔记',messages:'消息中心',settings:'个人设置'};
-let loadRevision=0,loadPending=false;
+const titles: Record<string, string> = {
+  favorites: '收藏课程',
+  notes: '私人笔记',
+  messages: '消息中心',
+  settings: '个人设置',
+};
+let loadRevision = 0,
+  loadPending = false;
 // Navigation and filters can change while useTask is guarding an in-flight request.
 // Keep the latest read queued and prevent an older response replacing the current page.
-watch(task.busy,busy=>{if(!busy && loadPending){const message=task.message.value;void load().then(()=>{if(message&&!task.error.value&&!task.message.value)task.message.value=message;});}});
-async function load(){const revision=++loadRevision;editing.value=undefined;if(task.busy.value){loadPending=true;return;}loadPending=false;const mode=props.mode;await task.run(async()=>{
- if(mode==='settings'){const result=await get<Row>('/services/user/users/me');if(revision===loadRevision)profile.value=result;return;}
- const path=mode==='favorites'?'/favorites':mode==='notes'?'/notes':'/services/message/inboxes';
- const result=await get<Row>(path+'?'+query({pageNo:page.value,pageSize:20,courseId:courseId.value,keyword:keyword.value}));if(revision!==loadRevision)return;rows.value=result.list||[];total.value=Number(result.total||0);if(['notes','favorites'].includes(mode))await names();
- if(revision===loadRevision && mode==='notes' && !noteCourses.value.length)await noteCourseChoices();
-});}
-async function saveProfile(){await task.run(async()=>{await write('/services/user/users','PUT',{...profile.value,oldPassword:oldPassword.value,password:password.value});oldPassword.value='';password.value='';task.message.value='个人信息已保存';});}
-async function updateNote(){const saved=await task.run(async()=>{if(!editing.value)return false;const result=await ops.begin('learning','编辑私人笔记','/notes/'+editing.value.id,{content:content.value,version:editing.value.version},'PUT');if(result.status==='SUCCEEDED'){editing.value=undefined;return true;}return false;});if(saved){await load();task.message.value='笔记已更新';}}
-async function deleteNote(row:Row){const result=await task.run(()=>ops.begin('learning','删除私人笔记','/notes/'+row.id+'?version='+row.version,undefined,'DELETE'));if(result?.status==='SUCCEEDED')await load();}
-watch(()=>props.mode,()=>{choicesAbort?.abort();page.value=1;courseId.value='';rows.value=[];void load();});onMounted(load);
+watch(task.busy, (busy) => {
+  if (!busy && loadPending) {
+    const message = task.message.value;
+    void load().then(() => {
+      if (message && !task.error.value && !task.message.value) task.message.value = message;
+    });
+  }
+});
+async function load() {
+  const revision = ++loadRevision;
+  editing.value = undefined;
+  if (task.busy.value) {
+    loadPending = true;
+    return;
+  }
+  loadPending = false;
+  const mode = props.mode;
+  await task.run(async () => {
+    if (mode === 'settings') {
+      const result = await get<Row>('/services/user/users/me');
+      if (revision === loadRevision) profile.value = result;
+      return;
+    }
+    const path =
+      mode === 'favorites'
+        ? '/favorites'
+        : mode === 'notes'
+          ? '/notes'
+          : '/services/message/inboxes';
+    const result = await get<Row>(
+      path +
+        '?' +
+        query({
+          pageNo: page.value,
+          pageSize: 20,
+          courseId: courseId.value,
+          keyword: keyword.value,
+        }),
+    );
+    if (revision !== loadRevision) return;
+    rows.value = result.list || [];
+    total.value = Number(result.total || 0);
+    if (['notes', 'favorites'].includes(mode)) await names();
+    if (revision === loadRevision && mode === 'notes' && !noteCourses.value.length)
+      await noteCourseChoices();
+  });
+}
+async function saveProfile() {
+  await task.run(async () => {
+    await write('/services/user/users', 'PUT', {
+      ...profile.value,
+      oldPassword: oldPassword.value,
+      password: password.value,
+    });
+    oldPassword.value = '';
+    password.value = '';
+    task.message.value = '个人信息已保存';
+  });
+}
+async function updateNote() {
+  const saved = await task.run(async () => {
+    if (!editing.value) return false;
+    const result = await ops.begin(
+      'learning',
+      '编辑私人笔记',
+      '/notes/' + editing.value.id,
+      { content: content.value, version: editing.value.version },
+      'PUT',
+    );
+    if (result.status === 'SUCCEEDED') {
+      editing.value = undefined;
+      return true;
+    }
+    return false;
+  });
+  if (saved) {
+    await load();
+    task.message.value = '笔记已更新';
+  }
+}
+async function deleteNote(row: Row) {
+  const result = await task.run(() =>
+    ops.begin(
+      'learning',
+      '删除私人笔记',
+      '/notes/' + row.id + '?version=' + row.version,
+      undefined,
+      'DELETE',
+    ),
+  );
+  if (result?.status === 'SUCCEEDED') await load();
+}
+watch(
+  () => props.mode,
+  () => {
+    choicesAbort?.abort();
+    page.value = 1;
+    courseId.value = '';
+    rows.value = [];
+    void load();
+  },
+);
+onMounted(load);
 </script>
-<template><section class="card personal-page"><div class="section-heading"><div><h2>{{titles[mode]}}</h2></div><RouterLink to="/">发现更多课程 →</RouterLink></div><Status :busy="task.busy.value"  :error="editing?undefined:task.error.value" :message="task.message.value"/>
-<div v-if="mode==='notes'" class="toolbar"><el-input v-model="keyword" placeholder="搜索笔记内容" aria-label="搜索笔记内容" clearable @keyup.enter="page=1;load()"/><el-button @click="page=1;load()">搜索笔记</el-button><el-select v-model="courseId" clearable filterable placeholder="筛选课程" aria-label="筛选笔记课程" @change="page=1;load()"><el-option v-for="item in noteCourses" :key="item.courseId" :label="item.courseName||'课程已下架'" :value="String(item.courseId)"/></el-select><p>笔记默认私有。并发编辑冲突时请刷新后重新编辑。</p></div>
-<div v-if="mode==='favorites'" class="grid favorite-cards"><article v-for="row in rows" :key="row.id" class="card"><p class="eyebrow">我的收藏</p><h3>{{courseNames[row.course_id]||'收藏课程'}}</h3><div class="toolbar"><RouterLink :to="'/courses/'+row.course_id">查看课程</RouterLink><el-button text @click="task.run(async()=>{await write('/favorites/'+row.course_id,'DELETE');rows=rows.filter(x=>x.course_id!==row.course_id);})">取消收藏</el-button></div></article></div>
-<template v-else-if="mode==='notes'"><article v-for="row in rows" :key="row.id" class="section journal-entry"><RouterLink :to="{path:'/courses/'+row.course_id,query:{sectionId:row.section_id,moment:row.moment}}">{{courseNames[row.course_id]||'查看课程'}}</RouterLink><small> {{row.section_id?'随堂笔记':'课程笔记'}} · {{row.moment??0}} 秒</small><p class="content">{{row.content}}</p><el-button @click="editing=row;content=row.content">编辑</el-button><el-popconfirm title="删除这条私人笔记？" @confirm="deleteNote(row)"><template #reference><el-button>删除</el-button></template></el-popconfirm></article><el-dialog  :model-value="!!editing" title="编辑笔记" @update:model-value="(value:boolean)=>{if(!value)editing=undefined;}" :before-close="()=>{editing=undefined;}"><Status :error="task.error.value" :busy="task.busy.value"/><el-input v-model="content" type="textarea" :rows="8" maxlength="10000"/><template #footer><el-button type="primary" @click="updateNote" :disabled="!content.trim() || task.busy.value">保存</el-button></template></el-dialog></template>
-<template v-else-if="mode==='messages'"><article v-for="row in rows" :key="row.id" class="section journal-entry"><h3>{{row.title||row.subject}}</h3><p class="content">{{row.content}}</p><small>{{row.pushTime}}</small><el-button v-if="!row.isRead" @click="task.run(async()=>{await write('/services/message/inboxes/'+row.id+'/read','PUT');row.isRead=true;})">标为已读</el-button><span v-else>已读</span></article></template>
-<el-form v-else-if="mode==='settings'" aria-label="个人资料设置" label-width="90px"><el-form-item label="昵称"><el-input v-model="profile.name" maxlength="50"/></el-form-item><el-form-item label="简介"><el-input v-model="profile.intro" type="textarea"/></el-form-item><el-form-item label="原密码"><el-input v-model="oldPassword" type="password" autocomplete="current-password"/></el-form-item><el-form-item label="新密码（可选）"><el-input v-model="password" type="password" autocomplete="new-password"/></el-form-item><el-button type="primary" @click="saveProfile" :disabled="task.busy.value || (!!password && !oldPassword)">保存</el-button></el-form>
-<AccountPrivacyPanel v-if="mode==='settings'"/><el-empty v-if="!rows.length && !task.busy.value && !task.error.value && mode!=='settings'" description="暂无记录"/><el-pagination v-if="mode!=='settings'" v-model:current-page="page" :total="total" :page-size="20" layout="prev,pager,next" @current-change="load"/></section></template>
+<template>
+  <section class="card personal-page">
+    <div class="section-heading">
+      <div>
+        <h2>{{ titles[mode] }}</h2>
+      </div>
+      <RouterLink to="/">发现更多课程 →</RouterLink>
+    </div>
+    <Status
+      :busy="task.busy.value"
+      :error="editing ? undefined : task.error.value"
+      :message="task.message.value"
+    />
+    <div v-if="mode === 'notes'" class="toolbar">
+      <el-input
+        v-model="keyword"
+        placeholder="搜索笔记内容"
+        aria-label="搜索笔记内容"
+        clearable
+        @keyup.enter="
+          page = 1;
+          load();
+        "
+      /><el-button
+        @click="
+          page = 1;
+          load();
+        "
+        >搜索笔记</el-button
+      ><el-select
+        v-model="courseId"
+        clearable
+        filterable
+        placeholder="筛选课程"
+        aria-label="筛选笔记课程"
+        @change="
+          page = 1;
+          load();
+        "
+        ><el-option
+          v-for="item in noteCourses"
+          :key="item.courseId"
+          :label="item.courseName || '课程已下架'"
+          :value="String(item.courseId)"
+      /></el-select>
+      <p>笔记默认私有。并发编辑冲突时请刷新后重新编辑。</p>
+    </div>
+    <div v-if="mode === 'favorites'" class="grid favorite-cards">
+      <article v-for="row in rows" :key="row.id" class="card">
+        <p class="eyebrow">我的收藏</p>
+        <h3>{{ courseNames[row.course_id] || '收藏课程' }}</h3>
+        <div class="toolbar">
+          <RouterLink :to="'/courses/' + row.course_id">查看课程</RouterLink
+          ><el-button
+            text
+            @click="
+              task.run(async () => {
+                await write('/favorites/' + row.course_id, 'DELETE');
+                rows = rows.filter((x) => x.course_id !== row.course_id);
+              })
+            "
+            >取消收藏</el-button
+          >
+        </div>
+      </article>
+    </div>
+    <template v-else-if="mode === 'notes'"
+      ><article v-for="row in rows" :key="row.id" class="section journal-entry">
+        <RouterLink
+          :to="{
+            path: '/courses/' + row.course_id,
+            query: { sectionId: row.section_id, moment: row.moment },
+          }"
+          >{{ courseNames[row.course_id] || '查看课程' }}</RouterLink
+        ><small> {{ row.section_id ? '随堂笔记' : '课程笔记' }} · {{ row.moment ?? 0 }} 秒</small>
+        <p class="content">{{ row.content }}</p>
+        <el-button
+          @click="
+            editing = row;
+            content = row.content;
+          "
+          >编辑</el-button
+        ><el-popconfirm title="删除这条私人笔记？" @confirm="deleteNote(row)"
+          ><template #reference><el-button>删除</el-button></template></el-popconfirm
+        >
+      </article>
+      <el-dialog
+        :model-value="!!editing"
+        title="编辑笔记"
+        @update:model-value="
+          (value: boolean) => {
+            if (!value) editing = undefined;
+          }
+        "
+        :before-close="
+          () => {
+            editing = undefined;
+          }
+        "
+        ><Status :error="task.error.value" :busy="task.busy.value" /><el-input
+          v-model="content"
+          type="textarea"
+          :rows="8"
+          maxlength="10000"
+        /><template #footer
+          ><el-button
+            type="primary"
+            @click="updateNote"
+            :disabled="!content.trim() || task.busy.value"
+            >保存</el-button
+          ></template
+        ></el-dialog
+      ></template
+    >
+    <template v-else-if="mode === 'messages'"
+      ><article v-for="row in rows" :key="row.id" class="section journal-entry">
+        <h3>{{ row.title || row.subject }}</h3>
+        <p class="content">{{ row.content }}</p>
+        <small>{{ row.pushTime }}</small
+        ><el-button
+          v-if="!row.isRead"
+          @click="
+            task.run(async () => {
+              await write('/services/message/inboxes/' + row.id + '/read', 'PUT');
+              row.isRead = true;
+            })
+          "
+          >标为已读</el-button
+        ><span v-else>已读</span>
+      </article></template
+    >
+    <el-form v-else-if="mode === 'settings'" aria-label="个人资料设置" label-width="90px"
+      ><el-form-item label="昵称"><el-input v-model="profile.name" maxlength="50" /></el-form-item
+      ><el-form-item label="简介"><el-input v-model="profile.intro" type="textarea" /></el-form-item
+      ><el-form-item label="原密码"
+        ><el-input
+          v-model="oldPassword"
+          type="password"
+          autocomplete="current-password" /></el-form-item
+      ><el-form-item label="新密码（可选）"
+        ><el-input v-model="password" type="password" autocomplete="new-password" /></el-form-item
+      ><el-button
+        type="primary"
+        @click="saveProfile"
+        :disabled="task.busy.value || (!!password && !oldPassword)"
+        >保存</el-button
+      ></el-form
+    >
+    <AccountPrivacyPanel v-if="mode === 'settings'" /><el-empty
+      v-if="!rows.length && !task.busy.value && !task.error.value && mode !== 'settings'"
+      description="暂无记录"
+    /><el-pagination
+      v-if="mode !== 'settings'"
+      v-model:current-page="page"
+      :total="total"
+      :page-size="20"
+      layout="prev,pager,next"
+      @current-change="load"
+    />
+  </section>
+</template>

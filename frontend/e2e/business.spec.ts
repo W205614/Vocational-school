@@ -1,155 +1,638 @@
-import {home, accounts, fixture, login, api as request} from './helpers';
-import {test,expect,type Page} from '@playwright/test';
-import {assertPersistedAudit} from './audit-check';
-import fs from 'node:fs';import {execFileSync} from 'node:child_process';
-function api(page:Page,path:string,method='GET',data?:unknown){return request(page,method,path,data,crypto.randomUUID());}
-async function pick(page:Page,label:string,keyword:string,names:string[],multiple=false){await page.getByRole('button',{name:label,exact:true}).click();const dialog=page.getByRole('dialog',{name:label,exact:true});await dialog.getByRole('textbox',{name:label+'关键词',exact:true}).fill(keyword);const result=page.waitForResponse(response=>{const params=new URL(response.url()).searchParams;return params.get('keyword')===keyword || params.get('name')===keyword;});await dialog.getByRole('button',{name:'查询',exact:true}).click();expect((await result).ok()).toBeTruthy();await expect(dialog.locator('.el-loading-mask:visible')).toHaveCount(0);for(const name of names)await expect(dialog.locator('.el-table__row').filter({hasText:name})).toBeVisible();for(const name of names)await dialog.locator('.el-table__row').filter({hasText:name}).getByRole('button',{name:multiple?'添加':'选用',exact:true}).click();if(multiple)await dialog.getByRole('button',{name:'确认选择',exact:true}).click();await expect(dialog).not.toBeVisible();}
-test('browser purchase, real local video, discussions, exam grading and targeted refund',async({page,browser},info)=>{
- test.skip(info.project.name!=='student');test.setTimeout(180000);
- const adminContext=await browser.newContext({baseURL:process.env.TJ_ADMIN_URL||'http://127.0.0.1:23501'}),admin=await adminContext.newPage();
- const teacherContext=await browser.newContext({baseURL:process.env.TJ_ADMIN_URL||'http://127.0.0.1:23501'}),teacher=await teacherContext.newPage();
- try{
-  await login(admin,'admin','/media');
-  const bytes=await admin.evaluate(async()=>{
-   const canvas=document.createElement('canvas');canvas.width=160;canvas.height=90;const ctx=canvas.getContext('2d')!;ctx.fillStyle='#2563eb';ctx.fillRect(0,0,160,90);
-   const stream=canvas.captureStream(10),recorder=new MediaRecorder(stream,{mimeType:'video/webm'}),chunks:Blob[]=[];
-   recorder.ondataavailable=e=>chunks.push(e.data);const frames=setInterval(()=>{ctx.fillStyle=`hsl(${Date.now()%360},70%,50%)`;ctx.fillRect(0,0,160,90);},100);
-   const done=new Promise<void>(resolve=>recorder.onstop=()=>resolve());recorder.start();await new Promise(resolve=>setTimeout(resolve,12100));recorder.stop();await done;clearInterval(frames);stream.getTracks().forEach(t=>t.stop());
-   return Array.from(new Uint8Array(await new Blob(chunks,{type:'video/webm'}).arrayBuffer()));
+import { home, accounts, fixture, login, api as request } from './helpers';
+import { test, expect, type Page } from '@playwright/test';
+import { assertPersistedAudit } from './audit-check';
+import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
+function api(page: Page, path: string, method = 'GET', data?: unknown) {
+  return request(page, method, path, data, crypto.randomUUID());
+}
+async function pick(page: Page, label: string, keyword: string, names: string[], multiple = false) {
+  await page.getByRole('button', { name: label, exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: label, exact: true });
+  await dialog.getByRole('textbox', { name: label + '关键词', exact: true }).fill(keyword);
+  const result = page.waitForResponse((response) => {
+    const params = new URL(response.url()).searchParams;
+    return params.get('keyword') === keyword || params.get('name') === keyword;
   });
-  await admin.getByLabel('选择本地视频').setInputFiles({name:'browser-'+fixture.marker+'.webm',mimeType:'video/webm',buffer:Buffer.from(bytes)});
-  await admin.getByRole('button',{name:'上传并登记',exact:true}).click();await expect(admin.getByText('视频已持久化',{exact:true})).toBeVisible();
-  const media=await admin.evaluate(()=>JSON.parse(sessionStorage.getItem('school-operations')||'[]').find((x:any)=>x.label==='登记本地视频').operation.result.id);
-  execFileSync(process.env.TJ_PYTHON||'python',[process.env.TJ_MEDIA_FIXTURE_SCRIPT||'../deploy/acceptance/attach_browser_media.py',String(media)],{stdio:'pipe'});
-  await admin.goto('/exams');await pick(admin,'选择考试课程',fixture.name,[fixture.name]);await expect(admin.getByRole('combobox',{name:'选择考试小节',exact:true})).toBeEnabled();await admin.locator('.el-select').filter({has:admin.getByRole('combobox',{name:'选择考试小节',exact:true})}).click();await admin.getByRole('option',{name:'Browser chapter / Browser exam',exact:true}).click();await pick(admin,'选择试卷题目',fixture.marker,['Browser objective '+fixture.marker,'Browser subjective '+fixture.marker],true);await pick(admin,'选择评分教师','teacher acceptance',['teacher acceptance'],true);
-  await admin.getByRole('button',{name:'发布不可变试卷版本'}).click();await expect(admin.getByText('试卷版本已发布',{exact:true})).toBeVisible();
-  await login(page,'student','/courses/'+fixture.course);await page.getByRole('button',{name:'加入购物车',exact:true}).click();await expect(page.getByText('已加入购物车',{exact:true})).toBeVisible();
-  await page.goto('/cart');const cart=page.locator('.el-table__row').filter({hasText:fixture.name});await expect(cart).toBeVisible();await cart.locator('.el-checkbox').click();
-  await page.getByRole('button',{name:/确认选购 1 门课程/}).click();await page.getByRole('button',{name:'提交订单',exact:true}).click();await expect(page.getByRole('dialog',{name:'订单创建成功'})).toBeVisible();await page.getByRole('button',{name:'立即付款',exact:true}).click();await expect(page.getByRole('dialog',{name:'完成付款'})).toBeVisible();await expect(page.getByRole('link',{name:'打开本地模拟支付 →',exact:true})).toBeVisible();await page.getByRole('dialog',{name:'完成付款',exact:true}).getByRole('button',{name:'稍后付款',exact:true}).click();
-  const order=page.locator('.el-table__row').first();const orderId=(await order.locator('.cell').nth(1).innerText()).trim();expect(orderId).toMatch(/^\d+$/);
-  await order.getByRole('button',{name:'取消',exact:true}).click();await expect(page.getByRole('dialog',{name:'取消这笔订单？'})).toBeVisible();await page.getByRole('button',{name:'继续保留',exact:true}).click();expect((await api(page,'/orders/'+orderId)).status).toBe(1);
-  await order.getByRole('button',{name:'支付',exact:true}).click();await expect(page.getByRole('link',{name:'打开本地模拟支付 →',exact:true})).toBeVisible();
-  const channels=await api(page,'/services/trade/pay/channels'),links=await Promise.all(Array.from({length:10},()=>api(page,'/services/trade/pay/order','POST',{orderId,payChannelCode:channels[0].channelCode})));expect(new Set(links).size).toBe(1);
-  await page.getByRole('link',{name:'打开本地模拟支付 →'}).click();await page.getByRole('button',{name:'确认模拟支付成功'}).click();await expect(page.getByText('模拟器已保存支付事实，业务订单正在通过通知和对账更新',{exact:true})).toBeVisible();
-  await expect.poll(async()=>(await api(page,'/orders/'+orderId)).status,{timeout:30000}).toBe(2);
-  await expect.poll(async()=>(await api(page,'/services/learning/learning-records/course/'+fixture.course))?.id,{timeout:30000}).toBeTruthy();
-  const purchased=(await api(page,'/orders/'+orderId)).details.find((detail:any)=>String(detail.courseId)===String(fixture.course));expect(purchased).toBeTruthy();
-  const learner=await api(page,'/services/user/users/me');await admin.goto('/orders');
-  await admin.getByRole('textbox',{name:'按订单条目 ID 查询',exact:true}).fill(String(purchased.id));
-  const orderListing=admin.waitForResponse(response=>response.url().includes('/order-details/page?')&&new URL(response.url()).searchParams.get('id')===String(purchased.id));
-  await admin.getByRole('button',{name:'查询',exact:true}).click();const listed=(await (await orderListing).json()).data.list;
-  expect(listed).toHaveLength(1);expect(listed[0].courseName).toBe(fixture.name);expect(listed[0].name).toBe(learner.name);
-  await expect(admin.getByRole('columnheader',{name:'课程',exact:true})).toBeVisible();await expect(admin.getByRole('columnheader',{name:'学员',exact:true})).toBeVisible();
-  const purchasedRow=admin.locator('.el-table__row').filter({hasText:String(purchased.id)});await expect(purchasedRow).toContainText(fixture.name);await expect(purchasedRow).toContainText(learner.name);
-  await page.goto('/courses/'+fixture.course);await expect(page.getByRole('heading',{name:fixture.name,exact:true})).toBeVisible();const initialTiming=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/v2/services/learning/learning-records/playback-sessions'&&response.request().method()==='POST');await page.getByRole('button',{name:/Browser video/}).click();
-  const video=page.locator('video');await expect(video).toBeVisible();
-  const retainedPlayUrl=await video.getAttribute('src');expect(retainedPlayUrl).toBeTruthy();
-  const requiredCreditMillis=Number((await (await initialTiming).json()).data.requiredMillis);expect(requiredCreditMillis).toBeGreaterThan(0);
-  const initialBytes=await page.request.get(retainedPlayUrl!,{headers:{Range:'bytes=0-31'}});expect([200,206]).toContain(initialBytes.status());
-  const timedRecord=async()=>{const data=await api(page,'/services/learning/learning-records/course/'+fixture.course);return data.records?.find((r:any)=>String(r.sectionId)===String(fixture.video));};
-  await video.evaluate(async(element:HTMLVideoElement)=>{if(element.readyState<1)await new Promise<void>(resolve=>element.addEventListener('loadedmetadata',()=>resolve(),{once:true}));element.muted=true;element.currentTime=element.duration-.1;});
-  await expect.poll(async()=>Number((await timedRecord())?.creditedMillis||0)).toBe(0);expect((await timedRecord())?.finished).toBe(false);
-  // A real second page creates a new server session. The old player must report 409,
-  // preserve its history and offer an explicit takeover rather than counting twice.
-  const otherPage=await page.context().newPage();
-  try{
-   await login(otherPage,'student','/courses/'+fixture.course);await otherPage.getByRole('button',{name:/Browser video/}).click();await expect(otherPage.locator('video')).toBeVisible();
-   await page.bringToFront();
-   const rejected=page.waitForResponse(response=>response.url().endsWith('/playback-sessions/heartbeat')&&response.status()===409);
-   await video.evaluate(async(element:HTMLVideoElement)=>{element.currentTime=0;await element.play().catch(error=>{if(error.name!=='AbortError')throw error;});});await rejected;
-   await expect(page.getByText(/计时已在其他页面开始/)).toBeVisible();await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.paused)).toBe(true);
-  }finally{await otherPage.close();}
-  await page.bringToFront();
-  await video.evaluate((element:HTMLVideoElement)=>{element.currentTime=0;element.playbackRate=.5;});
-  await page.getByRole('button',{name:'在当前页面重新开始计时',exact:true}).click();
-  await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.currentTime),{timeout:10000}).toBeGreaterThan(.6);
-  const paused=page.waitForResponse(response=>response.url().endsWith('/playback-sessions/heartbeat')&&response.request().postDataJSON()?.state==='PAUSED'&&response.ok());
-  await video.evaluate((element:HTMLVideoElement)=>element.pause());await paused;
-  const pausedTime=Number((await timedRecord()).creditedMillis);expect(pausedTime).toBeGreaterThan(0);expect(pausedTime).toBeLessThan(requiredCreditMillis);
-  await page.waitForTimeout(1100);expect(Number((await timedRecord()).creditedMillis)).toBe(pausedTime);
-  await video.evaluate(async(element:HTMLVideoElement)=>{element.playbackRate=2;await element.play();});
-  await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.ended),{timeout:15000}).toBe(true);
-  await expect.poll(async()=>(await timedRecord())?.finished,{timeout:15000}).toBe(true);
-  const completed=await timedRecord();expect(completed.completionSource).toBe('TIMED');expect(Number(completed.creditedMillis)).toBeGreaterThanOrEqual(requiredCreditMillis);
-  await expect(page.getByLabel('学习计时')).toContainText('已完成');
-  const earned=async()=>JSON.stringify(await api(page,'/services/learning/points/today'));
-  const pointsBeforeReplay=await earned(),lessonBeforeReplay=await api(page,'/services/learning/learning-records/course/'+fixture.course);
-  await video.evaluate(async(element:HTMLVideoElement)=>{element.currentTime=0;element.playbackRate=2;await element.play();});
-  await expect.poll(()=>video.evaluate((element:HTMLVideoElement)=>element.ended),{timeout:15000}).toBe(true);
-  expect((await api(page,'/services/learning/learning-records/course/'+fixture.course)).learnedSections).toBe(lessonBeforeReplay.learnedSections);
-  expect(await earned()).toBe(pointsBeforeReplay);
-  const note='Video note '+fixture.marker;await page.getByPlaceholder('记录私人笔记').fill(note);await page.getByRole('button',{name:'保存笔记',exact:true}).click();await expect(page.getByText('笔记已保存',{exact:true})).toBeVisible();
-  await page.getByPlaceholder('问题标题').fill('Question '+fixture.marker);await page.getByPlaceholder('描述问题').fill('A persisted browser discussion');await page.getByRole('button',{name:'在当前小节提问'}).click();await page.getByRole('button',{name:'Question '+fixture.marker,exact:true}).click();await page.getByPlaceholder('写下回答').fill('A persisted answer');await page.getByRole('button',{name:'提交回答',exact:true}).click();await expect(page.getByText('A persisted answer',{exact:true})).toBeVisible();await page.getByRole('button',{name:/^赞 /}).click();await expect(page.getByRole('button',{name:/^已赞 /})).toHaveAttribute('aria-pressed','true');
-  await page.reload();await page.getByRole('button',{name:/Browser video/}).click();await page.getByRole('button',{name:'查看讨论',exact:true}).click();await page.getByRole('button',{name:'Question '+fixture.marker,exact:true}).click();await expect(page.getByRole('button',{name:/^已赞 /})).toHaveAttribute('aria-pressed','true');await page.getByRole('button',{name:/^已赞 /}).click();await expect(page.getByRole('button',{name:/^赞 /})).toHaveAttribute('aria-pressed','false');
-  fs.mkdirSync(home+'/ux-screenshots',{recursive:true});await page.screenshot({path:home+'/ux-screenshots/course-learning.png',fullPage:true});
-  await page.goto('/notes');await expect(page.getByText(note,{exact:true})).toBeVisible();await page.reload();await expect(page.getByText(note,{exact:true})).toBeVisible();
-  await page.goto('/exams?courseId='+fixture.course);await page.getByRole('button',{name:'开始 / 继续考试'}).first().click();await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toHaveCount(1);await page.locator('.answer-options .el-checkbox').filter({hasText:'A. A'}).click();await page.locator('.answer-options .el-checkbox').filter({hasText:'B. B'}).click();await page.getByPlaceholder('请写下你的答案',{exact:true}).fill('Explain reliable transactions');
-  const draftAttempt=await page.evaluate(()=>sessionStorage.getItem('school-active-exam'));
-  await expect.poll(async()=>(await api(page,'/exam-attempts/'+draftAttempt+'/draft')).answers[fixture.subjective],{timeout:15000}).toBe('Explain reliable transactions');
-  const deviceContext=await browser.newContext({baseURL:process.env.TJ_STUDENT_URL||'http://127.0.0.1:23500'}),device=await deviceContext.newPage();
-  try{
-   await login(device,'student','/exams?courseId='+fixture.course);await device.getByRole('button',{name:'开始 / 继续考试'}).first().click();await expect(device.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Explain reliable transactions');await expect(device.getByRole('checkbox',{name:'A. A',exact:true})).toBeChecked();
-   await device.getByPlaceholder('请写下你的答案',{exact:true}).fill('Other device answer');await expect.poll(async()=>(await api(device,'/exam-attempts/'+draftAttempt+'/draft')).answers[fixture.subjective],{timeout:15000}).toBe('Other device answer');
-   await page.getByPlaceholder('请写下你的答案',{exact:true}).fill('Unsynchronized answer on first device');await expect(page.getByRole('button',{name:'载入最新草稿',exact:true})).toBeVisible();await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Unsynchronized answer on first device');await page.reload();await expect(page.getByRole('button',{name:'载入最新草稿',exact:true})).toBeVisible();await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Unsynchronized answer on first device');expect((await api(page,'/exam-attempts/'+draftAttempt+'/draft')).answers[fixture.subjective]).toBe('Other device answer');
-   await page.getByRole('button',{name:'载入最新草稿',exact:true}).click();await page.getByRole('dialog',{name:'载入最新草稿',exact:true}).getByRole('button',{name:'载入最新草稿',exact:true}).click();await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Other device answer');
-   expect(await page.evaluate(id=>JSON.parse(sessionStorage.getItem('school-exam-draft-backup-'+id)||'{}'),draftAttempt)).toHaveProperty(String(fixture.subjective),'Unsynchronized answer on first device');
-   await page.getByRole('button',{name:'查看本机备份',exact:true}).click();await expect(page.getByRole('dialog',{name:'本机未同步答案备份',exact:true}).getByRole('textbox').last()).toHaveValue('Unsynchronized answer on first device');await page.getByRole('dialog',{name:'本机未同步答案备份',exact:true}).getByRole('button',{name:'关闭此对话框',exact:true}).click();
-   await page.getByPlaceholder('请写下你的答案',{exact:true}).fill('Explain reliable transactions');await expect.poll(async()=>(await api(page,'/exam-attempts/'+draftAttempt+'/draft')).answers[fixture.subjective],{timeout:15000}).toBe('Explain reliable transactions');
-  }finally{await deviceContext.close();}
-  await page.reload();await expect(page.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Explain reliable transactions');await expect(page.getByRole('checkbox',{name:'A. A',exact:true})).toBeChecked();await expect(page.getByRole('checkbox',{name:'B. B',exact:true})).toBeChecked();
-  await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await page.screenshot({path:home+'/ux-screenshots/exam-390.png',fullPage:true});await page.setViewportSize({width:1440,height:900});
-  await page.getByRole('button',{name:'提交全部答案'}).click();await page.getByRole('button',{name:'继续检查',exact:true}).click();await expect(page.getByText('答题中',{exact:true})).toBeVisible();await page.getByRole('button',{name:'提交全部答案'}).click();await page.getByRole('button',{name:'确认提交答卷',exact:true}).click();await expect(page.getByText('等待教师评分',{exact:true})).toBeVisible();
-  const attempt=await page.evaluate(()=>sessionStorage.getItem('school-active-exam'));
-  const submitToken=await page.evaluate(()=>sessionStorage.getItem('school-token'));const lateDraft=await page.request.put('/api/v2/exam-attempts/'+attempt+'/draft',{headers:{Authorization:'Bearer '+submitToken},data:{version:0,answers:{[fixture.subjective]:'late change'}}});expect(lateDraft.status()).toBe(409);
-  await login(teacher,'teacher','/exams');
-  await teacher.getByPlaceholder('课程编号筛选').fill(fixture.course);await teacher.getByPlaceholder('学生编号筛选').fill(accounts.admin.id);
-  const emptyPending=teacher.waitForResponse(r=>r.url().includes('/teacher/exam-attempts/page?')&&r.url().includes('studentId='+accounts.admin.id));
-  await teacher.getByRole('button',{name:'刷新待评分列表'}).click();expect((await emptyPending).ok()).toBeTruthy();await expect(teacher.locator('.el-table__row')).toHaveCount(0);
-  await teacher.getByPlaceholder('学生编号筛选').fill(accounts.student.id);
-  const ownedPending=teacher.waitForResponse(r=>r.url().includes('/teacher/exam-attempts/page?')&&r.url().includes('courseId='+fixture.course)&&r.url().includes('studentId='+accounts.student.id));
-  await teacher.getByRole('button',{name:'刷新待评分列表'}).click();const pendingResult=await ownedPending;expect(pendingResult.ok()).toBeTruthy();expect((await pendingResult.json()).data.pageNo).toBe(1);
-  await expect(teacher.locator('.el-table__row').filter({hasText:attempt!})).toHaveCount(1);await teacher.locator('.el-table__row').filter({hasText:attempt!}).getByRole('button',{name:'查看答卷'}).click();await teacher.getByRole('spinbutton').fill('10');await teacher.getByPlaceholder('评分反馈').fill('Reviewed browser answer');await teacher.getByRole('button',{name:'提交评分'}).click();await expect(teacher.getByText('已评分 10 · Reviewed browser answer',{exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'刷新评分状态'}).click();await expect(page.locator('.exam-result')).toContainText('20');await expect(page.locator('.exam-result')).toContainText('已通过');
-  await expect.poll(async()=>(await api(page,'/services/learning/learning-records/course/'+fixture.course)).records.filter((r:any)=>r.finished).length,{timeout:30000}).toBe(2);
-  await page.goto('/orders');await page.locator('.el-table__row').filter({hasText:orderId}).getByRole('button',{name:'详情'}).click();await page.getByRole('button',{name:'申请退款'}).click();await expect(page.getByRole('dialog',{name:'申请课程退款'})).toBeVisible();await expect(page.getByRole('button',{name:'提交退款申请',exact:true})).toBeDisabled();await page.getByPlaceholder('请说明退款原因').fill('浏览器验收退款，验证学习历史保留');
-  // Observe the UI's async submission and its own polling before checking feedback.
-  const submittedRefund=page.waitForResponse(response=>response.request().method()==='POST'&&new URL(response.url()).pathname==='/api/v2/services/trade/refund-apply',{timeout:60000}).then(async response=>({response,envelope:await response.json()}));
-  const completedRefund=page.waitForResponse(async response=>{
-   if(response.request().method()!=='GET'||!new URL(response.url()).pathname.startsWith('/api/v2/operations/trade/'))return false;
-   const submitted=await submittedRefund;
-   if(new URL(response.url()).pathname!=='/api/v2/operations/trade/'+submitted.envelope.data.operationId)return false;
-   return (await response.json()).data?.status!=='PENDING';
-  },{timeout:60000});
-  await page.getByRole('button',{name:'提交退款申请',exact:true}).click();
-  const refundSubmission=await submittedRefund;expect(refundSubmission.response.status()).toBe(202);expect(refundSubmission.envelope.code).toBe(200);expect(refundSubmission.envelope.data.status).toBe('PENDING');
-  const refundCompletion=await completedRefund;expect(refundCompletion.status()).toBe(200);const refundOperation=(await refundCompletion.json()).data;expect(refundOperation.operationId).toBe(refundSubmission.envelope.data.operationId);expect(refundOperation.status).toBe('SUCCEEDED');expect(refundOperation.result.accepted).toBe(true);
-  await expect(page.getByText('退款申请已提交',{exact:true})).toBeVisible();
-  await admin.goto('/refunds');const refund=admin.locator('.el-table__row').filter({hasText:orderId});await refund.getByRole('button',{name:'同意退款'}).click();await admin.getByRole('button',{name:'确定',exact:true}).click();await expect(admin.getByText('同意退款已完成',{exact:true})).toBeVisible();
-  await expect.poll(async()=>(await api(page,'/orders/'+orderId)).status,{timeout:60000}).toBe(7);
-  // Financial completion precedes consumption of the entitlement event. Confirm
-  // that the authoritative playback check has observed revocation within 3s.
-  await expect.poll(async()=>{
-   const token=await page.evaluate(()=>sessionStorage.getItem('school-token'));
-   return (await page.request.get('/api/v2/services/media/medias/signature/play?sectionId='+fixture.video,{headers:{Authorization:'Bearer '+token}})).status();
-  },{timeout:3000,intervals:[100,200,300]}).toBe(403);
-  // A URL obtained before refund must be checked again when fetching new bytes.
-  // This does not claim that already downloaded video data can be revoked.
-  const refundedBytes=await page.request.get(retainedPlayUrl!,{headers:{Range:'bytes=0-31'}});expect(refundedBytes.status()).toBe(403);
-  await assertPersistedAudit(admin);
-  await page.goto('/courses/'+fixture.course);await expect(page.getByText('学习权益已失效',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:/Browser video/})).toBeDisabled();await expect(page.getByRole('link',{name:'查看考试记录 →',exact:true})).toBeVisible();await expect(page.locator('video')).toHaveCount(0);
-  // A fresh device has no active-attempt cache. Refunded students still need
-  // to discover and read their own graded history through the server list.
-  const historyContext=await browser.newContext({baseURL:process.env.TJ_STUDENT_URL||'http://127.0.0.1:23500'}),historyPage=await historyContext.newPage();
-  try{
-   await login(historyPage,'student','/exams?courseId='+fixture.course);
-   expect(await historyPage.evaluate(()=>sessionStorage.getItem('school-active-exam'))).toBeNull();
-   const history=historyPage.getByRole('region',{name:'我的考试记录',exact:true});
-   const record=history.locator('.el-table__row').filter({hasText:attempt!});await expect(record).toHaveCount(1);
-   await record.getByRole('button',{name:'查看答卷',exact:true}).click();await expect(historyPage.locator('.exam-result')).toContainText('20');await expect(historyPage.locator('.exam-result')).toContainText('已通过');
-   await expect(historyPage.getByPlaceholder('请写下你的答案',{exact:true})).toHaveValue('Explain reliable transactions');await expect(historyPage.getByPlaceholder('请写下你的答案',{exact:true})).toBeDisabled();await expect(historyPage.getByRole('button',{name:'提交全部答案',exact:true})).toHaveCount(0);
-   const list=await api(historyPage,'/exam-attempts/page?courseId='+fixture.course+'&pageNo=1&pageSize=20');expect(Number(list.total)).toBe(1);expect(list.list[0].id).toBe(attempt);expect(list.list[0]).not.toHaveProperty('answers');expect(list.list[0]).not.toHaveProperty('user_id');
-   await historyPage.setViewportSize({width:390,height:844});expect(await historyPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await historyPage.screenshot({path:home+'/ux-screenshots/exam-history-390.png',fullPage:true});
-  }finally{await historyContext.close();}
-  await page.goto('/notes');await expect(page.getByText(note,{exact:true})).toBeVisible();
- }finally{await adminContext.close();await teacherContext.close();}
+  await dialog.getByRole('button', { name: '查询', exact: true }).click();
+  expect((await result).ok()).toBeTruthy();
+  await expect(dialog.locator('.el-loading-mask:visible')).toHaveCount(0);
+  for (const name of names)
+    await expect(dialog.locator('.el-table__row').filter({ hasText: name })).toBeVisible();
+  for (const name of names)
+    await dialog
+      .locator('.el-table__row')
+      .filter({ hasText: name })
+      .getByRole('button', { name: multiple ? '添加' : '选用', exact: true })
+      .click();
+  if (multiple) await dialog.getByRole('button', { name: '确认选择', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+}
+test('browser purchase, real local video, discussions, exam grading and targeted refund', async ({
+  page,
+  browser,
+}, info) => {
+  test.skip(info.project.name !== 'student');
+  test.setTimeout(180000);
+  const adminContext = await browser.newContext({
+      baseURL: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501',
+    }),
+    admin = await adminContext.newPage();
+  const teacherContext = await browser.newContext({
+      baseURL: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501',
+    }),
+    teacher = await teacherContext.newPage();
+  try {
+    await login(admin, 'admin', '/media');
+    const bytes = await admin.evaluate(async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 160;
+      canvas.height = 90;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#2563eb';
+      ctx.fillRect(0, 0, 160, 90);
+      const stream = canvas.captureStream(10),
+        recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }),
+        chunks: Blob[] = [];
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      const frames = setInterval(() => {
+        ctx.fillStyle = `hsl(${Date.now() % 360},70%,50%)`;
+        ctx.fillRect(0, 0, 160, 90);
+      }, 100);
+      const done = new Promise<void>((resolve) => (recorder.onstop = () => resolve()));
+      recorder.start();
+      await new Promise((resolve) => setTimeout(resolve, 12100));
+      recorder.stop();
+      await done;
+      clearInterval(frames);
+      stream.getTracks().forEach((t) => t.stop());
+      return Array.from(
+        new Uint8Array(await new Blob(chunks, { type: 'video/webm' }).arrayBuffer()),
+      );
+    });
+    await admin
+      .getByLabel('选择本地视频')
+      .setInputFiles({
+        name: 'browser-' + fixture.marker + '.webm',
+        mimeType: 'video/webm',
+        buffer: Buffer.from(bytes),
+      });
+    await admin.getByRole('button', { name: '上传并登记', exact: true }).click();
+    await expect(admin.getByText('视频已持久化', { exact: true })).toBeVisible();
+    const media = await admin.evaluate(
+      () =>
+        JSON.parse(sessionStorage.getItem('school-operations') || '[]').find(
+          (x: any) => x.label === '登记本地视频',
+        ).operation.result.id,
+    );
+    execFileSync(
+      process.env.TJ_PYTHON || 'python',
+      [
+        process.env.TJ_MEDIA_FIXTURE_SCRIPT || '../deploy/acceptance/attach_browser_media.py',
+        String(media),
+      ],
+      { stdio: 'pipe' },
+    );
+    await admin.goto('/exams');
+    await pick(admin, '选择考试课程', fixture.name, [fixture.name]);
+    await expect(admin.getByRole('combobox', { name: '选择考试小节', exact: true })).toBeEnabled();
+    await admin
+      .locator('.el-select')
+      .filter({ has: admin.getByRole('combobox', { name: '选择考试小节', exact: true }) })
+      .click();
+    await admin
+      .getByRole('option', { name: 'Browser chapter / Browser exam', exact: true })
+      .click();
+    await pick(
+      admin,
+      '选择试卷题目',
+      fixture.marker,
+      ['Browser objective ' + fixture.marker, 'Browser subjective ' + fixture.marker],
+      true,
+    );
+    await pick(admin, '选择评分教师', 'teacher acceptance', ['teacher acceptance'], true);
+    await admin.getByRole('button', { name: '发布不可变试卷版本' }).click();
+    await expect(admin.getByText('试卷版本已发布', { exact: true })).toBeVisible();
+    await login(page, 'student', '/courses/' + fixture.course);
+    await page.getByRole('button', { name: '加入购物车', exact: true }).click();
+    await expect(page.getByText('已加入购物车', { exact: true })).toBeVisible();
+    await page.goto('/cart');
+    const cart = page.locator('.el-table__row').filter({ hasText: fixture.name });
+    await expect(cart).toBeVisible();
+    await cart.locator('.el-checkbox').click();
+    await page.getByRole('button', { name: /确认选购 1 门课程/ }).click();
+    await page.getByRole('button', { name: '提交订单', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: '订单创建成功' })).toBeVisible();
+    await page.getByRole('button', { name: '立即付款', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: '完成付款' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '打开本地模拟支付 →', exact: true })).toBeVisible();
+    await page
+      .getByRole('dialog', { name: '完成付款', exact: true })
+      .getByRole('button', { name: '稍后付款', exact: true })
+      .click();
+    const order = page.locator('.el-table__row').first();
+    const orderId = (await order.locator('.cell').nth(1).innerText()).trim();
+    expect(orderId).toMatch(/^\d+$/);
+    await order.getByRole('button', { name: '取消', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: '取消这笔订单？' })).toBeVisible();
+    await page.getByRole('button', { name: '继续保留', exact: true }).click();
+    expect((await api(page, '/orders/' + orderId)).status).toBe(1);
+    await order.getByRole('button', { name: '支付', exact: true }).click();
+    await expect(page.getByRole('link', { name: '打开本地模拟支付 →', exact: true })).toBeVisible();
+    const channels = await api(page, '/services/trade/pay/channels'),
+      links = await Promise.all(
+        Array.from({ length: 10 }, () =>
+          api(page, '/services/trade/pay/order', 'POST', {
+            orderId,
+            payChannelCode: channels[0].channelCode,
+          }),
+        ),
+      );
+    expect(new Set(links).size).toBe(1);
+    await page.getByRole('link', { name: '打开本地模拟支付 →' }).click();
+    await page.getByRole('button', { name: '确认模拟支付成功' }).click();
+    await expect(
+      page.getByText('模拟器已保存支付事实，业务订单正在通过通知和对账更新', { exact: true }),
+    ).toBeVisible();
+    await expect
+      .poll(async () => (await api(page, '/orders/' + orderId)).status, { timeout: 30000 })
+      .toBe(2);
+    await expect
+      .poll(
+        async () =>
+          (await api(page, '/services/learning/learning-records/course/' + fixture.course))?.id,
+        { timeout: 30000 },
+      )
+      .toBeTruthy();
+    const purchased = (await api(page, '/orders/' + orderId)).details.find(
+      (detail: any) => String(detail.courseId) === String(fixture.course),
+    );
+    expect(purchased).toBeTruthy();
+    const learner = await api(page, '/services/user/users/me');
+    await admin.goto('/orders');
+    await admin
+      .getByRole('textbox', { name: '按订单条目 ID 查询', exact: true })
+      .fill(String(purchased.id));
+    const orderListing = admin.waitForResponse(
+      (response) =>
+        response.url().includes('/order-details/page?') &&
+        new URL(response.url()).searchParams.get('id') === String(purchased.id),
+    );
+    await admin.getByRole('button', { name: '查询', exact: true }).click();
+    const listed = (await (await orderListing).json()).data.list;
+    expect(listed).toHaveLength(1);
+    expect(listed[0].courseName).toBe(fixture.name);
+    expect(listed[0].name).toBe(learner.name);
+    await expect(admin.getByRole('columnheader', { name: '课程', exact: true })).toBeVisible();
+    await expect(admin.getByRole('columnheader', { name: '学员', exact: true })).toBeVisible();
+    const purchasedRow = admin.locator('.el-table__row').filter({ hasText: String(purchased.id) });
+    await expect(purchasedRow).toContainText(fixture.name);
+    await expect(purchasedRow).toContainText(learner.name);
+    await page.goto('/courses/' + fixture.course);
+    await expect(page.getByRole('heading', { name: fixture.name, exact: true })).toBeVisible();
+    const initialTiming = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname ===
+          '/api/v2/services/learning/learning-records/playback-sessions' &&
+        response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: /Browser video/ }).click();
+    const video = page.locator('video');
+    await expect(video).toBeVisible();
+    const retainedPlayUrl = await video.getAttribute('src');
+    expect(retainedPlayUrl).toBeTruthy();
+    const requiredCreditMillis = Number((await (await initialTiming).json()).data.requiredMillis);
+    expect(requiredCreditMillis).toBeGreaterThan(0);
+    const initialBytes = await page.request.get(retainedPlayUrl!, {
+      headers: { Range: 'bytes=0-31' },
+    });
+    expect([200, 206]).toContain(initialBytes.status());
+    const timedRecord = async () => {
+      const data = await api(page, '/services/learning/learning-records/course/' + fixture.course);
+      return data.records?.find((r: any) => String(r.sectionId) === String(fixture.video));
+    };
+    await video.evaluate(async (element: HTMLVideoElement) => {
+      if (element.readyState < 1)
+        await new Promise<void>((resolve) =>
+          element.addEventListener('loadedmetadata', () => resolve(), { once: true }),
+        );
+      element.muted = true;
+      element.currentTime = element.duration - 0.1;
+    });
+    await expect.poll(async () => Number((await timedRecord())?.creditedMillis || 0)).toBe(0);
+    expect((await timedRecord())?.finished).toBe(false);
+    // A real second page creates a new server session. The old player must report 409,
+    // preserve its history and offer an explicit takeover rather than counting twice.
+    const otherPage = await page.context().newPage();
+    try {
+      await login(otherPage, 'student', '/courses/' + fixture.course);
+      await otherPage.getByRole('button', { name: /Browser video/ }).click();
+      await expect(otherPage.locator('video')).toBeVisible();
+      await page.bringToFront();
+      const rejected = page.waitForResponse(
+        (response) =>
+          response.url().endsWith('/playback-sessions/heartbeat') && response.status() === 409,
+      );
+      await video.evaluate(async (element: HTMLVideoElement) => {
+        element.currentTime = 0;
+        await element.play().catch((error) => {
+          if (error.name !== 'AbortError') throw error;
+        });
+      });
+      await rejected;
+      await expect(page.getByText(/计时已在其他页面开始/)).toBeVisible();
+      await expect
+        .poll(() => video.evaluate((element: HTMLVideoElement) => element.paused))
+        .toBe(true);
+    } finally {
+      await otherPage.close();
+    }
+    await page.bringToFront();
+    await video.evaluate((element: HTMLVideoElement) => {
+      element.currentTime = 0;
+      element.playbackRate = 0.5;
+    });
+    await page.getByRole('button', { name: '在当前页面重新开始计时', exact: true }).click();
+    await expect
+      .poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime), {
+        timeout: 10000,
+      })
+      .toBeGreaterThan(0.6);
+    const paused = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/playback-sessions/heartbeat') &&
+        response.request().postDataJSON()?.state === 'PAUSED' &&
+        response.ok(),
+    );
+    await video.evaluate((element: HTMLVideoElement) => element.pause());
+    await paused;
+    const pausedTime = Number((await timedRecord()).creditedMillis);
+    expect(pausedTime).toBeGreaterThan(0);
+    expect(pausedTime).toBeLessThan(requiredCreditMillis);
+    await page.waitForTimeout(1100);
+    expect(Number((await timedRecord()).creditedMillis)).toBe(pausedTime);
+    await video.evaluate(async (element: HTMLVideoElement) => {
+      element.playbackRate = 2;
+      await element.play();
+    });
+    await expect
+      .poll(() => video.evaluate((element: HTMLVideoElement) => element.ended), { timeout: 15000 })
+      .toBe(true);
+    await expect.poll(async () => (await timedRecord())?.finished, { timeout: 15000 }).toBe(true);
+    const completed = await timedRecord();
+    expect(completed.completionSource).toBe('TIMED');
+    expect(Number(completed.creditedMillis)).toBeGreaterThanOrEqual(requiredCreditMillis);
+    await expect(page.getByLabel('学习计时')).toContainText('已完成');
+    const earned = async () => JSON.stringify(await api(page, '/services/learning/points/today'));
+    const pointsBeforeReplay = await earned(),
+      lessonBeforeReplay = await api(
+        page,
+        '/services/learning/learning-records/course/' + fixture.course,
+      );
+    await video.evaluate(async (element: HTMLVideoElement) => {
+      element.currentTime = 0;
+      element.playbackRate = 2;
+      await element.play();
+    });
+    await expect
+      .poll(() => video.evaluate((element: HTMLVideoElement) => element.ended), { timeout: 15000 })
+      .toBe(true);
+    expect(
+      (await api(page, '/services/learning/learning-records/course/' + fixture.course))
+        .learnedSections,
+    ).toBe(lessonBeforeReplay.learnedSections);
+    expect(await earned()).toBe(pointsBeforeReplay);
+    const note = 'Video note ' + fixture.marker;
+    await page.getByPlaceholder('记录私人笔记').fill(note);
+    await page.getByRole('button', { name: '保存笔记', exact: true }).click();
+    await expect(page.getByText('笔记已保存', { exact: true })).toBeVisible();
+    await page.getByPlaceholder('问题标题').fill('Question ' + fixture.marker);
+    await page.getByPlaceholder('描述问题').fill('A persisted browser discussion');
+    await page.getByRole('button', { name: '在当前小节提问' }).click();
+    await page.getByRole('button', { name: 'Question ' + fixture.marker, exact: true }).click();
+    await page.getByPlaceholder('写下回答').fill('A persisted answer');
+    await page.getByRole('button', { name: '提交回答', exact: true }).click();
+    await expect(page.getByText('A persisted answer', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /^赞 / }).click();
+    await expect(page.getByRole('button', { name: /^已赞 / })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.reload();
+    await page.getByRole('button', { name: /Browser video/ }).click();
+    await page.getByRole('button', { name: '查看讨论', exact: true }).click();
+    await page.getByRole('button', { name: 'Question ' + fixture.marker, exact: true }).click();
+    await expect(page.getByRole('button', { name: /^已赞 / })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.getByRole('button', { name: /^已赞 / }).click();
+    await expect(page.getByRole('button', { name: /^赞 / })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    fs.mkdirSync(home + '/ux-screenshots', { recursive: true });
+    await page.screenshot({ path: home + '/ux-screenshots/course-learning.png', fullPage: true });
+    await page.goto('/notes');
+    await expect(page.getByText(note, { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(note, { exact: true })).toBeVisible();
+    await page.goto('/exams?courseId=' + fixture.course);
+    await page.getByRole('button', { name: '开始 / 继续考试' }).first().click();
+    await expect(page.getByPlaceholder('请写下你的答案', { exact: true })).toHaveCount(1);
+    await page.locator('.answer-options .el-checkbox').filter({ hasText: 'A. A' }).click();
+    await page.locator('.answer-options .el-checkbox').filter({ hasText: 'B. B' }).click();
+    await page
+      .getByPlaceholder('请写下你的答案', { exact: true })
+      .fill('Explain reliable transactions');
+    const draftAttempt = await page.evaluate(() => sessionStorage.getItem('school-active-exam'));
+    await expect
+      .poll(
+        async () =>
+          (await api(page, '/exam-attempts/' + draftAttempt + '/draft')).answers[
+            fixture.subjective
+          ],
+        { timeout: 15000 },
+      )
+      .toBe('Explain reliable transactions');
+    const deviceContext = await browser.newContext({
+        baseURL: process.env.TJ_STUDENT_URL || 'http://127.0.0.1:23500',
+      }),
+      device = await deviceContext.newPage();
+    try {
+      await login(device, 'student', '/exams?courseId=' + fixture.course);
+      await device.getByRole('button', { name: '开始 / 继续考试' }).first().click();
+      await expect(device.getByPlaceholder('请写下你的答案', { exact: true })).toHaveValue(
+        'Explain reliable transactions',
+      );
+      await expect(device.getByRole('checkbox', { name: 'A. A', exact: true })).toBeChecked();
+      await device.getByPlaceholder('请写下你的答案', { exact: true }).fill('Other device answer');
+      await expect
+        .poll(
+          async () =>
+            (await api(device, '/exam-attempts/' + draftAttempt + '/draft')).answers[
+              fixture.subjective
+            ],
+          { timeout: 15000 },
+        )
+        .toBe('Other device answer');
+      await page
+        .getByPlaceholder('请写下你的答案', { exact: true })
+        .fill('Unsynchronized answer on first device');
+      await expect(page.getByRole('button', { name: '载入最新草稿', exact: true })).toBeVisible();
+      await expect(page.getByPlaceholder('请写下你的答案', { exact: true })).toHaveValue(
+        'Unsynchronized answer on first device',
+      );
+      await page.reload();
+      await expect(page.getByRole('button', { name: '载入最新草稿', exact: true })).toBeVisible();
+      await expect(page.getByPlaceholder('请写下你的答案', { exact: true })).toHaveValue(
+        'Unsynchronized answer on first device',
+      );
+      expect(
+        (await api(page, '/exam-attempts/' + draftAttempt + '/draft')).answers[fixture.subjective],
+      ).toBe('Other device answer');
+      await page.getByRole('button', { name: '载入最新草稿', exact: true }).click();
+      await page
+        .getByRole('dialog', { name: '载入最新草稿', exact: true })
+        .getByRole('button', { name: '载入最新草稿', exact: true })
+        .click();
+      await expect(page.getByPlaceholder('请写下你的答案', { exact: true })).toHaveValue(
+        'Other device answer',
+      );
+      expect(
+        await page.evaluate(
+          (id) => JSON.parse(sessionStorage.getItem('school-exam-draft-backup-' + id) || '{}'),
+          draftAttempt,
+        ),
+      ).toHaveProperty(String(fixture.subjective), 'Unsynchronized answer on first device');
+      await page.getByRole('button', { name: '查看本机备份', exact: true }).click();
+      await expect(
+        page
+          .getByRole('dialog', { name: '本机未同步答案备份', exact: true })
+          .getByRole('textbox')
+          .last(),
+      ).toHaveValue('Unsynchronized answer on first device');
+      await page
+        .getByRole('dialog', { name: '本机未同步答案备份', exact: true })
+        .getByRole('button', { name: '关闭此对话框', exact: true })
+        .click();
+      await page
+        .getByPlaceholder('请写下你的答案', { exact: true })
+        .fill('Explain reliable transactions');
+      await expect
+        .poll(
+          async () =>
+            (await api(page, '/exam-attempts/' + draftAttempt + '/draft')).answers[
+              fixture.subjective
+            ],
+          { timeout: 15000 },
+        )
+        .toBe('Explain reliable transactions');
+    } finally {
+      await deviceContext.close();
+    }
+    await page.reload();
+    await expect(page.getByPlaceholder('请写下你的答案', { exact: true })).toHaveValue(
+      'Explain reliable transactions',
+    );
+    await expect(page.getByRole('checkbox', { name: 'A. A', exact: true })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: 'B. B', exact: true })).toBeChecked();
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)).toBe(
+      false,
+    );
+    await page.screenshot({ path: home + '/ux-screenshots/exam-390.png', fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.getByRole('button', { name: '提交全部答案' }).click();
+    await page.getByRole('button', { name: '继续检查', exact: true }).click();
+    await expect(page.getByText('答题中', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: '提交全部答案' }).click();
+    await page.getByRole('button', { name: '确认提交答卷', exact: true }).click();
+    await expect(page.getByText('等待教师评分', { exact: true })).toBeVisible();
+    const attempt = await page.evaluate(() => sessionStorage.getItem('school-active-exam'));
+    const submitToken = await page.evaluate(() => sessionStorage.getItem('school-token'));
+    const lateDraft = await page.request.put('/api/v2/exam-attempts/' + attempt + '/draft', {
+      headers: { Authorization: 'Bearer ' + submitToken },
+      data: { version: 0, answers: { [fixture.subjective]: 'late change' } },
+    });
+    expect(lateDraft.status()).toBe(409);
+    await login(teacher, 'teacher', '/exams');
+    await teacher.getByPlaceholder('课程编号筛选').fill(fixture.course);
+    await teacher.getByPlaceholder('学生编号筛选').fill(accounts.admin.id);
+    const emptyPending = teacher.waitForResponse(
+      (r) =>
+        r.url().includes('/teacher/exam-attempts/page?') &&
+        r.url().includes('studentId=' + accounts.admin.id),
+    );
+    await teacher.getByRole('button', { name: '刷新待评分列表' }).click();
+    expect((await emptyPending).ok()).toBeTruthy();
+    await expect(teacher.locator('.el-table__row')).toHaveCount(0);
+    await teacher.getByPlaceholder('学生编号筛选').fill(accounts.student.id);
+    const ownedPending = teacher.waitForResponse(
+      (r) =>
+        r.url().includes('/teacher/exam-attempts/page?') &&
+        r.url().includes('courseId=' + fixture.course) &&
+        r.url().includes('studentId=' + accounts.student.id),
+    );
+    await teacher.getByRole('button', { name: '刷新待评分列表' }).click();
+    const pendingResult = await ownedPending;
+    expect(pendingResult.ok()).toBeTruthy();
+    expect((await pendingResult.json()).data.pageNo).toBe(1);
+    await expect(teacher.locator('.el-table__row').filter({ hasText: attempt! })).toHaveCount(1);
+    await teacher
+      .locator('.el-table__row')
+      .filter({ hasText: attempt! })
+      .getByRole('button', { name: '查看答卷' })
+      .click();
+    await teacher.getByRole('spinbutton').fill('10');
+    await teacher.getByPlaceholder('评分反馈').fill('Reviewed browser answer');
+    await teacher.getByRole('button', { name: '提交评分' }).click();
+    await expect(
+      teacher.getByText('已评分 10 · Reviewed browser answer', { exact: true }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: '刷新评分状态' }).click();
+    await expect(page.locator('.exam-result')).toContainText('20');
+    await expect(page.locator('.exam-result')).toContainText('已通过');
+    await expect
+      .poll(
+        async () =>
+          (
+            await api(page, '/services/learning/learning-records/course/' + fixture.course)
+          ).records.filter((r: any) => r.finished).length,
+        { timeout: 30000 },
+      )
+      .toBe(2);
+    await page.goto('/orders');
+    await page
+      .locator('.el-table__row')
+      .filter({ hasText: orderId })
+      .getByRole('button', { name: '详情' })
+      .click();
+    await page.getByRole('button', { name: '申请退款' }).click();
+    await expect(page.getByRole('dialog', { name: '申请课程退款' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '提交退款申请', exact: true })).toBeDisabled();
+    await page.getByPlaceholder('请说明退款原因').fill('浏览器验收退款，验证学习历史保留');
+    // Observe the UI's async submission and its own polling before checking feedback.
+    const submittedRefund = page
+      .waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          new URL(response.url()).pathname === '/api/v2/services/trade/refund-apply',
+        { timeout: 60000 },
+      )
+      .then(async (response) => ({ response, envelope: await response.json() }));
+    const completedRefund = page.waitForResponse(
+      async (response) => {
+        if (
+          response.request().method() !== 'GET' ||
+          !new URL(response.url()).pathname.startsWith('/api/v2/operations/trade/')
+        )
+          return false;
+        const submitted = await submittedRefund;
+        if (
+          new URL(response.url()).pathname !==
+          '/api/v2/operations/trade/' + submitted.envelope.data.operationId
+        )
+          return false;
+        return (await response.json()).data?.status !== 'PENDING';
+      },
+      { timeout: 60000 },
+    );
+    await page.getByRole('button', { name: '提交退款申请', exact: true }).click();
+    const refundSubmission = await submittedRefund;
+    expect(refundSubmission.response.status()).toBe(202);
+    expect(refundSubmission.envelope.code).toBe(200);
+    expect(refundSubmission.envelope.data.status).toBe('PENDING');
+    const refundCompletion = await completedRefund;
+    expect(refundCompletion.status()).toBe(200);
+    const refundOperation = (await refundCompletion.json()).data;
+    expect(refundOperation.operationId).toBe(refundSubmission.envelope.data.operationId);
+    expect(refundOperation.status).toBe('SUCCEEDED');
+    expect(refundOperation.result.accepted).toBe(true);
+    await expect(page.getByText('退款申请已提交', { exact: true })).toBeVisible();
+    await admin.goto('/refunds');
+    const refund = admin.locator('.el-table__row').filter({ hasText: orderId });
+    await refund.getByRole('button', { name: '同意退款' }).click();
+    await admin.getByRole('button', { name: '确定', exact: true }).click();
+    await expect(admin.getByText('同意退款已完成', { exact: true })).toBeVisible();
+    await expect
+      .poll(async () => (await api(page, '/orders/' + orderId)).status, { timeout: 60000 })
+      .toBe(7);
+    // Financial completion precedes consumption of the entitlement event. Confirm
+    // that the authoritative playback check has observed revocation within 3s.
+    await expect
+      .poll(
+        async () => {
+          const token = await page.evaluate(() => sessionStorage.getItem('school-token'));
+          return (
+            await page.request.get(
+              '/api/v2/services/media/medias/signature/play?sectionId=' + fixture.video,
+              { headers: { Authorization: 'Bearer ' + token } },
+            )
+          ).status();
+        },
+        { timeout: 3000, intervals: [100, 200, 300] },
+      )
+      .toBe(403);
+    // A URL obtained before refund must be checked again when fetching new bytes.
+    // This does not claim that already downloaded video data can be revoked.
+    const refundedBytes = await page.request.get(retainedPlayUrl!, {
+      headers: { Range: 'bytes=0-31' },
+    });
+    expect(refundedBytes.status()).toBe(403);
+    await assertPersistedAudit(admin);
+    await page.goto('/courses/' + fixture.course);
+    await expect(page.getByText('学习权益已失效', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Browser video/ })).toBeDisabled();
+    await expect(page.getByRole('link', { name: '查看考试记录 →', exact: true })).toBeVisible();
+    await expect(page.locator('video')).toHaveCount(0);
+    // A fresh device has no active-attempt cache. Refunded students still need
+    // to discover and read their own graded history through the server list.
+    const historyContext = await browser.newContext({
+        baseURL: process.env.TJ_STUDENT_URL || 'http://127.0.0.1:23500',
+      }),
+      historyPage = await historyContext.newPage();
+    try {
+      await login(historyPage, 'student', '/exams?courseId=' + fixture.course);
+      expect(
+        await historyPage.evaluate(() => sessionStorage.getItem('school-active-exam')),
+      ).toBeNull();
+      const history = historyPage.getByRole('region', { name: '我的考试记录', exact: true });
+      const record = history.locator('.el-table__row').filter({ hasText: attempt! });
+      await expect(record).toHaveCount(1);
+      await record.getByRole('button', { name: '查看答卷', exact: true }).click();
+      await expect(historyPage.locator('.exam-result')).toContainText('20');
+      await expect(historyPage.locator('.exam-result')).toContainText('已通过');
+      await expect(historyPage.getByPlaceholder('请写下你的答案', { exact: true })).toHaveValue(
+        'Explain reliable transactions',
+      );
+      await expect(historyPage.getByPlaceholder('请写下你的答案', { exact: true })).toBeDisabled();
+      await expect(
+        historyPage.getByRole('button', { name: '提交全部答案', exact: true }),
+      ).toHaveCount(0);
+      const list = await api(
+        historyPage,
+        '/exam-attempts/page?courseId=' + fixture.course + '&pageNo=1&pageSize=20',
+      );
+      expect(Number(list.total)).toBe(1);
+      expect(list.list[0].id).toBe(attempt);
+      expect(list.list[0]).not.toHaveProperty('answers');
+      expect(list.list[0]).not.toHaveProperty('user_id');
+      await historyPage.setViewportSize({ width: 390, height: 844 });
+      expect(
+        await historyPage.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
+      ).toBe(false);
+      await historyPage.screenshot({
+        path: home + '/ux-screenshots/exam-history-390.png',
+        fullPage: true,
+      });
+    } finally {
+      await historyContext.close();
+    }
+    await page.goto('/notes');
+    await expect(page.getByText(note, { exact: true })).toBeVisible();
+  } finally {
+    await adminContext.close();
+    await teacherContext.close();
+  }
 });

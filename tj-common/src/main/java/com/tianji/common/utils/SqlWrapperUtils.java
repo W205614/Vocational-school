@@ -18,7 +18,6 @@ import java.lang.reflect.Field;
  **/
 public class SqlWrapperUtils {
 
-
     /**
      * 用于生成查询语句columns
      *
@@ -30,7 +29,7 @@ public class SqlWrapperUtils {
 
         Field[] fields = ReflectUtils.getFields(clazz);
         if (ArrayUtils.isEmpty(fields)) {
-            //如果该模型没有字段，给一个空，防止下次继续查询
+            // 如果该模型没有字段，给一个空，防止下次继续查询
             return null;
         }
         if (StringUtils.isNotEmpty(prefix)) {
@@ -40,8 +39,7 @@ public class SqlWrapperUtils {
         for (Field field : fields) {
             String fieldName = field.getName();
             if (ReflectUtils.getMethod(clazz, "get" + StringUtils.upperFirst(fieldName)) != null) {
-                buffer.append(prefix).append(StringUtils.toUnderlineCase(fieldName))
-                        .append(",");
+                buffer.append(prefix).append(StringUtils.toUnderlineCase(fieldName)).append(",");
             }
         }
         return buffer.substring(0, buffer.length() - 1);
@@ -56,8 +54,9 @@ public class SqlWrapperUtils {
      * @param <R>         需要转换的条件对象
      * @return LambdaQueryWrapper对象
      */
-    public static <T, R> LambdaQueryWrapper<T> toLambdaQueryWrapper(R queryDTO, Class<T> targetClazz) {
-        //sql查询条件
+    public static <T, R> LambdaQueryWrapper<T> toLambdaQueryWrapper(
+            R queryDTO, Class<T> targetClazz) {
+        // sql查询条件
         LambdaQueryWrapper<T> queryWrapper = new LambdaQueryWrapper<>();
         T target = BeanUtils.toBean(queryDTO, targetClazz);
         queryWrapper.setEntity(target);
@@ -74,7 +73,7 @@ public class SqlWrapperUtils {
      * @return QueryWrapper对象
      */
     public static <T, R> QueryWrapper<T> toQueryWrapper(R queryDTO, Class<T> targetClazz) {
-        //sql查询条件
+        // sql查询条件
         QueryWrapper<T> queryWrapper = new QueryWrapper<>();
         T target = BeanUtils.toBean(queryDTO, targetClazz);
         queryWrapper.setEntity(target);
@@ -91,19 +90,25 @@ public class SqlWrapperUtils {
      * @param <T> 目标类型
      * @param <R> 查询实体类型
      */
-    public static <T, R> void suppleQueryWrapper(QueryWrapper<?> queryWrapper, String prefix, R queryDTO, Class<T> targetClasszz) {
-        //将查询dto转换成目标对象
+    public static <T, R> void suppleQueryWrapper(
+            QueryWrapper<?> queryWrapper, String prefix, R queryDTO, Class<T> targetClasszz) {
+        // 将查询dto转换成目标对象
         T target = BeanUtils.toBean(queryDTO, targetClasszz);
-        //获取目标对象的字段
+        // 获取目标对象的字段
         Field[] fields = ReflectUtils.getFields(targetClasszz);
         if (ArrayUtils.isNotEmpty(fields)) {
-            //遍历所有字段
+            // 遍历所有字段
             for (Field field : fields) {
-                //获取字段值
+                // 获取字段值
                 Object value = ReflectUtils.getFieldValue(target, field);
-                //字段有值，并且字段有get方法（确保该字段是数据库中对应的字段），将该字段加入到查询语句中
-                if (value != null && ReflectUtils.getMethod(targetClasszz, "get" + StringUtils.upperFirst(field.getName())) != null) {
-                    queryWrapper.eq(prefix + "." + StringUtils.toUnderlineCase(field.getName()), value);
+                // 字段有值，并且字段有get方法（确保该字段是数据库中对应的字段），将该字段加入到查询语句中
+                if (value != null
+                        && ReflectUtils.getMethod(
+                                        targetClasszz,
+                                        "get" + StringUtils.upperFirst(field.getName()))
+                                != null) {
+                    queryWrapper.eq(
+                            prefix + "." + StringUtils.toUnderlineCase(field.getName()), value);
                 }
             }
         }
@@ -118,12 +123,12 @@ public class SqlWrapperUtils {
      * @param <R>         需要转换的条件对象
      * @return LambdaQueryWrapper对象
      */
-    public static <T, R> LambdaUpdateWrapper<T> toLambdaUpdateWrapper(R updateDTO, Class<T> targetClazz) {
-        //sql查询条件
+    public static <T, R> LambdaUpdateWrapper<T> toLambdaUpdateWrapper(
+            R updateDTO, Class<T> targetClazz) {
+        // sql查询条件
         LambdaUpdateWrapper<T> updateWrapper = new LambdaUpdateWrapper<>();
         T target = BeanUtils.toBean(updateDTO, targetClazz);
         updateWrapper.setEntity(target);
         return updateWrapper;
     }
-
 }

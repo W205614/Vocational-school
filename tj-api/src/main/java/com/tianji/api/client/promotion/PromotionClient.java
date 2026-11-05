@@ -15,8 +15,9 @@ import java.util.List;
 public interface PromotionClient {
 
     @PostMapping("/user-coupons/quote")
-    com.tianji.api.dto.promotion.CouponQuoteDTO quote(@RequestBody List<OrderCourseDTO> courses,
-            @RequestParam(value="couponIds",required=false) List<Long> couponIds);
+    com.tianji.api.dto.promotion.CouponQuoteDTO quote(
+            @RequestBody List<OrderCourseDTO> courses,
+            @RequestParam(value = "couponIds", required = false) List<Long> couponIds);
 
     @PostMapping("/user-coupons/available")
     List<CouponDiscountDTO> findDiscountSolution(@RequestBody List<OrderCourseDTO> orderCourses);
@@ -27,16 +28,24 @@ public interface PromotionClient {
 
     @Operation(summary = "核销指定优惠券")
     @PutMapping("/user-coupons/use")
-    void writeOffCoupon(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
+    void writeOffCoupon(
+            @Parameter(description = "用户优惠券id集合") @RequestParam("couponIds")
+                    List<Long> userCouponIds);
 
     @Operation(summary = "退还指定优惠券")
     @PutMapping("/user-coupons/refund")
-    void refundCoupon(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
+    void refundCoupon(
+            @Parameter(description = "用户优惠券id集合") @RequestParam("couponIds")
+                    List<Long> userCouponIds);
 
     @Operation(summary = "分页查询我的优惠券接口")
     @GetMapping("/user-coupons/rules")
-    List<String> queryDiscountRules(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
+    List<String> queryDiscountRules(
+            @Parameter(description = "用户优惠券id集合") @RequestParam("couponIds")
+                    List<Long> userCouponIds);
 
     @PutMapping("/internal/v2/coupon-reservations/{order}")
-    java.util.Map<String,Object> reserveCoupons(@PathVariable("order") Long order,@RequestBody com.tianji.api.dto.promotion.CouponReservationDTO request);
+    java.util.Map<String, Object> reserveCoupons(
+            @PathVariable("order") Long order,
+            @RequestBody com.tianji.api.dto.promotion.CouponReservationDTO request);
 }

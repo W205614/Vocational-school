@@ -4,14 +4,14 @@
 
 ## 工具职责
 
-| 工具 | 作用 |
-| --- | --- |
-| `mixed_fixture.py`、`load_workflows.py` | 独立合成夹具与查询、笔记、进度、考试、交易和领券工作流 |
-| `mixed_load.py`、`load_telemetry.py` | 冻结负载、执行测量并记录延迟、业务事实与资源指标 |
-| `run_baseline.py`、`run_post_measurements.py` | 串行编排修复前后独立／合并部署的对照测量 |
-| `perf_protocol.py` | 维护调度、工作负载覆盖、延迟、样本和 RSS 判定契约 |
-| `performance_acceptance.py` | 校验四组原始报告的提交、快照、镜像、负载和哈希绑定 |
-| `release_gate.py` | 完整交付模式要求正式性能证据；functional 模式明确将性能标为延期 |
+| 工具                                          | 作用                                                            |
+| --------------------------------------------- | --------------------------------------------------------------- |
+| `mixed_fixture.py`、`load_workflows.py`       | 独立合成夹具与查询、笔记、进度、考试、交易和领券工作流          |
+| `mixed_load.py`、`load_telemetry.py`          | 冻结负载、执行测量并记录延迟、业务事实与资源指标                |
+| `run_baseline.py`、`run_post_measurements.py` | 串行编排修复前后独立／合并部署的对照测量                        |
+| `perf_protocol.py`                            | 维护调度、工作负载覆盖、延迟、样本和 RSS 判定契约               |
+| `performance_acceptance.py`                   | 校验四组原始报告的提交、快照、镜像、负载和哈希绑定              |
+| `release_gate.py`                             | 完整交付模式要求正式性能证据；functional 模式明确将性能标为延期 |
 
 ## 正式协议
 

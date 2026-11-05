@@ -28,13 +28,14 @@ public class SubjectConstants {
             }
             return null;
         }
-
     }
 
     @AllArgsConstructor
     @Getter
     public enum Difficult {
-        EASY(1, "简单"), MEDIUM(2, "中等"), DIFFICULT(3, "困难");
+        EASY(1, "简单"),
+        MEDIUM(2, "中等"),
+        DIFFICULT(3, "困难");
         private Integer type;
         private String desc;
 

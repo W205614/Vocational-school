@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class CouponScopeVO {
     @Schema(description = "范围id集合")
     private Long id;
+
     @Schema(description = "范围名称集合")
     private String name;
 }

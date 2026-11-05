@@ -16,8 +16,13 @@ import org.apache.ibatis.annotations.Select;
  */
 public interface CategoryMapper extends BaseMapper<Category> {
 
-    String COLUMNS = "c.id,c.name,c.parent_id,c.level,c.priority,c.status,c.create_time,c.update_time,c.creater,c.updater,c.deleted";
-    @Select("select " + COLUMNS + " from category c LEFT JOIN category c2 on c.id=c2.parent_id where c2.id=#{childId} limit 1")
+    String COLUMNS =
+            "c.id,c.name,c.parent_id,c.level,c.priority,c.status,c.create_time,c.update_time,c.creater,c.updater,c.deleted";
+
+    @Select(
+            "select "
+                    + COLUMNS
+                    + " from category c LEFT JOIN category c2 on c.id=c2.parent_id where c2.id=#{childId} limit 1")
     @ResultMap("BaseResultMap")
     Category getByChildId(@Param("childId") Long childId);
 }

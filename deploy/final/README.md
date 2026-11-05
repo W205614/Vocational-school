@@ -4,12 +4,12 @@
 
 Docker Desktop 中的 **tianji-final** 是一套 Compose 部署分组，可以展开查看每个容器。每个后端、前端或基础服务使用自己的镜像和容器；同组启动、停止，不再运行旧版和临时环境。
 
-| 服务 | 数量 | 用途 |
-|---|---:|---|
-| app-data/pay/promotion/learning/trade/exam/course/user/auth/media/remark/search/message/gateway | 14 | 数据、支付、营销、学习、交易、考试、课程、用户、鉴权、媒资、点赞、搜索、消息和网关 |
-| web-student / web-admin | 2 | 学生端、管理端 |
-| mysql / redis / rabbitmq / elasticsearch | 4 | 数据库、缓存、消息队列、搜索索引 |
-| prometheus / grafana | 2 | 指标采集和监控 |
+| 服务                                                                                            | 数量 | 用途                                                                               |
+| ----------------------------------------------------------------------------------------------- | ---: | ---------------------------------------------------------------------------------- |
+| app-data/pay/promotion/learning/trade/exam/course/user/auth/media/remark/search/message/gateway |   14 | 数据、支付、营销、学习、交易、考试、课程、用户、鉴权、媒资、点赞、搜索、消息和网关 |
+| web-student / web-admin                                                                         |    2 | 学生端、管理端                                                                     |
+| mysql / redis / rabbitmq / elasticsearch                                                        |    4 | 数据库、缓存、消息队列、搜索索引                                                   |
+| prometheus / grafana                                                                            |    2 | 指标采集和监控                                                                     |
 
 学生端：http://localhost/ 。管理端：http://localhost:81/ 。验证账号保存在本机 `.local/accounts.json`，包含学生、管理员和教师；原业务账号的数据也已迁入。所有发布端口绑定本机回环地址。
 

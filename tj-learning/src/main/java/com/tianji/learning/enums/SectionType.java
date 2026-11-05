@@ -11,9 +11,7 @@ public enum SectionType implements BaseEnum {
     VIDEO(1, "视频"),
     EXAM(2, "考试"),
     ;
-    @JsonValue
-    @EnumValue
-    int value;
+    @JsonValue @EnumValue int value;
     String desc;
 
     SectionType(int value, String desc) {
@@ -21,9 +19,8 @@ public enum SectionType implements BaseEnum {
         this.desc = desc;
     }
 
-
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    public static SectionType of(Integer value){
+    public static SectionType of(Integer value) {
         if (value == null) {
             return null;
         }

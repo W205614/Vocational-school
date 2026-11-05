@@ -15,7 +15,7 @@ public class AspectUtils {
      * 所以应该使用反射获取当前对象的方法对象
      */
     public static Method getMethod(ProceedingJoinPoint pjp) {
-        //获取参数的类型
+        // 获取参数的类型
         Signature sig = pjp.getSignature();
         if (sig instanceof MethodSignature) {
             MethodSignature methodSignature = (MethodSignature) sig;

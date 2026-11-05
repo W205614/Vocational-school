@@ -15,17 +15,22 @@ import lombok.Data;
 public class CourseTeacherVO {
     @Schema(description = "老师课程关系id")
     private Long id;
+
     @Schema(description = "老师头像")
     private String icon;
+
     @Schema(description = "形象照")
     private String photo;
+
     @Schema(description = "老师姓名")
     private String name;
+
     @Schema(description = "老师介绍")
     private String introduce;
+
     @Schema(description = "用户端是否显示")
     private Boolean isShow;
+
     @Schema(description = "职位")
     private String job;
-
 }

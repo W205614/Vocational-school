@@ -7,7 +7,7 @@ import java.util.*;
 @Data
 public class CouponQuoteDTO {
     private List<CouponDiscountDTO> discounts = List.of();
-    private List<Map<String,Object>> availableCoupons = List.of();
+    private List<Map<String, Object>> availableCoupons = List.of();
     private boolean couponSelectionRequired;
     private String discountError;
 }

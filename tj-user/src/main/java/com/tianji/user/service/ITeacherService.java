@@ -12,7 +12,6 @@ import com.tianji.user.domain.vo.TeacherPageVO;
  * @author 虎哥
  * @since 2022-07-12
  */
-public interface ITeacherService{
+public interface ITeacherService {
     PageDTO<TeacherPageVO> queryTeacherPage(UserPageQuery pageQuery);
-
 }

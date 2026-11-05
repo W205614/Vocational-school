@@ -1,6 +1,5 @@
 package com.tianji.learning.controller;
 
-
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.learning.domain.dto.QuestionFormDTO;
 import com.tianji.learning.domain.query.QuestionPageQuery;
@@ -33,11 +32,25 @@ public class InteractionQuestionController {
 
     @Operation(summary = "新增互动问题")
     @PostMapping
-    public org.springframework.http.ResponseEntity<?> saveQuestion(@Valid @RequestBody QuestionFormDTO questionDTO,@RequestHeader("Idempotency-Key") String key) {
-        var section=courses.sectionInfo(questionDTO.getSectionId());
-        if(section==null || !java.util.Objects.equals(section.getCourseId(),questionDTO.getCourseId()))throw new com.tianji.common.exceptions.BadRequestException("小节不属于该课程");
-        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"DISCUSSION_CREATE",key,
-            new com.tianji.learning.service.impl.DiscussionOperationHandler.Request("QUESTION",com.tianji.common.utils.UserContext.getRole(),questionDTO,null)));
+    public org.springframework.http.ResponseEntity<?> saveQuestion(
+            @Valid @RequestBody QuestionFormDTO questionDTO,
+            @RequestHeader("Idempotency-Key") String key) {
+        var section = courses.sectionInfo(questionDTO.getSectionId());
+        if (section == null
+                || !java.util.Objects.equals(section.getCourseId(), questionDTO.getCourseId()))
+            throw new com.tianji.common.exceptions.BadRequestException("小节不属于该课程");
+        return org.springframework.http.ResponseEntity.accepted()
+                .body(
+                        operations.submit(
+                                com.tianji.common.utils.UserContext.requireUser(),
+                                "DISCUSSION_CREATE",
+                                key,
+                                new com.tianji.learning.service.impl.DiscussionOperationHandler
+                                        .Request(
+                                        "QUESTION",
+                                        com.tianji.common.utils.UserContext.getRole(),
+                                        questionDTO,
+                                        null)));
     }
 
     @Operation(summary = "分页查询互动问题")

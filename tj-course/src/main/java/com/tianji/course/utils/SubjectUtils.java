@@ -43,7 +43,7 @@ public class SubjectUtils {
         List<String> options = new ArrayList<>();
         for (int count = 1; count <= 10; count++) {
             Object option = ReflectUtils.getFieldValue(subject, "option" + count);
-            if (ObjectUtils.isEmpty(option) || StringUtils.isEmpty((String)option)) {
+            if (ObjectUtils.isEmpty(option) || StringUtils.isEmpty((String) option)) {
                 return options;
             }
             options.add((String) option);

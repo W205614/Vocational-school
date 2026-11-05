@@ -31,8 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SmsServiceImpl implements ISmsService {
 
-    @Resource
-    private Map<String, ISmsHandler> smsHandlers;
+    @Resource private Map<String, ISmsHandler> smsHandlers;
     private final SmsDeliveryTasks deliveries;
     private final ISmsThirdPlatformService platformService;
     private final INoticeTemplateService noticeTemplateService;
@@ -56,13 +55,15 @@ public class SmsServiceImpl implements ISmsService {
         String code = smsInfoDTO.getTemplateCode();
         NoticeTemplate noticeTemplate = noticeTemplateService.queryByCode(code);
         AssertUtils.isNotNull(noticeTemplate, MessageErrorInfo.NOTICE_TEMPLATE_NOT_EXISTS);
-        AssertUtils.isTrue(noticeTemplate.getIsSmsTemplate(), MessageErrorInfo.NOTICE_NOT_MESSAGE_TEMPLATE);
+        AssertUtils.isTrue(
+                noticeTemplate.getIsSmsTemplate(), MessageErrorInfo.NOTICE_NOT_MESSAGE_TEMPLATE);
         // 2.查询短信模板
-        List<MessageTemplate> messageTemplates = messageTemplateService.queryByNoticeTemplateId(noticeTemplate.getId());
+        List<MessageTemplate> messageTemplates =
+                messageTemplateService.queryByNoticeTemplateId(noticeTemplate.getId());
         AssertUtils.isNotEmpty(messageTemplates, MessageErrorInfo.NOTICE_NOT_MESSAGE_TEMPLATE);
 
         // 3.按照平台优先级来排序并筛选模板
-        List<MessageTemplate> sortedTemplates =  sortMessageTemplate(messageTemplates);
+        List<MessageTemplate> sortedTemplates = sortMessageTemplate(messageTemplates);
         if (sortedTemplates.isEmpty()) {
             throw new CommonException(MessageErrorInfo.NO_SUITABLE_TEMPLATE);
         }
@@ -84,8 +85,9 @@ public class SmsServiceImpl implements ISmsService {
         List<SmsThirdPlatform> platforms = platformService.queryAllPlatform();
         AssertUtils.isNotEmpty(platforms, MessageErrorInfo.PLATFORM_IS_EMPTY);
         // 2.以平台code为key，以template为value，组织map
-        Map<String, MessageTemplate> mtMap = messageTemplates.stream()
-                .collect(Collectors.toMap(MessageTemplate::getPlatformCode, m -> m));
+        Map<String, MessageTemplate> mtMap =
+                messageTemplates.stream()
+                        .collect(Collectors.toMap(MessageTemplate::getPlatformCode, m -> m));
         // 3.排序数据
         List<MessageTemplate> list = new ArrayList<>(messageTemplates.size());
         for (SmsThirdPlatform platform : platforms) {
@@ -99,6 +101,6 @@ public class SmsServiceImpl implements ISmsService {
 
     @Override
     public void sendMessageAsync(SmsInfoDTO smsInfoDTO) {
-        deliveries.stage(java.util.UUID.randomUUID().toString(),smsInfoDTO);
+        deliveries.stage(java.util.UUID.randomUUID().toString(), smsInfoDTO);
     }
 }

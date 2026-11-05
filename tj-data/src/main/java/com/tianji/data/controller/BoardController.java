@@ -24,8 +24,7 @@ import java.util.List;
 @Slf4j
 public class BoardController {
 
-    @Autowired
-    private BoardService boardService;
+    @Autowired private BoardService boardService;
 
     @GetMapping("")
     @Operation(summary = "看板数据获取")

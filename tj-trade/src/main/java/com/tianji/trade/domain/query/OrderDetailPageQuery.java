@@ -15,17 +15,23 @@ import java.time.LocalDateTime;
 public class OrderDetailPageQuery extends PageQuery {
     @Schema(description = "订单明细id")
     private Long id;
+
     @Schema(description = "订单状态：1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名")
     private Integer status;
+
     @Schema(description = "退款状态：1：待审批，2：取消退款，3：同意退款，4：拒绝退款，5：退款成功，6：退款失败")
     private Integer refundStatus;
+
     @Schema(description = "支付方式:wxPay:微信，aliPay：支付宝")
     private String payChannel;
+
     @Schema(description = "手机号")
     private String mobile;
+
     @Schema(description = "下单开始时间")
     @DateTimeFormat(pattern = DateUtils.DEFAULT_DATE_TIME_FORMAT)
     private LocalDateTime orderStartTime;
+
     @Schema(description = "下单结束时间")
     @DateTimeFormat(pattern = DateUtils.DEFAULT_DATE_TIME_FORMAT)
     private LocalDateTime orderEndTime;

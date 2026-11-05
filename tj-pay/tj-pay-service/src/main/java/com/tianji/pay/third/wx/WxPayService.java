@@ -18,7 +18,9 @@ import java.time.LocalDateTime;
 @Slf4j
 @Service(PayConstants.WX_CHANNEL_CODE)
 @RequiredArgsConstructor
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.pay.wx.enabled",havingValue="true")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "tj.pay.wx.enabled",
+        havingValue = "true")
 public class WxPayService implements IPayService {
 
     private final WxPayClient wxPayClient;
@@ -28,9 +30,11 @@ public class WxPayService implements IPayService {
         // 1.请求地址
         String requestPath = "https://api.mch.weixin.qq.com/v3/pay/transactions/native";
         // 2.请求参数
-        ObjectNode baseParam = wxPayClient.baseParam(true, true, false)
-                .put("out_trade_no", orderNo)
-                .put("description", title);
+        ObjectNode baseParam =
+                wxPayClient
+                        .baseParam(true, true, false)
+                        .put("out_trade_no", orderNo)
+                        .put("description", title);
         baseParam.putObject("amount").put("total", amount);
 
         // 3.发送请求
@@ -42,10 +46,7 @@ public class WxPayService implements IPayService {
         String codeUrl = result.getStr("code_url");
         if (codeUrl != null) {
             // 4.1.响应正常，返回支付链接
-            return PrepayResponse.builder()
-                    .success(true)
-                    .payUrl(codeUrl)
-                    .build();
+            return PrepayResponse.builder().success(true).payUrl(codeUrl).build();
         } else {
             // 4.2.响应异常，返回异常信息
             return PrepayResponse.builder()
@@ -60,7 +61,8 @@ public class WxPayService implements IPayService {
     @Override
     public PayStatusResponse queryPayOrderStatus(String payOrderNo) {
         // 1.请求地址
-        String requestPath = "https://api.mch.weixin.qq.com/v3/pay/transactions/out-trade-no/" + payOrderNo;
+        String requestPath =
+                "https://api.mch.weixin.qq.com/v3/pay/transactions/out-trade-no/" + payOrderNo;
         // 2.发送请求
         String responseJson = wxPayClient.doGetJson(requestPath, true);
         // 3.解析响应
@@ -69,7 +71,7 @@ public class WxPayService implements IPayService {
         String message = result.getStr("message");
         LocalDateTime successTime = result.getLocalDateTime("success_time", null);
         // 3.1.请求异常
-        if(StringUtils.isNotBlank(code)){
+        if (StringUtils.isNotBlank(code)) {
             return PayStatusResponse.builder().success(false).code(code).msg(message).build();
         }
         // 3.2.请求成功
@@ -80,23 +82,25 @@ public class WxPayService implements IPayService {
                 .msg(result.getStr("trade_state_desc"))
                 .totalAmount(result.getJSONObject("amount").getInt("total"))
                 .successTime(successTime)
-                .build()
-                ;
+                .build();
     }
 
     @Override
-    public RefundResponse refundOrder(String payOrderNo, String refundOrderNo, Integer refundAmount, Integer totalAmount) {
+    public RefundResponse refundOrder(
+            String payOrderNo, String refundOrderNo, Integer refundAmount, Integer totalAmount) {
         // 1.请求地址
         String requestPath = "https://api.mch.weixin.qq.com/v3/refund/domestic/refunds";
         // 2.准备请求参数
-        ObjectNode baseParam = wxPayClient.baseParam(false, false, true)
-                .put("out_trade_no", payOrderNo)
-                .put("out_refund_no", refundOrderNo);
-        baseParam.putObject("amount")
+        ObjectNode baseParam =
+                wxPayClient
+                        .baseParam(false, false, true)
+                        .put("out_trade_no", payOrderNo)
+                        .put("out_refund_no", refundOrderNo);
+        baseParam
+                .putObject("amount")
                 .put("refund", refundAmount)
                 .put("total", totalAmount)
-                .put("currency", "CNY")
-        ;
+                .put("currency", "CNY");
         // 3.发送请求
         String responseJson = wxPayClient.doPostJson(requestPath, baseParam);
         // 4.解析
@@ -104,7 +108,7 @@ public class WxPayService implements IPayService {
         String code = result.getStr("code");
         String message = result.getStr("message");
         // 4.1.请求异常
-        if(StringUtils.isNotBlank(code)){
+        if (StringUtils.isNotBlank(code)) {
             return RefundResponse.builder().success(false).code(code).msg(message).build();
         }
         // 4.2.请求成功
@@ -121,7 +125,8 @@ public class WxPayService implements IPayService {
     @Override
     public RefundResponse queryRefundStatus(String orderNo, String refundOrderNo) {
         // 1.请求地址
-        String requestPath = "https://api.mch.weixin.qq.com/v3/refund/domestic/refunds/" + refundOrderNo;
+        String requestPath =
+                "https://api.mch.weixin.qq.com/v3/refund/domestic/refunds/" + refundOrderNo;
         // 2.发送请求
         String responseJson = wxPayClient.doGetJson(requestPath, false);
         // 3.解析响应
@@ -129,7 +134,7 @@ public class WxPayService implements IPayService {
         String code = result.getStr("code");
         String message = result.getStr("message");
         // 3.1.请求异常
-        if(StringUtils.isNotBlank(code)){
+        if (StringUtils.isNotBlank(code)) {
             return RefundResponse.builder().success(false).code(code).msg(message).build();
         }
         // 3.2.请求成功
@@ -166,5 +171,4 @@ public class WxPayService implements IPayService {
                 return 1;
         }
     }
-
 }

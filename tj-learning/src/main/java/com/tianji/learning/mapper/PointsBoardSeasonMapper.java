@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2026-02-07
  */
-public interface PointsBoardSeasonMapper extends BaseMapper<PointsBoardSeason> {
-
-}
+public interface PointsBoardSeasonMapper extends BaseMapper<PointsBoardSeason> {}

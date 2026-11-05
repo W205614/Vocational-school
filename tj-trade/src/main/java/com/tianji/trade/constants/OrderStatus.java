@@ -4,11 +4,9 @@ import com.tianji.common.enums.BaseEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-
 @AllArgsConstructor
 @Getter
 public enum OrderStatus implements BaseEnum {
-
     NO_PAY(1, "待支付", "下单"),
     PAYED(2, "已支付", "付款"),
     CLOSED(3, "已关闭", "交易关闭"),
@@ -21,12 +19,12 @@ public enum OrderStatus implements BaseEnum {
     private final String desc;
     private final String progressName;
 
-    public static OrderStatus of(Integer value){
-        if(value == null){
+    public static OrderStatus of(Integer value) {
+        if (value == null) {
             return null;
         }
         for (OrderStatus status : values()) {
-            if(status.equalsValue(value)){
+            if (status.equalsValue(value)) {
                 return status;
             }
         }

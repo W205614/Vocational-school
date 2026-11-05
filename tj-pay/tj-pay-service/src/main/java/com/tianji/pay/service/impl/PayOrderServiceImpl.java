@@ -46,10 +46,10 @@ import static com.tianji.pay.sdk.constants.PayErrorInfo.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> implements IPayOrderService {
+public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder>
+        implements IPayOrderService {
 
-    @Resource
-    private Map<String, IPayService> payServiceChannels;
+    @Resource private Map<String, IPayService> payServiceChannels;
     private final ProviderSettlementService settlement;
     private final ProviderRequestGuard requests;
     private final ProviderPaymentReconciler reconciliation;
@@ -68,7 +68,9 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
         }
 
         // 2.幂等性校验
-        PayOrder payOrder = requests.prepare("PAY",payApplyDTO.getBizOrderNo(),()->checkIdempotent(payApplyDTO));
+        PayOrder payOrder =
+                requests.prepare(
+                        "PAY", payApplyDTO.getBizOrderNo(), () -> checkIdempotent(payApplyDTO));
         reconciliation.ensure(payOrder.getPayOrderNo());
         if (StringUtils.isNotBlank(payOrder.getQrCodeUrl())) {
             log.debug("支付链接已经存在，不再重新创建，直接返回");
@@ -76,8 +78,11 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
         }
 
         // 3.需要生成新支付链接，调用第三方，完成支付单下单
-        PrepayResponse prepayResponse = payService.createPrepayOrder(
-                payApplyDTO.getOrderInfo(), payOrder.getPayOrderNo().toString(), payOrder.getAmount());
+        PrepayResponse prepayResponse =
+                payService.createPrepayOrder(
+                        payApplyDTO.getOrderInfo(),
+                        payOrder.getPayOrderNo().toString(),
+                        payOrder.getAmount());
 
         // 4.更新支付链接等信息到数据库
         updatePayResult2DB(prepayResponse, payOrder.getId());
@@ -94,15 +99,27 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
     private void updatePayResult2DB(PrepayResponse prepayResponse, Long payOrderId) {
         try {
             lambdaUpdate()
-                    .set(prepayResponse.isSuccess(), PayOrder::getQrCodeUrl, prepayResponse.getPayUrl())
-                    .set(prepayResponse.isSuccess(), PayOrder::getStatus, PayStatus.WAIT_BUYER_PAY.getValue())
-                    .set(!prepayResponse.isSuccess(), PayOrder::getResultCode, prepayResponse.getCode())
-                    .set(!prepayResponse.isSuccess(), PayOrder::getResultMsg, prepayResponse.getMsg())
+                    .set(
+                            prepayResponse.isSuccess(),
+                            PayOrder::getQrCodeUrl,
+                            prepayResponse.getPayUrl())
+                    .set(
+                            prepayResponse.isSuccess(),
+                            PayOrder::getStatus,
+                            PayStatus.WAIT_BUYER_PAY.getValue())
+                    .set(
+                            !prepayResponse.isSuccess(),
+                            PayOrder::getResultCode,
+                            prepayResponse.getCode())
+                    .set(
+                            !prepayResponse.isSuccess(),
+                            PayOrder::getResultMsg,
+                            prepayResponse.getMsg())
                     .eq(PayOrder::getId, payOrderId)
-                    .in(PayOrder::getStatus,0,1)
+                    .in(PayOrder::getStatus, 0, 1)
                     .update();
         } catch (Exception e) {
-            throw new com.tianji.common.exceptions.CommonException("支付链接持久化失败，请按同一业务单号重试",e);
+            throw new com.tianji.common.exceptions.CommonException("支付链接持久化失败，请按同一业务单号重试", e);
         }
     }
 
@@ -138,9 +155,10 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
             // 已经关闭，抛出异常
             throw new BizIllegalException(PAY_ORDER_ALREADY_CLOSE_CODE, PAY_ORDER_ALREADY_CLOSE);
         }
-        if(!java.util.Objects.equals(oldOrder.getAmount(),payApplyDTO.getAmount()) ||
-           !java.util.Objects.equals(oldOrder.getBizUserId(),payApplyDTO.getBizUserId()) ||
-           !java.util.Objects.equals(oldOrder.getPayChannelCode(),payApplyDTO.getPayChannelCode()))
+        if (!java.util.Objects.equals(oldOrder.getAmount(), payApplyDTO.getAmount())
+                || !java.util.Objects.equals(oldOrder.getBizUserId(), payApplyDTO.getBizUserId())
+                || !java.util.Objects.equals(
+                        oldOrder.getPayChannelCode(), payApplyDTO.getPayChannelCode()))
             throw new com.tianji.common.exceptions.ConflictException("同一支付业务单的金额、用户或渠道不同");
         // 6.旧单已经存在，且可能是未支付或未提交，且支付渠道一致，直接返回旧数据
         return oldOrder;
@@ -148,9 +166,7 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
 
     @Override
     public PayOrder queryByBizOrderNo(Long bizOrderNo) {
-        return lambdaQuery()
-                .eq(PayOrder::getBizOrderNo, bizOrderNo)
-                .one();
+        return lambdaQuery().eq(PayOrder::getBizOrderNo, bizOrderNo).one();
     }
 
     @Override
@@ -161,21 +177,22 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
             throw new BizIllegalException(PAY_ORDER_NOT_FOUND);
         }
         // 2.判断支付状态
-        if (payOrder.success() || settlement.paidTime(payOrder.getPayOrderNo())!=null) {
+        if (payOrder.success() || settlement.paidTime(payOrder.getPayOrderNo()) != null) {
             // 2.1.支付成功
             return PayResultDTO.builder()
                     .status(PayResultDTO.SUCCESS)
                     .bizOrderId(payOrder.getBizOrderNo())
                     .payOrderNo(payOrder.getPayOrderNo())
-                    .successTime(payOrder.getPaySuccessTime()==null?settlement.paidTime(payOrder.getPayOrderNo()):payOrder.getPaySuccessTime())
+                    .successTime(
+                            payOrder.getPaySuccessTime() == null
+                                    ? settlement.paidTime(payOrder.getPayOrderNo())
+                                    : payOrder.getPaySuccessTime())
                     .payChannel(payOrder.getPayChannelCode())
                     .build();
         }
         // 2.2.未支付
         if (payOrder.notCommit() || payOrder.waitBuyerPay()) {
-            return PayResultDTO.builder()
-                    .status(PayStatus.WAIT_BUYER_PAY.getValue())
-                    .build();
+            return PayResultDTO.builder().status(PayStatus.WAIT_BUYER_PAY.getValue()).build();
         }
         // 2.2.支付失败
         return PayResultDTO.builder()
@@ -197,7 +214,10 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
                 .set(PayOrder::getPaySuccessTime, successTime)
                 .eq(PayOrder::getId, id)
                 // 支付状态的乐观锁判断
-                .in(PayOrder::getStatus, PayStatus.NOT_COMMIT.getValue(), PayStatus.WAIT_BUYER_PAY.getValue())
+                .in(
+                        PayOrder::getStatus,
+                        PayStatus.NOT_COMMIT.getValue(),
+                        PayStatus.WAIT_BUYER_PAY.getValue())
                 .update();
     }
 
@@ -207,17 +227,19 @@ public class PayOrderServiceImpl extends ServiceImpl<PayOrderMapper, PayOrder> i
         Page<PayOrder> page = new Page<>(pageNo, size);
         page.addOrder(OrderItem.asc("id"));
         // 2.查询
-        Page<PayOrder> result = lambdaQuery()
-                .eq(PayOrder::getStatus, PayStatus.WAIT_BUYER_PAY.getValue())
-                .page(page);
+        Page<PayOrder> result =
+                lambdaQuery()
+                        .eq(PayOrder::getStatus, PayStatus.WAIT_BUYER_PAY.getValue())
+                        .page(page);
         return PageDTO.of(result);
     }
 
     @Override
-    @Lock(name = PayConstants.RedisKeyFormatter.PAY_ORDER_CHECK_TASK, lockStrategy = LockStrategy.SKIP_AFTER_RETRY_TIMEOUT)
+    @Lock(
+            name = PayConstants.RedisKeyFormatter.PAY_ORDER_CHECK_TASK,
+            lockStrategy = LockStrategy.SKIP_AFTER_RETRY_TIMEOUT)
     public void checkPayOrder(PayOrder payOrder) {
         reconciliation.ensure(payOrder.getPayOrderNo());
         reconciliation.check(payOrder);
     }
-
 }

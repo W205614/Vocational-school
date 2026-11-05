@@ -19,7 +19,6 @@ public interface PayErrorInfo {
 
     String REFUND_ORDER_NOT_FOUND = "退款单不存在";
 
-
     int PAY_ORDER_ALREADY_PAY_CODE = 1000;
     int PAY_ORDER_ALREADY_CLOSE_CODE = 2000;
 }

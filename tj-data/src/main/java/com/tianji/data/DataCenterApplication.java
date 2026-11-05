@@ -15,7 +15,8 @@ import java.net.UnknownHostException;
 @Slf4j
 public class DataCenterApplication {
     public static void main(String[] args) throws UnknownHostException {
-        SpringApplication app = new SpringApplicationBuilder(DataCenterApplication.class).build(args);
+        SpringApplication app =
+                new SpringApplicationBuilder(DataCenterApplication.class).build(args);
         Environment env = app.run(args).getEnvironment();
         StartupLogger.log(env, log);
     }

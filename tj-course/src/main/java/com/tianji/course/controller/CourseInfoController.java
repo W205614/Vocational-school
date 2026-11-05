@@ -25,22 +25,20 @@ import java.util.Map;
  * @Version
  **/
 @RestController
-@RequestMapping({"course","/internal/v1/course"})
+@RequestMapping({"course", "/internal/v1/course"})
 @Tag(name = "课程相关接口，内部调用")
 public class CourseInfoController {
 
-    @Autowired
-    private ICourseCatalogueService courseCatalogueService;
+    @Autowired private ICourseCatalogueService courseCatalogueService;
 
-    @Autowired
-    private ICourseService courseService;
+    @Autowired private ICourseService courseService;
 
-    @Autowired
-    private ICategoryService categoryService;
+    @Autowired private ICategoryService categoryService;
 
     @GetMapping("infoByTeacherIds")
     @Operation(summary = "通过老师id获取老师负责的课程和出的题目数量")
-    public List<SubNumAndCourseNumDTO> infoByTeacherIds(@RequestParam("teacherIds") List<Long> teacherIds) {
+    public List<SubNumAndCourseNumDTO> infoByTeacherIds(
+            @RequestParam("teacherIds") List<Long> teacherIds) {
 
         if (CollUtils.isEmpty(teacherIds)) {
             return new ArrayList<>();
@@ -80,9 +78,9 @@ public class CourseInfoController {
     @GetMapping("/{id}")
     @Operation(summary = "获取课程信息")
     @Parameters({
-            @Parameter(name = "id", description = "获取课程信息"),
-            @Parameter(name = "withCatalogue", description = "是否要查询目录信息"),
-            @Parameter(name = "withTeachers", description = "是否查询课程老师信息")
+        @Parameter(name = "id", description = "获取课程信息"),
+        @Parameter(name = "withCatalogue", description = "是否要查询目录信息"),
+        @Parameter(name = "withTeachers", description = "是否查询课程老师信息")
     })
     public CourseFullInfoDTO getById(
             @PathVariable("id") Long id,
@@ -91,15 +89,15 @@ public class CourseInfoController {
         return courseService.getInfoById(id, withCatalogue, withTeachers);
     }
 
-
     @GetMapping("/getCateNameMap")
     @Hidden
-    public Map<Long, String> queryByThirdCateIds(@RequestParam("thirdCateIdList") List<Long> thirdCateIdList) {
+    public Map<Long, String> queryByThirdCateIds(
+            @RequestParam("thirdCateIdList") List<Long> thirdCateIdList) {
         return categoryService.queryByThirdCateIds(thirdCateIdList);
     }
 
     @GetMapping("/name")
-    public List<Long> queryCoursesIdByName(@RequestParam("name") String name){
+    public List<Long> queryCoursesIdByName(@RequestParam("name") String name) {
         return courseService.queryCourseIdByName(name);
     }
 }

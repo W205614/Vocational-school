@@ -9,7 +9,7 @@ public class MediaUploadResultDTO {
 
     @Schema(description = "文件在云端的唯一标示", example = "387702302659783576")
     private String fileId;
-/*
+    /*
     @Schema(description = "媒体播放地址", example = "http://xxx.mp4")
     private String mediaUrl;
 

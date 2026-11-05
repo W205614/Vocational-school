@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 public class CourseCatalogueDraft implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     /**
      * 设置目录基本信息
      *
@@ -34,7 +35,8 @@ public class CourseCatalogueDraft implements Serializable {
      * @param parentCatalogueId 父目录id
      * @param courseId 课程id
      */
-    public void setCataBaseInfo(Integer cIndex, String name, Integer type, Long parentCatalogueId, Long courseId){
+    public void setCataBaseInfo(
+            Integer cIndex, String name, Integer type, Long parentCatalogueId, Long courseId) {
         this.cIndex = cIndex;
         this.name = name;
         this.type = type;
@@ -116,6 +118,7 @@ public class CourseCatalogueDraft implements Serializable {
      * 是否可以修改，上架后的目录位置不能移动
      */
     private Boolean canUpdate;
+
     /**
      * 部门id
      */
@@ -124,7 +127,6 @@ public class CourseCatalogueDraft implements Serializable {
     /**
      * 创建时间
      */
-
     private LocalDateTime createTime;
 
     /**
@@ -145,7 +147,6 @@ public class CourseCatalogueDraft implements Serializable {
     /**
      * 逻辑删除
      */
-//    private Integer deleted;
-
+    //    private Integer deleted;
 
 }

@@ -29,7 +29,6 @@ REGRESSION_TESTS = [
     'CloudPlaybackControllerTest',
     'CloudCourseCoverTest',
     'CloudMediaDatabaseTest',
-
     'CredentialValidationLoggingTest',
     'StaffDirectoryDatabaseTest',
     'UserProfilePasswordDatabaseTest',

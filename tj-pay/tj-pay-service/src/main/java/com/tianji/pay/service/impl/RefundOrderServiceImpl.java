@@ -43,7 +43,8 @@ import static com.tianji.pay.sdk.constants.PayErrorInfo.INVALID_PAY_CHANNEL;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, RefundOrder> implements IRefundOrderService {
+public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, RefundOrder>
+        implements IRefundOrderService {
 
     private final IPayOrderService payOrderService;
 
@@ -51,15 +52,20 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
     private final ProviderRequestGuard requests;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    @Resource
-    private Map<String, IPayService> payServiceChannels;
+    @Resource private Map<String, IPayService> payServiceChannels;
 
     @Override
     public RefundResultDTO applyRefund(RefundApplyDTO refundApplyDTO) {
         log.debug("准备申请退款，业务端退款订单号：{}", refundApplyDTO.getBizRefundOrderNo());
         // 1.幂等性校验
-        RefundOrder refundOrder = requests.prepare("REFUND",refundApplyDTO.getBizOrderNo(),()->checkIdempotent(refundApplyDTO));
-        if (refundOrder!=null && (refundOrder.success() || refundOrder.failed() || !refundOrder.notCommit()))return queryRefundResult(refundApplyDTO.getBizRefundOrderNo());
+        RefundOrder refundOrder =
+                requests.prepare(
+                        "REFUND",
+                        refundApplyDTO.getBizOrderNo(),
+                        () -> checkIdempotent(refundApplyDTO));
+        if (refundOrder != null
+                && (refundOrder.success() || refundOrder.failed() || !refundOrder.notCommit()))
+            return queryRefundResult(refundApplyDTO.getBizRefundOrderNo());
         if (refundOrder == null) {
             // 为 null说明退款处理中，无需重新申请，返回false
             return RefundResultDTO.running().msg("退款执行中").build();
@@ -71,9 +77,11 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
             throw new BadRequestException(INVALID_PAY_CHANNEL);
         }
         // 3.尝试退款
-        RefundResponse refundResponse = payService.refundOrder(
-                refundOrder.getPayOrderNo().toString(), refundOrder.getRefundOrderNo().toString(),
-                refundOrder.getRefundAmount(), refundOrder.getTotalAmount());
+        RefundResponse refundResponse =
+                payService.refundOrder(
+                        refundOrder.getPayOrderNo().toString(),
+                                refundOrder.getRefundOrderNo().toString(),
+                        refundOrder.getRefundAmount(), refundOrder.getTotalAmount());
         // 4.更新退款结果到数据库
         updateRefundStatus(refundResponse, refundOrder.getId());
         // 5.返回退款申请结果
@@ -84,13 +92,23 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
         return refundResultDTO;
     }
 
-    private void updateRefundStatus(RefundResponse response,Long id){
-        if(!Boolean.TRUE.equals(response.getSuccess()) || response.getStatus()==null)return;
-        RefundOrder order=getById(id);
-        settlement.refund(order.getRefundOrderNo(),response.getStatus(),response.getChannel(),response.getMsg(),response.getAmount());
-        if(response.getStatus()<2)lambdaUpdate().set(RefundOrder::getStatus,response.getStatus())
-          .set(RefundOrder::getResultCode,response.getCode()).set(RefundOrder::getResultMsg,response.getMsg())
-          .eq(RefundOrder::getId,id).in(RefundOrder::getStatus,0,1).update();
+    private void updateRefundStatus(RefundResponse response, Long id) {
+        if (!Boolean.TRUE.equals(response.getSuccess()) || response.getStatus() == null) return;
+        RefundOrder order = getById(id);
+        settlement.refund(
+                order.getRefundOrderNo(),
+                response.getStatus(),
+                response.getChannel(),
+                response.getMsg(),
+                response.getAmount());
+        if (response.getStatus() < 2)
+            lambdaUpdate()
+                    .set(RefundOrder::getStatus, response.getStatus())
+                    .set(RefundOrder::getResultCode, response.getCode())
+                    .set(RefundOrder::getResultMsg, response.getMsg())
+                    .eq(RefundOrder::getId, id)
+                    .in(RefundOrder::getStatus, 0, 1)
+                    .update();
     }
 
     @Lock(name = PayConstants.RedisKeyFormatter.REFUND_APPLY, leaseTime = 10, autoUnlock = false)
@@ -107,14 +125,28 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
             throw new BizIllegalException(PayErrorInfo.PAY_ORDER_NOT_SUCCESS);
         }
 
-        if(refundApplyDTO.getRefundAmount()==null || refundApplyDTO.getRefundAmount()<=0 || refundApplyDTO.getRefundAmount()>payOrder.getAmount())throw new BadRequestException("退款金额无效");
+        if (refundApplyDTO.getRefundAmount() == null
+                || refundApplyDTO.getRefundAmount() <= 0
+                || refundApplyDTO.getRefundAmount() > payOrder.getAmount())
+            throw new BadRequestException("退款金额无效");
         // 3.查询当前订单是否已经有退款单
         RefundOrder oldRefundOrder = queryByBizRefundOrder(refundApplyDTO.getBizRefundOrderNo());
         // 3.1.判断是否为空
-        if(oldRefundOrder!=null && (!java.util.Objects.equals(oldRefundOrder.getBizOrderNo(),refundApplyDTO.getBizOrderNo()) || !java.util.Objects.equals(oldRefundOrder.getRefundAmount(),refundApplyDTO.getRefundAmount())))throw new com.tianji.common.exceptions.ConflictException("同一退款业务单的请求内容不同");
+        if (oldRefundOrder != null
+                && (!java.util.Objects.equals(
+                                oldRefundOrder.getBizOrderNo(), refundApplyDTO.getBizOrderNo())
+                        || !java.util.Objects.equals(
+                                oldRefundOrder.getRefundAmount(),
+                                refundApplyDTO.getRefundAmount())))
+            throw new com.tianji.common.exceptions.ConflictException("同一退款业务单的请求内容不同");
         if (oldRefundOrder == null) {
-            long committed=jdbc.queryForObject("SELECT COALESCE(SUM(refund_amount),0) FROM refund_order WHERE biz_order_no=? AND status IN(0,1,2)",Long.class,refundApplyDTO.getBizOrderNo());
-            if(committed+refundApplyDTO.getRefundAmount()>payOrder.getAmount())throw new BadRequestException("退款总额超过支付金额");
+            long committed =
+                    jdbc.queryForObject(
+                            "SELECT COALESCE(SUM(refund_amount),0) FROM refund_order WHERE biz_order_no=? AND status IN(0,1,2)",
+                            Long.class,
+                            refundApplyDTO.getBizOrderNo());
+            if (committed + refundApplyDTO.getRefundAmount() > payOrder.getAmount())
+                throw new BadRequestException("退款总额超过支付金额");
             // 本订单第一次退款，需要生成新退款单
             RefundOrder refundOrder = BeanUtils.toBean(refundApplyDTO, RefundOrder.class);
             refundOrder.setRefundOrderNo(IdWorker.getId());
@@ -131,9 +163,7 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
     }
 
     private RefundOrder queryByBizRefundOrder(Long bizRefundOrderId) {
-        return lambdaQuery()
-                .eq(RefundOrder::getBizRefundOrderNo, bizRefundOrderId)
-                .one();
+        return lambdaQuery().eq(RefundOrder::getBizRefundOrderNo, bizRefundOrderId).one();
     }
 
     @Override
@@ -167,8 +197,10 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
             throw new BadRequestException(INVALID_PAY_CHANNEL);
         }
         // 6.去第三方查询一下
-        RefundResponse refundResponse = payService.queryRefundStatus(
-                refundOrder.getPayOrderNo().toString(), refundOrder.getRefundOrderNo().toString());
+        RefundResponse refundResponse =
+                payService.queryRefundStatus(
+                        refundOrder.getPayOrderNo().toString(),
+                        refundOrder.getRefundOrderNo().toString());
         // 6.1.更新数据库退款单状态
         updateRefundStatus(refundResponse, refundOrder.getId());
 
@@ -182,9 +214,7 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
 
     @Override
     public RefundOrder queryByRefundOrderNo(Long refundOrderNo) {
-        return lambdaQuery()
-                .eq(RefundOrder::getRefundOrderNo, refundOrderNo)
-                .one();
+        return lambdaQuery().eq(RefundOrder::getRefundOrderNo, refundOrderNo).one();
     }
 
     @Override
@@ -193,9 +223,10 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
         Page<RefundOrder> page = new Page<>(pageNo, size);
         page.addOrder(OrderItem.asc("id"));
         // 2.查询
-        Page<RefundOrder> result = lambdaQuery()
-                .eq(RefundOrder::getStatus, RefundStatus.UN_KNOWN.getValue())
-                .page(page);
+        Page<RefundOrder> result =
+                lambdaQuery()
+                        .eq(RefundOrder::getStatus, RefundStatus.UN_KNOWN.getValue())
+                        .page(page);
         return PageDTO.of(result);
     }
 
@@ -211,8 +242,10 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
             return;
         }
         // 2.查询退款状态
-        RefundResponse refundResponse = payService.queryRefundStatus(
-                refundOrder.getPayOrderNo().toString(), refundOrder.getRefundOrderNo().toString());
+        RefundResponse refundResponse =
+                payService.queryRefundStatus(
+                        refundOrder.getPayOrderNo().toString(),
+                        refundOrder.getRefundOrderNo().toString());
 
         if (refundResponse.getStatus().equals(refundOrder.getStatus())) {
             // 退款状态没有变化，不做处理
@@ -221,8 +254,6 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
 
         // 3.更新数据库退款单状态
         updateRefundStatus(refundResponse, refundOrder.getId());
-
-
     }
 
     @Override
@@ -255,12 +286,16 @@ public class RefundOrderServiceImpl extends ServiceImpl<RefundOrderMapper, Refun
     private RefundResultDTO transferRefundResult(RefundResponse refundResponse) {
         if (!refundResponse.getSuccess()) {
             return RefundResultDTO.failed()
-                    .msg(refundResponse.getMsg()).refundChannel(refundResponse.getChannel()).build();
+                    .msg(refundResponse.getMsg())
+                    .refundChannel(refundResponse.getChannel())
+                    .build();
         }
         if (refundResponse.refundSuccess()) {
             return RefundResultDTO.success().refundChannel(refundResponse.getChannel()).build();
         }
         return RefundResultDTO.running()
-                .msg(refundResponse.getMsg()).refundChannel(refundResponse.getChannel()).build();
+                .msg(refundResponse.getMsg())
+                .refundChannel(refundResponse.getChannel())
+                .build();
     }
 }

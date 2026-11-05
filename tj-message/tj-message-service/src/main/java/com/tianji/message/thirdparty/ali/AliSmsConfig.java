@@ -12,20 +12,21 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(AliProperties.class)
 public class AliSmsConfig {
     @Bean
-    public AsyncClient asyncClient(AliProperties prop){
+    public AsyncClient asyncClient(AliProperties prop) {
         // 1.访问凭证
-        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
-                .accessKeyId(prop.getAccessId())
-                .accessKeySecret(prop.getAccessSecret())
-                .build());
+        StaticCredentialProvider provider =
+                StaticCredentialProvider.create(
+                        Credential.builder()
+                                .accessKeyId(prop.getAccessId())
+                                .accessKeySecret(prop.getAccessSecret())
+                                .build());
         // 2.创建客户端
         return AsyncClient.builder()
                 .region("cn-shanghai") // Region ID
                 .credentialsProvider(provider)
                 .overrideConfiguration(
                         ClientOverrideConfiguration.create()
-                                .setEndpointOverride("dysmsapi.aliyuncs.com")
-                )
+                                .setEndpointOverride("dysmsapi.aliyuncs.com"))
                 .build();
     }
 }

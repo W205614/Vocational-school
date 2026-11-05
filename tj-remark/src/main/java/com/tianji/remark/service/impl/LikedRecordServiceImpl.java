@@ -28,9 +28,10 @@ import static com.tianji.common.constants.MqConstants.Key.LIKED_TIMES_KEY_TEMPLA
  * @author 虎哥
  * @since 2026-02-06
  */
-//@Service
+// @Service
 @RequiredArgsConstructor
-public class LikedRecordServiceImpl extends ServiceImpl<LikedRecordMapper, LikedRecord> implements ILikedRecordService {
+public class LikedRecordServiceImpl extends ServiceImpl<LikedRecordMapper, LikedRecord>
+        implements ILikedRecordService {
 
     private final RabbitMqHelper mqHelper;
 
@@ -39,13 +40,13 @@ public class LikedRecordServiceImpl extends ServiceImpl<LikedRecordMapper, Liked
         // 1. 基于前端的参数, 判断是执行点赞还是取消点赞
         boolean success = recordDTO.getLiked() ? like(recordDTO) : unlike(recordDTO);
         // 2. 判断是否执行成功, 如果失败, 则直接结束
-        if(!success) {
+        if (!success) {
             return;
         }
         // 3. 如果执行成功, 统计点赞总数
-        Integer likeTimes = Math.toIntExact(lambdaQuery()
-                .eq(LikedRecord::getBizId, recordDTO.getBizId())
-                .count());
+        Integer likeTimes =
+                Math.toIntExact(
+                        lambdaQuery().eq(LikedRecord::getBizId, recordDTO.getBizId()).count());
         // 4. 发送MQ通知
         mqHelper.send(
                 LIKE_RECORD_EXCHANGE,
@@ -58,34 +59,37 @@ public class LikedRecordServiceImpl extends ServiceImpl<LikedRecordMapper, Liked
         // 1. 获取登录用户id
         Long userId = UserContext.getUser();
         // 2. 查询点赞状态
-        List<LikedRecord> list = lambdaQuery()
-                .in(LikedRecord::getBizId, bizIds)
-                .eq(LikedRecord::getUserId, userId)
-                .list();
+        List<LikedRecord> list =
+                lambdaQuery()
+                        .in(LikedRecord::getBizId, bizIds)
+                        .eq(LikedRecord::getUserId, userId)
+                        .list();
         // 3. 返回结果
         return list.stream().map(LikedRecord::getBizId).collect(Collectors.toSet());
     }
 
     @Override
-    public void readLikedTimesAndSendMessage(String bizType, int maxBizSize) {
-
-    }
+    public void readLikedTimesAndSendMessage(String bizType, int maxBizSize) {}
 
     private boolean unlike(LikeRecordFormDTO recordDTO) {
-        return remove(new QueryWrapper<LikedRecord>().lambda()
-                .eq(LikedRecord::getUserId, UserContext.getUser())
-                .eq(LikedRecord::getBizId, recordDTO.getBizId()));
+        return remove(
+                new QueryWrapper<LikedRecord>()
+                        .lambda()
+                        .eq(LikedRecord::getUserId, UserContext.getUser())
+                        .eq(LikedRecord::getBizId, recordDTO.getBizId()));
     }
 
     private boolean like(LikeRecordFormDTO recordDTO) {
         Long userId = UserContext.getUser();
         // 1. 查询点赞记录
-        Integer count = Math.toIntExact(lambdaQuery()
-                .eq(LikedRecord::getUserId, userId)
-                .eq(LikedRecord::getBizId, recordDTO.getBizId())
-                .count());
+        Integer count =
+                Math.toIntExact(
+                        lambdaQuery()
+                                .eq(LikedRecord::getUserId, userId)
+                                .eq(LikedRecord::getBizId, recordDTO.getBizId())
+                                .count());
         // 2. 判断是否存在, 如果已经存在, 直接结束
-        if(count > 0) {
+        if (count > 0) {
             return false;
         }
         // 3. 如果不存在, 直接新增

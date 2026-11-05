@@ -21,20 +21,19 @@ public class RecommendController {
 
     @Operation(summary = "精品好课接口")
     @GetMapping("/best")
-    public List<CourseVO> queryBestTopN(){
+    public List<CourseVO> queryBestTopN() {
         return searchService.queryBestTopN();
     }
 
     @Operation(summary = "新课推荐接口")
     @GetMapping("/new")
-    public List<CourseVO> queryNewTopN(){
+    public List<CourseVO> queryNewTopN() {
         return searchService.queryNewTopN();
     }
 
     @Operation(summary = "精品公开课接口")
     @GetMapping("/free")
-    public List<CourseVO> queryFreeTopN(){
+    public List<CourseVO> queryFreeTopN() {
         return searchService.queryFreeTopN();
     }
-
 }

@@ -24,6 +24,5 @@ public class XxlJobProperties {
         private Integer port;
         private String logPath;
         private Integer logRetentionDays;
-
     }
 }

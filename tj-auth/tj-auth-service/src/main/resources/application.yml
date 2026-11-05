@@ -21,10 +21,10 @@ spring:
             loggerLevel: basic
   config:
     import:
-    - optional:nacos:shared-spring.yaml?refreshEnabled=false
-    - optional:nacos:shared-redis.yaml?refreshEnabled=false
-    - optional:nacos:shared-mybatis.yaml?refreshEnabled=false
-    - optional:nacos:shared-logs.yaml?refreshEnabled=false
+      - optional:nacos:shared-spring.yaml?refreshEnabled=false
+      - optional:nacos:shared-redis.yaml?refreshEnabled=false
+      - optional:nacos:shared-mybatis.yaml?refreshEnabled=false
+      - optional:nacos:shared-logs.yaml?refreshEnabled=false
   lifecycle:
     timeout-per-shutdown-phase: 30s
 encrypt:
@@ -48,8 +48,8 @@ tj:
     resource:
       enable: true
       includeLoginPaths:
-      - /menus/me
-      - /accounts/logout
+        - /menus/me
+        - /accounts/logout
   jdbc:
     database: tj_auth
 management:

@@ -11,6 +11,7 @@ import lombok.EqualsAndHashCode;
 public class ReplyPageQuery extends PageQuery {
     @Schema(description = "问题id，不为空则代表根据问题查询回答")
     private Long questionId;
+
     @Schema(description = "回答id，不为空则代表根据回答查询评论")
     private Long answerId;
 }

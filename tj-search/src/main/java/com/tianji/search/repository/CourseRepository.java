@@ -5,7 +5,7 @@ import com.tianji.search.domain.po.Course;
 import java.util.List;
 import java.util.Optional;
 
-public interface CourseRepository{
+public interface CourseRepository {
     String INDEX_NAME = "course";
     String DEFAULT_QUERY_NAME = "name";
     String CATEGORY_ID_LV1 = "categoryIdLv1";
@@ -30,16 +30,18 @@ public interface CourseRepository{
      * </pre>
      */
     String INCREMENT_SOLD_SCRIPT_ID = "increment_sold";
+
     String INCREMENT_SOLD_SCRIPT_PARAM = "count";
 
     void save(Course course);
-    void projectMetadata(long courseId,Course course,long version);
+
+    void projectMetadata(long courseId, Course course, long version);
 
     void deleteById(Long courseId);
 
     Optional<Course> findById(Long courseId);
 
-    void updateById(Long courseId, Object ... docs);
+    void updateById(Long courseId, Object... docs);
 
     void increment(Long courseId, String field, int amount);
 

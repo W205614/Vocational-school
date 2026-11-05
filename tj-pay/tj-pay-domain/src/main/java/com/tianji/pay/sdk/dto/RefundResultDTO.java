@@ -19,18 +19,25 @@ public class RefundResultDTO {
 
     @Schema(description = "退款状态，1：退款中，2：退款失败，3：退款成功")
     private int status;
+
     @Schema(description = "支付失败原因")
     private String msg;
+
     @Schema(description = "业务端支付订单号")
     private Long bizPayOrderId;
+
     @Schema(description = "业务端退款订单号")
     private Long bizRefundOrderId;
+
     @Schema(description = "支付流水交易单号")
     private Long payOrderNo;
+
     @Schema(description = "退款交易单号")
     private Long refundOrderNo;
+
     @Schema(description = "支付渠道")
     private String payChannel;
+
     @Schema(description = "退款渠道")
     private String refundChannel;
 

@@ -12,11 +12,13 @@ import java.time.LocalDateTime;
 public class PlaceOrderResultVO {
     @Schema(description = "订单号")
     private Long orderId;
+
     @Schema(description = "支付金额")
     private Integer payAmount;
+
     @Schema(description = "待支付的订单，超时时间")
     private LocalDateTime payOutTime;
+
     @Schema(description = "订单状态，1：待支付，2：已支付，3：已关闭，4：已完成，5：已报名, 6:申请退款")
     private Integer status;
 }
-

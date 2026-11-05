@@ -31,8 +31,7 @@ public class Menu implements Serializable {
     /**
      * 主键
      */
-    @TableId
-    private Long id;
+    @TableId private Long id;
 
     /**
      * 父菜单id，默认0代表没有父菜单
@@ -77,13 +76,11 @@ public class Menu implements Serializable {
     /**
      * 创建者id
      */
-
     private Long creater;
 
     /**
      * 更新者id
      */
-
     private Long updater;
 
     /**
@@ -96,7 +93,6 @@ public class Menu implements Serializable {
      */
     private Integer deleted;
 
-
     public Menu(MenuDTO dto) {
         this.id = dto.getId();
         this.parentId = dto.getParentId();
@@ -106,7 +102,7 @@ public class Menu implements Serializable {
         this.priority = dto.getPriority();
     }
 
-    public MenuDTO toDTO(){
+    public MenuDTO toDTO() {
         MenuDTO dto = new MenuDTO();
         dto.setId(id);
         dto.setPath(path);

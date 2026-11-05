@@ -35,7 +35,8 @@ public class InteractionReplyAdminController {
 
     @Operation(summary = "隐藏或显示回答或评论")
     @PutMapping("/{id}/hidden/{hidden}")
-    public void hiddenReplyAdmin(@PathVariable("id") Long id, @PathVariable("hidden") Boolean hidden) {
+    public void hiddenReplyAdmin(
+            @PathVariable("id") Long id, @PathVariable("hidden") Boolean hidden) {
         replyService.hiddenReplyAdmin(id, hidden);
     }
 

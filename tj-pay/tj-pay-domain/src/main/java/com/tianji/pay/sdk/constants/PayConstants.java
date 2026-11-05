@@ -7,7 +7,7 @@ public interface PayConstants {
     /**
      * redis key前缀
      */
-   interface RedisKeyFormatter {
+    interface RedisKeyFormatter {
         String PAY_APPLY = "pay:apply:bizOrderNo:#{payApplyDTO.bizOrderNo}";
         String PAY_NOTIFY = "pay:notify:payOrderNo:#{tradingOrderNo}";
         String PAY_ORDER_CHECK_TASK = "pay:notify:payOrderNo:#{payOrder.payOrderNo}";

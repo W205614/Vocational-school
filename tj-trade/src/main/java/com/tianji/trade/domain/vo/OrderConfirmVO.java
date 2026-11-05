@@ -9,15 +9,19 @@ import java.util.List;
 @Data
 @Schema(description = "订单确认页信息")
 public class OrderConfirmVO {
-    private List<java.util.Map<String,Object>> availableCoupons = List.of();
+    private List<java.util.Map<String, Object>> availableCoupons = List.of();
     private boolean couponSelectionRequired;
     private String discountError;
+
     @Schema(description = "订单id")
     private Long orderId;
+
     @Schema(description = "订单总金额")
     private Integer totalAmount;
+
     @Schema(description = "优惠折扣方案")
     private List<CouponDiscountDTO> discounts;
+
     @Schema(description = "订单中包含的课程")
     private List<OrderCourseVO> courses;
 }

@@ -1,25 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>tj-message</artifactId>
         <groupId>com.tianji</groupId>
         <version>1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
     <artifactId>tj-message-service</artifactId>
-
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
     <dependencies>
-        <dependency><groupId>com.alibaba.nacos</groupId><artifactId>nacos-client</artifactId><classifier>pure</classifier></dependency>
-        <dependency><groupId>com.alibaba.nacos</groupId><artifactId>nacos-api</artifactId></dependency>
-        <dependency><groupId>com.alibaba.nacos</groupId><artifactId>nacos-common</artifactId></dependency>
-        <dependency><groupId>com.tianji</groupId><artifactId>tj-auth-resource-sdk</artifactId><version>1.0.0</version></dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client</artifactId>
+            <classifier>pure</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.tianji</groupId>
+            <artifactId>tj-auth-resource-sdk</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
@@ -86,22 +96,38 @@
             <exclusions>
                 <!-- The SDK's shaded transport embeds HttpCore 5.3.1 and
                      bypasses dependencyManagement security patches. -->
-                <exclusion><groupId>com.aliyun</groupId><artifactId>aliyun-http-apache</artifactId></exclusion>
-                <exclusion><groupId>com.aliyun</groupId><artifactId>aliyun-java-auth</artifactId></exclusion>
+                <exclusion>
+                    <groupId>com.aliyun</groupId>
+                    <artifactId>aliyun-http-apache</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.aliyun</groupId>
+                    <artifactId>aliyun-java-auth</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <!-- Use the official unshaded pair together: auth bytecode and its
              transport must reference the same managed Apache HTTP classes. -->
         <dependency>
-            <groupId>com.aliyun</groupId><artifactId>aliyun-java-auth</artifactId><version>0.4.2</version>
-            <exclusions><exclusion><groupId>com.aliyun</groupId><artifactId>aliyun-http-apache</artifactId></exclusion></exclusions>
+            <groupId>com.aliyun</groupId>
+            <artifactId>aliyun-java-auth</artifactId>
+            <version>0.4.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.aliyun</groupId>
+                    <artifactId>aliyun-http-apache</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.aliyun</groupId><artifactId>aliyun-http-apache</artifactId><version>0.4.2</version>
+            <groupId>com.aliyun</groupId>
+            <artifactId>aliyun-http-apache</artifactId>
+            <version>0.4.2</version>
         </dependency>
         <!-- The upstream dependency-reduced transport POM omits these. -->
         <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId><artifactId>httpclient5</artifactId>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -123,6 +149,12 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles><profile><id>compact</id><properties><spring-boot.repackage.skip>true</spring-boot.repackage.skip></properties></profile></profiles>
+    <profiles>
+        <profile>
+            <id>compact</id>
+            <properties>
+                <spring-boot.repackage.skip>true</spring-boot.repackage.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>

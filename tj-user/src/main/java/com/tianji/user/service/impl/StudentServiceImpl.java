@@ -62,7 +62,7 @@ public class StudentServiceImpl implements IStudentService {
     @Override
     public PageDTO<StudentPageVo> queryStudentPage(UserPageQuery query) {
         // 1.分页条件
-        Page<UserDetail> page  =  detailService.queryUserDetailByPage(query, UserType.STUDENT);
+        Page<UserDetail> page = detailService.queryUserDetailByPage(query, UserType.STUDENT);
         List<UserDetail> records = page.getRecords();
         if (CollUtils.isEmpty(records)) {
             return PageDTO.empty(page);

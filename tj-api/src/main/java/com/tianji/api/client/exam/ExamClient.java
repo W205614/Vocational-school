@@ -17,12 +17,13 @@ import java.util.Map;
 public interface ExamClient {
 
     @GetMapping("/internal/v1/exams/settlement-readiness")
-    ExamSettlementPage settlementReadiness(@RequestParam("month") String month,
-                                           @RequestParam("cursor") long cursor,
-                                           @RequestParam(value="upperBound",required=false) Long upperBound);
+    ExamSettlementPage settlementReadiness(
+            @RequestParam("month") String month,
+            @RequestParam("cursor") long cursor,
+            @RequestParam(value = "upperBound", required = false) Long upperBound);
 
     @PostMapping("/internal/v1/exams/learning-overview")
-    Map<String,Integer> learningOverview(@RequestBody List<Long> courseIds);
+    Map<String, Integer> learningOverview(@RequestBody List<Long> courseIds);
 
     @PostMapping("/question-biz/list")
     void saveQuestionBizInfoBatch(@RequestBody Iterable<QuestionBizDTO> qbs);
@@ -34,7 +35,8 @@ public interface ExamClient {
     Map<Long, Integer> queryQuestionScoresByBizIds(@RequestParam("ids") Iterable<Long> bizIds);
 
     @GetMapping("/questions/list")
-    List<QuestionDTO> queryQuestionByIds(@Parameter(description = "要查询的题目的id集合") @RequestParam("ids") Iterable<Long> ids);
+    List<QuestionDTO> queryQuestionByIds(
+            @Parameter(description = "要查询的题目的id集合") @RequestParam("ids") Iterable<Long> ids);
 
     @GetMapping("/questions/numOfTeacher")
     Map<Long, Integer> countSubjectNumOfTeacher(@RequestParam("ids") Iterable<Long> createrIds);

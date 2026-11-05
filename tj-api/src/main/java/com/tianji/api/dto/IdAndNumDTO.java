@@ -18,7 +18,7 @@ public class IdAndNumDTO {
     private Long id;
     private Integer num;
 
-    public static Map<Long, Integer> toMap(List<IdAndNumDTO> list){
+    public static Map<Long, Integer> toMap(List<IdAndNumDTO> list) {
         if (CollUtils.isEmpty(list)) {
             return CollUtils.emptyMap();
         }

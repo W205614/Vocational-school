@@ -36,21 +36,22 @@ public class CookieBuilder {
     /**
      * 构建cookie，会对cookie值用UTF-8做URL编码，避免中文乱码
      */
-    public void build(){
+    public void build() {
         if (response == null) {
             log.error("response为null，无法写入cookie");
             return;
         }
         Cookie cookie = new Cookie(name, URLEncoder.encode(value, charset));
-        if(StringUtils.isNotBlank(domain)) {
+        if (StringUtils.isNotBlank(domain)) {
             cookie.setDomain(domain);
         }
-        cookie.setSecure(requireSecure || trustedHttps || request!=null && request.isSecure());
-        cookie.setAttribute("SameSite","Lax");
+        cookie.setSecure(requireSecure || trustedHttps || request != null && request.isSecure());
+        cookie.setAttribute("SameSite", "Lax");
         cookie.setHttpOnly(httpOnly);
         cookie.setMaxAge(maxAge);
         cookie.setPath(path);
-        log.debug("生成cookie name={}, maxAge={}, path={}, httpOnly={}",name,maxAge,path,httpOnly);
+        log.debug(
+                "生成cookie name={}, maxAge={}, path={}, httpOnly={}", name, maxAge, path, httpOnly);
         response.addCookie(cookie);
     }
 
@@ -59,7 +60,7 @@ public class CookieBuilder {
      * @param cookieValue cookie原始值
      * @return 解码后的值
      */
-    public String decode(String cookieValue){
+    public String decode(String cookieValue) {
         return URLDecoder.decode(cookieValue, charset);
     }
 }

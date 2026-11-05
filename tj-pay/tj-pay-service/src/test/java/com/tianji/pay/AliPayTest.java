@@ -14,22 +14,23 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.util.List;
 
-@EnabledIfEnvironmentVariable(named="TJ_REAL_PAYMENT_TESTS", matches="true")
+@EnabledIfEnvironmentVariable(named = "TJ_REAL_PAYMENT_TESTS", matches = "true")
 public class AliPayTest {
     @BeforeEach
-    public void init(){
+    public void init() {
         Factory.setOptions(getOptions());
     }
 
     String orderNo = required("TJ_ALIPAY_TEST_ORDER_NO");
     String refundOrderNo1 = required("TJ_ALIPAY_TEST_REFUND_NO_1");
     String refundOrderNo2 = required("TJ_ALIPAY_TEST_REFUND_NO_2");
+
     @Test
     void testPreCreate() {
         try {
             // 1. 发起API调用（以创建当面付收款二维码为例）
-            AlipayTradePrecreateResponse response = Factory.Payment.FaceToFace()
-                    .preCreate("pen lv2", orderNo, "2.00");
+            AlipayTradePrecreateResponse response =
+                    Factory.Payment.FaceToFace().preCreate("pen lv2", orderNo, "2.00");
             // 2. 处理响应或异常
             if (ResponseChecker.success(response)) {
                 System.out.println(response.getQrCode());
@@ -57,18 +58,19 @@ public class AliPayTest {
 
     @Test
     void testRefund() throws Exception {
-        AlipayTradeRefundResponse response = Factory.Payment.Common()
-                .optional("query_options", List.of("refund_detail_item_list"))
-                .optional("out_request_no", refundOrderNo1)
-                .refund(orderNo, "1");
+        AlipayTradeRefundResponse response =
+                Factory.Payment.Common()
+                        .optional("query_options", List.of("refund_detail_item_list"))
+                        .optional("out_request_no", refundOrderNo1)
+                        .refund(orderNo, "1");
 
         System.out.println("response = " + response.getHttpBody());
     }
 
     @Test
     void testQueryRefund() throws Exception {
-        AlipayTradeFastpayRefundQueryResponse response = Factory.Payment.Common()
-                .queryRefund(orderNo, refundOrderNo1);
+        AlipayTradeFastpayRefundQueryResponse response =
+                Factory.Payment.Common().queryRefund(orderNo, refundOrderNo1);
 
         System.out.println("response = " + response.getHttpBody());
     }
@@ -79,10 +81,10 @@ public class AliPayTest {
         System.out.println("response = " + response.getHttpBody());
     }
 
-
     private static String required(String name) {
-        String value=System.getenv(name);
-        if(value==null || value.isBlank())throw new IllegalStateException("Missing payment test configuration: "+name);
+        String value = System.getenv(name);
+        if (value == null || value.isBlank())
+            throw new IllegalStateException("Missing payment test configuration: " + name);
         return value;
     }
 
@@ -95,7 +97,7 @@ public class AliPayTest {
         // 为避免私钥随源码泄露，推荐从文件中读取私钥字符串而不是写入源码中
         config.merchantPrivateKey = required("TJ_ALIPAY_PRIVATE_KEY");
         config.alipayPublicKey = required("TJ_ALIPAY_PUBLIC_KEY");
-        //可设置异步通知接收服务地址（可选）
+        // 可设置异步通知接收服务地址（可选）
         config.notifyUrl = required("TJ_ALIPAY_NOTIFY_URL");
         return config;
     }

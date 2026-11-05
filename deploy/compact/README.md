@@ -12,19 +12,19 @@
 
 ## 结构
 
-| 应用 | 原模块 | 默认端口 |
-| --- | --- | --- |
-| identity | auth、user | 24001 |
-| commerce | trade、pay、promotion | 24002 |
-| education | course、learning、exam、remark | 24003 |
-| support | media、search、message、data | 24004 |
-| gateway | 网关 | 24310 |
+| 应用      | 原模块                         | 默认端口 |
+| --------- | ------------------------------ | -------- |
+| identity  | auth、user                     | 24001    |
+| commerce  | trade、pay、promotion          | 24002    |
+| education | course、learning、exam、remark | 24003    |
+| support   | media、search、message、data   | 24004    |
+| gateway   | 网关                           | 24310    |
 
-| 入口 | 默认本机地址与页面 |
-| --- | --- |
-| 学生门户 | `http://127.0.0.1:24500/`；游客选课 `/`、课程 `/courses/:id`、学习 `/learning`、积分 `/points`、复习 `/review`、笔记 `/notes`、考试 `/exams`、结算 `/cart` |
-| 教师／管理端 | `http://127.0.0.1:24501/`；授课学情与答疑 `/teaching`、授权评分 `/exams`、管理员赛季奖励 `/seasons` |
-| API 网关 | `http://127.0.0.1:24310/api/v2/` |
+| 入口         | 默认本机地址与页面                                                                                                                                         |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 学生门户     | `http://127.0.0.1:24500/`；游客选课 `/`、课程 `/courses/:id`、学习 `/learning`、积分 `/points`、复习 `/review`、笔记 `/notes`、考试 `/exams`、结算 `/cart` |
+| 教师／管理端 | `http://127.0.0.1:24501/`；授课学情与答疑 `/teaching`、授权评分 `/exams`、管理员赛季奖励 `/seasons`                                                        |
+| API 网关     | `http://127.0.0.1:24310/api/v2/`                                                                                                                           |
 
 游客仅能读取公开课程介绍和目录；登录后回到原操作，个人数据和收费媒体仍由后端校验。教师授课权限和评分权限独立。业务仍使用原来的 12 个数据库。每个模块有独立 Spring Bean 容器、Mapper、连接池、事务管理器、任务和消费者，共享宿主的 HTTP 服务器；禁止 Bean 定义覆盖。普通业务 JAR 由四个启动模块组装。默认 Maven 构建仍保留独立应用，`-Pcompact` 构建合并应用。compact 与媒资 worker 的配置已禁用 Nacos，相关交付包不包含 Nacos 客户端和 starter。独立应用使用官方 `nacos-client:pure`、同版本 `nacos-api`／`nacos-common` 和统一管理的外部 Guava，避免默认 SDK 内嵌旧依赖绕过版本管理；CI 检查独立网关真实 JAR 的依赖结构及 HIGH／CRITICAL 漏洞。连接用户自己的 Nacos 服务仍须按其地址、认证和命名空间配置验收。
 
@@ -90,13 +90,13 @@ docker compose -p tianji-compact --project-directory deploy/compact -f deploy/co
 python deploy/compact/setup.py up
 ```
 
-| 遇到的问题 | 处理方式 |
-| --- | --- |
-| 命令找不到或构建失败 | 确认工具已加入 `PATH`、Docker 已启动、依赖与镜像下载可用；脚本诊断日志位于 `deploy/compact/.local/`，例如 `maven.log`、`frontend.log`、`infra.log`、`up-None.log` |
+| 遇到的问题           | 处理方式                                                                                                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 命令找不到或构建失败 | 确认工具已加入 `PATH`、Docker 已启动、依赖与镜像下载可用；脚本诊断日志位于 `deploy/compact/.local/`，例如 `maven.log`、`frontend.log`、`infra.log`、`up-None.log`             |
 | 页面打不开或启动失败 | 用上面的 `ps` 查看状态；检查本机端口是否被占用，实际端口与挂载见本机 `deploy/compact/.local/compose.runtime.yaml`；用同一 Compose 命令将 `ps` 换成 `logs --tail 100` 查看日志 |
-| 门户搜索不到课程 | 确认启动成功，并已执行两个搜索初始化与同步命令 |
-| 不知道登录账号 | 查看 `deploy/compact/.local/accounts.json`，学生与教师／管理员使用不同网页入口 |
-| 已有环境需要升级 | 按[学习体验升级与隔离迁移演练](#学习体验升级与隔离迁移演练)完成迁移、配置补全和重新构建，遵循当前备份策略；不要重复执行首次准备步骤 |
+| 门户搜索不到课程     | 确认启动成功，并已执行两个搜索初始化与同步命令                                                                                                                                |
+| 不知道登录账号       | 查看 `deploy/compact/.local/accounts.json`，学生与教师／管理员使用不同网页入口                                                                                                |
+| 已有环境需要升级     | 按[学习体验升级与隔离迁移演练](#学习体验升级与隔离迁移演练)完成迁移、配置补全和重新构建，遵循当前备份策略；不要重复执行首次准备步骤                                           |
 
 数据库等数据保存在 Docker 命名卷，上传文件在 `deploy/compact/.local/objects`。保留 `.env`、`.local` 和数据卷；**不要用 `docker compose down -v` 清理有数据的部署**。所有默认发布端口仅绑定本机回环地址，其他设备不能直接访问。
 
@@ -196,7 +196,6 @@ python deploy/compact/load_test.py --users 50 --seconds 60
 ## 容器退役操作
 
 常规容器退役工具为 `retire_old.py`、`retire_images.py` 和 `retire_test_volumes.py`，按各自契约核验所有权与引用。此次用户明确不保留本地恢复包和旧版本回滚，按本次审计清单清理；当前业务卷、配置和媒资保留，归属不明或被其他项目引用的资源保留。普通文件移入 Windows 回收站，不使用全局 prune 或 `down -v`。更新验证后恢复原有容器启停状态。
-
 
 ## 学习体验升级与隔离迁移演练
 

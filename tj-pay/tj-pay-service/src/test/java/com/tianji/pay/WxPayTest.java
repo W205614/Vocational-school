@@ -11,12 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-@EnabledIfEnvironmentVariable(named="TJ_REAL_PAYMENT_TESTS", matches="true")
+@EnabledIfEnvironmentVariable(named = "TJ_REAL_PAYMENT_TESTS", matches = "true")
 public class WxPayTest {
-    @Autowired
-    private WxPayClient wxPayClient;
-    @Autowired
-    private WxPayService payService;
+    @Autowired private WxPayClient wxPayClient;
+    @Autowired private WxPayService payService;
 
     String orderNo = "21294121545";
     String refundOrderNo1 = "2129412671345";

@@ -4,9 +4,10 @@ import org.slf4j.MDC;
 
 import java.util.Map;
 
-public class MarkedRunnable implements Runnable{
+public class MarkedRunnable implements Runnable {
     private Runnable runnable;
     private Map<String, String> context;
+
     public MarkedRunnable(Runnable runnable) {
         this.runnable = runnable;
         this.context = MDC.getCopyOfContextMap();
@@ -14,14 +15,14 @@ public class MarkedRunnable implements Runnable{
 
     @Override
     public void run() {
-        if(context == null){
+        if (context == null) {
             MDC.clear();
-        }else {
+        } else {
             MDC.setContextMap(context);
         }
         try {
             runnable.run();
-        }finally {
+        } finally {
             MDC.clear();
         }
     }

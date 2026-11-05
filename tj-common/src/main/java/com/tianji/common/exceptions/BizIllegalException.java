@@ -3,7 +3,7 @@ package com.tianji.common.exceptions;
 /**
  * 业务不合法异常
  **/
-public class BizIllegalException extends CommonException{
+public class BizIllegalException extends CommonException {
     public BizIllegalException(String message) {
         super(message);
     }

@@ -7,5 +7,8 @@ import java.time.ZoneId;
 
 @Configuration
 public class LearningTimeConfiguration {
-    @Bean("learningClock") public Clock learningClock() {return Clock.system(ZoneId.of("Asia/Shanghai"));}
+    @Bean("learningClock")
+    public Clock learningClock() {
+        return Clock.system(ZoneId.of("Asia/Shanghai"));
+    }
 }

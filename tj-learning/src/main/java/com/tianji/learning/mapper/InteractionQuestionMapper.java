@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2026-02-04
  */
-public interface InteractionQuestionMapper extends BaseMapper<InteractionQuestion> {
-
-}
+public interface InteractionQuestionMapper extends BaseMapper<InteractionQuestion> {}

@@ -18,6 +18,5 @@ public class TradeApplication {
         SpringApplication app = new SpringApplicationBuilder(TradeApplication.class).build(args);
         Environment env = app.run(args).getEnvironment();
         StartupLogger.log(env, log);
-
     }
 }

@@ -21,8 +21,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class TodayDataServiceImpl implements TodayDataService {
 
-    @Autowired
-    private StringRedisTemplate redisTemplate;
+    @Autowired private StringRedisTemplate redisTemplate;
 
     @Override
     public TodayDataVO get() {

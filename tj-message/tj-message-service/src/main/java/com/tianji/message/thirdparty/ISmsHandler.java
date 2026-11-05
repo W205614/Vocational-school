@@ -12,6 +12,4 @@ public interface ISmsHandler {
      * 发送短信
      */
     void send(SmsInfoDTO platformSmsInfoDTO, MessageTemplate template);
-
-
 }

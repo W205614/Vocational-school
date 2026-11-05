@@ -14,13 +14,14 @@ public class PrivilegeOptionVO implements Serializable {
 
     @Schema(description = "权限id", example = "1")
     private Long id;
+
     @Schema(description = "权限说明", example = "新增员工")
     private String intro;
+
     @Schema(description = "是否选中", example = "true")
     private Boolean checked;
 
-    public PrivilegeOptionVO() {
-    }
+    public PrivilegeOptionVO() {}
 
     public PrivilegeOptionVO(Privilege privilege) {
         this.id = privilege.getId();

@@ -18,8 +18,10 @@ import lombok.NoArgsConstructor;
 public class CoursePurchaseInfoDTO {
     @Schema(description = "报名人数")
     private Integer enrollNum;
+
     @Schema(description = "退款人数")
     private Integer refundNum;
+
     @Schema(description = "实付总金额")
     private Integer realPayAmount;
 }

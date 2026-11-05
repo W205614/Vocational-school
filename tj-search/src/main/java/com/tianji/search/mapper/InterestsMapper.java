@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2022-07-21
  */
-public interface InterestsMapper extends BaseMapper<Interests> {
-
-}
+public interface InterestsMapper extends BaseMapper<Interests> {}

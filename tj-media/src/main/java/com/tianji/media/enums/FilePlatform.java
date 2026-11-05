@@ -8,8 +8,7 @@ public enum FilePlatform {
     TENCENT(1, "/img-tx/"),
     ALI(2, "/img-ali/"),
     ;
-    @EnumValue
-    int value;
+    @EnumValue int value;
     String path;
 
     FilePlatform(int value, String path) {

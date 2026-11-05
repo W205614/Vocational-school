@@ -42,6 +42,4 @@ public class CourseCataSubject implements Serializable {
      * 题目id
      */
     private Long subjectId;
-
-
 }

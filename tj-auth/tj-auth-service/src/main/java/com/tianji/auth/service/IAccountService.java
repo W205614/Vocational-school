@@ -10,7 +10,7 @@ import com.tianji.api.dto.user.LoginFormDTO;
  * @author 虎哥
  * @since 2022-06-16
  */
-public interface IAccountService{
+public interface IAccountService {
 
     String login(LoginFormDTO loginFormDTO, boolean isStaff);
 

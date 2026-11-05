@@ -1,36 +1,367 @@
-import type {Row} from '../../../packages/shared/src/ui';
-export interface Field{key:string;label:string;kind?:'number'|'boolean'|'text'|'long'|'ids'|'options'|'datetime'|'select'|'category'|'entity';choices?:{label:string;value:string|number}[];picker?:'roles'|'templates'|'users';multiple?:boolean;required?:boolean;initial?:unknown}
-export interface Action{label:string;path:(row:Row)=>string;method:string;body?:(row:Row)=>unknown}
-export interface Resource{title:string;list:string;columns:[string,string][];fields?:Field[];create?:string;update?:(row:Row)=>string;detail?:(row:Row)=>string;remove?:(row:Row)=>string;actions?:Action[]}
-const choice=(key:string,label:string,values:string[],start=1,initial=start):Field=>({key,label,kind:'select',initial,choices:values.map((label,i)=>({label,value:i+start}))});
-const entity=(key:string,label:string,picker:Field['picker'],multiple=false):Field=>({key,label,kind:'entity',picker,multiple});
-const categories=(key:string,label:string):Field=>({key,label,kind:'category'});
-const f=(key:string,label:string,kind:Field['kind']='text',initial?:unknown):Field=>({key,label,kind,initial});
-export interface ResourceSearch{parameter:'name'|'keyword'|'id';label:string;localField?:string;idLabel?:string}
-export const resourceSearch:Record<string,ResourceSearch>={
- courses:{parameter:'keyword',label:'按课程名称搜索'},
- media:{parameter:'name',label:'按文件名搜索'},
- questions:{parameter:'keyword',label:'按题干搜索'},
- students:{parameter:'name',label:'按学生姓名搜索'},
- staff:{parameter:'name',label:'按教师或员工姓名搜索'},
- roles:{parameter:'name',label:'按角色名称搜索',localField:'name'},
- coupons:{parameter:'name',label:'按优惠券名称搜索'},
- orders:{parameter:'id',label:'按订单条目 ID 查询',idLabel:'订单条目 ID'},
- refunds:{parameter:'id',label:'按退款 ID 查询',idLabel:'退款 ID'},
- templates:{parameter:'keyword',label:'按模板名称搜索'},
- notices:{parameter:'keyword',label:'按通知任务名称搜索'}
+import type { Row } from '../../../packages/shared/src/ui';
+export interface Field {
+  key: string;
+  label: string;
+  kind?:
+    | 'number'
+    | 'boolean'
+    | 'text'
+    | 'long'
+    | 'ids'
+    | 'options'
+    | 'datetime'
+    | 'select'
+    | 'category'
+    | 'entity';
+  choices?: { label: string; value: string | number }[];
+  picker?: 'roles' | 'templates' | 'users';
+  multiple?: boolean;
+  required?: boolean;
+  initial?: unknown;
+}
+export interface Action {
+  label: string;
+  path: (row: Row) => string;
+  method: string;
+  body?: (row: Row) => unknown;
+}
+export interface Resource {
+  title: string;
+  list: string;
+  columns: [string, string][];
+  fields?: Field[];
+  create?: string;
+  update?: (row: Row) => string;
+  detail?: (row: Row) => string;
+  remove?: (row: Row) => string;
+  actions?: Action[];
+}
+const choice = (
+  key: string,
+  label: string,
+  values: string[],
+  start = 1,
+  initial = start,
+): Field => ({
+  key,
+  label,
+  kind: 'select',
+  initial,
+  choices: values.map((label, i) => ({ label, value: i + start })),
+});
+const entity = (key: string, label: string, picker: Field['picker'], multiple = false): Field => ({
+  key,
+  label,
+  kind: 'entity',
+  picker,
+  multiple,
+});
+const categories = (key: string, label: string): Field => ({ key, label, kind: 'category' });
+const f = (key: string, label: string, kind: Field['kind'] = 'text', initial?: unknown): Field => ({
+  key,
+  label,
+  kind,
+  initial,
+});
+export interface ResourceSearch {
+  parameter: 'name' | 'keyword' | 'id';
+  label: string;
+  localField?: string;
+  idLabel?: string;
+}
+export const resourceSearch: Record<string, ResourceSearch> = {
+  courses: { parameter: 'keyword', label: '按课程名称搜索' },
+  media: { parameter: 'name', label: '按文件名搜索' },
+  questions: { parameter: 'keyword', label: '按题干搜索' },
+  students: { parameter: 'name', label: '按学生姓名搜索' },
+  staff: { parameter: 'name', label: '按教师或员工姓名搜索' },
+  roles: { parameter: 'name', label: '按角色名称搜索', localField: 'name' },
+  coupons: { parameter: 'name', label: '按优惠券名称搜索' },
+  orders: { parameter: 'id', label: '按订单条目 ID 查询', idLabel: '订单条目 ID' },
+  refunds: { parameter: 'id', label: '按退款 ID 查询', idLabel: '退款 ID' },
+  templates: { parameter: 'keyword', label: '按模板名称搜索' },
+  notices: { parameter: 'keyword', label: '按通知任务名称搜索' },
 };
-export const resources:Record<string,Resource>={
- courses:{title:'课程管理',list:'/admin/course/courses/page',columns:[['id','课程 ID'],['name','课程名称'],['price','价格'],['status','状态'],['purchaseEndTime','报名截止']],create:'/admin/course/courses/baseInfo/save',update:()=>'/admin/course/courses/baseInfo/save',detail:r=>'/admin/course/courses/baseInfo/'+r.id+'?see=false',fields:[f('name','课程名称'),f('thirdCateId','三级分类 ID'),f('coverUrl','封面地址'),f('free','免费课程','boolean',false),f('price','价格（分）','number',0),f('purchaseEndTime','购买截止','datetime'),f('validDuration','学习有效期（月，0 永久）','number',0),f('introduce','课程介绍','long'),f('usePeople','适用人群'),f('detail','课程详情','long')],remove:r=>'/admin/course/courses/delete/'+r.id,actions:[{label:'上架',path:()=>'/admin/course/courses/upShelf',method:'POST',body:r=>({id:r.id})},{label:'下架',path:()=>'/admin/course/courses/downShelf',method:'POST',body:r=>({id:r.id})}]},
- media:{title:'媒资管理',list:'/admin/media/medias',columns:[['id','媒资 ID'],['filename','文件名'],['duration','时长'],['useTimes','引用次数'],['creater','创建人']],remove:r=>'/admin/media/medias/'+r.id},
- questions:{title:'题库',list:'/admin/exam/questions/page',columns:[['id','题目 ID'],['name','题干'],['type','类型'],['score','分值'],['difficulty','难度']],create:'/admin/exam/questions',update:r=>'/admin/exam/questions/'+r.id,detail:r=>'/admin/exam/questions/'+r.id,remove:r=>'/admin/exam/questions/'+r.id,fields:[f('name','题干','long'),choice('type','题目类型',['单选题','多选题','不定项选择题','判断题','主观题']),choice('difficulty','题目难度',['简单','中等','困难']),f('score','分值','number',10),categories('cateIds','题目分类'),f('options','每行一个选项','options'),f('answer','标准答案'),f('analysis','答案解析','long')]},
- students:{title:'学生管理',list:'/admin/user/students/page',columns:[['id','用户 ID'],['name','姓名'],['cellPhone','手机'],['status','状态']],actions:[{label:'禁用',path:r=>'/admin/user/users/'+r.id+'/status/0',method:'PUT'},{label:'启用',path:r=>'/admin/user/users/'+r.id+'/status/1',method:'PUT'}]},
- staff:{title:'教师与员工',list:'/admin/user/staffs/page',columns:[['id','用户 ID'],['name','姓名'],['cellPhone','手机'],['roleName','角色']],create:'/admin/user/users',update:r=>'/admin/user/users/'+r.id,detail:r=>'/admin/user/users/'+r.id,fields:[f('name','姓名'),f('username','账号'),f('cellPhone','手机'),{key:'type',label:'用户类型',kind:'select',initial:3,choices:[{label:'教师',value:3},{label:'员工',value:1}]},entity('roleId','角色','roles')],actions:[{label:'重置密码',path:r=>'/admin/user/users/'+r.id+'/password/default',method:'PUT'}]},
- roles:{title:'角色',list:'/admin/auth/roles/list',columns:[['id','角色 ID'],['name','角色名称'],['code','角色代码']],create:'/admin/auth/roles',update:r=>'/admin/auth/roles/'+r.id,remove:r=>'/admin/auth/roles/'+r.id,fields:[f('name','角色名称'),f('code','角色代码'),f('description','说明','long')]},
- privileges:{title:'接口权限',list:'/admin/auth/privileges',columns:[['id','权限 ID'],['intro','说明'],['method','请求方法'],['uri','接口路径']],create:'/admin/auth/privileges',update:r=>'/admin/auth/privileges/'+r.id,fields:[f('intro','权限说明'),f('menuId','所属菜单 ID'),{key:'method',label:'请求方法',kind:'select',initial:'GET',choices:['GET','POST','PUT','DELETE','PATCH'].map(value=>({label:value,value}))},f('uri','接口路径'),f('internal','内部接口','boolean',false)]},
- coupons:{title:'优惠券营销',list:'/admin/promotion/coupons/page',columns:[['id','优惠券 ID'],['intro','说明'],['totalNum','总库存'],['issueNum','已发放'],['usedNum','已使用'],['status','状态']],create:'/admin/promotion/coupons',update:r=>'/admin/promotion/coupons/'+r.id,detail:r=>'/admin/promotion/coupons/'+r.id,remove:r=>'/admin/promotion/coupons/'+r.id,fields:[f('name','优惠券名称'),choice('discountType','优惠类型',['每满减','折扣','无门槛减免','满减'],1,3),f('thresholdAmount','门槛（分）','number',0),f('discountValue','减免金额（分）或折扣百分比','number',100),f('maxDiscountAmount','最大优惠（分）','number',0),f('totalNum','库存','number',100),f('userLimit','每人限领','number',1),choice('obtainWay','领取方式',['手动领取','兑换码领取']),f('specific','限定范围','boolean',false),categories('scopes','适用课程分类')]},
- orders:{title:'订单管理',list:'/admin/trade/order-details/page',columns:[['id','条目 ID'],['orderId','订单 ID'],['courseName','课程'],['name','学员'],['realPayAmount','实付（分）'],['statusDesc','状态']]},
- refunds:{title:'退款审核',list:'/admin/trade/refund-apply/page',columns:[['id','退款 ID'],['orderDetailId','条目 ID'],['orderId','订单 ID'],['refundAmount','退款金额（分）'],['proposerName','申请人'],['refundStatusDesc','状态'],['createTime','申请时间']],actions:[{label:'同意退款',path:()=>'/admin/trade/refund-apply/approval',method:'PUT',body:r=>({id:r.id,approveType:1,approveOpinion:'审核通过'})},{label:'拒绝退款',path:()=>'/admin/trade/refund-apply/approval',method:'PUT',body:r=>({id:r.id,approveType:2,approveOpinion:'审核未通过，请联系管理员'})}]},
- templates:{title:'通知模板',list:'/admin/message/notice-templates',columns:[['id','模板 ID'],['intro','说明'],['title','通知标题'],['status','状态']],create:'/admin/message/notice-templates',update:r=>'/admin/message/notice-templates/'+r.id,detail:r=>'/admin/message/notice-templates/'+r.id,fields:[f('name','模板名称'),f('code','模板代码'),choice('type','通知类型',['系统通知','笔记通知','问答通知','其他通知'],0),choice('status','模板状态',['草稿','使用中','已停用'],0),f('title','通知标题'),f('content','通知内容','long'),f('isSmsTemplate','短信通知','boolean',false)]},
- notices:{title:'通知任务',list:'/admin/message/notice-tasks',columns:[['id','任务 ID'],['name','任务名称'],['pushTime','执行时间'],['finished','完成']],create:'/admin/message/notice-tasks',update:r=>'/admin/message/notice-tasks/'+r.id,detail:r=>'/admin/message/notice-tasks/'+r.id,fields:[f('name','任务名称'),entity('templateId','通知模板','templates'),f('partial','指定用户','boolean',false),entity('userIds','接收人','users',true),f('pushTime','执行时间','datetime'),f('maxTimes','重复次数上限','number',0),f('interval','重复间隔（分钟）','number',0),f('expireTime','失效时间','datetime')]}
+export const resources: Record<string, Resource> = {
+  courses: {
+    title: '课程管理',
+    list: '/admin/course/courses/page',
+    columns: [
+      ['id', '课程 ID'],
+      ['name', '课程名称'],
+      ['price', '价格'],
+      ['status', '状态'],
+      ['purchaseEndTime', '报名截止'],
+    ],
+    create: '/admin/course/courses/baseInfo/save',
+    update: () => '/admin/course/courses/baseInfo/save',
+    detail: (r) => '/admin/course/courses/baseInfo/' + r.id + '?see=false',
+    fields: [
+      f('name', '课程名称'),
+      f('thirdCateId', '三级分类 ID'),
+      f('coverUrl', '封面地址'),
+      f('free', '免费课程', 'boolean', false),
+      f('price', '价格（分）', 'number', 0),
+      f('purchaseEndTime', '购买截止', 'datetime'),
+      f('validDuration', '学习有效期（月，0 永久）', 'number', 0),
+      f('introduce', '课程介绍', 'long'),
+      f('usePeople', '适用人群'),
+      f('detail', '课程详情', 'long'),
+    ],
+    remove: (r) => '/admin/course/courses/delete/' + r.id,
+    actions: [
+      {
+        label: '上架',
+        path: () => '/admin/course/courses/upShelf',
+        method: 'POST',
+        body: (r) => ({ id: r.id }),
+      },
+      {
+        label: '下架',
+        path: () => '/admin/course/courses/downShelf',
+        method: 'POST',
+        body: (r) => ({ id: r.id }),
+      },
+    ],
+  },
+  media: {
+    title: '媒资管理',
+    list: '/admin/media/medias',
+    columns: [
+      ['id', '媒资 ID'],
+      ['filename', '文件名'],
+      ['duration', '时长'],
+      ['useTimes', '引用次数'],
+      ['creater', '创建人'],
+    ],
+    remove: (r) => '/admin/media/medias/' + r.id,
+  },
+  questions: {
+    title: '题库',
+    list: '/admin/exam/questions/page',
+    columns: [
+      ['id', '题目 ID'],
+      ['name', '题干'],
+      ['type', '类型'],
+      ['score', '分值'],
+      ['difficulty', '难度'],
+    ],
+    create: '/admin/exam/questions',
+    update: (r) => '/admin/exam/questions/' + r.id,
+    detail: (r) => '/admin/exam/questions/' + r.id,
+    remove: (r) => '/admin/exam/questions/' + r.id,
+    fields: [
+      f('name', '题干', 'long'),
+      choice('type', '题目类型', ['单选题', '多选题', '不定项选择题', '判断题', '主观题']),
+      choice('difficulty', '题目难度', ['简单', '中等', '困难']),
+      f('score', '分值', 'number', 10),
+      categories('cateIds', '题目分类'),
+      f('options', '每行一个选项', 'options'),
+      f('answer', '标准答案'),
+      f('analysis', '答案解析', 'long'),
+    ],
+  },
+  students: {
+    title: '学生管理',
+    list: '/admin/user/students/page',
+    columns: [
+      ['id', '用户 ID'],
+      ['name', '姓名'],
+      ['cellPhone', '手机'],
+      ['status', '状态'],
+    ],
+    actions: [
+      { label: '禁用', path: (r) => '/admin/user/users/' + r.id + '/status/0', method: 'PUT' },
+      { label: '启用', path: (r) => '/admin/user/users/' + r.id + '/status/1', method: 'PUT' },
+    ],
+  },
+  staff: {
+    title: '教师与员工',
+    list: '/admin/user/staffs/page',
+    columns: [
+      ['id', '用户 ID'],
+      ['name', '姓名'],
+      ['cellPhone', '手机'],
+      ['roleName', '角色'],
+    ],
+    create: '/admin/user/users',
+    update: (r) => '/admin/user/users/' + r.id,
+    detail: (r) => '/admin/user/users/' + r.id,
+    fields: [
+      f('name', '姓名'),
+      f('username', '账号'),
+      f('cellPhone', '手机'),
+      {
+        key: 'type',
+        label: '用户类型',
+        kind: 'select',
+        initial: 3,
+        choices: [
+          { label: '教师', value: 3 },
+          { label: '员工', value: 1 },
+        ],
+      },
+      entity('roleId', '角色', 'roles'),
+    ],
+    actions: [
+      {
+        label: '重置密码',
+        path: (r) => '/admin/user/users/' + r.id + '/password/default',
+        method: 'PUT',
+      },
+    ],
+  },
+  roles: {
+    title: '角色',
+    list: '/admin/auth/roles/list',
+    columns: [
+      ['id', '角色 ID'],
+      ['name', '角色名称'],
+      ['code', '角色代码'],
+    ],
+    create: '/admin/auth/roles',
+    update: (r) => '/admin/auth/roles/' + r.id,
+    remove: (r) => '/admin/auth/roles/' + r.id,
+    fields: [f('name', '角色名称'), f('code', '角色代码'), f('description', '说明', 'long')],
+  },
+  privileges: {
+    title: '接口权限',
+    list: '/admin/auth/privileges',
+    columns: [
+      ['id', '权限 ID'],
+      ['intro', '说明'],
+      ['method', '请求方法'],
+      ['uri', '接口路径'],
+    ],
+    create: '/admin/auth/privileges',
+    update: (r) => '/admin/auth/privileges/' + r.id,
+    fields: [
+      f('intro', '权限说明'),
+      f('menuId', '所属菜单 ID'),
+      {
+        key: 'method',
+        label: '请求方法',
+        kind: 'select',
+        initial: 'GET',
+        choices: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map((value) => ({
+          label: value,
+          value,
+        })),
+      },
+      f('uri', '接口路径'),
+      f('internal', '内部接口', 'boolean', false),
+    ],
+  },
+  coupons: {
+    title: '优惠券营销',
+    list: '/admin/promotion/coupons/page',
+    columns: [
+      ['id', '优惠券 ID'],
+      ['intro', '说明'],
+      ['totalNum', '总库存'],
+      ['issueNum', '已发放'],
+      ['usedNum', '已使用'],
+      ['status', '状态'],
+    ],
+    create: '/admin/promotion/coupons',
+    update: (r) => '/admin/promotion/coupons/' + r.id,
+    detail: (r) => '/admin/promotion/coupons/' + r.id,
+    remove: (r) => '/admin/promotion/coupons/' + r.id,
+    fields: [
+      f('name', '优惠券名称'),
+      choice('discountType', '优惠类型', ['每满减', '折扣', '无门槛减免', '满减'], 1, 3),
+      f('thresholdAmount', '门槛（分）', 'number', 0),
+      f('discountValue', '减免金额（分）或折扣百分比', 'number', 100),
+      f('maxDiscountAmount', '最大优惠（分）', 'number', 0),
+      f('totalNum', '库存', 'number', 100),
+      f('userLimit', '每人限领', 'number', 1),
+      choice('obtainWay', '领取方式', ['手动领取', '兑换码领取']),
+      f('specific', '限定范围', 'boolean', false),
+      categories('scopes', '适用课程分类'),
+    ],
+  },
+  orders: {
+    title: '订单管理',
+    list: '/admin/trade/order-details/page',
+    columns: [
+      ['id', '条目 ID'],
+      ['orderId', '订单 ID'],
+      ['courseName', '课程'],
+      ['name', '学员'],
+      ['realPayAmount', '实付（分）'],
+      ['statusDesc', '状态'],
+    ],
+  },
+  refunds: {
+    title: '退款审核',
+    list: '/admin/trade/refund-apply/page',
+    columns: [
+      ['id', '退款 ID'],
+      ['orderDetailId', '条目 ID'],
+      ['orderId', '订单 ID'],
+      ['refundAmount', '退款金额（分）'],
+      ['proposerName', '申请人'],
+      ['refundStatusDesc', '状态'],
+      ['createTime', '申请时间'],
+    ],
+    actions: [
+      {
+        label: '同意退款',
+        path: () => '/admin/trade/refund-apply/approval',
+        method: 'PUT',
+        body: (r) => ({ id: r.id, approveType: 1, approveOpinion: '审核通过' }),
+      },
+      {
+        label: '拒绝退款',
+        path: () => '/admin/trade/refund-apply/approval',
+        method: 'PUT',
+        body: (r) => ({ id: r.id, approveType: 2, approveOpinion: '审核未通过，请联系管理员' }),
+      },
+    ],
+  },
+  templates: {
+    title: '通知模板',
+    list: '/admin/message/notice-templates',
+    columns: [
+      ['id', '模板 ID'],
+      ['intro', '说明'],
+      ['title', '通知标题'],
+      ['status', '状态'],
+    ],
+    create: '/admin/message/notice-templates',
+    update: (r) => '/admin/message/notice-templates/' + r.id,
+    detail: (r) => '/admin/message/notice-templates/' + r.id,
+    fields: [
+      f('name', '模板名称'),
+      f('code', '模板代码'),
+      choice('type', '通知类型', ['系统通知', '笔记通知', '问答通知', '其他通知'], 0),
+      choice('status', '模板状态', ['草稿', '使用中', '已停用'], 0),
+      f('title', '通知标题'),
+      f('content', '通知内容', 'long'),
+      f('isSmsTemplate', '短信通知', 'boolean', false),
+    ],
+  },
+  notices: {
+    title: '通知任务',
+    list: '/admin/message/notice-tasks',
+    columns: [
+      ['id', '任务 ID'],
+      ['name', '任务名称'],
+      ['pushTime', '执行时间'],
+      ['finished', '完成'],
+    ],
+    create: '/admin/message/notice-tasks',
+    update: (r) => '/admin/message/notice-tasks/' + r.id,
+    detail: (r) => '/admin/message/notice-tasks/' + r.id,
+    fields: [
+      f('name', '任务名称'),
+      entity('templateId', '通知模板', 'templates'),
+      f('partial', '指定用户', 'boolean', false),
+      entity('userIds', '接收人', 'users', true),
+      f('pushTime', '执行时间', 'datetime'),
+      f('maxTimes', '重复次数上限', 'number', 0),
+      f('interval', '重复间隔（分钟）', 'number', 0),
+      f('expireTime', '失效时间', 'datetime'),
+    ],
+  },
 };

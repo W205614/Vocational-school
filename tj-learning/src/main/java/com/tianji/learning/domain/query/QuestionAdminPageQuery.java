@@ -15,11 +15,14 @@ import java.time.LocalDateTime;
 public class QuestionAdminPageQuery extends PageQuery {
     @Schema(description = "课程名称搜索关键字", example = "Redis")
     private String courseName;
+
     @Schema(description = "管理端问题状态：0-未查看，1-已查看", example = "1")
     private Integer status;
+
     @Schema(description = "更新时间区间的开始时间", example = "2022-7-18 19:52:36")
     @DateTimeFormat(pattern = DateUtils.DEFAULT_DATE_TIME_FORMAT)
     private LocalDateTime beginTime;
+
     @DateTimeFormat(pattern = DateUtils.DEFAULT_DATE_TIME_FORMAT)
     @Schema(description = "更新时间区间的结束时间", example = "2022-7-18 19:52:36")
     private LocalDateTime endTime;

@@ -14,5 +14,4 @@ public interface MessageClient {
      */
     @PostMapping("message")
     void sendMessage(@RequestBody SmsInfoDTO smsInfoDTO);
-
 }

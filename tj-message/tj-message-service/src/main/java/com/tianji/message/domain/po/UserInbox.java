@@ -71,6 +71,4 @@ public class UserInbox implements Serializable {
      * 过期时间，一旦过期用户端不在展示
      */
     private LocalDateTime expireTime;
-
-
 }

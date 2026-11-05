@@ -50,5 +50,4 @@ public class PointsBoard implements Serializable {
      * 赛季，例如 1,就是第一赛季，2-就是第二赛季
      */
     private Integer season;
-
 }

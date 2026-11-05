@@ -1,6 +1,5 @@
 package com.tianji.promotion.controller;
 
-
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +14,4 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/coupon-scope")
-public class CouponScopeController {
-
-}
+public class CouponScopeController {}

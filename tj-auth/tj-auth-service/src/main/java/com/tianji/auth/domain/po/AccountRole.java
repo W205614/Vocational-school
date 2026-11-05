@@ -37,5 +37,4 @@ public class AccountRole implements Serializable {
      * 角色id
      */
     private Long roleId;
-
 }

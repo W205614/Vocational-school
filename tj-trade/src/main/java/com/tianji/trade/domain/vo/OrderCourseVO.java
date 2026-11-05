@@ -8,10 +8,13 @@ import lombok.Data;
 public class OrderCourseVO {
     @Schema(description = "课程id")
     private Long id;
+
     @Schema(description = "课程名称")
     private String name;
+
     @Schema(description = "课程封面url")
     private String coverUrl;
+
     @Schema(description = "课程价格，单位元")
     private Integer price;
 }

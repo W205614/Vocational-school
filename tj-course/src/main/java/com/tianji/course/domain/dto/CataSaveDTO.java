@@ -23,11 +23,14 @@ import java.util.List;
 public class CataSaveDTO implements Checker {
     @Schema(description = "章、节、练习id")
     private Long id;
+
     @Schema(description = "目录类型1：章，2：节，3：测试")
     @NotNull(message = "")
     private Integer type;
+
     @Schema(description = "章节练习名称")
     private String name;
+
     @Schema(description = "章排序，章一定要传，小节和练习不需要传")
     private Integer index;
 
@@ -37,21 +40,20 @@ public class CataSaveDTO implements Checker {
 
     @Override
     public void check() {
-        //名称为空校验
-        if(type == CourseConstants.CataType.CHAPTER && StringUtils.isEmpty(name)) {
+        // 名称为空校验
+        if (type == CourseConstants.CataType.CHAPTER && StringUtils.isEmpty(name)) {
             throw new BadRequestException(CourseErrorInfo.Msg.COURSE_CATAS_SAVE_NAME_NULL);
-        }else if(StringUtils.isEmpty(name)){
+        } else if (StringUtils.isEmpty(name)) {
             throw new BadRequestException(CourseErrorInfo.Msg.COURSE_CATAS_SAVE_NAME_NULL2);
         }
-        //名称长度问题
-        if (type == CourseConstants.CataType.CHAPTER && name.length() > 30){
+        // 名称长度问题
+        if (type == CourseConstants.CataType.CHAPTER && name.length() > 30) {
             throw new BadRequestException(CourseErrorInfo.Msg.COURSE_CATAS_SAVE_NAME_SIZE);
-        }else if(name.length() > 30) {
+        } else if (name.length() > 30) {
             throw new BadRequestException(CourseErrorInfo.Msg.COURSE_CATAS_SAVE_NAME_SIZE2);
         }
-        if(CollUtils.isEmpty(sections)){
+        if (CollUtils.isEmpty(sections)) {
             throw new BadRequestException("不能出现空章");
         }
-
     }
 }

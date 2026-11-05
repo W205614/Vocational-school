@@ -29,14 +29,13 @@ import java.util.List;
 @Tag(name = "用户管理接口")
 public class UserController {
 
-    @Autowired
-    private IUserService userService;
-    @Autowired
-    private IUserDetailService detailService;
+    @Autowired private IUserService userService;
+    @Autowired private IUserDetailService detailService;
 
     @Operation(summary = "新增用户，一般是员工或教师")
     @PostMapping
-    public com.tianji.api.dto.user.TemporaryCredentialDTO saveUser(@Valid @RequestBody UserDTO userDTO){
+    public com.tianji.api.dto.user.TemporaryCredentialDTO saveUser(
+            @Valid @RequestBody UserDTO userDTO) {
         com.tianji.common.utils.UserContext.requireAdmin();
         userDTO.setId(null);
         return userService.saveUser(userDTO);
@@ -44,7 +43,7 @@ public class UserController {
 
     @Operation(summary = "更新用户信息")
     @PutMapping("/{id}")
-    public void updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO){
+    public void updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
         com.tianji.common.utils.UserContext.requireAdmin();
         userDTO.setId(id);
         userService.updateUser(userDTO);
@@ -52,7 +51,7 @@ public class UserController {
 
     @Operation(summary = "更新当前登录用户信息，可修改密码")
     @PutMapping
-    public void updateCurrentUser(@Valid @RequestBody UserFormDTO userDTO){
+    public void updateCurrentUser(@Valid @RequestBody UserFormDTO userDTO) {
         userService.updateUserWithPassword(userDTO);
     }
 
@@ -61,7 +60,8 @@ public class UserController {
     public com.tianji.api.dto.user.TemporaryCredentialDTO resetPassword(
             @Parameter(description = "要重置的用户的id", example = "1") @PathVariable("id") Long userId) {
         com.tianji.common.utils.UserContext.requireAdmin();
-        if(java.util.Objects.equals(userId,com.tianji.common.utils.UserContext.requireUser()))throw new BadRequestException("当前账号请使用个人设置中的修改密码，避免丢失临时凭据");
+        if (java.util.Objects.equals(userId, com.tianji.common.utils.UserContext.requireUser()))
+            throw new BadRequestException("当前账号请使用个人设置中的修改密码，避免丢失临时凭据");
         return userService.resetPassword(userId);
     }
 
@@ -69,8 +69,7 @@ public class UserController {
     @Operation(summary = "修改用户状态, status=0为禁用，status=1为正常")
     public void updateUserStatus(
             @Parameter(description = "要重置的用户的id", example = "1") @PathVariable("id") Long userId,
-            @Parameter(description = "状态", example = "1") @PathVariable("status") Integer status
-    ) {
+            @Parameter(description = "状态", example = "1") @PathVariable("status") Integer status) {
         com.tianji.common.utils.UserContext.requireAdmin();
         User user = new User();
         user.setId(userId);
@@ -86,11 +85,11 @@ public class UserController {
 
     @Operation(summary = "根据id查询用户信息")
     @GetMapping("/{id}")
-    public UserDTO queryUserById(
-            @Parameter(description = "用户id") @PathVariable("id") Long id) {
+    public UserDTO queryUserById(@Parameter(description = "用户id") @PathVariable("id") Long id) {
         com.tianji.common.utils.InternalAuth.requireService();
         UserDetail userDetail = detailService.queryById(id);
-        return BeanUtils.copyBean(userDetail, UserDTO.class, (d, u) -> u.setType(d.getType().getValue()));
+        return BeanUtils.copyBean(
+                userDetail, UserDTO.class, (d, u) -> u.setType(d.getType().getValue()));
     }
 
     /**
@@ -118,8 +117,8 @@ public class UserController {
     public List<UserDTO> queryUserByIds(
             @Parameter(description = "用户id的列表") @RequestParam("ids") List<Long> ids) {
         com.tianji.common.utils.InternalAuth.requireService();
-        if(ids.size()>100)throw new BadRequestException("最多查询100个用户");
-        if(CollUtils.isEmpty(ids)){
+        if (ids.size() > 100) throw new BadRequestException("最多查询100个用户");
+        if (CollUtils.isEmpty(ids)) {
             return CollUtils.emptyList();
         }
         // 1.查询列表
@@ -149,8 +148,7 @@ public class UserController {
     @GetMapping("/ids")
     public Long exchangeUserIdWithPhone(@RequestParam("phone") String phone) {
         com.tianji.common.utils.InternalAuth.requireService();
-        User user = userService
-                .lambdaQuery().eq(User::getCellPhone, phone).one();
+        User user = userService.lambdaQuery().eq(User::getCellPhone, phone).one();
         if (user == null) {
             throw new BadRequestException(UserErrorInfo.Msg.USER_ID_NOT_EXISTS);
         }
@@ -159,10 +157,12 @@ public class UserController {
 
     @Operation(summary = "检查用户手机号是否存在")
     @GetMapping("checkCellphone")
-    public Boolean checkCellPhone(@RequestParam("cellphone") String cellPhone){
-        return userService.lambdaQuery()
-                .eq(User::getCellPhone, cellPhone)
-                // .in(User::getType, UserType.STAFF, UserType.TEACHER)
-                .count() <= 0;
+    public Boolean checkCellPhone(@RequestParam("cellphone") String cellPhone) {
+        return userService
+                        .lambdaQuery()
+                        .eq(User::getCellPhone, cellPhone)
+                        // .in(User::getType, UserType.STAFF, UserType.TEACHER)
+                        .count()
+                <= 0;
     }
 }

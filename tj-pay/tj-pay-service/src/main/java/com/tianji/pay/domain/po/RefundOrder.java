@@ -73,6 +73,7 @@ public class RefundOrder implements Serializable {
      * 支付渠道id
      */
     private String payChannelCode;
+
     /**
      * 第三方交易编码
      */
@@ -126,23 +127,21 @@ public class RefundOrder implements Serializable {
     /**
      * 逻辑删除
      */
-    @TableLogic
-    private Boolean deleted;
+    @TableLogic private Boolean deleted;
 
-
-    public boolean success(){
+    public boolean success() {
         return RefundStatus.SUCCESS.equalsValue(status);
     }
 
-    public boolean failed(){
+    public boolean failed() {
         return RefundStatus.FAILED.equalsValue(status);
     }
 
-    public boolean unknown(){
+    public boolean unknown() {
         return RefundStatus.UN_KNOWN.equalsValue(status);
     }
 
-    public boolean notCommit(){
+    public boolean notCommit() {
         return RefundStatus.NOT_COMMIT.equalsValue(status);
     }
 }

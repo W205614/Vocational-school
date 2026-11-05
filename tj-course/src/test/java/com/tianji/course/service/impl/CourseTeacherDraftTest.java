@@ -14,13 +14,20 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class CourseTeacherDraftTest {
-    @Test void sameTeacherCanBeAssociatedWithDifferentCoursesWithoutReusingRelationPrimaryKey() {
+    @Test
+    void sameTeacherCanBeAssociatedWithDifferentCoursesWithoutReusingRelationPrimaryKey() {
         var service = spy(new CourseTeacherDraftServiceImpl());
         ReflectionTestUtils.setField(service, "baseMapper", mock(CourseTeacherDraftMapper.class));
-        ReflectionTestUtils.setField(service, "courseDraftService", mock(ICourseDraftService.class));
+        ReflectionTestUtils.setField(
+                service, "courseDraftService", mock(ICourseDraftService.class));
         List<CourseTeacherDraft> saved = new ArrayList<>();
-        doAnswer(call -> { saved.addAll(call.<Collection<CourseTeacherDraft>>getArgument(0)); return true; })
-                .when(service).saveBatch(any(Collection.class));
+        doAnswer(
+                        call -> {
+                            saved.addAll(call.<Collection<CourseTeacherDraft>>getArgument(0));
+                            return true;
+                        })
+                .when(service)
+                .saveBatch(any(Collection.class));
         var teacher = new CourseTeacherSaveDTO.TeacherInfo();
         teacher.setId(800000000000000003L);
         teacher.setIsShow(true);

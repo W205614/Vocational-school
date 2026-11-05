@@ -27,6 +27,7 @@ public class BeanUtils extends BeanUtil {
         }
         return target;
     }
+
     /**
      * 将原对象转换成目标对象，对于字段不匹配的字段可以使用转换器处理
      *
@@ -36,7 +37,7 @@ public class BeanUtils extends BeanUtil {
      * @param <T>     目标对象类型
      * @return 目标对象
      */
-    public static <R, T> T copyBean(R source, Class<T> clazz){
+    public static <R, T> T copyBean(R source, Class<T> clazz) {
         if (source == null) {
             return null;
         }

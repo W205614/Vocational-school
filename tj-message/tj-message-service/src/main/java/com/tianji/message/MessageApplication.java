@@ -24,7 +24,5 @@ public class MessageApplication {
         SpringApplication app = new SpringApplicationBuilder(MessageApplication.class).build(args);
         Environment env = app.run(args).getEnvironment();
         StartupLogger.log(env, log);
-
-
     }
 }

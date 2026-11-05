@@ -34,7 +34,8 @@ import static com.tianji.auth.constants.AuthConstants.ADMIN_ROLE_ID;
  */
 @Service
 @RequiredArgsConstructor
-public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege> implements IPrivilegeService {
+public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege>
+        implements IPrivilegeService {
 
     private final IRolePrivilegeService rolePrivilegeService;
     private final IRoleService roleService;
@@ -43,7 +44,7 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
     @Override
     public Page<Privilege> listPrivilegesByPage(PageQuery pageQuery) {
         // 1.分页查询
-        return page(pageQuery.toMpPage("id",true));
+        return page(pageQuery.toMpPage("id", true));
     }
 
     @Override
@@ -52,11 +53,13 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
         privilegeCache.lockMutation();
         p.setMethod(p.getMethod().toUpperCase());
         // 1.判断是否存在
-        Integer count = Math.toIntExact(lambdaQuery()
-                .eq(Privilege::getMethod, p.getMethod())
-                .eq(Privilege::getUri, p.getUri())
-                .count());
-        if(count > 0){
+        Integer count =
+                Math.toIntExact(
+                        lambdaQuery()
+                                .eq(Privilege::getMethod, p.getMethod())
+                                .eq(Privilege::getUri, p.getUri())
+                                .count());
+        if (count > 0) {
             // 已经存在，结束
             throw new CommonException(PRIVILEGE_EXISTS);
         }
@@ -91,16 +94,16 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
         // 2.查询所有角色
         List<RolePrivilege> rpList = rolePrivilegeService.list();
         // 3.按照权限将角色分组
-        Map<Long, List<RolePrivilege>> rpMap = rpList.stream()
-                .collect(Collectors.groupingBy(RolePrivilege::getPrivilegeId));
+        Map<Long, List<RolePrivilege>> rpMap =
+                rpList.stream().collect(Collectors.groupingBy(RolePrivilege::getPrivilegeId));
         // 4.组装权限对应角色
         List<PrivilegeRoleDTO> list = new ArrayList<>(privileges.size());
         for (Privilege p : privileges) {
             // 4.1.根据权限查询角色
-            Set<Long> roles = rpMap.getOrDefault(p.getId(),List.of())
-                    .stream()
-                    .map(RolePrivilege::getRoleId)
-                    .collect(Collectors.toSet());
+            Set<Long> roles =
+                    rpMap.getOrDefault(p.getId(), List.of()).stream()
+                            .map(RolePrivilege::getRoleId)
+                            .collect(Collectors.toSet());
             // 4.2.组装
             PrivilegeRoleDTO prDTO = new PrivilegeRoleDTO();
             prDTO.setId(p.getId());
@@ -115,19 +118,20 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
 
     @Override
     public Set<Long> listPrivilegeByRoleId(Long roleId) {
-        List<RolePrivilege> rolePrivileges = rolePrivilegeService.lambdaQuery()
-                .eq(RolePrivilege::getRoleId, roleId)
-                .list();
+        List<RolePrivilege> rolePrivileges =
+                rolePrivilegeService.lambdaQuery().eq(RolePrivilege::getRoleId, roleId).list();
         if (CollectionUtil.isEmpty(rolePrivileges)) {
             return Collections.emptySet();
         }
-        return rolePrivileges.stream().map(RolePrivilege::getPrivilegeId).collect(Collectors.toSet());
+        return rolePrivileges.stream()
+                .map(RolePrivilege::getPrivilegeId)
+                .collect(Collectors.toSet());
     }
 
     @Override
     @Transactional
     public void bindRolePrivileges(Long roleId, List<Long> privilegeIds) {
-        privilegeIds=checkedIds(privilegeIds);
+        privilegeIds = checkedIds(privilegeIds);
         privilegeCache.lockMutation();
         // 1.判断角色是否存在
         boolean roleExists = roleService.exists(roleId);
@@ -135,19 +139,20 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
             throw new CommonException(ROLE_NOT_FOUND);
         }
         // 2.判断权限是否存在
-        Integer privilegeCount = Math.toIntExact(lambdaQuery().in(Privilege::getId, privilegeIds).count());
+        Integer privilegeCount =
+                Math.toIntExact(lambdaQuery().in(Privilege::getId, privilegeIds).count());
         if (privilegeCount != privilegeIds.size()) {
             throw new CommonException(PRIVILEGE_NOT_FOUND);
         }
         // 3.绑定关系
         List<RolePrivilege> rolePrivileges = new ArrayList<>(privilegeCount);
-        Set<Long> existing=listPrivilegeByRoleId(roleId);
+        Set<Long> existing = listPrivilegeByRoleId(roleId);
         for (Long privilegeId : privilegeIds) {
-            if(existing.contains(privilegeId))continue;
+            if (existing.contains(privilegeId)) continue;
             rolePrivileges.add(new RolePrivilege(roleId, privilegeId));
         }
         // 4.写入数据库
-        if(!rolePrivileges.isEmpty())rolePrivilegeService.saveBatch(rolePrivileges);
+        if (!rolePrivileges.isEmpty()) rolePrivilegeService.saveBatch(rolePrivileges);
         // 5.重置缓存
         privilegeCache.publishChange();
     }
@@ -155,7 +160,7 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
     @Override
     @Transactional
     public void deleteRolePrivileges(Long roleId, List<Long> privilegeIds) {
-        privilegeIds=checkedIds(privilegeIds);
+        privilegeIds = checkedIds(privilegeIds);
         privilegeCache.lockMutation();
         // 1.删除
         rolePrivilegeService.deleteRolePrivileges(roleId, privilegeIds);
@@ -163,15 +168,27 @@ public class PrivilegeServiceImpl extends ServiceImpl<PrivilegeMapper, Privilege
         privilegeCache.publishChange();
     }
 
-    @Override @Transactional
-    public void updatePrivilege(Privilege privilege){
+    @Override
+    @Transactional
+    public void updatePrivilege(Privilege privilege) {
         privilegeCache.lockMutation();
-        if(getById(privilege.getId())==null)throw new com.tianji.common.exceptions.BadRequestException("权限不存在");
-        if(lambdaQuery().eq(Privilege::getMethod,privilege.getMethod()).eq(Privilege::getUri,privilege.getUri()).ne(Privilege::getId,privilege.getId()).exists())throw new CommonException(PRIVILEGE_EXISTS);
-        updateById(privilege);privilegeCache.publishChange();
+        if (getById(privilege.getId()) == null)
+            throw new com.tianji.common.exceptions.BadRequestException("权限不存在");
+        if (lambdaQuery()
+                .eq(Privilege::getMethod, privilege.getMethod())
+                .eq(Privilege::getUri, privilege.getUri())
+                .ne(Privilege::getId, privilege.getId())
+                .exists()) throw new CommonException(PRIVILEGE_EXISTS);
+        updateById(privilege);
+        privilegeCache.publishChange();
     }
-    private List<Long> checkedIds(List<Long> ids){
-        if(ids==null || ids.isEmpty() || ids.size()>100 || ids.stream().anyMatch(id->id==null || id<=0))throw new com.tianji.common.exceptions.BadRequestException("一次需指定 1 至 100 个权限");
+
+    private List<Long> checkedIds(List<Long> ids) {
+        if (ids == null
+                || ids.isEmpty()
+                || ids.size() > 100
+                || ids.stream().anyMatch(id -> id == null || id <= 0))
+            throw new com.tianji.common.exceptions.BadRequestException("一次需指定 1 至 100 个权限");
         return ids.stream().distinct().toList();
     }
 }

@@ -11,9 +11,7 @@ public enum PlanStatus implements BaseEnum {
     NO_PLAN(0, "没有计划"),
     PLAN_RUNNING(1, "计划进行中"),
     ;
-    @JsonValue
-    @EnumValue
-    int value;
+    @JsonValue @EnumValue int value;
     String desc;
 
     PlanStatus(int value, String desc) {
@@ -21,9 +19,8 @@ public enum PlanStatus implements BaseEnum {
         this.desc = desc;
     }
 
-
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    public static PlanStatus of(Integer value){
+    public static PlanStatus of(Integer value) {
         if (value == null) {
             return null;
         }

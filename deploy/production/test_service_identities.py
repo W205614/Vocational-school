@@ -11,12 +11,16 @@ import service_identities as identities
 
 
 class DirectedCredentialPreparationTest(unittest.TestCase):
-    def test_generated_edges_are_unique_private_scoped_and_never_printed_or_overwritten(self):
+    def test_generated_edges_are_unique_private_scoped_and_never_printed_or_overwritten(
+        self,
+    ):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "initial"
             stdout, stderr = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-                self.assertEqual(0, identities.main(["generate", "--output", str(output)]))
+                self.assertEqual(
+                    0, identities.main(["generate", "--output", str(output)])
+                )
             metadata = json.loads(stdout.getvalue())
             manifest, rings = identities.load(output)
             self.assertEqual("GENERATED", metadata["status"])
@@ -24,37 +28,77 @@ class DirectedCredentialPreparationTest(unittest.TestCase):
             tokens = []
             for caller, receiver in identities.required_edges():
                 token = rings[caller]["outbound"][receiver]
-                self.assertTrue(token == rings[receiver]["inbound"][caller][0], "Directed sender/receiver mismatch")
-                self.assertTrue(identities.TOKEN.fullmatch(token) is not None, "Edge token has insufficient generated entropy encoding")
-                self.assertFalse(token in stdout.getvalue() or token in stderr.getvalue(), "CLI exposed a token")
+                self.assertTrue(
+                    token == rings[receiver]["inbound"][caller][0],
+                    "Directed sender/receiver mismatch",
+                )
+                self.assertTrue(
+                    identities.TOKEN.fullmatch(token) is not None,
+                    "Edge token has insufficient generated entropy encoding",
+                )
+                self.assertFalse(
+                    token in stdout.getvalue() or token in stderr.getvalue(),
+                    "CLI exposed a token",
+                )
                 tokens.append(token)
             self.assertEqual(len(tokens), len(set(tokens)))
             self.assertEqual({"outbound": {}, "inbound": {}}, rings["media-worker"])
             self.assertEqual({}, rings["observability"]["inbound"])
-            self.assertEqual(set(identities.APPLICATIONS), set(rings["observability"]["outbound"]))
+            self.assertEqual(
+                set(identities.APPLICATIONS), set(rings["observability"]["outbound"])
+            )
             before = (output / "manifest.json").read_bytes()
-            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                self.assertEqual(1, identities.main(["generate", "--output", str(output)]))
-            self.assertTrue(before == (output / "manifest.json").read_bytes(), "Existing generation was overwritten")
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(
+                io.StringIO()
+            ):
+                self.assertEqual(
+                    1, identities.main(["generate", "--output", str(output)])
+                )
+            self.assertTrue(
+                before == (output / "manifest.json").read_bytes(),
+                "Existing generation was overwritten",
+            )
 
-    def test_receiver_first_rotation_and_explicit_retirement_preserve_previous_artifacts(self):
+    def test_receiver_first_rotation_and_explicit_retirement_preserve_previous_artifacts(
+        self,
+    ):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            initial, rotated, retired = root / "initial", root / "rotated", root / "retired"
+            initial, rotated, retired = (
+                root / "initial",
+                root / "rotated",
+                root / "retired",
+            )
             identities.generate(initial)
             old_manifest, old = identities.load(initial)
-            before = hashlib.sha256((initial / "manifest.json").read_bytes()).hexdigest()
+            before = hashlib.sha256(
+                (initial / "manifest.json").read_bytes()
+            ).hexdigest()
             identities.rotate(initial, rotated)
             rotation, new = identities.load(rotated)
             self.assertEqual("rotation-prepared", rotation["phase"])
-            self.assertEqual(old_manifest["generation"], rotation["previous_generation"])
+            self.assertEqual(
+                old_manifest["generation"], rotation["previous_generation"]
+            )
             for caller, receiver in identities.required_edges():
                 previous = old[caller]["outbound"][receiver]
                 current = new[caller]["outbound"][receiver]
-                self.assertTrue(current != previous, "Rotation reused an old edge token")
-                self.assertTrue(new[receiver]["inbound"][caller] == [current, previous], "Receiver rotation window changed")
-                stage = json.loads((rotated / "receiver-first" / caller / "service-identities.json").read_text())
-                self.assertTrue(stage["outbound"][receiver] == previous, "Receiver-first stage advanced the sender prematurely")
+                self.assertTrue(
+                    current != previous, "Rotation reused an old edge token"
+                )
+                self.assertTrue(
+                    new[receiver]["inbound"][caller] == [current, previous],
+                    "Receiver rotation window changed",
+                )
+                stage = json.loads(
+                    (
+                        rotated / "receiver-first" / caller / "service-identities.json"
+                    ).read_text()
+                )
+                self.assertTrue(
+                    stage["outbound"][receiver] == previous,
+                    "Receiver-first stage advanced the sender prematurely",
+                )
             with self.assertRaises(identities.IdentityError):
                 identities.rotate(rotated, root / "unsafe-second-rotation")
             self.assertFalse((root / "unsafe-second-rotation").exists())
@@ -62,12 +106,23 @@ class DirectedCredentialPreparationTest(unittest.TestCase):
             retired_manifest, final = identities.load(retired)
             self.assertEqual("retirement-prepared", retired_manifest["phase"])
             for caller, receiver in identities.required_edges():
-                self.assertTrue(final[caller]["outbound"][receiver] == new[caller]["outbound"][receiver])
-                self.assertTrue(final[receiver]["inbound"][caller] == [new[caller]["outbound"][receiver]])
-            self.assertTrue(before == hashlib.sha256((initial / "manifest.json").read_bytes()).hexdigest())
+                self.assertTrue(
+                    final[caller]["outbound"][receiver]
+                    == new[caller]["outbound"][receiver]
+                )
+                self.assertTrue(
+                    final[receiver]["inbound"][caller]
+                    == [new[caller]["outbound"][receiver]]
+                )
+            self.assertTrue(
+                before
+                == hashlib.sha256((initial / "manifest.json").read_bytes()).hexdigest()
+            )
             self.assertEqual("rotation-prepared", identities.load(rotated)[0]["phase"])
 
-    def test_duplicate_keys_cross_edge_reuse_wrong_caller_and_unsafe_outbound_are_rejected(self):
+    def test_duplicate_keys_cross_edge_reuse_wrong_caller_and_unsafe_outbound_are_rejected(
+        self,
+    ):
         with self.assertRaises(identities.IdentityError):
             identities._json('{"outbound":{},"outbound":{},"inbound":{}}')
         with tempfile.TemporaryDirectory() as temporary:

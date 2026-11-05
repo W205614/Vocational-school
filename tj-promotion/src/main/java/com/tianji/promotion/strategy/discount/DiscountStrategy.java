@@ -6,7 +6,7 @@ import java.util.EnumMap;
 
 public class DiscountStrategy {
 
-    private final static EnumMap<DiscountType, Discount> strategies;
+    private static final EnumMap<DiscountType, Discount> strategies;
 
     static {
         strategies = new EnumMap<>(DiscountType.class);

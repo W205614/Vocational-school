@@ -17,7 +17,8 @@ import java.util.List;
  */
 public interface CourseSubjectMapper extends BaseMapper<CourseSubject> {
 
-    @Insert("<script>insert into course_subject (course_id,subject_id) " +
-            "value <foreach collection='courseSubjects' item='cs' separator=','>(#{cs.courseId},#{cs.subjectId})</foreach></script>")
-    int batchInsert(@Param("courseSubjects")List<CourseSubject> courseSubjects);
+    @Insert(
+            "<script>insert into course_subject (course_id,subject_id) "
+                    + "value <foreach collection='courseSubjects' item='cs' separator=','>(#{cs.courseId},#{cs.subjectId})</foreach></script>")
+    int batchInsert(@Param("courseSubjects") List<CourseSubject> courseSubjects);
 }

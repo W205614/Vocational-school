@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2026-02-06
  */
-public interface LikedRecordMapper extends BaseMapper<LikedRecord> {
-
-}
+public interface LikedRecordMapper extends BaseMapper<LikedRecord> {}

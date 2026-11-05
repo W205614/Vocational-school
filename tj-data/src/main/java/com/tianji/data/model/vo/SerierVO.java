@@ -19,11 +19,11 @@ import java.util.List;
 @Builder
 public class SerierVO {
 
-    //折线图
+    // 折线图
     public static final String TYPE_LINE = "line";
-    //柱状图
+    // 柱状图
     public static final String TYPE_BAR = "bar";
-    //饼图
+    // 饼图
     public static final String TYPE_PIE = "pie";
 
     private String name;
@@ -31,6 +31,4 @@ public class SerierVO {
     private List<?> data;
     private String max;
     private String min;
-
-
 }

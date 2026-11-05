@@ -50,6 +50,4 @@ public class SubjectCategory implements Serializable {
      * 三级课程分类id
      */
     private Long thirdCateId;
-
-
 }

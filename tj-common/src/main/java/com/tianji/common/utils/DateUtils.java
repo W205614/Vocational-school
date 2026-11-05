@@ -101,8 +101,6 @@ public class DateUtils extends LocalDateTimeUtil {
         return c.getTime();
     }
 
-
-
     public static LocalDate getMonthBegin(LocalDate date) {
         return LocalDate.of(date.getYear(), date.getMonth(), 1);
     }
@@ -117,7 +115,8 @@ public class DateUtils extends LocalDateTimeUtil {
 
     public static LocalDateTime getMonthEndTime(LocalDate date) {
         return LocalDate.of(date.getYear(), date.getMonthValue() + 1, 1)
-                .minusDays(1).atTime(LocalTime.MAX);
+                .minusDays(1)
+                .atTime(LocalTime.MAX);
     }
 
     public static LocalDateTime getWeekBeginTime(LocalDate now) {
@@ -133,16 +132,19 @@ public class DateUtils extends LocalDateTimeUtil {
      *
      * @return
      */
-    public static List<String> last15Day(){
+    public static List<String> last15Day() {
         // 1.定义日期列表
         List<String> days = new ArrayList<>();
         // 2.获取15天前的时间
         LocalDateTime time = now().minusDays(15);
         // 3.for循环遍历
-        for (int count = 0; count < 15; count++){
+        for (int count = 0; count < 15; count++) {
             // 3.1.格式化时间
-            days.add(String.format("%s.%s",
-                    NumberUtils.repair0(time.getMonthValue(),2), NumberUtils.repair0(time.getDayOfMonth(), 2)));
+            days.add(
+                    String.format(
+                            "%s.%s",
+                            NumberUtils.repair0(time.getMonthValue(), 2),
+                            NumberUtils.repair0(time.getDayOfMonth(), 2)));
             // 3.2.日期加1天
             time = time.plusDays(1);
         }

@@ -10,10 +10,10 @@ import lombok.Data;
  **/
 @Data
 public class CataIdAndSubScore {
-    //目录id
+    // 目录id
     private Long cataId;
-    //题目id
+    // 题目id
     private Long subjectId;
-    //题目对应的分
+    // 题目对应的分
     private Integer score;
 }

@@ -29,9 +29,11 @@ public class WrapperResponseMessageConverter implements HttpMessageConverter<Obj
 
     @Override
     public boolean canWrite(@NonNull Class<?> clazz, MediaType mediaType) {
-        if(org.springframework.core.io.Resource.class.isAssignableFrom(clazz))return false;
-        var request=WebUtils.getRequest();
-        return request!=null && (WebUtils.isGatewayRequest() || request.getRequestURI().startsWith("/api/v2/")) && delegate.canWrite(clazz, mediaType);
+        if (org.springframework.core.io.Resource.class.isAssignableFrom(clazz)) return false;
+        var request = WebUtils.getRequest();
+        return request != null
+                && (WebUtils.isGatewayRequest() || request.getRequestURI().startsWith("/api/v2/"))
+                && delegate.canWrite(clazz, mediaType);
     }
 
     @Override
@@ -42,12 +44,15 @@ public class WrapperResponseMessageConverter implements HttpMessageConverter<Obj
 
     @Override
     @NonNull
-    public Object read(@NonNull Class<?> clazz,@NonNull HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException {
+    public Object read(@NonNull Class<?> clazz, @NonNull HttpInputMessage inputMessage)
+            throws IOException, HttpMessageNotReadableException {
         return delegate.read(clazz, inputMessage);
     }
 
     @Override
-    public void write(@NonNull Object o, MediaType contentType,@NonNull HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
+    public void write(
+            @NonNull Object o, MediaType contentType, @NonNull HttpOutputMessage outputMessage)
+            throws IOException, HttpMessageNotWritableException {
         delegate.write(o, contentType, outputMessage);
     }
 }

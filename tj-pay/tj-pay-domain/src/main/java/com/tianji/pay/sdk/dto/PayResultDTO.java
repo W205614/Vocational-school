@@ -21,14 +21,19 @@ public class PayResultDTO {
 
     @Schema(description = "支付结果，1：支付中，2：支付失败，3：支付成功")
     private int status;
+
     @Schema(description = "支付失败原因")
     private String msg;
+
     @Schema(description = "业务订单号")
     private Long bizOrderId;
+
     @Schema(description = "业务订单号")
     private Long payOrderNo;
+
     @Schema(description = "支付渠道")
     private String payChannel;
+
     @Schema(description = "支付成功时间")
     private LocalDateTime successTime;
 }

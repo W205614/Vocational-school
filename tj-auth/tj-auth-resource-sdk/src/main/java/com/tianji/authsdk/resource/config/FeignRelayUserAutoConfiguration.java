@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class FeignRelayUserAutoConfiguration {
 
     @Bean
-    public FeignRelayUserInterceptor feignRelayUserInterceptor(){
+    public FeignRelayUserInterceptor feignRelayUserInterceptor() {
         return new FeignRelayUserInterceptor();
     }
 }

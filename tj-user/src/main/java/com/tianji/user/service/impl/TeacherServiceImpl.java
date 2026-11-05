@@ -29,10 +29,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class TeacherServiceImpl implements ITeacherService {
-    @Autowired
-    private IUserDetailService detailService;
-    @Autowired
-    private CourseClient courseClient;
+    @Autowired private IUserDetailService detailService;
+    @Autowired private CourseClient courseClient;
 
     @Override
     public PageDTO<TeacherPageVO> queryTeacherPage(UserPageQuery pageQuery) {
@@ -43,8 +41,9 @@ public class TeacherServiceImpl implements ITeacherService {
         // 2.1.查询老师的试题数量、课程数量
         List<Long> ids = records.stream().map(UserDetail::getId).collect(Collectors.toList());
         List<SubNumAndCourseNumDTO> countDTOs = courseClient.infoByTeacherIds(ids);
-        Map<Long, SubNumAndCourseNumDTO> map = countDTOs.stream()
-                .collect(Collectors.toMap(SubNumAndCourseNumDTO::getTeacherId, s -> s));
+        Map<Long, SubNumAndCourseNumDTO> map =
+                countDTOs.stream()
+                        .collect(Collectors.toMap(SubNumAndCourseNumDTO::getTeacherId, s -> s));
         // 2.2.数据转换
         List<TeacherPageVO> list = new ArrayList<>(records.size());
         for (UserDetail record : records) {

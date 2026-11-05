@@ -1,6 +1,5 @@
 package com.tianji.api.dto.promotion;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,8 +14,13 @@ import java.util.List;
 public class OrderCouponDTO {
     @Schema(description = "用户优惠券id")
     private List<Long> userCouponIds;
+
     @Schema(description = "订单中的课程列表")
     private List<OrderCourseDTO> courseList;
+
     private Long orderId;
-    public OrderCouponDTO(List<Long> ids,List<OrderCourseDTO> courses) {this(ids,courses,null);}
+
+    public OrderCouponDTO(List<Long> ids, List<OrderCourseDTO> courses) {
+        this(ids, courses, null);
+    }
 }

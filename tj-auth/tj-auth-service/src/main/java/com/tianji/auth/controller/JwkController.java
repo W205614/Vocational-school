@@ -26,9 +26,10 @@ public class JwkController {
     }
 
     @GetMapping
-    public String getJwk(@RequestParam(defaultValue="legacy") String format){
+    public String getJwk(@RequestParam(defaultValue = "legacy") String format) {
         if ("jwks".equals(format)) return verificationKeys.jwks();
-        if (!"legacy".equals(format)) throw new com.tianji.common.exceptions.BadRequestException("不支持的公钥格式");
+        if (!"legacy".equals(format))
+            throw new com.tianji.common.exceptions.BadRequestException("不支持的公钥格式");
         // The default preserves the deployed SDK contract during a receiver-first upgrade.
         return Base64.encode(keyPair.getPublic().getEncoded());
     }

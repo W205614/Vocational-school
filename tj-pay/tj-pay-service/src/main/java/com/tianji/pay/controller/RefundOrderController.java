@@ -1,6 +1,5 @@
 package com.tianji.pay.controller;
 
-
 import com.tianji.pay.sdk.dto.RefundApplyDTO;
 import com.tianji.pay.sdk.dto.RefundResultDTO;
 import com.tianji.pay.service.IRefundOrderService;
@@ -28,7 +27,8 @@ public class RefundOrderController {
 
     @PostMapping
     @Operation(summary = "申请退款接口")
-    public RefundResultDTO applyRefund(@jakarta.validation.Valid @RequestBody RefundApplyDTO refundApplyDTO) {
+    public RefundResultDTO applyRefund(
+            @jakarta.validation.Valid @RequestBody RefundApplyDTO refundApplyDTO) {
         com.tianji.common.utils.InternalAuth.requireService();
         return refundOrderService.applyRefund(refundApplyDTO);
     }
@@ -36,12 +36,13 @@ public class RefundOrderController {
     @GetMapping("{bizRefundOrderId}/status")
     @Operation(summary = "查询退款结果")
     public RefundResultDTO queryRefundResult(
-            @Parameter(description = "业务端退款的子订单id") @PathVariable("bizRefundOrderId") Long bizRefundOrderId) {
+            @Parameter(description = "业务端退款的子订单id") @PathVariable("bizRefundOrderId")
+                    Long bizRefundOrderId) {
         com.tianji.common.utils.InternalAuth.requireService();
         return refundOrderService.queryRefundResult(bizRefundOrderId);
     }
 
-/*    @GetMapping("{bizRefundOrderId}/detail")
+    /*    @GetMapping("{bizRefundOrderId}/detail")
     @Operation(summary = "查询退款详情")
     public RefundResultDTO queryRefundDetail(
             @Parameter(description = "业务端退款的子订单id") @PathVariable("bizRefundOrderId") Long bizRefundOrderId) {

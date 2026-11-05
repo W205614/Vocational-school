@@ -22,6 +22,7 @@ public interface IPrivilegeService extends IService<Privilege> {
     Page<Privilege> listPrivilegesByPage(PageQuery pageQuery);
 
     void savePrivilege(Privilege privilege);
+
     void updatePrivilege(Privilege privilege);
 
     void removePrivilegeById(Long id);

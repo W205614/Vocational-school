@@ -152,6 +152,4 @@ public class Coupon implements Serializable {
      * 更新人
      */
     private Long updater;
-
-
 }

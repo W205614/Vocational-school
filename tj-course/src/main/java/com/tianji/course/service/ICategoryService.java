@@ -88,7 +88,8 @@ public interface ICategoryService extends IService<Category> {
      * @param thirdCateIdList 三级课程分类
      * @return 课程分类信息
      */
-    Map<Long, String> queryByThirdCateIds(@RequestParam("thirdCateIdList") List<Long> thirdCateIdList);
+    Map<Long, String> queryByThirdCateIds(
+            @RequestParam("thirdCateIdList") List<Long> thirdCateIdList);
 
     /**
      * 获取课程分类信息

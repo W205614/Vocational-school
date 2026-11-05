@@ -22,17 +22,17 @@ mesh:
   trust_domain: cluster.local
   ingress_namespace: istio-system
   ingress_service_account: istio-ingressgateway
-  ingress_selector: {istio: ingressgateway}
+  ingress_selector: { istio: ingressgateway }
 public:
   student_host: REQUIRED_STUDENT_DNS
   admin_host: REQUIRED_ADMIN_DNS
   tls_secret: tianji-public-tls
   trusted_proxy_addresses: [REQUIRED_HEADLESS_INGRESS_PEER_DNS]
 managed:
-  mysql: {host: REQUIRED_MYSQL_HA_DNS, port: 3306, cidrs: [REQUIRED_PRIVATE_CIDR]}
-  redis: {host: REQUIRED_REDIS_HA_DNS, port: 6380, cidrs: [REQUIRED_PRIVATE_CIDR]}
-  rabbitmq: {host: REQUIRED_RABBIT_QUORUM_DNS, port: 5671, cidrs: [REQUIRED_PRIVATE_CIDR]}
-  elasticsearch: {host: REQUIRED_SEARCH_DNS, port: 9243, cidrs: [REQUIRED_PRIVATE_CIDR]}
+  mysql: { host: REQUIRED_MYSQL_HA_DNS, port: 3306, cidrs: [REQUIRED_PRIVATE_CIDR] }
+  redis: { host: REQUIRED_REDIS_HA_DNS, port: 6380, cidrs: [REQUIRED_PRIVATE_CIDR] }
+  rabbitmq: { host: REQUIRED_RABBIT_QUORUM_DNS, port: 5671, cidrs: [REQUIRED_PRIVATE_CIDR] }
+  elasticsearch: { host: REQUIRED_SEARCH_DNS, port: 9243, cidrs: [REQUIRED_PRIVATE_CIDR] }
 providers:
   region: ap-shanghai
   cos_bucket: REQUIRED_PRIVATE_BUCKET_WITH_APPID

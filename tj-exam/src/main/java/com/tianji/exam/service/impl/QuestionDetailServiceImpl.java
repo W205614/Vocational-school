@@ -15,6 +15,5 @@ import org.springframework.stereotype.Service;
  * @since 2022-09-02
  */
 @Service
-public class QuestionDetailServiceImpl extends ServiceImpl<QuestionDetailMapper, QuestionDetail> implements IQuestionDetailService {
-
-}
+public class QuestionDetailServiceImpl extends ServiceImpl<QuestionDetailMapper, QuestionDetail>
+        implements IQuestionDetailService {}

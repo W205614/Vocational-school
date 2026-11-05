@@ -21,9 +21,11 @@ import java.time.LocalDateTime;
  */
 @Service
 @RequiredArgsConstructor
-public class PublicNoticeServiceImpl extends ServiceImpl<PublicNoticeMapper, PublicNotice> implements IPublicNoticeService {
+public class PublicNoticeServiceImpl extends ServiceImpl<PublicNoticeMapper, PublicNotice>
+        implements IPublicNoticeService {
 
     private final MessageProperties messageProperties;
+
     @Override
     public void saveNoticeOfTemplate(NoticeTemplate noticeTemplate) {
         LocalDateTime now = LocalDateTime.now();

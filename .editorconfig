@@ -6,8 +6,8 @@ end_of_line = lf
 insert_final_newline = true
 indent_style = space
 
-[*.{java,py}]
+[*.{java,py,xml,ps1,lua}]
 indent_size = 4
 
-[*.{vue,ts,js,json,yaml,yml}]
+[*.{vue,ts,js,mjs,cjs,html,css,json,yaml,yml}]
 indent_size = 2

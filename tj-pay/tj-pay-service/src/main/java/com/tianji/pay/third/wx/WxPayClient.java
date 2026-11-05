@@ -28,7 +28,9 @@ import java.util.Arrays;
 
 @Slf4j
 @Component
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.pay.wx.enabled",havingValue="true")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "tj.pay.wx.enabled",
+        havingValue = "true")
 public class WxPayClient {
     private final CloseableHttpClient wxPayClient;
     private final ObjectMapper objectMapper;
@@ -37,8 +39,10 @@ public class WxPayClient {
     private final String mchId;
 
     public WxPayClient(
-            CloseableHttpClient wxPayClient, WxPayProperties properties,
-            ObjectMapper objectMapper, CommonPayProperties commonPayProperties) {
+            CloseableHttpClient wxPayClient,
+            WxPayProperties properties,
+            ObjectMapper objectMapper,
+            CommonPayProperties commonPayProperties) {
         this.wxPayClient = wxPayClient;
         this.objectMapper = objectMapper;
         this.appId = properties.getAppId();
@@ -53,7 +57,9 @@ public class WxPayClient {
             HttpPost httpPost = new HttpPost(requestPath);
             httpPost.addHeader("Accept", MediaType.APPLICATION_JSON_VALUE);
             httpPost.addHeader("Content-type", MediaType.APPLICATION_JSON_VALUE);
-            httpPost.setEntity(new StringEntity(objectMapper.writeValueAsString(body), StandardCharsets.UTF_8));
+            httpPost.setEntity(
+                    new StringEntity(
+                            objectMapper.writeValueAsString(body), StandardCharsets.UTF_8));
             // 3.发送请求
             CloseableHttpResponse response = wxPayClient.execute(httpPost);
             // 4.解析响应
@@ -71,7 +77,7 @@ public class WxPayClient {
             // 1.构建请求路径
             URIBuilder uriBuilder = new URIBuilder(requestPath);
             // 2.构建请求参数
-            if(withMch) {
+            if (withMch) {
                 uriBuilder.addParameter("mchid", mchId);
             }
             if (params != null && params.length > 0) {
@@ -94,15 +100,16 @@ public class WxPayClient {
 
     public ObjectNode baseParam(boolean withApp, boolean withMch, Boolean isRefund) {
         ObjectNode objectNode = objectMapper.createObjectNode();
-        if(withApp){
+        if (withApp) {
             objectNode.put("appid", appId);
         }
-        if(withMch) {
-                objectNode.put("mchid", mchId);
+        if (withMch) {
+            objectNode.put("mchid", mchId);
         }
-        if(isRefund != null) {
+        if (isRefund != null) {
             String notifyPath = isRefund ? "/notify/refund/" : "/notify/";
-            objectNode.put("notify_url",
+            objectNode.put(
+                    "notify_url",
                     payProperties.getNotifyHost() + notifyPath + PayConstants.WX_CHANNEL_CODE);
         }
         return objectNode;

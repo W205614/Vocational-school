@@ -1,60 +1,257 @@
-import {home, accounts, fixture, login, api as request} from './helpers';
-import {test,expect,type Page,type Route} from '@playwright/test';import fs from 'node:fs';
-function api(page:Page,path:string,body?:unknown){return request(page,body===undefined?'GET':'POST',path,body,crypto.randomUUID());}
-async function pick(page:Page,label:string,keyword:string,names:string[],multiple=false){
- await page.getByRole('button',{name:label,exact:true}).click();const dialog=page.getByRole('dialog',{name:label,exact:true}),query=dialog.getByRole('button',{name:'查询',exact:true});
- await expect(query).toBeEnabled();await dialog.getByRole('textbox',{name:label+'关键词',exact:true}).fill(keyword);
- if(label==='选择关联题目'){
-  // Hold a real backend response: selections must remain unavailable while rows change.
-  let fetched!:()=>void,release!:()=>void;const started=new Promise<void>(resolve=>fetched=resolve),held=new Promise<void>(resolve=>release=resolve),pattern='**/api/v2/admin/exam/questions/page?**';
-  const handler=async(route:Route)=>{const response=await route.fetch();fetched();await held;await route.fulfill({response});};
-  await page.route(pattern,handler);const response=page.waitForResponse(r=>r.url().includes('/admin/exam/questions/page?')&&new URL(r.url()).searchParams.get('keyword')===keyword);
-  try{await query.click();await started;await expect(dialog.getByRole('button',{name:'确认选择',exact:true})).toBeDisabled();await expect(dialog.locator('.el-table__row').filter({hasText:names[0]}).getByRole('button',{name:'添加',exact:true})).toBeDisabled();}
-  finally{release();expect((await response).ok()).toBeTruthy();await page.unroute(pattern,handler);}
- }else{const response=page.waitForResponse(r=>r.url().includes('/admin/user/teachers/page?')&&new URL(r.url()).searchParams.get('name')===keyword);await query.click();expect((await response).ok()).toBeTruthy();}
- await expect(query).toBeEnabled();
- for(const name of names){const row=dialog.locator('.el-table__row').filter({hasText:name});await row.getByRole('button',{name:multiple?'添加':'选用',exact:true}).click();if(multiple)await expect(row.getByRole('button',{name:'已选',exact:true})).toBeVisible();}
- if(multiple)await dialog.getByRole('button',{name:'确认选择',exact:true}).click();await expect(dialog).not.toBeVisible();
+import { home, accounts, fixture, login, api as request } from './helpers';
+import { test, expect, type Page, type Route } from '@playwright/test';
+import fs from 'node:fs';
+function api(page: Page, path: string, body?: unknown) {
+  return request(page, body === undefined ? 'GET' : 'POST', path, body, crypto.randomUUID());
 }
-async function option(page:Page,label:string,value:string){
- const box=page.getByRole('combobox',{name:label,exact:true});await expect(box).toBeEnabled();
- await page.locator('.el-select').filter({has:box}).click();
- // Keep the locator after aria-hidden changes: the leaving popup still affects page width.
- const choice=page.getByRole('option',{name:value,exact:true,includeHidden:true});
- const popup=page.locator('.el-select__popper').filter({has:choice});
- await choice.click();await expect(popup).toHaveCSS('display','none');
+async function pick(page: Page, label: string, keyword: string, names: string[], multiple = false) {
+  await page.getByRole('button', { name: label, exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: label, exact: true }),
+    query = dialog.getByRole('button', { name: '查询', exact: true });
+  await expect(query).toBeEnabled();
+  await dialog.getByRole('textbox', { name: label + '关键词', exact: true }).fill(keyword);
+  if (label === '选择关联题目') {
+    // Hold a real backend response: selections must remain unavailable while rows change.
+    let fetched!: () => void, release!: () => void;
+    const started = new Promise<void>((resolve) => (fetched = resolve)),
+      held = new Promise<void>((resolve) => (release = resolve)),
+      pattern = '**/api/v2/admin/exam/questions/page?**';
+    const handler = async (route: Route) => {
+      const response = await route.fetch();
+      fetched();
+      await held;
+      await route.fulfill({ response });
+    };
+    await page.route(pattern, handler);
+    const response = page.waitForResponse(
+      (r) =>
+        r.url().includes('/admin/exam/questions/page?') &&
+        new URL(r.url()).searchParams.get('keyword') === keyword,
+    );
+    try {
+      await query.click();
+      await started;
+      await expect(dialog.getByRole('button', { name: '确认选择', exact: true })).toBeDisabled();
+      await expect(
+        dialog
+          .locator('.el-table__row')
+          .filter({ hasText: names[0] })
+          .getByRole('button', { name: '添加', exact: true }),
+      ).toBeDisabled();
+    } finally {
+      release();
+      expect((await response).ok()).toBeTruthy();
+      await page.unroute(pattern, handler);
+    }
+  } else {
+    const response = page.waitForResponse(
+      (r) =>
+        r.url().includes('/admin/user/teachers/page?') &&
+        new URL(r.url()).searchParams.get('name') === keyword,
+    );
+    await query.click();
+    expect((await response).ok()).toBeTruthy();
+  }
+  await expect(query).toBeEnabled();
+  for (const name of names) {
+    const row = dialog.locator('.el-table__row').filter({ hasText: name });
+    await row.getByRole('button', { name: multiple ? '添加' : '选用', exact: true }).click();
+    if (multiple)
+      await expect(row.getByRole('button', { name: '已选', exact: true })).toBeVisible();
+  }
+  if (multiple) await dialog.getByRole('button', { name: '确认选择', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
 }
-test('managed draft keeps closed enrollment and persists cover, syllabus, media, questions and teachers',async({page},info)=>{
- test.skip(info.project.name!=='admin');test.setTimeout(120000);
- await login(page,'admin','/courses');
- const tree=await api(page,'/services/course/categorys/list?status=1'),leaf=tree[0].children[0].children[0].id;
- const name='UX managed draft '+fixture.marker+' '+Date.now().toString(36),deadline=new Date(Date.now()-86400000).toISOString().slice(0,19);
- const body={name,thirdCateId:leaf,coverUrl:'/missing-original-cover.png',free:false,price:100,purchaseEndTime:new Date(Date.now()+86400000*365).toISOString().slice(0,19),validDuration:12,introduce:'Original isolated description',usePeople:'Local QA students',detail:'<h2>Original isolated detail</h2>'};
- const draft=await api(page,'/admin/course/courses/baseInfo/save',body);await api(page,'/admin/course/courses/baseInfo/save',{...body,id:draft.id,purchaseEndTime:deadline});
- await option(page,'课程状态','待上架草稿');await page.getByRole('textbox',{name:'按课程名称搜索',exact:true}).fill(name);await page.getByRole('button',{name:'查询',exact:true}).click();const row=page.locator('.el-table__row').filter({hasText:name});await row.getByRole('button',{name:'编辑',exact:true}).click();
- await expect(page.getByRole('alert').filter({hasText:'该课程报名已结束'})).toBeVisible();
- const bytes=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;const context=canvas.getContext('2d')!;context.fillStyle='#2563eb';context.fillRect(0,0,640,360);context.fillStyle='#ffffff';context.font='32px sans-serif';context.fillText('Local QA course artwork',35,175);return Array.from(Uint8Array.from(atob(canvas.toDataURL('image/png').split(',')[1]),c=>c.charCodeAt(0)));});
- const uploaded=page.waitForResponse(r=>r.url().endsWith('/api/v2/admin/course-cover-upload'));await page.getByLabel('上传课程封面').setInputFiles({name:'course-artwork.png',mimeType:'image/png',buffer:Buffer.from(bytes)});const upload=await uploaded;expect(upload.ok()).toBeTruthy();const cover=(await upload.json()).data.path;expect(cover).not.toContain('expires');await expect(page.getByRole('img',{name:'课程封面预览',exact:true})).toBeVisible();
- await page.getByRole('textbox',{name:'课程介绍',exact:true}).fill('Updated isolated course description');await page.getByRole('textbox',{name:'课程详情',exact:true}).fill('<h2>Updated isolated detail</h2>');await page.getByRole('button',{name:'保存课程资料',exact:true}).click();await expect(page.getByText('课程资料已保存',{exact:true})).toBeVisible();await expect(row.getByRole('button',{name:'上架',exact:true})).toBeDisabled();
- const persisted=await api(page,'/admin/course/courses/baseInfo/'+draft.id+'?see=false');expect(persisted.purchaseEndTime).toBe(deadline);expect(persisted.coverUrl).toBe(cover);expect(persisted.introduce).toBe('Updated isolated course description');
- const publicImage=await page.request.get(cover);expect(publicImage.ok()).toBeTruthy();expect(publicImage.headers()['content-type']).toContain('image/png');expect(publicImage.headers()['x-content-type-options']).toBe('nosniff');expect((await publicImage.body()).length).toBe(bytes.length);
- const accessToken=await page.evaluate(()=>sessionStorage.getItem('school-token'));const invalid=await page.request.post('/api/v2/admin/course-cover-upload',{headers:{Authorization:'Bearer '+accessToken},multipart:{file:{name:'fake.png',mimeType:'image/png',buffer:Buffer.from('<svg/>')}}});expect(invalid.status()).toBe(400);
- const studentLogin=await page.request.post('/api/v2/auth/accounts/login',{data:{type:1,username:accounts.student.username,password:accounts.student.password,rememberMe:false}});const studentToken=(await studentLogin.json()).data;
- const denied=await page.request.post('/api/v2/admin/course-cover-upload',{headers:{Authorization:'Bearer '+studentToken},multipart:{file:{name:'course.png',mimeType:'image/png',buffer:Buffer.from(bytes)}}});expect(denied.status()).toBe(403);
- await page.goto('/course-editor?courseId='+draft.id);await expect(page.getByPlaceholder('课程 ID')).toHaveCount(0);await page.getByRole('button',{name:'新增章',exact:true}).click();await page.getByPlaceholder('章名称').fill('UX chapter');await page.getByPlaceholder('小节 / 考试名称').fill('UX video');await page.getByRole('button',{name:'新增小节 / 考试',exact:true}).click();await page.getByPlaceholder('小节 / 考试名称').nth(1).fill('UX exam');await page.locator('.chapter-editor .el-select').nth(1).click();await page.getByRole('option',{name:'考试',exact:true}).click();await page.getByRole('button',{name:'保存章节',exact:true}).click();await expect(page.getByText('章节已保存',{exact:true})).toBeVisible();
- await option(page,'选择视频小节','UX chapter / UX video');await page.getByRole('button',{name:'选择课程视频',exact:true}).click();const mediaDialog=page.getByRole('dialog',{name:'选择课程视频',exact:true});await expect(mediaDialog.locator('.el-table__row').first()).toBeVisible();await mediaDialog.locator('.el-table__row').first().getByRole('button',{name:'选用',exact:true}).click();await page.getByRole('button',{name:'保存视频关联',exact:true}).click();await expect(page.getByText('视频关联已保存',{exact:true})).toBeVisible();
- await option(page,'选择关联考试小节','UX chapter / UX exam');await pick(page,'选择关联题目',fixture.marker,['Browser objective '+fixture.marker,'Browser subjective '+fixture.marker],true);await page.getByRole('button',{name:'关联题目',exact:true}).click();await expect(page.getByText('考试题目关联已保存',{exact:true})).toBeVisible();await pick(page,'选择授课教师','teacher acceptance',['teacher acceptance'],true);await page.getByRole('button',{name:'保存授课教师',exact:true}).click();await expect(page.getByText('授课教师已保存',{exact:true})).toBeVisible();
- await page.reload();await expect(page.getByText('teacher acceptance',{exact:true})).toBeVisible();await option(page,'选择关联考试小节','UX chapter / UX exam');await expect(page.getByText('Browser objective '+fixture.marker,{exact:true})).toBeVisible();
- // Hold desktop popup geometry during a slow close, so an early resize fails deterministically.
- const videoBox=page.locator('.el-select').filter({has:page.getByRole('combobox',{name:'选择视频小节',exact:true})});
- const desktop=await videoBox.boundingBox();expect(desktop).not.toBeNull();
- const slowClose=await page.addStyleTag({content:`.el-select__popper.el-zoom-in-top-leave-active {
+async function option(page: Page, label: string, value: string) {
+  const box = page.getByRole('combobox', { name: label, exact: true });
+  await expect(box).toBeEnabled();
+  await page.locator('.el-select').filter({ has: box }).click();
+  // Keep the locator after aria-hidden changes: the leaving popup still affects page width.
+  const choice = page.getByRole('option', { name: value, exact: true, includeHidden: true });
+  const popup = page.locator('.el-select__popper').filter({ has: choice });
+  await choice.click();
+  await expect(popup).toHaveCSS('display', 'none');
+}
+test('managed draft keeps closed enrollment and persists cover, syllabus, media, questions and teachers', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'admin');
+  test.setTimeout(120000);
+  await login(page, 'admin', '/courses');
+  const tree = await api(page, '/services/course/categorys/list?status=1'),
+    leaf = tree[0].children[0].children[0].id;
+  const name = 'UX managed draft ' + fixture.marker + ' ' + Date.now().toString(36),
+    deadline = new Date(Date.now() - 86400000).toISOString().slice(0, 19);
+  const body = {
+    name,
+    thirdCateId: leaf,
+    coverUrl: '/missing-original-cover.png',
+    free: false,
+    price: 100,
+    purchaseEndTime: new Date(Date.now() + 86400000 * 365).toISOString().slice(0, 19),
+    validDuration: 12,
+    introduce: 'Original isolated description',
+    usePeople: 'Local QA students',
+    detail: '<h2>Original isolated detail</h2>',
+  };
+  const draft = await api(page, '/admin/course/courses/baseInfo/save', body);
+  await api(page, '/admin/course/courses/baseInfo/save', {
+    ...body,
+    id: draft.id,
+    purchaseEndTime: deadline,
+  });
+  await option(page, '课程状态', '待上架草稿');
+  await page.getByRole('textbox', { name: '按课程名称搜索', exact: true }).fill(name);
+  await page.getByRole('button', { name: '查询', exact: true }).click();
+  const row = page.locator('.el-table__row').filter({ hasText: name });
+  await row.getByRole('button', { name: '编辑', exact: true }).click();
+  await expect(page.getByRole('alert').filter({ hasText: '该课程报名已结束' })).toBeVisible();
+  const bytes = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 360;
+    const context = canvas.getContext('2d')!;
+    context.fillStyle = '#2563eb';
+    context.fillRect(0, 0, 640, 360);
+    context.fillStyle = '#ffffff';
+    context.font = '32px sans-serif';
+    context.fillText('Local QA course artwork', 35, 175);
+    return Array.from(
+      Uint8Array.from(atob(canvas.toDataURL('image/png').split(',')[1]), (c) => c.charCodeAt(0)),
+    );
+  });
+  const uploaded = page.waitForResponse((r) =>
+    r.url().endsWith('/api/v2/admin/course-cover-upload'),
+  );
+  await page
+    .getByLabel('上传课程封面')
+    .setInputFiles({
+      name: 'course-artwork.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(bytes),
+    });
+  const upload = await uploaded;
+  expect(upload.ok()).toBeTruthy();
+  const cover = (await upload.json()).data.path;
+  expect(cover).not.toContain('expires');
+  await expect(page.getByRole('img', { name: '课程封面预览', exact: true })).toBeVisible();
+  await page
+    .getByRole('textbox', { name: '课程介绍', exact: true })
+    .fill('Updated isolated course description');
+  await page
+    .getByRole('textbox', { name: '课程详情', exact: true })
+    .fill('<h2>Updated isolated detail</h2>');
+  await page.getByRole('button', { name: '保存课程资料', exact: true }).click();
+  await expect(page.getByText('课程资料已保存', { exact: true })).toBeVisible();
+  await expect(row.getByRole('button', { name: '上架', exact: true })).toBeDisabled();
+  const persisted = await api(page, '/admin/course/courses/baseInfo/' + draft.id + '?see=false');
+  expect(persisted.purchaseEndTime).toBe(deadline);
+  expect(persisted.coverUrl).toBe(cover);
+  expect(persisted.introduce).toBe('Updated isolated course description');
+  const publicImage = await page.request.get(cover);
+  expect(publicImage.ok()).toBeTruthy();
+  expect(publicImage.headers()['content-type']).toContain('image/png');
+  expect(publicImage.headers()['x-content-type-options']).toBe('nosniff');
+  expect((await publicImage.body()).length).toBe(bytes.length);
+  const accessToken = await page.evaluate(() => sessionStorage.getItem('school-token'));
+  const invalid = await page.request.post('/api/v2/admin/course-cover-upload', {
+    headers: { Authorization: 'Bearer ' + accessToken },
+    multipart: { file: { name: 'fake.png', mimeType: 'image/png', buffer: Buffer.from('<svg/>') } },
+  });
+  expect(invalid.status()).toBe(400);
+  const studentLogin = await page.request.post('/api/v2/auth/accounts/login', {
+    data: {
+      type: 1,
+      username: accounts.student.username,
+      password: accounts.student.password,
+      rememberMe: false,
+    },
+  });
+  const studentToken = (await studentLogin.json()).data;
+  const denied = await page.request.post('/api/v2/admin/course-cover-upload', {
+    headers: { Authorization: 'Bearer ' + studentToken },
+    multipart: { file: { name: 'course.png', mimeType: 'image/png', buffer: Buffer.from(bytes) } },
+  });
+  expect(denied.status()).toBe(403);
+  await page.goto('/course-editor?courseId=' + draft.id);
+  await expect(page.getByPlaceholder('课程 ID')).toHaveCount(0);
+  await page.getByRole('button', { name: '新增章', exact: true }).click();
+  await page.getByPlaceholder('章名称').fill('UX chapter');
+  await page.getByPlaceholder('小节 / 考试名称').fill('UX video');
+  await page.getByRole('button', { name: '新增小节 / 考试', exact: true }).click();
+  await page.getByPlaceholder('小节 / 考试名称').nth(1).fill('UX exam');
+  await page.locator('.chapter-editor .el-select').nth(1).click();
+  await page.getByRole('option', { name: '考试', exact: true }).click();
+  await page.getByRole('button', { name: '保存章节', exact: true }).click();
+  await expect(page.getByText('章节已保存', { exact: true })).toBeVisible();
+  await option(page, '选择视频小节', 'UX chapter / UX video');
+  await page.getByRole('button', { name: '选择课程视频', exact: true }).click();
+  const mediaDialog = page.getByRole('dialog', { name: '选择课程视频', exact: true });
+  await expect(mediaDialog.locator('.el-table__row').first()).toBeVisible();
+  await mediaDialog
+    .locator('.el-table__row')
+    .first()
+    .getByRole('button', { name: '选用', exact: true })
+    .click();
+  await page.getByRole('button', { name: '保存视频关联', exact: true }).click();
+  await expect(page.getByText('视频关联已保存', { exact: true })).toBeVisible();
+  await option(page, '选择关联考试小节', 'UX chapter / UX exam');
+  await pick(
+    page,
+    '选择关联题目',
+    fixture.marker,
+    ['Browser objective ' + fixture.marker, 'Browser subjective ' + fixture.marker],
+    true,
+  );
+  await page.getByRole('button', { name: '关联题目', exact: true }).click();
+  await expect(page.getByText('考试题目关联已保存', { exact: true })).toBeVisible();
+  await pick(page, '选择授课教师', 'teacher acceptance', ['teacher acceptance'], true);
+  await page.getByRole('button', { name: '保存授课教师', exact: true }).click();
+  await expect(page.getByText('授课教师已保存', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('teacher acceptance', { exact: true })).toBeVisible();
+  await option(page, '选择关联考试小节', 'UX chapter / UX exam');
+  await expect(
+    page.getByText('Browser objective ' + fixture.marker, { exact: true }),
+  ).toBeVisible();
+  // Hold desktop popup geometry during a slow close, so an early resize fails deterministically.
+  const videoBox = page
+    .locator('.el-select')
+    .filter({ has: page.getByRole('combobox', { name: '选择视频小节', exact: true }) });
+  const desktop = await videoBox.boundingBox();
+  expect(desktop).not.toBeNull();
+  const slowClose = await page.addStyleTag({
+    content: `.el-select__popper.el-zoom-in-top-leave-active {
   left:${desktop!.x}px!important;min-width:${desktop!.width}px!important;
   transform:none!important;transition-duration:1s!important;
- }`});
- await option(page,'选择视频小节','UX chapter / UX video');await expect(page.getByRole('button',{name:'保存视频关联',exact:true})).toBeEnabled();
- await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await page.getByRole('button',{name:'选择授课教师',exact:true}).click();await expect(page.getByRole('dialog',{name:'选择授课教师',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await page.getByRole('dialog',{name:'选择授课教师',exact:true}).getByRole('button',{name:'取消',exact:true}).click();await page.setViewportSize({width:1440,height:900});
- await slowClose.evaluate(el=>el.parentNode?.removeChild(el));
- fs.mkdirSync(home+'/ux-admin-screenshots',{recursive:true});await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:home+'/ux-admin-screenshots/course-config.png',fullPage:true,animations:'disabled'});
- fs.writeFileSync(home+'/admin-ux-fixture.json',JSON.stringify({courseId:draft.id,name,deadline,cover,step:5},null,2));
+ }`,
+  });
+  await option(page, '选择视频小节', 'UX chapter / UX video');
+  await expect(page.getByRole('button', { name: '保存视频关联', exact: true })).toBeEnabled();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)).toBe(
+    false,
+  );
+  await page.getByRole('button', { name: '选择授课教师', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '选择授课教师', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)).toBe(
+    false,
+  );
+  await page
+    .getByRole('dialog', { name: '选择授课教师', exact: true })
+    .getByRole('button', { name: '取消', exact: true })
+    .click();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await slowClose.evaluate((el) => el.parentNode?.removeChild(el));
+  fs.mkdirSync(home + '/ux-admin-screenshots', { recursive: true });
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.screenshot({
+    path: home + '/ux-admin-screenshots/course-config.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
+  fs.writeFileSync(
+    home + '/admin-ux-fixture.json',
+    JSON.stringify({ courseId: draft.id, name, deadline, cover, step: 5 }, null, 2),
+  );
 });

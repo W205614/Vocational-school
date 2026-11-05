@@ -12,14 +12,14 @@ import java.lang.annotation.*;
  **/
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.PARAMETER, ElementType.FIELD, ElementType.METHOD })
+@Target({ElementType.PARAMETER, ElementType.FIELD, ElementType.METHOD})
 @Constraint(validatedBy = {EnumValidator.class, EnumValueValidator.class})
 public @interface EnumValid {
     String message() default "不满足业务条件";
 
     int[] enumeration() default {};
 
-    Class<?>[] groups() default { };
+    Class<?>[] groups() default {};
 
-    Class<? extends Payload>[] payload() default { };
+    Class<? extends Payload>[] payload() default {};
 }

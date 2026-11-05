@@ -51,7 +51,9 @@ public class User implements Serializable {
     private String password;
 
     /** Read with the verified credential only; the database triggers own version updates. */
-    @TableField(select = false, insertStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.NEVER,
+    @TableField(
+            select = false,
+            insertStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.NEVER,
             updateStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.NEVER)
     private Long authVersion;
 
@@ -77,14 +79,14 @@ public class User implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
+
     /**
      * 创建者id
      */
-
     private Long creater;
+
     /**
      * 修改者id
      */
-
     private Long updater;
 }

@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2022-08-20
  */
-public interface SmsThirdPlatformMapper extends BaseMapper<SmsThirdPlatform> {
-
-}
+public interface SmsThirdPlatformMapper extends BaseMapper<SmsThirdPlatform> {}

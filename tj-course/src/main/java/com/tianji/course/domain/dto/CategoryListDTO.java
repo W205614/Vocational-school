@@ -14,8 +14,7 @@ import lombok.Data;
 public class CategoryListDTO {
     @Schema(description = "类目状态1:正常，2：禁用")
     private Integer status;
+
     @Schema(description = "类目名称")
     private String name;
-
-
 }

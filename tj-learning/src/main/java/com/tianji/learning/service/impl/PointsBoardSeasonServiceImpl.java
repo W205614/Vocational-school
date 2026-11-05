@@ -18,14 +18,17 @@ import java.util.Optional;
  * @since 2026-02-07
  */
 @Service
-public class PointsBoardSeasonServiceImpl extends ServiceImpl<PointsBoardSeasonMapper, PointsBoardSeason> implements IPointsBoardSeasonService {
+public class PointsBoardSeasonServiceImpl
+        extends ServiceImpl<PointsBoardSeasonMapper, PointsBoardSeason>
+        implements IPointsBoardSeasonService {
 
     @Override
     public Integer querySeasonByTime(LocalDateTime time) {
-        Optional<PointsBoardSeason> optional = lambdaQuery()
-                .le(PointsBoardSeason::getBeginTime, time)
-                .ge(PointsBoardSeason::getEndTime, time)
-                .oneOpt();
+        Optional<PointsBoardSeason> optional =
+                lambdaQuery()
+                        .le(PointsBoardSeason::getBeginTime, time)
+                        .ge(PointsBoardSeason::getEndTime, time)
+                        .oneOpt();
         return optional.map(PointsBoardSeason::getId).orElse(null);
     }
 }

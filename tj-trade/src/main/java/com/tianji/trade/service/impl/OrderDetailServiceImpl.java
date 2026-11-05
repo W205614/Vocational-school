@@ -50,7 +50,8 @@ import static com.tianji.trade.constants.TradeErrorInfo.ORDER_NOT_EXISTS;
  */
 @Service
 @RequiredArgsConstructor
-public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, OrderDetail> implements IOrderDetailService {
+public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, OrderDetail>
+        implements IOrderDetailService {
 
     private final UserClient userClient;
 
@@ -65,10 +66,11 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
     @Override
     @Transactional
     public void updateStatusByOrderId(Long orderId, Integer status) {
-        boolean success = lambdaUpdate()
-                .set(OrderDetail::getStatus, status)
-                .eq(OrderDetail::getOrderId, orderId)
-                .update();
+        boolean success =
+                lambdaUpdate()
+                        .set(OrderDetail::getStatus, status)
+                        .eq(OrderDetail::getOrderId, orderId)
+                        .update();
         if (!success) {
             throw new DbRuntimeException(ErrorInfo.Msg.DB_UPDATE_EXCEPTION);
         }
@@ -99,15 +101,28 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
             }
         }
         // 3.搜索
-        Page<OrderDetail> page = lambdaQuery()
-                .eq(query.getId() != null, OrderDetail::getId, query.getId())
-                .eq(query.getStatus() != null, OrderDetail::getStatus, query.getStatus())
-                .eq(query.getRefundStatus() != null, OrderDetail::getRefundStatus, query.getRefundStatus())
-                .eq(StringUtils.isNotBlank(query.getPayChannel()), OrderDetail::getPayChannel, query.getPayChannel())
-                .ge(query.getOrderStartTime() != null, OrderDetail::getCreateTime, query.getOrderStartTime())
-                .le(query.getOrderEndTime() != null, OrderDetail::getCreateTime, query.getOrderEndTime())
-                .eq(userId != null, OrderDetail::getUserId, userId)
-                .page(p);
+        Page<OrderDetail> page =
+                lambdaQuery()
+                        .eq(query.getId() != null, OrderDetail::getId, query.getId())
+                        .eq(query.getStatus() != null, OrderDetail::getStatus, query.getStatus())
+                        .eq(
+                                query.getRefundStatus() != null,
+                                OrderDetail::getRefundStatus,
+                                query.getRefundStatus())
+                        .eq(
+                                StringUtils.isNotBlank(query.getPayChannel()),
+                                OrderDetail::getPayChannel,
+                                query.getPayChannel())
+                        .ge(
+                                query.getOrderStartTime() != null,
+                                OrderDetail::getCreateTime,
+                                query.getOrderStartTime())
+                        .le(
+                                query.getOrderEndTime() != null,
+                                OrderDetail::getCreateTime,
+                                query.getOrderEndTime())
+                        .eq(userId != null, OrderDetail::getUserId, userId)
+                        .page(p);
         // 4.判断是否为空
         List<OrderDetail> records = page.getRecords();
         if (CollUtils.isEmpty(records)) {
@@ -117,7 +132,8 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         Set<Long> uIds = records.stream().map(OrderDetail::getUserId).collect(Collectors.toSet());
         List<UserDTO> users = userClient.queryUserByIds(uIds);
         AssertUtils.isNotEmpty(users, ErrorInfo.Msg.USER_NOT_EXISTS);
-        Map<Long, UserDTO> userMap = users.stream().collect(Collectors.toMap(UserDTO::getId, u -> u));
+        Map<Long, UserDTO> userMap =
+                users.stream().collect(Collectors.toMap(UserDTO::getId, u -> u));
 
         // 6.数据转换
         List<OrderDetailPageVO> list = new ArrayList<>(records.size());
@@ -143,7 +159,9 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
     public OrderDetailAdminVO queryOrdersDetailProgress(Long id) {
         // 1.查询订单明细
         OrderDetail detail = getById(id);
-        if (detail == null || (!Long.valueOf(1).equals(UserContext.getRole()) && !Objects.equals(detail.getUserId(),UserContext.requireUser()))) {
+        if (detail == null
+                || (!Long.valueOf(1).equals(UserContext.getRole())
+                        && !Objects.equals(detail.getUserId(), UserContext.requireUser()))) {
             throw new BadRequestException(ORDER_NOT_EXISTS);
         }
         // 2.查询对应订单
@@ -156,7 +174,7 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         RefundApply refundApply = null;
         if (detail.getRefundStatus() != null && detail.getRefundStatus() != 0) {
             refundApplyList = applyMapper.queryByDetailId(detail.getId());
-            if(!refundApplyList.isEmpty()) refundApply = refundApplyList.get(0);
+            if (!refundApplyList.isEmpty()) refundApply = refundApplyList.get(0);
         }
 
         // 4.查询学生和申请人信息
@@ -167,7 +185,8 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         }
         List<UserDTO> userDTOS = userClient.queryUserByIds(uIds);
         AssertUtils.isNotEmpty(userDTOS, ErrorInfo.Msg.USER_NOT_EXISTS);
-        Map<Long, UserDTO> userMap = userDTOS.stream().collect(Collectors.toMap(UserDTO::getId, u -> u));
+        Map<Long, UserDTO> userMap =
+                userDTOS.stream().collect(Collectors.toMap(UserDTO::getId, u -> u));
 
         // 5.数据处理
         OrderDetailAdminVO vo = BeanUtils.toBean(detail, OrderDetailAdminVO.class);
@@ -209,10 +228,10 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         // - 已经支付并且当前没有退款
         // - 当前只且只有1次退款并且退款进程已完结
         vo.setCanRefund(
-                (OrderStatus.canRefund(detail.getStatus()) && refundApply == null) ||
-                        (refundApply != null && refundApplyList.size() == 1 &&
-                                !RefundStatus.inProgress(refundApply.getStatus()))
-        );
+                (OrderStatus.canRefund(detail.getStatus()) && refundApply == null)
+                        || (refundApply != null
+                                && refundApplyList.size() == 1
+                                && !RefundStatus.inProgress(refundApply.getStatus())));
         return vo;
     }
 
@@ -221,25 +240,37 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         // 1.先填充订单交易的每个节点的时间值
         List<OrderProgressNodeVO> list = new ArrayList<>();
         // 1.1.下单时间
-        list.add(new OrderProgressNodeVO(OrderStatus.NO_PAY.getProgressName(), order.getCreateTime()));
+        list.add(
+                new OrderProgressNodeVO(
+                        OrderStatus.NO_PAY.getProgressName(), order.getCreateTime()));
         // 1.2.支付成功时间
         list.add(new OrderProgressNodeVO(PAYED.getProgressName(), order.getPayTime()));
         // 1.3.交易关闭时间
-        list.add(new OrderProgressNodeVO(OrderStatus.CLOSED.getProgressName(), order.getCloseTime()));
+        list.add(
+                new OrderProgressNodeVO(
+                        OrderStatus.CLOSED.getProgressName(), order.getCloseTime()));
         // 1.4.交易完成时间
         list.add(new OrderProgressNodeVO(FINISHED.getProgressName(), order.getFinishTime()));
         if (refundApply == null) {
             // 1.5.没有退款参数情况下，默认是用户端查询，添加退款成功时间字段
-            list.add(new OrderProgressNodeVO(OrderStatus.REFUNDED.getProgressName(), order.getRefundTime()));
+            list.add(
+                    new OrderProgressNodeVO(
+                            OrderStatus.REFUNDED.getProgressName(), order.getRefundTime()));
         } else {
             // 2.再填充订单退款的每个节点的时间值
             // 2.1.订单申请退款
-            list.add(new OrderProgressNodeVO(RefundStatus.UN_APPROVE.getProgressName(), refundApply.getCreateTime()));
+            list.add(
+                    new OrderProgressNodeVO(
+                            RefundStatus.UN_APPROVE.getProgressName(),
+                            refundApply.getCreateTime()));
             // 2.2.订单审批时间（审批成功或失败）
-            list.add(new OrderProgressNodeVO(RefundStatus.AGREE.getProgressName(), refundApply.getApproveTime()));
+            list.add(
+                    new OrderProgressNodeVO(
+                            RefundStatus.AGREE.getProgressName(), refundApply.getApproveTime()));
             // 2.3.退款结束时间（学员取消、退款成功、退款关闭）
             RefundStatus status = RefundStatus.of(refundApply.getStatus());
-            list.add(new OrderProgressNodeVO(status.getProgressName(), refundApply.getFinishTime()));
+            list.add(
+                    new OrderProgressNodeVO(status.getProgressName(), refundApply.getFinishTime()));
         }
 
         // 3.然后过滤掉没有时间的节点，再按照时间进行排序，升序
@@ -253,10 +284,17 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
     public void markDetailSuccessByOrderId(Long id, String payChannel, LocalDateTime successTime) {
         List<OrderDetail> details = queryByOrderId(id);
         for (OrderDetail detail : details) {
-            LocalDateTime expiration=detail.getValidDuration()==null || detail.getValidDuration()<=0?null:successTime.plusMonths(detail.getValidDuration());
-            lambdaUpdate().eq(OrderDetail::getId,detail.getId()).eq(OrderDetail::getStatus,NO_PAY.getValue())
-                    .set(OrderDetail::getStatus,PAYED.getValue()).set(OrderDetail::getPayChannel,payChannel)
-                    .set(OrderDetail::getCourseExpireTime,expiration).update();
+            LocalDateTime expiration =
+                    detail.getValidDuration() == null || detail.getValidDuration() <= 0
+                            ? null
+                            : successTime.plusMonths(detail.getValidDuration());
+            lambdaUpdate()
+                    .eq(OrderDetail::getId, detail.getId())
+                    .eq(OrderDetail::getStatus, NO_PAY.getValue())
+                    .set(OrderDetail::getStatus, PAYED.getValue())
+                    .set(OrderDetail::getPayChannel, payChannel)
+                    .set(OrderDetail::getCourseExpireTime, expiration)
+                    .update();
         }
     }
 
@@ -279,11 +317,16 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         Long userId = UserContext.getUser();
 
         // 2.查询订单
-        List<OrderDetail> orders = lambdaQuery()
-                .eq(OrderDetail::getUserId, userId)
-                .eq(OrderDetail::getCourseId, courseId)
-                .in(OrderDetail::getStatus, PAYED.getValue(), FINISHED.getValue(), ENROLLED.getValue())
-                .list();
+        List<OrderDetail> orders =
+                lambdaQuery()
+                        .eq(OrderDetail::getUserId, userId)
+                        .eq(OrderDetail::getCourseId, courseId)
+                        .in(
+                                OrderDetail::getStatus,
+                                PAYED.getValue(),
+                                FINISHED.getValue(),
+                                ENROLLED.getValue())
+                        .list();
 
         // 3.判断是否存在订单
         if (CollUtils.isEmpty(orders)) {
@@ -292,7 +335,11 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
 
         // 4.找到未过期的
         LocalDateTime now = LocalDateTime.now();
-        return orders.stream().anyMatch(o -> o.getCourseExpireTime()==null || o.getCourseExpireTime().isAfter(now));
+        return orders.stream()
+                .anyMatch(
+                        o ->
+                                o.getCourseExpireTime() == null
+                                        || o.getCourseExpireTime().isAfter(now));
     }
 
     @Override
@@ -301,7 +348,11 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         QueryWrapper<OrderDetail> wrapper = new QueryWrapper<>();
         wrapper.lambda()
                 .in(OrderDetail::getCourseId, courseIdList)
-                .in(OrderDetail::getStatus, PAYED.getValue(), FINISHED.getValue(), ENROLLED.getValue());
+                .in(
+                        OrderDetail::getStatus,
+                        PAYED.getValue(),
+                        FINISHED.getValue(),
+                        ENROLLED.getValue());
 
         // 2.统计
         List<IdAndNumDTO> list = baseMapper.countEnrollNumOfCourse(wrapper);
@@ -316,7 +367,11 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
         QueryWrapper<OrderDetail> wrapper = new QueryWrapper<>();
         wrapper.lambda()
                 .in(OrderDetail::getUserId, studentIds)
-                .in(OrderDetail::getStatus, PAYED.getValue(), FINISHED.getValue(), ENROLLED.getValue());
+                .in(
+                        OrderDetail::getStatus,
+                        PAYED.getValue(),
+                        FINISHED.getValue(),
+                        ENROLLED.getValue());
         // 2.统计
         List<IdAndNumDTO> list = baseMapper.countEnrollCourseOfStudent(wrapper);
 
@@ -327,15 +382,23 @@ public class OrderDetailServiceImpl extends ServiceImpl<OrderDetailMapper, Order
     @Override
     public CoursePurchaseInfoDTO getPurchaseInfoOfCourse(Long courseId) {
         // 1.统计报名人数
-        Integer enrollNum = Math.toIntExact(lambdaQuery()
-                .eq(OrderDetail::getCourseId, courseId)
-                .in(OrderDetail::getStatus, PAYED.getValue(), FINISHED.getValue(), ENROLLED.getValue())
-                .count());
+        Integer enrollNum =
+                Math.toIntExact(
+                        lambdaQuery()
+                                .eq(OrderDetail::getCourseId, courseId)
+                                .in(
+                                        OrderDetail::getStatus,
+                                        PAYED.getValue(),
+                                        FINISHED.getValue(),
+                                        ENROLLED.getValue())
+                                .count());
         // 2.统计退款人数
-        Integer refundNum = Math.toIntExact(lambdaQuery()
-                .eq(OrderDetail::getCourseId, courseId)
-                .eq(OrderDetail::getStatus, REFUNDED.getValue())
-                .count());
+        Integer refundNum =
+                Math.toIntExact(
+                        lambdaQuery()
+                                .eq(OrderDetail::getCourseId, courseId)
+                                .eq(OrderDetail::getStatus, REFUNDED.getValue())
+                                .count());
         // 3.统计销售额
         int realPayAmount = baseMapper.countRealPayAmountByCourseId(courseId);
 

@@ -39,6 +39,7 @@ public class RefundApply implements Serializable {
      * 订单id
      */
     private Long orderId;
+
     /**
      * 退款单号，每次退款的唯一标示
      */
@@ -58,14 +59,17 @@ public class RefundApply implements Serializable {
      * 退款状态，1：待审批，2：取消退款，3：同意退款，4：拒绝退款，5：退款成功，6：退款失败
      */
     private Integer status;
+
     /**
      * 退款状态描述
      */
     private String message;
+
     /**
      * 申请退款原因
      */
     private String refundReason;
+
     /**
      * 退款原因描述
      */
@@ -75,10 +79,12 @@ public class RefundApply implements Serializable {
      * 审批人id
      */
     private Long approver;
+
     /**
      * 审批意见
      */
     private String approveOpinion;
+
     /**
      * 审批备注
      */
@@ -88,6 +94,7 @@ public class RefundApply implements Serializable {
      * 退款渠道
      */
     private String refundChannel;
+
     /**
      * 退款失败原因
      */
@@ -112,16 +119,14 @@ public class RefundApply implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
+
     /**
      * 创建人
      */
-
     private Long creater;
 
     /**
      * 更新人
      */
-
     private Long updater;
-
 }

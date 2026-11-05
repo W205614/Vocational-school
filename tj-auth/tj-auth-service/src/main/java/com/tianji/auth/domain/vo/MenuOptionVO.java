@@ -30,8 +30,7 @@ public class MenuOptionVO {
     @Schema(description = "子菜单集合")
     private List<MenuOptionVO> subMenus;
 
-    public MenuOptionVO() {
-    }
+    public MenuOptionVO() {}
 
     public MenuOptionVO(Menu menu) {
         this.id = menu.getId();

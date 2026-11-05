@@ -14,10 +14,13 @@ import static com.tianji.common.constants.ErrorInfo.Msg.OK;
 public class R<T> {
     @Schema(description = "业务状态码，200-成功，其它-失败")
     private int code;
+
     @Schema(description = "响应消息", example = "OK")
     private String msg;
+
     @Schema(description = "响应数据")
     private T data;
+
     @Schema(description = "请求id", example = "1af123c11412e")
     private String requestId;
 
@@ -37,8 +40,7 @@ public class R<T> {
         return new R<>(code, msg, null);
     }
 
-    public R() {
-    }
+    public R() {}
 
     public R(int code, String msg, T data) {
         this.code = code;
@@ -47,7 +49,7 @@ public class R<T> {
         this.requestId = MDC.get(Constant.REQUEST_ID_HEADER);
     }
 
-    public boolean success(){
+    public boolean success() {
         return code == SUCCESS;
     }
 

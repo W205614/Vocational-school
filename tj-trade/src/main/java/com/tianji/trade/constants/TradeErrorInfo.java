@@ -20,5 +20,4 @@ public interface TradeErrorInfo {
     String REFUND_NOT_EXISTS = "退款记录不存在";
     String REFUND_APPROVED = "退款申请已经处理过了";
     String FREE_COURSE_CANNOT_REFUND = "免费课程不能退款";
-
 }

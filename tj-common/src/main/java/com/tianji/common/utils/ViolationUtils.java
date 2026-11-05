@@ -16,10 +16,11 @@ import java.util.stream.Collectors;
 public class ViolationUtils {
 
     public static <T> void process(Set<ConstraintViolation<T>> violations) {
-        if(CollUtils.isEmpty(violations)){
+        if (CollUtils.isEmpty(violations)) {
             return;
         }
-        String message = violations.stream().map(v -> v.getMessage()).collect(Collectors.joining("|"));
+        String message =
+                violations.stream().map(v -> v.getMessage()).collect(Collectors.joining("|"));
         throw new BadRequestException(message);
     }
 }

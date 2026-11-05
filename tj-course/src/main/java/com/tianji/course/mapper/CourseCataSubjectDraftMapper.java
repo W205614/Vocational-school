@@ -17,9 +17,10 @@ import java.util.List;
  */
 public interface CourseCataSubjectDraftMapper extends BaseMapper<CourseCataSubjectDraft> {
 
-    @Insert("<script>insert into course_cata_subject_draft(course_id,cata_id,subject_id) value " +
-            "<foreach collection='pos' item='po' separator=','>(#{po.courseId},#{po.cataId},#{po.subjectId})</foreach></script>")
-    int batchInsert(@Param("pos")List<CourseCataSubjectDraft> courseCataSubjectDrafts);
+    @Insert(
+            "<script>insert into course_cata_subject_draft(course_id,cata_id,subject_id) value "
+                    + "<foreach collection='pos' item='po' separator=','>(#{po.courseId},#{po.cataId},#{po.subjectId})</foreach></script>")
+    int batchInsert(@Param("pos") List<CourseCataSubjectDraft> courseCataSubjectDrafts);
 
     /**
      * 根据id删除课程对应的题目
@@ -29,16 +30,18 @@ public interface CourseCataSubjectDraftMapper extends BaseMapper<CourseCataSubje
     @Delete("delete from course_cata_subject_draft where course_id=#{courseId}")
     int deleteByCourseId(@Param("courseId") Long courseId);
 
-    @Select("select course_id,cata_id,subject_id from course_cata_subject_draft where course_id=#{courseId}")
+    @Select(
+            "select course_id,cata_id,subject_id from course_cata_subject_draft where course_id=#{courseId}")
     @ResultMap("BaseResultMap")
     List<CourseCataSubjectDraft> getByCourseId(@Param("courseId") Long courseId);
 
-    @Insert("insert into course_cata_subject_draft (course_id,cata_id,subject_id) " +
-            "(select course_id,cata_id,subject_id from course_cata_subject where course_id=#{courseId})")
+    @Insert(
+            "insert into course_cata_subject_draft (course_id,cata_id,subject_id) "
+                    + "(select course_id,cata_id,subject_id from course_cata_subject where course_id=#{courseId})")
     int insertFromCourseCataSubject(@Param("courseId") Long courseId);
 
-    @Select("select ccs.cata_id as cataId,ccs.subject_id as subjectId, s.score from course_cata_subject_draft ccs " +
-            "left join subject s on ccs.subject_id=s.id where ccs.course_id=#{courseId}")
+    @Select(
+            "select ccs.cata_id as cataId,ccs.subject_id as subjectId, s.score from course_cata_subject_draft ccs "
+                    + "left join subject s on ccs.subject_id=s.id where ccs.course_id=#{courseId}")
     List<CataIdAndSubScore> queryCataIdAndScoreByCorseId(@Param("courseId") Long courseId);
-
 }

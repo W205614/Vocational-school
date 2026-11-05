@@ -3,7 +3,7 @@ package com.tianji.common.exceptions;
 import lombok.Getter;
 
 @Getter
-public class CommonException extends RuntimeException{
+public class CommonException extends RuntimeException {
     private final int code;
 
     public CommonException(String message) {
@@ -26,7 +26,8 @@ public class CommonException extends RuntimeException{
         this.code = code;
     }
 
-    public int getStatus(){
+    public int getStatus() {
         return 500;
-    };
+    }
+    ;
 }

@@ -18,7 +18,7 @@ public class NoticeJobHandler {
     private final INoticeTaskService taskService;
 
     @XxlJob("publishNoticeJob")
-    public void publishNotice(){
+    public void publishNotice() {
         // 1.获取分片参数，作为数据查询的分页参数，分片数+1作为页码，jobParam作为每页大小，默认size为10
         int index = XxlJobHelper.getShardIndex() + 1;
         String jobParam = XxlJobHelper.getJobParam();

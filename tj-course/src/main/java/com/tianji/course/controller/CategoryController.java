@@ -35,8 +35,7 @@ import java.util.List;
 @Validated
 public class CategoryController {
 
-    @Autowired
-    private ICategoryService categoryService;
+    @Autowired private ICategoryService categoryService;
 
     @GetMapping("list")
     @Operation(summary = "查询课程分类信息")
@@ -47,9 +46,7 @@ public class CategoryController {
 
     @GetMapping("{id}")
     @Operation(summary = "获取课程分类信息")
-    @Parameters(
-            @Parameter(name = "id", description = "分类id")
-    )
+    @Parameters(@Parameter(name = "id", description = "分类id"))
     public CategoryInfoVO get(@PathVariable("id") Long id) {
         return categoryService.get(id);
     }
@@ -63,16 +60,15 @@ public class CategoryController {
 
     @DeleteMapping("{id}")
     @Operation(summary = "删除分类信息")
-    @Parameters(
-            @Parameter(name = "id", description = "分类id")
-    )
+    @Parameters(@Parameter(name = "id", description = "分类id"))
     public void delete(@PathVariable("id") Long id) {
         categoryService.delete(id);
     }
 
     @PutMapping("disableOrEnable")
     @Operation(summary = "课程分类停用或启用")
-    public void disableOrEnable(@Validated @RequestBody CategoryDisableOrEnableDTO categoryDisableOrEnableDTO) {
+    public void disableOrEnable(
+            @Validated @RequestBody CategoryDisableOrEnableDTO categoryDisableOrEnableDTO) {
         categoryService.disableOrEnable(categoryDisableOrEnableDTO);
     }
 
@@ -84,7 +80,8 @@ public class CategoryController {
 
     @GetMapping("all")
     @Operation(summary = "获取所有的课程分类信息，只包含id,名称，课程分类关系")
-    public List<SimpleCategoryVO> all(@RequestParam(value = "admin",required = false, defaultValue = "0") Boolean admin) {
+    public List<SimpleCategoryVO> all(
+            @RequestParam(value = "admin", required = false, defaultValue = "0") Boolean admin) {
         return categoryService.all(admin);
     }
 

@@ -44,6 +44,4 @@ public class QuestionBiz implements Serializable {
      * 问题id
      */
     private Long questionId;
-
-
 }

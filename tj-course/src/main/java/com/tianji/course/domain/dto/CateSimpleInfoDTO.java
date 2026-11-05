@@ -15,9 +15,10 @@ import lombok.Data;
 public class CateSimpleInfoDTO {
     @Schema(description = "一级分类")
     private Long firstCateId;
+
     @Schema(description = "二级分类id")
     private Long secondCateId;
+
     @Schema(description = "三级分类id")
     private Long thirdCateId;
-
 }

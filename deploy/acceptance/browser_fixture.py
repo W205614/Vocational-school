@@ -1,53 +1,198 @@
 """Create explicit browser-only course/exam fixtures; no baseline row replacement."""
-from prepare import mysql,LOCAL
-import json,time,uuid
+
+from prepare import mysql, LOCAL
+import json, time, uuid
+
+
 def main():
- marker=uuid.uuid4().hex[:12];course=810000000000000000+int(time.time())*10;chapter=course+1;video=course+2;exam=course+3;objective=course+4;subjective=course+5
- accounts=json.loads((LOCAL/'accounts.json').read_text());admin=accounts['admin']['id'];teacher=accounts['teacher']['id']
- prior=LOCAL/'browser-fixture.json'
- if prior.exists():
-  previous=json.loads(prior.read_text())
-  if not previous['course'].isdigit() or not accounts['student']['id'].isdigit():raise ValueError('Invalid fixture identity')
-  mysql('DELETE FROM cart WHERE user_id='+accounts['student']['id']+' AND course_id='+previous['course'],'tj_trade')
- columns=[line.split('\t')[0] for line in mysql('SHOW COLUMNS FROM course','tj_course').splitlines()]
- substitutions={'id':str(course),'name':"'Browser course "+marker+"'",'status':'2','free':'0','price':'100','purchase_end_time':'NOW()+INTERVAL 1 YEAR','purchase_start_time':'NOW()-INTERVAL 1 DAY','valid_duration':'12','section_num':'2','media_duration':'2','creater':admin,'updater':admin,'deleted':'0','publish_times':'1'}
- values=','.join(substitutions.get(c,'`'+c+'`') for c in columns)
- mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+values+' FROM course WHERE id=1','tj_course')
- for i,name,type,parent in [(chapter,'Browser chapter',1,0),(video,'Browser video',2,chapter),(exam,'Browser exam',3,chapter)]:
-  mysql(f"INSERT INTO course_catalogue(id,name,course_id,type,parent_catalogue_id,media_duration,c_index,dep_id,creater,updater) VALUES({i},'{name}',{course},{type},{parent},2,{1 if type<3 else 2},0,{admin},{admin})",'tj_course')
- mysql(f"INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES({course},{course},{teacher},1,1,0,NOW(),NOW(),{admin},{admin},0)",'tj_course')
- for i,name,type,answer in [(objective,'Browser objective '+marker,2,'1,2'),(subjective,'Browser subjective '+marker,5,'reference')]:
-  mysql(f"INSERT INTO question(id,name,type,cate_id1,cate_id2,cate_id3,difficulty,score,creater,updater) VALUES({i},'{name}',{type},1,2,3,1,10,{admin},{admin});INSERT INTO question_detail(id,options,answer,analysis) VALUES({i},'[\"A\",\"B\",\"C\"]','{answer}','Acceptance');INSERT INTO question_biz(biz_id,question_id) VALUES({exam},{i})",'tj_exam')
- # Independent draft course + historical learning access for note tests.
- # Financial tests refund course 1; they must not remove this test's permission.
- notes_course=course+10;notes_lesson=course+11
- notes_substitutions={**substitutions,'id':str(notes_course),'name':"'Browser notes "+marker+"'",'status':'1'}
- notes_values=','.join(notes_substitutions.get(c,'`'+c+'`') for c in columns)
- mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+notes_values+' FROM course WHERE id=1','tj_course')
- mysql(f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections) VALUES({notes_lesson},{accounts['student']['id']},{notes_course},NOW()+INTERVAL 1 YEAR,0,0)",'tj_learning')
- # Explicit synthetic rights, isolated from all real financial provenance.
- mysql(f"INSERT INTO learning_entitlement(order_detail_id,order_id,user_id,course_id,active,expires_at) VALUES({notes_lesson},{notes_lesson},{accounts['student']['id']},{notes_course},1,NOW()+INTERVAL 1 YEAR)",'tj_learning')
- # A current free course verifies enrollment without rewriting expired legacy courses.
- free_course=course+20
- free_substitutions={**substitutions,'id':str(free_course),'name':"'Browser free "+marker+"'",'free':'1','price':'0','section_num':'1'}
- free_values=','.join(free_substitutions.get(c,'`'+c+'`') for c in columns)
- mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+free_values+' FROM course WHERE id=1','tj_course')
- expired_course=course+30
- expired_substitutions={**substitutions,'id':str(expired_course),'name':"'Browser expired "+marker+"'",'purchase_start_time':'NOW()-INTERVAL 1 MONTH','purchase_end_time':'NOW()-INTERVAL 1 DAY'}
- expired_values=','.join(expired_substitutions.get(c,'`'+c+'`') for c in columns)
- mysql('INSERT INTO course('+','.join('`'+c+'`' for c in columns)+') SELECT '+expired_values+' FROM course WHERE id=1','tj_course')
- # Retain a real catalogue on the expired course to exercise unavailable video
- # controls, rather than accidentally passing against an empty course outline.
- for i,name,kind,parent in [(course+32,'Browser chapter',1,0),(course+33,'Browser video',2,course+32),(course+34,'Browser exam',3,course+32)]:
-  mysql(f"INSERT INTO course_catalogue(id,name,course_id,type,parent_catalogue_id,trailer,media_duration,c_index,dep_id,creater,updater) VALUES({i},'{name}',{expired_course},{kind},{parent},0,2,{1 if kind<3 else 2},0,{admin},{admin})",'tj_course')
- # Explicit expired learning history must remain visible without offering a new exam.
- mysql(f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections,latest_learn_time) VALUES({course+31},{accounts['student']['id']},{expired_course},NOW()-INTERVAL 1 DAY,3,0,NOW()-INTERVAL 2 DAY)",'tj_learning')
- # An unsubmitted historical draft proves read-only discovery after expiry.
- expired_paper,expired_attempt,expired_question=course+35,course+36,course+37
- mysql(f"INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count) VALUES({expired_paper},{expired_course},{course+34},1,10,60,2);INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score) VALUES({expired_paper},{expired_question},1,'Expired retained answer',5,10);INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id) VALUES({expired_attempt},{expired_paper},{accounts['student']['id']},{course+31});INSERT INTO exam_draft(attempt_id,answers,version) VALUES({expired_attempt},'{{\"{expired_question}\":\"Historical draft before expiry\"}}',1)",'tj_exam')
- for assigned_course in [free_course,expired_course]:
-  mysql(f"INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES({assigned_course},{assigned_course},{teacher},1,1,0,NOW(),NOW(),{admin},{admin},0)",'tj_course')
- fixture=dict(marker=marker,expiredCourse=str(expired_course),expiredAttempt=str(expired_attempt),expiredQuestion=str(expired_question),freeCourse=str(free_course),notesCourse=str(notes_course),notesLesson=str(notes_lesson),course=str(course),chapter=str(chapter),video=str(video),exam=str(exam),objective=str(objective),subjective=str(subjective),name='Browser course '+marker)
- (LOCAL/'browser-fixture.json').write_text(json.dumps(fixture,indent=2))
- print('Fresh isolated browser fixtures created')
-if __name__=='__main__':main()
+    marker = uuid.uuid4().hex[:12]
+    course = 810000000000000000 + int(time.time()) * 10
+    chapter = course + 1
+    video = course + 2
+    exam = course + 3
+    objective = course + 4
+    subjective = course + 5
+    accounts = json.loads((LOCAL / 'accounts.json').read_text())
+    admin = accounts['admin']['id']
+    teacher = accounts['teacher']['id']
+    prior = LOCAL / 'browser-fixture.json'
+    if prior.exists():
+        previous = json.loads(prior.read_text())
+        if not previous['course'].isdigit() or not accounts['student']['id'].isdigit():
+            raise ValueError('Invalid fixture identity')
+        mysql(
+            'DELETE FROM cart WHERE user_id='
+            + accounts['student']['id']
+            + ' AND course_id='
+            + previous['course'],
+            'tj_trade',
+        )
+    columns = [
+        line.split('\t')[0]
+        for line in mysql('SHOW COLUMNS FROM course', 'tj_course').splitlines()
+    ]
+    substitutions = {
+        'id': str(course),
+        'name': "'Browser course " + marker + "'",
+        'status': '2',
+        'free': '0',
+        'price': '100',
+        'purchase_end_time': 'NOW()+INTERVAL 1 YEAR',
+        'purchase_start_time': 'NOW()-INTERVAL 1 DAY',
+        'valid_duration': '12',
+        'section_num': '2',
+        'media_duration': '2',
+        'creater': admin,
+        'updater': admin,
+        'deleted': '0',
+        'publish_times': '1',
+    }
+    values = ','.join(substitutions.get(c, '`' + c + '`') for c in columns)
+    mysql(
+        'INSERT INTO course('
+        + ','.join('`' + c + '`' for c in columns)
+        + ') SELECT '
+        + values
+        + ' FROM course WHERE id=1',
+        'tj_course',
+    )
+    for i, name, type, parent in [
+        (chapter, 'Browser chapter', 1, 0),
+        (video, 'Browser video', 2, chapter),
+        (exam, 'Browser exam', 3, chapter),
+    ]:
+        mysql(
+            f"INSERT INTO course_catalogue(id,name,course_id,type,parent_catalogue_id,media_duration,c_index,dep_id,creater,updater) VALUES({i},'{name}',{course},{type},{parent},2,{1 if type<3 else 2},0,{admin},{admin})",
+            'tj_course',
+        )
+    mysql(
+        f"INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES({course},{course},{teacher},1,1,0,NOW(),NOW(),{admin},{admin},0)",
+        'tj_course',
+    )
+    for i, name, type, answer in [
+        (objective, 'Browser objective ' + marker, 2, '1,2'),
+        (subjective, 'Browser subjective ' + marker, 5, 'reference'),
+    ]:
+        mysql(
+            f"INSERT INTO question(id,name,type,cate_id1,cate_id2,cate_id3,difficulty,score,creater,updater) VALUES({i},'{name}',{type},1,2,3,1,10,{admin},{admin});INSERT INTO question_detail(id,options,answer,analysis) VALUES({i},'[\"A\",\"B\",\"C\"]','{answer}','Acceptance');INSERT INTO question_biz(biz_id,question_id) VALUES({exam},{i})",
+            'tj_exam',
+        )
+    # Independent draft course + historical learning access for note tests.
+    # Financial tests refund course 1; they must not remove this test's permission.
+    notes_course = course + 10
+    notes_lesson = course + 11
+    notes_substitutions = {
+        **substitutions,
+        'id': str(notes_course),
+        'name': "'Browser notes " + marker + "'",
+        'status': '1',
+    }
+    notes_values = ','.join(notes_substitutions.get(c, '`' + c + '`') for c in columns)
+    mysql(
+        'INSERT INTO course('
+        + ','.join('`' + c + '`' for c in columns)
+        + ') SELECT '
+        + notes_values
+        + ' FROM course WHERE id=1',
+        'tj_course',
+    )
+    mysql(
+        f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections) VALUES({notes_lesson},{accounts['student']['id']},{notes_course},NOW()+INTERVAL 1 YEAR,0,0)",
+        'tj_learning',
+    )
+    # Explicit synthetic rights, isolated from all real financial provenance.
+    mysql(
+        f"INSERT INTO learning_entitlement(order_detail_id,order_id,user_id,course_id,active,expires_at) VALUES({notes_lesson},{notes_lesson},{accounts['student']['id']},{notes_course},1,NOW()+INTERVAL 1 YEAR)",
+        'tj_learning',
+    )
+    # A current free course verifies enrollment without rewriting expired legacy courses.
+    free_course = course + 20
+    free_substitutions = {
+        **substitutions,
+        'id': str(free_course),
+        'name': "'Browser free " + marker + "'",
+        'free': '1',
+        'price': '0',
+        'section_num': '1',
+    }
+    free_values = ','.join(free_substitutions.get(c, '`' + c + '`') for c in columns)
+    mysql(
+        'INSERT INTO course('
+        + ','.join('`' + c + '`' for c in columns)
+        + ') SELECT '
+        + free_values
+        + ' FROM course WHERE id=1',
+        'tj_course',
+    )
+    expired_course = course + 30
+    expired_substitutions = {
+        **substitutions,
+        'id': str(expired_course),
+        'name': "'Browser expired " + marker + "'",
+        'purchase_start_time': 'NOW()-INTERVAL 1 MONTH',
+        'purchase_end_time': 'NOW()-INTERVAL 1 DAY',
+    }
+    expired_values = ','.join(
+        expired_substitutions.get(c, '`' + c + '`') for c in columns
+    )
+    mysql(
+        'INSERT INTO course('
+        + ','.join('`' + c + '`' for c in columns)
+        + ') SELECT '
+        + expired_values
+        + ' FROM course WHERE id=1',
+        'tj_course',
+    )
+    # Retain a real catalogue on the expired course to exercise unavailable video
+    # controls, rather than accidentally passing against an empty course outline.
+    for i, name, kind, parent in [
+        (course + 32, 'Browser chapter', 1, 0),
+        (course + 33, 'Browser video', 2, course + 32),
+        (course + 34, 'Browser exam', 3, course + 32),
+    ]:
+        mysql(
+            f"INSERT INTO course_catalogue(id,name,course_id,type,parent_catalogue_id,trailer,media_duration,c_index,dep_id,creater,updater) VALUES({i},'{name}',{expired_course},{kind},{parent},0,2,{1 if kind<3 else 2},0,{admin},{admin})",
+            'tj_course',
+        )
+    # Explicit expired learning history must remain visible without offering a new exam.
+    mysql(
+        f"INSERT INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections,latest_learn_time) VALUES({course+31},{accounts['student']['id']},{expired_course},NOW()-INTERVAL 1 DAY,3,0,NOW()-INTERVAL 2 DAY)",
+        'tj_learning',
+    )
+    # An unsubmitted historical draft proves read-only discovery after expiry.
+    expired_paper, expired_attempt, expired_question = (
+        course + 35,
+        course + 36,
+        course + 37,
+    )
+    mysql(
+        f"INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count) VALUES({expired_paper},{expired_course},{course+34},1,10,60,2);INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score) VALUES({expired_paper},{expired_question},1,'Expired retained answer',5,10);INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id) VALUES({expired_attempt},{expired_paper},{accounts['student']['id']},{course+31});INSERT INTO exam_draft(attempt_id,answers,version) VALUES({expired_attempt},'{{\"{expired_question}\":\"Historical draft before expiry\"}}',1)",
+        'tj_exam',
+    )
+    for assigned_course in [free_course, expired_course]:
+        mysql(
+            f"INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES({assigned_course},{assigned_course},{teacher},1,1,0,NOW(),NOW(),{admin},{admin},0)",
+            'tj_course',
+        )
+    fixture = dict(
+        marker=marker,
+        expiredCourse=str(expired_course),
+        expiredAttempt=str(expired_attempt),
+        expiredQuestion=str(expired_question),
+        freeCourse=str(free_course),
+        notesCourse=str(notes_course),
+        notesLesson=str(notes_lesson),
+        course=str(course),
+        chapter=str(chapter),
+        video=str(video),
+        exam=str(exam),
+        objective=str(objective),
+        subjective=str(subjective),
+        name='Browser course ' + marker,
+    )
+    (LOCAL / 'browser-fixture.json').write_text(json.dumps(fixture, indent=2))
+    print('Fresh isolated browser fixtures created')
+
+
+if __name__ == '__main__':
+    main()

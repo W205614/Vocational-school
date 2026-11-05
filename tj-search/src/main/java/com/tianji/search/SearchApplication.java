@@ -21,6 +21,5 @@ public class SearchApplication {
         SpringApplication app = new SpringApplicationBuilder(SearchApplication.class).build(args);
         Environment env = app.run(args).getEnvironment();
         StartupLogger.log(env, log);
-
     }
 }

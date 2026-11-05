@@ -57,51 +57,42 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> implements ICourseService {
 
-    @Autowired
-    private CourseTeacherMapper courseTeacherMapper;
+    @Autowired private CourseTeacherMapper courseTeacherMapper;
 
-    @Autowired
-    private CourseDraftMapper courseDraftMapper;
+    @Autowired private CourseDraftMapper courseDraftMapper;
 
-    @Autowired
-    private ICourseDraftService courseDraftService;
+    @Autowired private ICourseDraftService courseDraftService;
 
-    @Autowired
-    private com.tianji.common.autoconfigure.reliability.OutboxStore outbox;
+    @Autowired private com.tianji.common.autoconfigure.reliability.OutboxStore outbox;
     @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    @Autowired
-    private ICourseCatalogueService courseCatalogueService;
+    @Autowired private ICourseCatalogueService courseCatalogueService;
 
-    @Autowired
-    private ICourseTeacherService courseTeacherService;
+    @Autowired private ICourseTeacherService courseTeacherService;
 
-    @Autowired
-    private ICategoryService categoryService;
+    @Autowired private ICategoryService categoryService;
 
-    @Autowired
-    private UserClient userClient;
+    @Autowired private UserClient userClient;
 
-    @Autowired
-    private TradeClient tradeClient;
+    @Autowired private TradeClient tradeClient;
 
-    @Autowired
-    private ExamClient examClient;
+    @Autowired private ExamClient examClient;
 
-    @Autowired
-    private LearningClient learningClient;
+    @Autowired private LearningClient learningClient;
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = {DbException.class, Exception.class})
+    @Transactional(
+            propagation = Propagation.REQUIRED,
+            rollbackFor = {DbException.class, Exception.class})
     public void updateStatus(Long id, Integer status) {
-        //1.组装数据
+        // 1.组装数据
         Course course = new Course();
         course.setId(id);
         course.setStatus(status);
         course.setUpdateTime(LocalDateTime.now());
-        //2.更新数据
+        // 2.更新数据
         int result = baseMapper.updateById(course);
-        //3.判断直接条数是1条
+        // 3.判断直接条数是1条
         if (result != 1) {
             throw new DbException(ErrorInfo.Msg.DB_UPDATE_EXCEPTION);
         }
@@ -111,11 +102,11 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     public CourseDTO getCourseDTOById(Long id) {
         // 1.查询课程信息
         Course course = baseMapper.selectById(id);
-        //1.1判空
+        // 1.1判空
         if (course == null) {
             return null;
         }
-        //2.教师查询条件
+        // 2.教师查询条件
         LambdaQueryWrapper<CourseTeacher> queryWrapper =
                 Wrappers.lambdaQuery(CourseTeacher.class)
                         .eq(CourseTeacher::getCourseId, id)
@@ -126,19 +117,19 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
 
         // 3.课程数据封装
         CourseDTO courseDTO = BeanUtils.toBean(course, CourseDTO.class);
-        //3.1.一级课程分类
+        // 3.1.一级课程分类
         courseDTO.setCategoryIdLv1(course.getFirstCateId());
-        //3.2.二级课程分类
+        // 3.2.二级课程分类
         courseDTO.setCategoryIdLv2(course.getSecondCateId());
-        //3.3.三级课程分类
+        // 3.3.三级课程分类
         courseDTO.setCategoryIdLv3(course.getThirdCateId());
-        //3.4.媒资信息
+        // 3.4.媒资信息
         courseDTO.setDuration(course.getMediaDuration());
-        //3.5.课程发布时间
+        // 3.5.课程发布时间
         courseDTO.setPublishTime(course.getCreateTime());
-        //3.6.课程小节数量
+        // 3.6.课程小节数量
         courseDTO.setSections(course.getSectionNum());
-        //3.7.课程第一位老师
+        // 3.7.课程第一位老师
         if (CollUtils.isNotEmpty(courseTeachers)) {
             courseDTO.setTeacher(courseTeachers.get(0).getTeacherId());
         } else {
@@ -148,94 +139,98 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         // 销量由搜索侧独立的绝对计数投影发布。元信息重建不依赖交易服务，
         // 以便升级时暂停财务处理，同时保留课程与教师信息的查询能力。
         return courseDTO;
-
     }
 
     @Override
     @org.springframework.transaction.annotation.Transactional
     public void delete(Long id) {
-        jdbc.update("INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",id);
-        //1.删除草稿信息
+        jdbc.update(
+                "INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",
+                id);
+        // 1.删除草稿信息
         courseDraftService.delete(id);
-        //2.发送删除草稿mq
-        outbox.enqueue("course:"+id+":delete",MqConstants.Exchange.COURSE_EXCHANGE,MqConstants.Key.COURSE_DELETE_KEY,id);
+        // 2.发送删除草稿mq
+        outbox.enqueue(
+                "course:" + id + ":delete",
+                MqConstants.Exchange.COURSE_EXCHANGE,
+                MqConstants.Key.COURSE_DELETE_KEY,
+                id);
     }
 
     @Override
-    public List<CourseSimpleInfoDTO> getSimpleInfoList(CourseSimpleInfoListDTO courseSimpleInfoListDTO) {
-        //1.课程查询条件
+    public List<CourseSimpleInfoDTO> getSimpleInfoList(
+            CourseSimpleInfoListDTO courseSimpleInfoListDTO) {
+        // 1.课程查询条件
         LambdaQueryWrapper<Course> queryWrapper =
                 Wrappers.lambdaQuery(Course.class)
-                        .in(CollUtils.isNotEmpty(courseSimpleInfoListDTO.getThirdCataIds()),
-                                Course::getThirdCateId, courseSimpleInfoListDTO.getThirdCataIds())
-                        .in(CollUtils.isNotEmpty(courseSimpleInfoListDTO.getIds()),
-                                Course::getId, courseSimpleInfoListDTO.getIds());
-        //2.查询课程
+                        .in(
+                                CollUtils.isNotEmpty(courseSimpleInfoListDTO.getThirdCataIds()),
+                                Course::getThirdCateId,
+                                courseSimpleInfoListDTO.getThirdCataIds())
+                        .in(
+                                CollUtils.isNotEmpty(courseSimpleInfoListDTO.getIds()),
+                                Course::getId,
+                                courseSimpleInfoListDTO.getIds());
+        // 2.查询课程
         List<Course> courses = baseMapper.selectList(queryWrapper);
-        //3.课程信息转化
+        // 3.课程信息转化
         return BeanUtils.copyList(courses, CourseSimpleInfoDTO.class);
     }
 
     @Override
     public List<Course> queryByCategoryIdAndLevel(Long categoryId, Integer level) {
-        //1.课程基本信息查询条件
+        // 1.课程基本信息查询条件
         LambdaQueryWrapper<Course> queryWrapper =
                 Wrappers.lambdaQuery(Course.class)
-                        .eq(level == 1, Course::getFirstCateId, categoryId) //一级课程分类
-                        .eq(level == 2, Course::getSecondCateId, categoryId) //二级课程分类
-                        .eq(level == 3, Course::getThirdCateId, categoryId);//三级课程分类
-        //2.查询课程基本信息
+                        .eq(level == 1, Course::getFirstCateId, categoryId) // 一级课程分类
+                        .eq(level == 2, Course::getSecondCateId, categoryId) // 二级课程分类
+                        .eq(level == 3, Course::getThirdCateId, categoryId); // 三级课程分类
+        // 2.查询课程基本信息
         return baseMapper.selectList(queryWrapper);
     }
 
     @Override
     public NameExistVO checkName(String name, Long id) {
-        //1.正式课程同名课程数量
+        // 1.正式课程同名课程数量
         LambdaQueryWrapper<Course> queryWrapper =
                 Wrappers.lambdaQuery(Course.class)
                         .eq(Course::getName, name)
                         .last(id != null, " and id !=" + id);
-        //2.统计数量
+        // 2.统计数量
         Integer num = Math.toIntExact(baseMapper.selectCount(queryWrapper));
         if (num > 0) {
             return NameExistVO.EXISTED;
         }
-        //3.统计草稿课程同名数量
+        // 3.统计草稿课程同名数量
         return courseDraftService.checkName(name, id);
     }
 
     @Override
     public List<Long> queryExists(List<Long> idList, List<Integer> statusList) {
-        //1.指定状态的课程id存在查询条件
+        // 1.指定状态的课程id存在查询条件
         LambdaQueryWrapper<Course> queryWrapper =
                 Wrappers.lambdaQuery(Course.class)
                         .in(Course::getId, idList)
                         .in(Course::getStatus, statusList);
-        //2.根据条件查询课程
+        // 2.根据条件查询课程
         List<Course> courses = baseMapper.selectList(queryWrapper);
         if (CollUtils.isEmpty(courses)) {
             return null;
         }
-        //3.组装数据
-        return courses.stream()
-                .map(Course::getId)
-                .collect(Collectors.toList());
+        // 3.组装数据
+        return courses.stream().map(Course::getId).collect(Collectors.toList());
     }
 
     @Override
     public List<Long> queryCourseIdByName(String name) {
         // 1.查询条件
         LambdaQueryWrapper<Course> queryWrapper =
-                Wrappers.lambdaQuery(Course.class)
-                .like(Course::getName, name);
+                Wrappers.lambdaQuery(Course.class).like(Course::getName, name);
         // 2.查询数据
         List<Course> courses = baseMapper.selectList(queryWrapper);
         // 3.转换出课程id列表
-        return courses.stream()
-                .map(Course::getId)
-                .collect(Collectors.toList());
+        return courses.stream().map(Course::getId).collect(Collectors.toList());
     }
-
 
     @Override
     public CourseAndSectionVO queryCourseAndCatalogById(Long courseId) {
@@ -285,13 +280,13 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         List<LearningRecordDTO> records = lessonDTO.getRecords();
         // 6.2.获取最近学习的记录。由于查询时按照学习时间排序，第一条记录就是最近学习的小节记录
         Long latestSectionId = lessonDTO.getLatestSectionId();
-        if(latestSectionId == null) {
+        if (latestSectionId == null) {
             latestSectionId = records.get(0).getSectionId();
         }
         vo.setLatestSectionId(latestSectionId);
         // 6.3.处理记录为一个map
-        Map<Long, LearningRecordDTO> rMap = records.stream()
-                .collect(Collectors.toMap(LearningRecordDTO::getSectionId, r -> r));
+        Map<Long, LearningRecordDTO> rMap =
+                records.stream().collect(Collectors.toMap(LearningRecordDTO::getSectionId, r -> r));
         // 6.4.填充学习进度到章节中
         for (ChapterVO chapter : vo.getChapters()) {
             for (SectionVO section : chapter.getSections()) {
@@ -314,19 +309,22 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         Map<Long, Integer> teacherIdAndCourseNumMap2 =
                 IdAndNumDTO.toMap(courseDraftMapper.countCourseNumOfTeacher(teacherIds));
         // 1.3.统计老师的出题数量
-        Map<Long, Integer> teacherIdAndSubjectNumMap = examClient.countSubjectNumOfTeacher(teacherIds);
+        Map<Long, Integer> teacherIdAndSubjectNumMap =
+                examClient.countSubjectNumOfTeacher(teacherIds);
 
         // 2.遍历老师id
         List<SubNumAndCourseNumDTO> subNumAndCourseNumDTOS = new ArrayList<>();
         for (Long teacherId : teacherIds) {
-            subNumAndCourseNumDTOS.add(new SubNumAndCourseNumDTO(
-                    //2.1.设置老师id
-                    teacherId,
-                    //2.2.设置老师课程数量
-                    NumberUtils.null2Zero(teacherIdAndCourseNumMap.get(teacherId)) +
-                            NumberUtils.null2Zero(teacherIdAndCourseNumMap2.get(teacherId)),
-                    //2.3.设置老师出题数量
-                    NumberUtils.null2Zero(teacherIdAndSubjectNumMap.get(teacherId))));
+            subNumAndCourseNumDTOS.add(
+                    new SubNumAndCourseNumDTO(
+                            // 2.1.设置老师id
+                            teacherId,
+                            // 2.2.设置老师课程数量
+                            NumberUtils.null2Zero(teacherIdAndCourseNumMap.get(teacherId))
+                                    + NumberUtils.null2Zero(
+                                            teacherIdAndCourseNumMap2.get(teacherId)),
+                            // 2.3.设置老师出题数量
+                            NumberUtils.null2Zero(teacherIdAndSubjectNumMap.get(teacherId))));
         }
         return subNumAndCourseNumDTOS;
     }
@@ -334,26 +332,39 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public int courseFinished() {
-        //1.完结课程查询条件
+        // 1.完结课程查询条件
         LambdaQueryWrapper<Course> queryWrapper =
                 Wrappers.lambdaQuery(Course.class)
                         .le(Course::getPurchaseEndTime, LocalDateTime.now())
-                        .in(Course::getStatus,
-                                List.of(CourseStatus.DOWN_SHELF.getStatus(),
+                        .in(
+                                Course::getStatus,
+                                List.of(
+                                        CourseStatus.DOWN_SHELF.getStatus(),
                                         CourseStatus.SHELF.getStatus()));
 
-        //1.2.查询完结课程
+        // 1.2.查询完结课程
         List<Course> courses = baseMapper.selectList(queryWrapper);
-        //1.3.完结课程判空
+        // 1.3.完结课程判空
         if (CollUtils.isEmpty(courses)) {
             return 0;
         }
-        int changed=0;
-        for(Course course:courses){
-            jdbc.update("INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",course.getId());
-            if(jdbc.update("UPDATE course SET status=? WHERE id=? AND status IN(2,3) AND purchase_end_time<=NOW()",CourseStatus.FINISHED.getStatus(),course.getId())==1){
-                outbox.enqueue("course:"+course.getId()+":expired",MqConstants.Exchange.COURSE_EXCHANGE,MqConstants.Key.COURSE_EXPIRE_KEY,course.getId());
-                courseDraftService.delete(course.getId());changed++;
+        int changed = 0;
+        for (Course course : courses) {
+            jdbc.update(
+                    "INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",
+                    course.getId());
+            if (jdbc.update(
+                            "UPDATE course SET status=? WHERE id=? AND status IN(2,3) AND purchase_end_time<=NOW()",
+                            CourseStatus.FINISHED.getStatus(),
+                            course.getId())
+                    == 1) {
+                outbox.enqueue(
+                        "course:" + course.getId() + ":expired",
+                        MqConstants.Exchange.COURSE_EXCHANGE,
+                        MqConstants.Key.COURSE_EXPIRE_KEY,
+                        course.getId());
+                courseDraftService.delete(course.getId());
+                changed++;
             }
         }
         return changed;
@@ -362,13 +373,11 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Override
     @Cacheable(cacheNames = RedisContants.Formatter.STATISTICS_COURSE_NUM_CATE)
     public Map<Long, Integer> countCourseNumOfCategory() {
-        //1.统计课程分类拥有已上架、已完成的课程数量
-        Map<Long, Integer> nomalCourseNumOfCategory =
-                countNomalCourseNumOfCategory();
-        //2.统计课程分类待上架，已下架的课程分类的数量
-        Map<Long, Integer> draftCourseNumOfCategory =
-                courseDraftService.countCourseNumOfCategory();
-        //3.两组数据聚合
+        // 1.统计课程分类拥有已上架、已完成的课程数量
+        Map<Long, Integer> nomalCourseNumOfCategory = countNomalCourseNumOfCategory();
+        // 2.统计课程分类待上架，已下架的课程分类的数量
+        Map<Long, Integer> draftCourseNumOfCategory = courseDraftService.countCourseNumOfCategory();
+        // 3.两组数据聚合
         return CollUtils.union(nomalCourseNumOfCategory, draftCourseNumOfCategory);
     }
 
@@ -378,29 +387,32 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         // 1.查询条件
         List<Category3PO> category3s = baseMapper.queryCategoryIdWithCourse();
         // 1.1.判空
-        if(CollUtils.isEmpty(category3s)) {
+        if (CollUtils.isEmpty(category3s)) {
             return new ArrayList<>();
         }
         // 2.将课程分类id设置到categoryIdList
         List<Long> categoryIdList = new ArrayList<>();
-        category3s.stream().forEach(category3->{
-            category3.setId(categoryIdList);
-        });
+        category3s.stream()
+                .forEach(
+                        category3 -> {
+                            category3.setId(categoryIdList);
+                        });
         // 2.1.去重，并返回数据
-        return categoryIdList.stream()
-                .distinct()
-                .collect(Collectors.toList());
+        return categoryIdList.stream().distinct().collect(Collectors.toList());
     }
 
     @Override
     public Integer countCourseNumOfCategory(Long categoryId) {
-        //1.课程统计条件
+        // 1.课程统计条件
         LambdaQueryWrapper<Course> queryWrapper =
                 Wrappers.lambdaQuery(Course.class)
-                        .or().eq(Course::getFirstCateId, categoryId)
-                        .or().eq(Course::getSecondCateId, categoryId)
-                        .or().eq(Course::getThirdCateId, categoryId);
-        //2.统计课程数量
+                        .or()
+                        .eq(Course::getFirstCateId, categoryId)
+                        .or()
+                        .eq(Course::getSecondCateId, categoryId)
+                        .or()
+                        .eq(Course::getThirdCateId, categoryId);
+        // 2.统计课程数量
         return Math.toIntExact(baseMapper.selectCount(queryWrapper));
     }
 
@@ -408,7 +420,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     public CourseFullInfoDTO getInfoById(Long id, boolean withCatalogue, boolean withTeachers) {
         // 1.查询课程基本信息
         Course course = baseMapper.selectById(id);
-        if (course == null || course.getDeleted()!=null && course.getDeleted()!=0) {
+        if (course == null || course.getDeleted() != null && course.getDeleted() != 0) {
             throw new BadRequestException(CourseErrorInfo.Msg.COURSE_CHECK_NOT_EXISTS);
         }
         // 2.转换vo
@@ -427,74 +439,73 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
 
     @Override
     public PageDTO<CoursePageVO> queryForPage(CoursePageQuery coursePageQuery) {
-        //1.课程查询条件
+        // 1.课程查询条件
         LambdaQueryWrapper<Course> queryWrapper =
                 SqlWrapperUtils.toLambdaQueryWrapper(coursePageQuery, Course.class);
-        //1.1.课程条件-更新时间
+        // 1.1.课程条件-更新时间
         queryWrapper.between(
                 ObjectUtils.isNotEmpty(coursePageQuery.getBeginTime())
                         && ObjectUtils.isNotEmpty(coursePageQuery.getEndTime()),
                 Course::getUpdateTime,
                 coursePageQuery.getBeginTime(),
                 coursePageQuery.getEndTime());
-        //1.2.课程查询条件-名称
+        // 1.2.课程查询条件-名称
         queryWrapper.like(
                 StringUtils.isNotEmpty(coursePageQuery.getKeyword()),
                 Course::getName,
                 coursePageQuery.getKeyword());
-        //1.3.分页查询数据
+        // 1.3.分页查询数据
         Page<Course> page = page(coursePageQuery.toMpPage(), queryWrapper);
-        //1.4.分页数据判空
+        // 1.4.分页数据判空
         if (CollUtils.isEmpty(page.getRecords())) {
             return PageDTO.empty(page);
         }
-        //2.课程更新人id列表
-        List<Long> updaterList = page
-                .getRecords()
-                .stream()
-                .map(Course::getUpdater)
-                .collect(Collectors.toList());
-        //2.1查询更新人用户信息
+        // 2.课程更新人id列表
+        List<Long> updaterList =
+                page.getRecords().stream().map(Course::getUpdater).collect(Collectors.toList());
+        // 2.1查询更新人用户信息
         List<UserDTO> userDTOS = userClient.queryUserByIds(updaterList);
-        //2.2.转化课程更新人id+name map
+        // 2.2.转化课程更新人id+name map
         Map<Long, String> updaterMap =
-                CollUtils.isEmpty(updaterList) ?
-                        new HashMap<>()
-                        : userDTOS
-                        .stream()
-                        .collect(Collectors.toMap(UserDTO::getId, UserDTO::getName));
-        //3.获取所有课程分类信息
+                CollUtils.isEmpty(updaterList)
+                        ? new HashMap<>()
+                        : userDTOS.stream()
+                                .collect(Collectors.toMap(UserDTO::getId, UserDTO::getName));
+        // 3.获取所有课程分类信息
         List<Category> list = categoryService.list();
-        //3.1.转化课程分类id+name map关系
+        // 3.1.转化课程分类id+name map关系
         Map<Long, String> categoryNameMap =
-                CollUtils.isEmpty(list) ?
-                        new HashMap<>()
+                CollUtils.isEmpty(list)
+                        ? new HashMap<>()
                         : list.stream()
-                        .collect(Collectors.toMap(Category::getId, Category::getName));
-        //4.课程id列表
-        List<Long> courseIdList = page
-                .getRecords()
-                .stream()
-                .map(Course::getId)
-                .collect(Collectors.toList());
-        //4.1.统计每个课程报名人数map关系
+                                .collect(Collectors.toMap(Category::getId, Category::getName));
+        // 4.课程id列表
+        List<Long> courseIdList =
+                page.getRecords().stream().map(Course::getId).collect(Collectors.toList());
+        // 4.1.统计每个课程报名人数map关系
         Map<Long, Integer> peoNumOfCourseMap = tradeClient.countEnrollNumOfCourse(courseIdList);
-        //5.组装数据
-        return PageDTO.of(page, CoursePageVO.class, (course, coursePageVO) -> {
-            //5.1.拼接课程分类名称
-            String categories = StringUtils.format("{}/{}/{}",
-                    categoryNameMap.get(course.getFirstCateId()),
-                    categoryNameMap.get(course.getSecondCateId()),
-                    categoryNameMap.get(course.getThirdCateId()));
-            //5.2.设置课程分类名称
-            coursePageVO.setCategories(categories);
-            //5.3.设置课程更新人姓名
-            coursePageVO.setUpdaterName(updaterMap.get(course.getUpdater()));
-            //5.4.设置课程报名人数
-            coursePageVO.setSold(NumberUtils.null2Zero(peoNumOfCourseMap.get(course.getId())));
-            //5.5.设置课程小节数
-            coursePageVO.setSections(course.getSectionNum());
-        });
+        // 5.组装数据
+        return PageDTO.of(
+                page,
+                CoursePageVO.class,
+                (course, coursePageVO) -> {
+                    // 5.1.拼接课程分类名称
+                    String categories =
+                            StringUtils.format(
+                                    "{}/{}/{}",
+                                    categoryNameMap.get(course.getFirstCateId()),
+                                    categoryNameMap.get(course.getSecondCateId()),
+                                    categoryNameMap.get(course.getThirdCateId()));
+                    // 5.2.设置课程分类名称
+                    coursePageVO.setCategories(categories);
+                    // 5.3.设置课程更新人姓名
+                    coursePageVO.setUpdaterName(updaterMap.get(course.getUpdater()));
+                    // 5.4.设置课程报名人数
+                    coursePageVO.setSold(
+                            NumberUtils.null2Zero(peoNumOfCourseMap.get(course.getId())));
+                    // 5.5.设置课程小节数
+                    coursePageVO.setSections(course.getSectionNum());
+                });
     }
 
     /**
@@ -503,31 +514,34 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
      * @param finishedCourse
      */
 
-
     /**
      * 统计课程分类上架和已完结课程的数量
      *
      * @return
      */
     private Map<Long, Integer> countNomalCourseNumOfCategory() {
-        //1.查询条件
+        // 1.查询条件
         LambdaQueryWrapper<Course> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.in(Course::getStatus,
+        queryWrapper.in(
+                Course::getStatus,
                 Arrays.asList(CourseStatus.SHELF.getStatus(), CourseStatus.FINISHED.getStatus()));
-        //2.查询数据
+        // 2.查询数据
         List<Course> courses = baseMapper.selectList(queryWrapper);
         Map<Long, Integer> cateIdAndNumMap = new HashMap<>();
-        //3.统计每个分类的课程数量
+        // 3.统计每个分类的课程数量
         for (Course course : courses) {
-            //3.1一级分类数量
+            // 3.1一级分类数量
             Integer firstCateNum = cateIdAndNumMap.get(course.getFirstCateId());
-            cateIdAndNumMap.put(course.getFirstCateId(), firstCateNum == null ? 1 : firstCateNum + 1);
-            //3.2二级分类数量
+            cateIdAndNumMap.put(
+                    course.getFirstCateId(), firstCateNum == null ? 1 : firstCateNum + 1);
+            // 3.2二级分类数量
             Integer secondCateNum = cateIdAndNumMap.get(course.getSecondCateId());
-            cateIdAndNumMap.put(course.getSecondCateId(), secondCateNum == null ? 1 : secondCateNum + 1);
-            //3.3三级分类数量够
+            cateIdAndNumMap.put(
+                    course.getSecondCateId(), secondCateNum == null ? 1 : secondCateNum + 1);
+            // 3.3三级分类数量够
             Integer thirdCateNum = cateIdAndNumMap.get(course.getThirdCateId());
-            cateIdAndNumMap.put(course.getThirdCateId(), thirdCateNum == null ? 1 : thirdCateNum + 1);
+            cateIdAndNumMap.put(
+                    course.getThirdCateId(), thirdCateNum == null ? 1 : thirdCateNum + 1);
         }
         return cateIdAndNumMap;
     }

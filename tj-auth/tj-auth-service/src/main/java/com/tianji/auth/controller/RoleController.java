@@ -1,6 +1,5 @@
 package com.tianji.auth.controller;
 
-
 import cn.hutool.core.collection.CollectionUtil;
 import com.tianji.api.dto.auth.RoleDTO;
 import com.tianji.auth.domain.po.Role;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
 
 /**
  * @author 虎哥
@@ -30,7 +28,7 @@ public class RoleController {
 
     @Operation(summary = "查询员工角色列表")
     @GetMapping("/list")
-    public List<RoleDTO> listAllRoles(){
+    public List<RoleDTO> listAllRoles() {
         // 1.查询
         List<Role> list = roleService.list();
         if (CollectionUtil.isEmpty(list)) {
@@ -42,7 +40,7 @@ public class RoleController {
 
     @Operation(summary = "查询员工角色列表")
     @GetMapping
-    public List<RoleDTO> listStaffRoles(){
+    public List<RoleDTO> listStaffRoles() {
         // 1.查询
         List<Role> list = roleService.lambdaQuery().eq(Role::getType, Role.RoleType.CUSTOM).list();
         if (CollectionUtil.isEmpty(list)) {
@@ -54,7 +52,7 @@ public class RoleController {
 
     @Operation(summary = "根据id查询角色")
     @GetMapping("/{id}")
-    public RoleDTO queryRoleById(@PathVariable("id") Long id){
+    public RoleDTO queryRoleById(@PathVariable("id") Long id) {
         // 1.查询
         Role role = roleService.getById(id);
         if (role == null) {
@@ -63,8 +61,6 @@ public class RoleController {
         // 2.数据转换
         return role.toDTO();
     }
-
-
 
     @Operation(summary = "新增角色")
     @PostMapping
@@ -82,8 +78,7 @@ public class RoleController {
     @PutMapping("{id}")
     public void updateRole(
             @RequestBody RoleDTO roleDTO,
-            @Parameter(description = "角色id", example = "1") @PathVariable("id") Long id
-    ) {
+            @Parameter(description = "角色id", example = "1") @PathVariable("id") Long id) {
         // 1.数据转换
         Role role = new Role(roleDTO);
         role.setId(id);
@@ -93,7 +88,8 @@ public class RoleController {
 
     @Operation(summary = "删除角色信息")
     @DeleteMapping("{id}")
-    public void deleteRole(@Parameter(description = "角色id", example = "1") @PathVariable("id") Long id) {
+    public void deleteRole(
+            @Parameter(description = "角色id", example = "1") @PathVariable("id") Long id) {
         roleService.deleteRole(id);
     }
 }

@@ -17,7 +17,8 @@ import org.springframework.stereotype.Service;
  * @since 2022-08-26
  */
 @Service
-public class PayChannelServiceImpl extends ServiceImpl<PayChannelMapper, PayChannel> implements IPayChannelService {
+public class PayChannelServiceImpl extends ServiceImpl<PayChannelMapper, PayChannel>
+        implements IPayChannelService {
 
     @Override
     public Long addPayChannel(PayChannelDTO channelDTO) {

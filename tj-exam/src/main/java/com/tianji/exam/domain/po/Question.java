@@ -93,14 +93,10 @@ public class Question implements Serializable {
     /**
      * 创建人
      */
-
     private Long creater;
 
     /**
      * 更新人
      */
-
     private Long updater;
-
-
 }

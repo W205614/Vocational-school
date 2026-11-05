@@ -15,6 +15,5 @@ import org.springframework.stereotype.Service;
  * @since 2022-06-16
  */
 @Service
-public class AccountRoleServiceImpl extends ServiceImpl<AccountRoleMapper, AccountRole> implements IAccountRoleService {
-
-}
+public class AccountRoleServiceImpl extends ServiceImpl<AccountRoleMapper, AccountRole>
+        implements IAccountRoleService {}

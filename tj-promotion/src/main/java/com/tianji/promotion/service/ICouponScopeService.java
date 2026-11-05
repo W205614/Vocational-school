@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.spring.service.IService;
  * @author 虎哥
  * @since 2026-02-11
  */
-public interface ICouponScopeService extends IService<CouponScope> {
-
-}
+public interface ICouponScopeService extends IService<CouponScope> {}

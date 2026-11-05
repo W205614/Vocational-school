@@ -14,8 +14,10 @@ import lombok.Data;
 public class CourseMediaSaveDTO {
     @Schema(description = "小节id")
     private Long cataId;
+
     @Schema(description = "媒资id")
     private Long mediaId;
+
     @Schema(description = "是否支持试看")
     private Boolean trailer;
 }

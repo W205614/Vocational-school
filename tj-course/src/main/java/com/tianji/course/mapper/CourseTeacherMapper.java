@@ -17,5 +17,4 @@ public interface CourseTeacherMapper extends BaseMapper<CourseTeacher> {
 
     @Delete("delete from course_teacher where course_id=#{courseId}")
     int deleteByCourseId(@Param("courseId") Long courseId);
-
 }

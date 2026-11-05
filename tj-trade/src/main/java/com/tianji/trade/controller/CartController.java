@@ -1,6 +1,5 @@
 package com.tianji.trade.controller;
 
-
 import com.tianji.trade.domain.dto.CartsAddDTO;
 import com.tianji.trade.domain.vo.CartVO;
 import com.tianji.trade.service.ICartService;
@@ -31,25 +30,26 @@ public class CartController {
 
     @Operation(summary = "添加课程到购物车")
     @PostMapping
-    public void addCourse2Cart(@Valid @RequestBody CartsAddDTO cartsAddDTO){
+    public void addCourse2Cart(@Valid @RequestBody CartsAddDTO cartsAddDTO) {
         cartService.addCourse2Cart(cartsAddDTO.getCourseId());
     }
 
     @Operation(summary = "获取购物车中的课程")
     @GetMapping
-    public List<CartVO> getMyCarts(){
+    public List<CartVO> getMyCarts() {
         return cartService.getMyCarts();
     }
 
     @Operation(summary = "删除指定的购物车条目")
     @DeleteMapping("/{id}")
-    public void deleteCartById(@Parameter(description = "购物车条目id") @PathVariable("id") Long id){
+    public void deleteCartById(@Parameter(description = "购物车条目id") @PathVariable("id") Long id) {
         cartService.deleteCartById(id);
     }
 
     @Operation(summary = "批量删除购物车条目")
     @DeleteMapping
-    public void deleteCartById(@Parameter(description = "购物车条目id集合") @RequestParam("ids") List<Long> ids){
+    public void deleteCartById(
+            @Parameter(description = "购物车条目id集合") @RequestParam("ids") List<Long> ids) {
         cartService.deleteCartByIds(ids);
     }
 }

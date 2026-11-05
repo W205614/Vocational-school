@@ -17,11 +17,12 @@ public enum PayChannel {
         this.desc = desc;
     }
 
-    public static String desc(String value){
+    public static String desc(String value) {
         if (StringUtils.isBlank(value)) {
             return "";
         }
-        for(PayChannel channel:values())if(channel.name().equals(value))return channel.getDesc();
+        for (PayChannel channel : values())
+            if (channel.name().equals(value)) return channel.getDesc();
         return "未知支付渠道";
     }
 }

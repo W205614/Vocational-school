@@ -52,7 +52,6 @@ public class CourseContentDraft implements Serializable {
     /**
      * 创建时间
      */
-
     private LocalDateTime createTime;
 
     /**
@@ -73,7 +72,6 @@ public class CourseContentDraft implements Serializable {
     /**
      * 逻辑删除
      */
-//    private Integer deleted;
-
+    //    private Integer deleted;
 
 }

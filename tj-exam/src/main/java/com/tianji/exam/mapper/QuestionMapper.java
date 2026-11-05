@@ -18,5 +18,4 @@ import java.util.List;
 public interface QuestionMapper extends BaseMapper<Question> {
 
     List<IdAndNumDTO> countQuestionOfCreater(@Param("createrIds") List<Long> createrIds);
-
 }

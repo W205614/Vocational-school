@@ -29,5 +29,4 @@ public class PayController {
     public List<PayChannelVO> queryPayChannels() {
         return payService.queryPayChannels();
     }
-
 }

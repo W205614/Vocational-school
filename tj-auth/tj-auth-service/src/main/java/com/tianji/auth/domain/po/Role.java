@@ -31,8 +31,7 @@ public class Role implements Serializable {
     /**
      * 主键
      */
-    @TableId
-    private Long id;
+    @TableId private Long id;
 
     /**
      * 角色代号，例如：admin
@@ -62,14 +61,13 @@ public class Role implements Serializable {
     /**
      * 创建者id
      */
-
     private Long creater;
 
     /**
      * 更新者id
      */
-
     private Long updater;
+
     /**
      * 部门id
      */
@@ -86,7 +84,7 @@ public class Role implements Serializable {
         this.name = dto.getName();
     }
 
-    public RoleDTO toDTO(){
+    public RoleDTO toDTO() {
         RoleDTO dto = new RoleDTO();
         dto.setId(id);
         dto.setCode(code);
@@ -95,12 +93,11 @@ public class Role implements Serializable {
     }
 
     @Getter
-    public enum RoleType{
+    public enum RoleType {
         CONSTANT(0, "固定角色"),
         CUSTOM(1, "自定义角色"),
         ;
-        @EnumValue
-        int value;
+        @EnumValue int value;
         String desc;
 
         RoleType(int value, String desc) {

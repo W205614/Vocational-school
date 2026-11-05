@@ -8,8 +8,10 @@ import lombok.Data;
 public class CategoryBasicDTO {
     @Schema(description = "分类id", example = "1")
     private Long id;
+
     @Schema(description = "分类名称", example = "Java")
     private String name;
+
     @Schema(description = "父分类id", example = "0")
     private Long parentId;
 }

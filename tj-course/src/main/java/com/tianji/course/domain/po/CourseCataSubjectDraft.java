@@ -42,6 +42,4 @@ public class CourseCataSubjectDraft implements Serializable {
     private Long subjectId;
 
     private LocalDateTime createTime;
-
-
 }

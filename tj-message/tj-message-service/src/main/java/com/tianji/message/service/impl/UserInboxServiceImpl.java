@@ -36,7 +36,8 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class UserInboxServiceImpl extends ServiceImpl<UserInboxMapper, UserInbox> implements IUserInboxService {
+public class UserInboxServiceImpl extends ServiceImpl<UserInboxMapper, UserInbox>
+        implements IUserInboxService {
 
     private final MessageProperties properties;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
@@ -66,26 +67,44 @@ public class UserInboxServiceImpl extends ServiceImpl<UserInboxMapper, UserInbox
     @Override
     @Transactional
     public PageDTO<UserInboxDTO> queryUserInBoxesPage(UserInboxQuery query) {
-        Long userId=UserContext.requireUser();LocalDateTime now=LocalDateTime.now();
-        List<PublicNotice> notices=publicNoticeService.lambdaQuery()
-            .gt(PublicNotice::getExpireTime,now).le(PublicNotice::getPushTime,now)
-            .apply("NOT EXISTS(SELECT 1 FROM user_inbox i WHERE i.user_id={0} AND i.public_notice_id=public_notice.id)",userId)
-            .orderByAsc(PublicNotice::getPushTime).last("LIMIT 100").list();
-        if(!notices.isEmpty())saveNoticeListToInbox(notices,userId);
+        Long userId = UserContext.requireUser();
+        LocalDateTime now = LocalDateTime.now();
+        List<PublicNotice> notices =
+                publicNoticeService
+                        .lambdaQuery()
+                        .gt(PublicNotice::getExpireTime, now)
+                        .le(PublicNotice::getPushTime, now)
+                        .apply(
+                                "NOT EXISTS(SELECT 1 FROM user_inbox i WHERE i.user_id={0} AND i.public_notice_id=public_notice.id)",
+                                userId)
+                        .orderByAsc(PublicNotice::getPushTime)
+                        .last("LIMIT 100")
+                        .list();
+        if (!notices.isEmpty()) saveNoticeListToInbox(notices, userId);
         // 5.分页查询收件箱信息并返回
         Page<UserInbox> userInboxPage = query.toMpPage("push_time", false);
-        userInboxPage = lambdaQuery()
-                .eq(UserInbox::getUserId, userId)
-                .gt(UserInbox::getExpireTime,now)
-                .eq(query.getIsRead() != null, UserInbox::getIsRead, query.getIsRead())
-                .eq(query.getType() != null, UserInbox::getType, query.getType())
-                .page(userInboxPage);
+        userInboxPage =
+                lambdaQuery()
+                        .eq(UserInbox::getUserId, userId)
+                        .gt(UserInbox::getExpireTime, now)
+                        .eq(query.getIsRead() != null, UserInbox::getIsRead, query.getIsRead())
+                        .eq(query.getType() != null, UserInbox::getType, query.getType())
+                        .page(userInboxPage);
         return PageDTO.of(userInboxPage, UserInboxDTO.class);
     }
 
     private void saveNoticeListToInbox(List<PublicNotice> notices, Long userId) {
-        for(PublicNotice notice:notices)jdbc.update("INSERT IGNORE INTO user_inbox(id,user_id,type,title,content,push_time,expire_time,public_notice_id) VALUES(?,?,?,?,?,?,?,?)",com.baomidou.mybatisplus.core.toolkit.IdWorker.getId(),userId,notice.getType(),notice.getTitle(),notice.getContent(),notice.getPushTime(),notice.getExpireTime(),notice.getId());
-
+        for (PublicNotice notice : notices)
+            jdbc.update(
+                    "INSERT IGNORE INTO user_inbox(id,user_id,type,title,content,push_time,expire_time,public_notice_id) VALUES(?,?,?,?,?,?,?,?)",
+                    com.baomidou.mybatisplus.core.toolkit.IdWorker.getId(),
+                    userId,
+                    notice.getType(),
+                    notice.getTitle(),
+                    notice.getContent(),
+                    notice.getPushTime(),
+                    notice.getExpireTime(),
+                    notice.getId());
     }
 
     @Override

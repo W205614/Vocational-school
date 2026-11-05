@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 
 public class SPELUtils {
 
-
     /**
      * 将模板中的表达式替换成args参数中的值
      *
@@ -29,27 +28,30 @@ public class SPELUtils {
      */
     public static String parse(String formatter, String[] paraNameArr, Object[] args) {
         if (StringUtils.isNotBlank(formatter) && formatter.indexOf("#") > -1) {
-            //正则表达式 #{user.id},
+            // 正则表达式 #{user.id},
             Pattern pattern = Pattern.compile("(\\#\\{([^\\}]*)\\})");
             Matcher matcher = pattern.matcher(formatter);
-            //将正则表达式中#{}的值取出放在keys中
+            // 将正则表达式中#{}的值取出放在keys中
             List<String> keys = new ArrayList<>();
             while (matcher.find()) {
                 keys.add(matcher.group());
             }
             if (!CollUtils.isEmpty(keys)) {
-                //SPEL表达式对象
+                // SPEL表达式对象
                 ExpressionParser parser = new SpelExpressionParser();
                 StandardEvaluationContext context = new StandardEvaluationContext();
-                //将名称和value一一对应
+                // 将名称和value一一对应
                 for (int i = 0; i < paraNameArr.length; i++) {
                     context.setVariable(paraNameArr[i], args[i]);
                 }
 
                 for (String tmp : keys) {
-                    formatter = formatter.replace(tmp,
-                            //通过SPEL表达式获取对应的值，然后再替换掉原有值
-                            parser.parseExpression("#" + tmp.substring(2, tmp.length() - 1)).getValue(context, String.class));
+                    formatter =
+                            formatter.replace(
+                                    tmp,
+                                    // 通过SPEL表达式获取对应的值，然后再替换掉原有值
+                                    parser.parseExpression("#" + tmp.substring(2, tmp.length() - 1))
+                                            .getValue(context, String.class));
                 }
                 return formatter;
             }
@@ -61,11 +63,12 @@ public class SPELUtils {
     public static class User {
         private Long id = 1L;
     }
+
     public static void main(String[] args) {
 
-        Object [] users = new Object[1];
+        Object[] users = new Object[1];
         users[0] = new User();
 
-        System.out.println(parse("tj:#{user.id}", new String[]{"user"}, users));
+        System.out.println(parse("tj:#{user.id}", new String[] {"user"}, users));
     }
 }

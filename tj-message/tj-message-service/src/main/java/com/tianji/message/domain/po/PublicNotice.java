@@ -36,6 +36,7 @@ public class PublicNotice implements Serializable {
      * 公告类型
      */
     private Integer type;
+
     /**
      * 公告标题
      */
@@ -61,6 +62,4 @@ public class PublicNotice implements Serializable {
      * 通知失效时间
      */
     private LocalDateTime expireTime;
-
-
 }

@@ -8,6 +8,7 @@ import lombok.Data;
 public class InterestCategoryVO {
     @Schema(description = "分类id", example = "1")
     private Long id;
+
     @Schema(description = "分类名称", example = "Java")
     private String name;
 }

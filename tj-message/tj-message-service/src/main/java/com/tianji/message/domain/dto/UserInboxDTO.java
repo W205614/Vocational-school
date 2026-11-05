@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @Schema(description = "用户收件箱消息")
-public class UserInboxDTO{
+public class UserInboxDTO {
 
     @Schema(description = "收件箱消息id")
     private Long id;

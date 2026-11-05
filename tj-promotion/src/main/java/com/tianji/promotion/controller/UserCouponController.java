@@ -1,6 +1,5 @@
 package com.tianji.promotion.controller;
 
-
 import com.tianji.api.dto.promotion.CouponDiscountDTO;
 import com.tianji.api.dto.promotion.OrderCouponDTO;
 import com.tianji.api.dto.promotion.OrderCourseDTO;
@@ -36,22 +35,40 @@ public class UserCouponController {
     private final IDiscountService discountService;
 
     @PostMapping("/quote")
-    public com.tianji.api.dto.promotion.CouponQuoteDTO quote(@RequestBody List<OrderCourseDTO> courses,
-            @RequestParam(value="couponIds",required=false) List<Long> ids) {
-        return discountService.quote(courses,ids);
+    public com.tianji.api.dto.promotion.CouponQuoteDTO quote(
+            @RequestBody List<OrderCourseDTO> courses,
+            @RequestParam(value = "couponIds", required = false) List<Long> ids) {
+        return discountService.quote(courses, ids);
     }
+
     private final com.tianji.common.autoconfigure.reliability.OperationStore operations;
 
     @Operation(summary = "领取优惠卷接口")
     @PostMapping("/{couponId}/receive")
-    public org.springframework.http.ResponseEntity<?> receiveCoupon(@PathVariable("couponId") Long couponId,@RequestHeader("Idempotency-Key") String key) {
-        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"COUPON_CLAIM",key,new com.tianji.promotion.service.impl.CouponClaimService.Request(couponId,null)));
+    public org.springframework.http.ResponseEntity<?> receiveCoupon(
+            @PathVariable("couponId") Long couponId, @RequestHeader("Idempotency-Key") String key) {
+        return org.springframework.http.ResponseEntity.accepted()
+                .body(
+                        operations.submit(
+                                com.tianji.common.utils.UserContext.requireUser(),
+                                "COUPON_CLAIM",
+                                key,
+                                new com.tianji.promotion.service.impl.CouponClaimService.Request(
+                                        couponId, null)));
     }
 
     @Operation(summary = "兑换码兑换优惠券接口")
     @PostMapping("/{code}/exchange")
-    public org.springframework.http.ResponseEntity<?> exchangeCoupon(@PathVariable("code") String code,@RequestHeader("Idempotency-Key") String key) {
-        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"COUPON_CLAIM",key,new com.tianji.promotion.service.impl.CouponClaimService.Request(null,code)));
+    public org.springframework.http.ResponseEntity<?> exchangeCoupon(
+            @PathVariable("code") String code, @RequestHeader("Idempotency-Key") String key) {
+        return org.springframework.http.ResponseEntity.accepted()
+                .body(
+                        operations.submit(
+                                com.tianji.common.utils.UserContext.requireUser(),
+                                "COUPON_CLAIM",
+                                key,
+                                new com.tianji.promotion.service.impl.CouponClaimService.Request(
+                                        null, code)));
     }
 
     @Operation(summary = "分页查询我的优惠券")
@@ -62,26 +79,32 @@ public class UserCouponController {
 
     @Operation(summary = "查询我的优惠券可用方案")
     @PostMapping("/available")
-    public List<CouponDiscountDTO> findDiscountSolution(@RequestBody List<OrderCourseDTO> orderCourses) {
+    public List<CouponDiscountDTO> findDiscountSolution(
+            @RequestBody List<OrderCourseDTO> orderCourses) {
         return discountService.findDiscountSolution(orderCourses);
     }
 
     @Operation(summary = "根据券方案计算订单优惠明细")
     @PostMapping("/discount")
-    public CouponDiscountDTO queryDiscountDetailByOrder(@RequestBody OrderCouponDTO orderCouponDTO){
+    public CouponDiscountDTO queryDiscountDetailByOrder(
+            @RequestBody OrderCouponDTO orderCouponDTO) {
         return discountService.queryDiscountDetailByOrder(orderCouponDTO);
     }
 
     @Operation(summary = "核销指定优惠券")
     @PutMapping("/use")
-    public void writeOffCoupon(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+    public void writeOffCoupon(
+            @Parameter(description = "用户优惠券id集合") @RequestParam("couponIds")
+                    List<Long> userCouponIds) {
         com.tianji.common.utils.InternalAuth.requireService();
         userCouponService.writeOffCoupon(userCouponIds);
     }
 
     @Operation(summary = "退还指定优惠券")
     @PutMapping("/refund")
-    public void refundCoupon(@Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+    public void refundCoupon(
+            @Parameter(description = "用户优惠券id集合") @RequestParam("couponIds")
+                    List<Long> userCouponIds) {
         com.tianji.common.utils.InternalAuth.requireService();
         userCouponService.refundCoupon(userCouponIds);
     }
@@ -89,7 +112,8 @@ public class UserCouponController {
     @Operation(summary = "分页查询我的优惠券接口")
     @GetMapping("/rules")
     public List<String> queryDiscountRules(
-            @Parameter(description = "用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+            @Parameter(description = "用户优惠券id集合") @RequestParam("couponIds")
+                    List<Long> userCouponIds) {
         return userCouponService.queryDiscountRules(userCouponIds);
     }
 }

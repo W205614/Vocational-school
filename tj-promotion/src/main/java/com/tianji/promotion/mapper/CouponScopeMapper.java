@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2026-02-11
  */
-public interface CouponScopeMapper extends BaseMapper<CouponScope> {
-
-}
+public interface CouponScopeMapper extends BaseMapper<CouponScope> {}

@@ -1,4 +1,5 @@
 package com.tianji.learning.service.impl;
+
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.tianji.api.client.course.CourseClient;
@@ -20,7 +21,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper,LearningRecord> implements ILearningRecordService {
+public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper, LearningRecord>
+        implements ILearningRecordService {
     private final ILearningLessonService lessonService;
     private final CourseClient courseClient;
     private final LearningRecordDelayTaskHandler taskHandler;
@@ -28,54 +30,128 @@ public class LearningRecordServiceImpl extends ServiceImpl<LearningRecordMapper,
     private final PlatformTransactionManager manager;
     private final LearningEntitlementService entitlements;
     private final LearningMilestoneService milestones;
+
     @org.springframework.beans.factory.annotation.Qualifier("learningClock")
     private final java.time.Clock clock;
+
     @org.springframework.beans.factory.annotation.Autowired
-    public LearningRecordServiceImpl(ILearningLessonService lessonService,CourseClient courseClient,LearningRecordDelayTaskHandler taskHandler,JdbcTemplate jdbc,PlatformTransactionManager manager,LearningEntitlementService entitlements,LearningMilestoneService milestones,@org.springframework.beans.factory.annotation.Qualifier("learningClock") java.time.Clock clock) {
-        this.lessonService=lessonService;this.courseClient=courseClient;this.taskHandler=taskHandler;this.jdbc=jdbc;this.manager=manager;this.entitlements=entitlements;this.milestones=milestones;this.clock=clock;
+    public LearningRecordServiceImpl(
+            ILearningLessonService lessonService,
+            CourseClient courseClient,
+            LearningRecordDelayTaskHandler taskHandler,
+            JdbcTemplate jdbc,
+            PlatformTransactionManager manager,
+            LearningEntitlementService entitlements,
+            LearningMilestoneService milestones,
+            @org.springframework.beans.factory.annotation.Qualifier("learningClock")
+                    java.time.Clock clock) {
+        this.lessonService = lessonService;
+        this.courseClient = courseClient;
+        this.taskHandler = taskHandler;
+        this.jdbc = jdbc;
+        this.manager = manager;
+        this.entitlements = entitlements;
+        this.milestones = milestones;
+        this.clock = clock;
     }
-    public LearningRecordServiceImpl(ILearningLessonService lessonService,CourseClient courseClient,LearningRecordDelayTaskHandler taskHandler,JdbcTemplate jdbc,PlatformTransactionManager manager,LearningEntitlementService entitlements) {
-        this(lessonService,courseClient,taskHandler,jdbc,manager,entitlements,null,java.time.Clock.system(java.time.ZoneId.of("Asia/Shanghai")));
+
+    public LearningRecordServiceImpl(
+            ILearningLessonService lessonService,
+            CourseClient courseClient,
+            LearningRecordDelayTaskHandler taskHandler,
+            JdbcTemplate jdbc,
+            PlatformTransactionManager manager,
+            LearningEntitlementService entitlements) {
+        this(
+                lessonService,
+                courseClient,
+                taskHandler,
+                jdbc,
+                manager,
+                entitlements,
+                null,
+                java.time.Clock.system(java.time.ZoneId.of("Asia/Shanghai")));
     }
-    @Override public LearningLessonDTO queryLearningRecordByCourse(Long courseId) {
-        long user=UserContext.requireUser();
-        LearningLesson lesson=lessonService.queryByUserIdAndCourseId(user,courseId);
-        if(lesson==null) return null;
-        LearningLessonDTO dto=new LearningLessonDTO();dto.setId(lesson.getId());dto.setLatestSectionId(lesson.getLatestSectionId());
+
+    @Override
+    public LearningLessonDTO queryLearningRecordByCourse(Long courseId) {
+        long user = UserContext.requireUser();
+        LearningLesson lesson = lessonService.queryByUserIdAndCourseId(user, courseId);
+        if (lesson == null) return null;
+        LearningLessonDTO dto = new LearningLessonDTO();
+        dto.setId(lesson.getId());
+        dto.setLatestSectionId(lesson.getLatestSectionId());
         // Retained progress is history; only current order-detail rights authorize
         // further learning. Report the same expiry facts as the learning list.
-        var right=entitlements.summaries(user,List.of(courseId)).get(courseId);
-        dto.setStatus(right==null?3:lesson.getStatus()==com.tianji.learning.enums.LessonStatus.EXPIRED
-                ?right.lastActiveStatus():lesson.getStatus().getValue());
-        dto.setExpireTime(right==null?null:right.expiresAt());
+        var right = entitlements.summaries(user, List.of(courseId)).get(courseId);
+        dto.setStatus(
+                right == null
+                        ? 3
+                        : lesson.getStatus() == com.tianji.learning.enums.LessonStatus.EXPIRED
+                                ? right.lastActiveStatus()
+                                : lesson.getStatus().getValue());
+        dto.setExpireTime(right == null ? null : right.expiresAt());
         dto.setLearnedSections(lesson.getLearnedSections());
-        dto.setRecords(BeanUtils.copyList(lambdaQuery().eq(LearningRecord::getLessonId,lesson.getId()).list(),LearningRecordDTO.class));
+        dto.setRecords(
+                BeanUtils.copyList(
+                        lambdaQuery().eq(LearningRecord::getLessonId, lesson.getId()).list(),
+                        LearningRecordDTO.class));
         return dto;
     }
-    @Override public void addLearningRecord(LearningRecordFormDTO form) {
-        long user=UserContext.requireUser();
-        if(form.getSectionType()!=SectionType.VIDEO) throw new BadRequestException("考试完成由评分结果更新");
-        LearningLesson lesson=lessonService.getById(form.getLessonId());
-        if(lesson==null || !Objects.equals(lesson.getUserId(),user)) throw new BadRequestException("课表不存在");
+
+    @Override
+    public void addLearningRecord(LearningRecordFormDTO form) {
+        long user = UserContext.requireUser();
+        if (form.getSectionType() != SectionType.VIDEO)
+            throw new BadRequestException("考试完成由评分结果更新");
+        LearningLesson lesson = lessonService.getById(form.getLessonId());
+        if (lesson == null || !Objects.equals(lesson.getUserId(), user))
+            throw new BadRequestException("课表不存在");
         // Remote metadata is fetched before taking a local database lock.
-        var section=courseClient.sectionInfo(form.getSectionId());
-        var course=courseClient.getCourseInfoById(lesson.getCourseId(),false,false);
-        if(section==null || !Integer.valueOf(2).equals(section.getType()) || !Objects.equals(section.getCourseId(),lesson.getCourseId()) || course==null) throw new BadRequestException("视频小节不属于该课程");
-        Integer duration=section.getMediaDuration(),moment=form.getMoment();
-        if(duration==null || duration<=0 || moment==null || moment<0 || moment>duration) throw new BadRequestException("播放进度或视频时长无效");
-        new TransactionTemplate(manager).executeWithoutResult(tx -> {
-            if(entitlements.require(user,lesson.getCourseId())!=lesson.getId()) throw new BadRequestException("课表权益来源不一致");
-            var locked=jdbc.queryForList("SELECT * FROM learning_lesson WHERE id=? AND user_id=? FOR UPDATE",lesson.getId(),user);
-            if(locked.isEmpty()) throw new BadRequestException("课程权益已失效");
-            var rows=jdbc.queryForList("SELECT id,finished FROM learning_record WHERE lesson_id=? AND section_id=?",lesson.getId(),form.getSectionId());
-            long recordId;
-            if(rows.isEmpty()) {
-                recordId=IdWorker.getId();
-                jdbc.update("INSERT INTO learning_record(id,lesson_id,section_id,user_id,moment,finished) VALUES(?,?,?,?,0,0)",recordId,lesson.getId(),form.getSectionId(),user);
-            } else recordId=((Number)rows.getFirst().get("id")).longValue();
-            LearningRecord record=new LearningRecord().setId(recordId).setLessonId(lesson.getId()).setSectionId(form.getSectionId()).setMoment(moment);
-            taskHandler.addLearningRecordTask(record);
-            // Position is resume history only. Completion belongs to server playback accounting.
-        });
+        var section = courseClient.sectionInfo(form.getSectionId());
+        var course = courseClient.getCourseInfoById(lesson.getCourseId(), false, false);
+        if (section == null
+                || !Integer.valueOf(2).equals(section.getType())
+                || !Objects.equals(section.getCourseId(), lesson.getCourseId())
+                || course == null) throw new BadRequestException("视频小节不属于该课程");
+        Integer duration = section.getMediaDuration(), moment = form.getMoment();
+        if (duration == null || duration <= 0 || moment == null || moment < 0 || moment > duration)
+            throw new BadRequestException("播放进度或视频时长无效");
+        new TransactionTemplate(manager)
+                .executeWithoutResult(
+                        tx -> {
+                            if (entitlements.require(user, lesson.getCourseId()) != lesson.getId())
+                                throw new BadRequestException("课表权益来源不一致");
+                            var locked =
+                                    jdbc.queryForList(
+                                            "SELECT * FROM learning_lesson WHERE id=? AND user_id=? FOR UPDATE",
+                                            lesson.getId(),
+                                            user);
+                            if (locked.isEmpty()) throw new BadRequestException("课程权益已失效");
+                            var rows =
+                                    jdbc.queryForList(
+                                            "SELECT id,finished FROM learning_record WHERE lesson_id=? AND section_id=?",
+                                            lesson.getId(),
+                                            form.getSectionId());
+                            long recordId;
+                            if (rows.isEmpty()) {
+                                recordId = IdWorker.getId();
+                                jdbc.update(
+                                        "INSERT INTO learning_record(id,lesson_id,section_id,user_id,moment,finished) VALUES(?,?,?,?,0,0)",
+                                        recordId,
+                                        lesson.getId(),
+                                        form.getSectionId(),
+                                        user);
+                            } else recordId = ((Number) rows.getFirst().get("id")).longValue();
+                            LearningRecord record =
+                                    new LearningRecord()
+                                            .setId(recordId)
+                                            .setLessonId(lesson.getId())
+                                            .setSectionId(form.getSectionId())
+                                            .setMoment(moment);
+                            taskHandler.addLearningRecordTask(record);
+                            // Position is resume history only. Completion belongs to server
+                            // playback accounting.
+                        });
     }
 }

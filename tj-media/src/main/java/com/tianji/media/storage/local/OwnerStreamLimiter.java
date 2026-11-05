@@ -28,7 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 @Slf4j
 public class OwnerStreamLimiter implements AutoCloseable {
-    private static final DefaultRedisScript<Long> ACQUIRE = new DefaultRedisScript<>("""
+    private static final DefaultRedisScript<Long> ACQUIRE =
+            new DefaultRedisScript<>(
+                    """
         local clock=redis.call('TIME')
         local now=tonumber(clock[1])*1000+math.floor(tonumber(clock[2])/1000)
         redis.call('ZREMRANGEBYSCORE',KEYS[1],'-inf',now)
@@ -36,8 +38,11 @@ public class OwnerStreamLimiter implements AutoCloseable {
         redis.call('ZADD',KEYS[1],now+tonumber(ARGV[2]),ARGV[3])
         redis.call('PEXPIRE',KEYS[1],ARGV[2])
         return 1
-        """, Long.class);
-    private static final DefaultRedisScript<Long> RENEW = new DefaultRedisScript<>("""
+        """,
+                    Long.class);
+    private static final DefaultRedisScript<Long> RENEW =
+            new DefaultRedisScript<>(
+                    """
         local clock=redis.call('TIME')
         local now=tonumber(clock[1])*1000+math.floor(tonumber(clock[2])/1000)
         local expires=redis.call('ZSCORE',KEYS[1],ARGV[1])
@@ -45,48 +50,84 @@ public class OwnerStreamLimiter implements AutoCloseable {
         redis.call('ZADD',KEYS[1],now+tonumber(ARGV[2]),ARGV[1])
         redis.call('PEXPIRE',KEYS[1],ARGV[2])
         return 1
-        """, Long.class);
+        """,
+                    Long.class);
 
     private final StringRedisTemplate redis;
     private final int maximum;
     private final long leaseMillis;
     private final ScheduledExecutorService renewal;
-    private final ConcurrentHashMap<String,LeasedInputStream> active = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, LeasedInputStream> active = new ConcurrentHashMap<>();
 
     @Autowired
-    public OwnerStreamLimiter(StringRedisTemplate redis, @Value("${tj.media.streams-per-owner:2}") int maximum) {
-        this(redis, maximum, 60_000, 10_000, Executors.newSingleThreadScheduledExecutor(task -> {
-            var thread = new Thread(task, "media-stream-leases");
-            thread.setDaemon(true);
-            return thread;
-        }));
+    public OwnerStreamLimiter(
+            StringRedisTemplate redis, @Value("${tj.media.streams-per-owner:2}") int maximum) {
+        this(
+                redis,
+                maximum,
+                60_000,
+                10_000,
+                Executors.newSingleThreadScheduledExecutor(
+                        task -> {
+                            var thread = new Thread(task, "media-stream-leases");
+                            thread.setDaemon(true);
+                            return thread;
+                        }));
     }
 
-    OwnerStreamLimiter(StringRedisTemplate redis, int maximum, long leaseMillis, long renewalMillis,
-                       ScheduledExecutorService renewal) {
+    OwnerStreamLimiter(
+            StringRedisTemplate redis,
+            int maximum,
+            long leaseMillis,
+            long renewalMillis,
+            ScheduledExecutorService renewal) {
         if (maximum < 1 || leaseMillis < 1 || renewalMillis < 1 || renewalMillis >= leaseMillis) {
-            throw new IllegalArgumentException("Positive owner limit and renewal shorter than lease required");
+            throw new IllegalArgumentException(
+                    "Positive owner limit and renewal shorter than lease required");
         }
         this.redis = redis;
         this.maximum = maximum;
         this.leaseMillis = leaseMillis;
         this.renewal = renewal;
-        renewal.scheduleWithFixedDelay(this::renew, renewalMillis, renewalMillis, TimeUnit.MILLISECONDS);
+        renewal.scheduleWithFixedDelay(
+                this::renew, renewalMillis, renewalMillis, TimeUnit.MILLISECONDS);
     }
 
     public Resource wrap(Resource source, long owner) {
         return new AbstractResource() {
-            @Override public String getDescription() { return source.getDescription(); }
-            @Override public String getFilename() { return source.getFilename(); }
-            @Override public long contentLength() throws IOException { return source.contentLength(); }
-            @Override public long lastModified() throws IOException { return source.lastModified(); }
-            @Override public InputStream getInputStream() throws IOException {
+            @Override
+            public String getDescription() {
+                return source.getDescription();
+            }
+
+            @Override
+            public String getFilename() {
+                return source.getFilename();
+            }
+
+            @Override
+            public long contentLength() throws IOException {
+                return source.contentLength();
+            }
+
+            @Override
+            public long lastModified() throws IOException {
+                return source.lastModified();
+            }
+
+            @Override
+            public InputStream getInputStream() throws IOException {
                 String key = "media:streams:owner:" + owner, token = UUID.randomUUID().toString();
                 long started = System.nanoTime();
                 Long accepted;
                 try {
-                    accepted = redis.execute(ACQUIRE, List.of(key), Integer.toString(maximum),
-                            Long.toString(leaseMillis), token);
+                    accepted =
+                            redis.execute(
+                                    ACQUIRE,
+                                    List.of(key),
+                                    Integer.toString(maximum),
+                                    Long.toString(leaseMillis),
+                                    token);
                 } catch (DataAccessException error) {
                     throw new ServiceUnavailableException("视频播放连接额度暂时无法核验，请稍后重试");
                 }
@@ -113,9 +154,16 @@ public class OwnerStreamLimiter implements AutoCloseable {
             long started = System.nanoTime();
             Long renewed;
             try {
-                renewed = redis.execute(RENEW, List.of(stream.key), stream.token, Long.toString(leaseMillis));
+                renewed =
+                        redis.execute(
+                                RENEW,
+                                List.of(stream.key),
+                                stream.token,
+                                Long.toString(leaseMillis));
             } catch (DataAccessException error) {
-                log.warn("Media stream lease could not be renewed: {}", error.getClass().getSimpleName());
+                log.warn(
+                        "Media stream lease could not be renewed: {}",
+                        error.getClass().getSimpleName());
                 stream.abort();
                 continue;
             }
@@ -123,7 +171,8 @@ public class OwnerStreamLimiter implements AutoCloseable {
                 log.warn("Media stream lease was lost; closing its source");
                 stream.abort();
             } else {
-                // Start before the Redis round trip so a delayed response cannot extend a local lease.
+                // Start before the Redis round trip so a delayed response cannot extend a local
+                // lease.
                 stream.deadline = started + TimeUnit.MILLISECONDS.toNanos(leaseMillis);
             }
         }
@@ -133,12 +182,15 @@ public class OwnerStreamLimiter implements AutoCloseable {
         try {
             redis.opsForZSet().remove(key, token);
         } catch (DataAccessException error) {
-            log.warn("Media stream permit awaits lease expiry: {}", error.getClass().getSimpleName());
+            log.warn(
+                    "Media stream permit awaits lease expiry: {}",
+                    error.getClass().getSimpleName());
         }
     }
 
     @PreDestroy
-    @Override public void close() {
+    @Override
+    public void close() {
         renewal.shutdownNow();
         active.values().forEach(LeasedInputStream::abort);
     }
@@ -162,31 +214,39 @@ public class OwnerStreamLimiter implements AutoCloseable {
             }
         }
 
-        @Override public int read() throws IOException {
+        @Override
+        public int read() throws IOException {
             requireActive();
             int value = in.read();
             requireActive();
             return value;
         }
 
-        @Override public int read(byte[] bytes, int offset, int length) throws IOException {
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
             requireActive();
             int count = in.read(bytes, offset, length);
             requireActive();
             return count;
         }
 
-        @Override public long skip(long count) throws IOException {
+        @Override
+        public long skip(long count) throws IOException {
             requireActive();
             long skipped = in.skip(count);
             requireActive();
             return skipped;
         }
 
-        @Override public void close() throws IOException {
+        @Override
+        public void close() throws IOException {
             if (closed.compareAndSet(false, true)) {
                 active.remove(token, this);
-                try { super.close(); } finally { release(key, token); }
+                try {
+                    super.close();
+                } finally {
+                    release(key, token);
+                }
             }
         }
 
@@ -194,7 +254,9 @@ public class OwnerStreamLimiter implements AutoCloseable {
             try {
                 close();
             } catch (IOException error) {
-                log.warn("Closing a media stream source failed: {}", error.getClass().getSimpleName());
+                log.warn(
+                        "Closing a media stream source failed: {}",
+                        error.getClass().getSimpleName());
             }
         }
     }

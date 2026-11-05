@@ -8,12 +8,12 @@
 
 网关只开放以下固定入口，内部用户服务仍要求服务身份：
 
-| 接口 | 输入与行为 |
-| --- | --- |
-| `GET /api/v2/public/accounts/privacy` | 当前规则版本、运营方政策地址、自助服务开关和通知模式 |
+| 接口                                              | 输入与行为                                                                                          |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `GET /api/v2/public/accounts/privacy`             | 当前规则版本、运营方政策地址、自助服务开关和通知模式                                                |
 | `POST /api/v2/public/accounts/verification-codes` | `{phone,purpose}`，purpose 为 `REGISTER` 或 `RECOVER`；202 表示持久通知已受理，不能解释为短信已送达 |
-| `POST /api/v2/public/accounts/registration` | `{phone,code,password,policyVersion,consent}`；验证码单次有效，必须接受当前规则版本 |
-| `POST /api/v2/public/accounts/password-recovery` | `{phone,code,newPassword}`；只更新可用学生账户，不恢复被禁用或注销的账户，也不签发登录会话 |
+| `POST /api/v2/public/accounts/registration`       | `{phone,code,password,policyVersion,consent}`；验证码单次有效，必须接受当前规则版本                 |
+| `POST /api/v2/public/accounts/password-recovery`  | `{phone,code,newPassword}`；只更新可用学生账户，不恢复被禁用或注销的账户，也不签发登录会话          |
 
 配置位于 user 模块：
 

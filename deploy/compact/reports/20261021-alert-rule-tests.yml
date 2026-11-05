@@ -13,9 +13,9 @@ tests:
       - eval_time: 30s
         alertname: FailedDurableWork
         exp_alerts:
-          - exp_labels: {job: trade, severity: warning}
+          - exp_labels: { job: trade, severity: warning }
             exp_annotations:
-              summary: "Durable work requires investigation or replay"
+              summary: 'Durable work requires investigation or replay'
 
   - name: resolved retry-exhausted operation clears its alert
     interval: 15s
@@ -26,9 +26,9 @@ tests:
       - eval_time: 30s
         alertname: FailedDurableWork
         exp_alerts:
-          - exp_labels: {job: trade, severity: warning}
+          - exp_labels: { job: trade, severity: warning }
             exp_annotations:
-              summary: "Durable work requires investigation or replay"
+              summary: 'Durable work requires investigation or replay'
       - eval_time: 1m
         alertname: FailedDurableWork
         exp_alerts: []
@@ -61,6 +61,6 @@ tests:
       - eval_time: 2m30s
         alertname: ReliabilityMetricsStale
         exp_alerts:
-          - exp_labels: {job: trade, severity: warning}
+          - exp_labels: { job: trade, severity: warning }
             exp_annotations:
-              summary: "Reliability database metrics have not refreshed successfully"
+              summary: 'Reliability database metrics have not refreshed successfully'

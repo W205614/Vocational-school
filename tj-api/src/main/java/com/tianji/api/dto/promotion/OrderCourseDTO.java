@@ -10,8 +10,10 @@ import lombok.experimental.Accessors;
 public class OrderCourseDTO {
     @Schema(description = "课id")
     private Long id;
+
     @Schema(description = "课程的三级分类id")
     private Long cateId;
+
     @Schema(description = "课程价格")
     private Integer price;
 }

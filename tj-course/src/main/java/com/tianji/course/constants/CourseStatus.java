@@ -21,14 +21,14 @@ public enum CourseStatus {
 
     public static String desc(Integer status) {
         for (CourseStatus courseStatus : values()) {
-            if (java.util.Objects.equals(courseStatus.getStatus(),status)) {
+            if (java.util.Objects.equals(courseStatus.getStatus(), status)) {
                 return courseStatus.getDesc();
             }
         }
         return null;
     }
 
-    public boolean equals(Integer status){
-        return java.util.Objects.equals(this.status,status);
+    public boolean equals(Integer status) {
+        return java.util.Objects.equals(this.status, status);
     }
 }

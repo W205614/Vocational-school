@@ -1,6 +1,5 @@
 package com.tianji.auth.controller;
 
-
 import cn.hutool.core.collection.CollectionUtil;
 import com.tianji.auth.domain.dto.MenuDTO;
 import com.tianji.auth.domain.po.Menu;
@@ -42,7 +41,7 @@ public class MenuController {
     @GetMapping("/parent/{pid}")
     @Operation(summary = "根据父菜单id查询子菜单")
     public List<MenuOptionVO> listMenusByParent(
-            @Parameter(description = "父菜单id", example = "0") @PathVariable("pid") Long pid){
+            @Parameter(description = "父菜单id", example = "0") @PathVariable("pid") Long pid) {
         // 1.根据父id查询
         List<Menu> list = menuService.lambdaQuery().eq(Menu::getParentId, pid).list();
         // 2.非空判断
@@ -55,7 +54,8 @@ public class MenuController {
 
     @GetMapping("{id}")
     @Operation(summary = "根据id查询菜单")
-    public MenuOptionVO getMenuById(@Parameter(description = "菜单id", example = "1") @PathVariable("id") Long id) {
+    public MenuOptionVO getMenuById(
+            @Parameter(description = "菜单id", example = "1") @PathVariable("id") Long id) {
         Menu menu = menuService.getById(id);
         if (menu == null) {
             return null;
@@ -69,7 +69,7 @@ public class MenuController {
      */
     @GetMapping
     @Operation(summary = "查询菜单，按照多级菜单组成树结构")
-    public List<MenuOptionVO> listMenuTree(){
+    public List<MenuOptionVO> listMenuTree() {
         // 1.查询所有菜单
         List<Menu> menus = menuService.list();
         return convert2MenuDTOs(menus);
@@ -80,9 +80,10 @@ public class MenuController {
             return Collections.emptyList();
         }
         // 2.按照父菜单id分组
-        Map<Long, List<MenuOptionVO>> menuMap = menus.stream()
-                .map(MenuOptionVO::new)
-                .collect(Collectors.groupingBy(MenuOptionVO::getParentId));
+        Map<Long, List<MenuOptionVO>> menuMap =
+                menus.stream()
+                        .map(MenuOptionVO::new)
+                        .collect(Collectors.groupingBy(MenuOptionVO::getParentId));
         // 3.组合
         // 3.1.获取1级菜单
         List<MenuOptionVO> parents = menuMap.get(0L);
@@ -103,7 +104,7 @@ public class MenuController {
      */
     @GetMapping("me")
     @Operation(summary = "查询我的菜单，按照多级菜单组成树结构")
-    public List<MenuOptionVO> listMenuTreeByUser(){
+    public List<MenuOptionVO> listMenuTreeByUser() {
         // 1.查询所有菜单
         List<Menu> menus = menuService.listMenuByUser();
         return convert2MenuDTOs(menus);
@@ -111,7 +112,7 @@ public class MenuController {
 
     @PostMapping
     @Operation(summary = "新增菜单")
-    public void saveMenu(@RequestBody MenuDTO menuDTO){
+    public void saveMenu(@RequestBody MenuDTO menuDTO) {
         // 1.数据转换
         Menu menu = new Menu(menuDTO);
         // 2.保存
@@ -122,7 +123,7 @@ public class MenuController {
     @Operation(summary = "更新菜单")
     public void updateMenu(
             @RequestBody MenuDTO menuDTO,
-            @Parameter(description = "菜单id", example = "1")@PathVariable("id") Long id) {
+            @Parameter(description = "菜单id", example = "1") @PathVariable("id") Long id) {
         menuDTO.setId(id);
         menuService.updateById(new Menu(menuDTO));
     }
@@ -138,7 +139,7 @@ public class MenuController {
     @Operation(summary = "绑定角色与菜单权限")
     public void bindRoleMenus(
             @Parameter(description = "角色id", example = "1") @PathVariable("roleId") Long roleId,
-            @Parameter(description = "菜单id集合") List<Long> menuIds){
+            @Parameter(description = "菜单id集合") List<Long> menuIds) {
         menuService.bindRoleMenus(roleId, menuIds);
     }
 
@@ -146,7 +147,7 @@ public class MenuController {
     @Operation(summary = "解除角色的菜单权限")
     public void deleteRoleMenus(
             @Parameter(description = "角色id", example = "1") @PathVariable("roleId") Long roleId,
-            @Parameter(description = "菜单id集合") List<Long> menuIds){
+            @Parameter(description = "菜单id集合") List<Long> menuIds) {
         menuService.deleteRoleMenus(roleId, menuIds);
     }
 }

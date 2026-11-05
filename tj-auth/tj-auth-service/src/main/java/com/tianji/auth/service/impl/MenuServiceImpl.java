@@ -47,11 +47,13 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements IM
         // 1.获取用户信息
         Long userId = UserContext.getUser();
         // 2.查询角色
-        List<AccountRole> accountRoles = accountRoleService.lambdaQuery().eq(AccountRole::getAccountId, userId).list();
+        List<AccountRole> accountRoles =
+                accountRoleService.lambdaQuery().eq(AccountRole::getAccountId, userId).list();
         if (CollUtil.isEmpty(accountRoles)) {
             return Collections.emptyList();
         }
-        List<Long> roleIds = accountRoles.stream().map(AccountRole::getRoleId).collect(Collectors.toList());
+        List<Long> roleIds =
+                accountRoles.stream().map(AccountRole::getRoleId).collect(Collectors.toList());
         // 3.查询菜单
         return getBaseMapper().listByRoles(roleIds);
     }
@@ -62,10 +64,10 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements IM
         // 1.新增菜单
         save(menu);
         // 2.判断当前菜单是否有父菜单
-        if(menu.getParentId() != 0) {
+        if (menu.getParentId() != 0) {
             // 有父菜单，需要判断父菜单hashChildren属性
             Menu parent = getById(menu.getParentId());
-            if(!parent.getHasChildren()){
+            if (!parent.getHasChildren()) {
                 // 更新父菜单的hasChildren属性
                 parent.setHasChildren(true);
                 parent.setUpdateTime(null);
@@ -91,15 +93,13 @@ public class MenuServiceImpl extends ServiceImpl<MenuMapper, Menu> implements IM
         List<Long> delIds;
         if (menu.getHasChildren()) {
             // 2.1.添加子菜单及父菜单
-            delIds = lambdaQuery()
-                    .eq(Menu::getParentId, id)
-                    .list()
-                    .stream()
-                    .map(Menu::getId)
-                    .collect(Collectors.toList());
+            delIds =
+                    lambdaQuery().eq(Menu::getParentId, id).list().stream()
+                            .map(Menu::getId)
+                            .collect(Collectors.toList());
             // 添加父菜单id
             delIds.add(id);
-        }else {
+        } else {
             // 2.2.添加父菜单id
             delIds = Collections.singletonList(id);
         }

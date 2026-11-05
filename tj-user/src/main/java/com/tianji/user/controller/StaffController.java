@@ -1,6 +1,5 @@
 package com.tianji.user.controller;
 
-
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.user.domain.query.UserPageQuery;
 import com.tianji.user.domain.vo.StaffVO;
@@ -32,7 +31,7 @@ public class StaffController {
 
     @Operation(summary = "分页查询教师与员工信息")
     @GetMapping("page")
-    public PageDTO<StaffVO> queryStaffPage(UserPageQuery pageQuery){
+    public PageDTO<StaffVO> queryStaffPage(UserPageQuery pageQuery) {
         return staffService.queryStaffPage(pageQuery);
     }
 }

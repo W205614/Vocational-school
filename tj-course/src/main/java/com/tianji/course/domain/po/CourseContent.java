@@ -73,6 +73,4 @@ public class CourseContent implements Serializable {
      * 逻辑删除
      */
     private Integer deleted;
-
-
 }

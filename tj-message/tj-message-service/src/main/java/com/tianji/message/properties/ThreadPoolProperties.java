@@ -17,8 +17,5 @@ import java.util.Map;
 @Data
 public class ThreadPoolProperties {
 
-    @NestedConfigurationProperty
-    private Map<String, Object> threadPools;
-
-
+    @NestedConfigurationProperty private Map<String, Object> threadPools;
 }

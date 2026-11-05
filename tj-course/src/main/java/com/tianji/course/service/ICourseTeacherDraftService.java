@@ -30,12 +30,11 @@ public interface ICourseTeacherDraftService extends IService<CourseTeacherDraft>
      * @param see 是否用于查看
      * @return 老师数据
      */
-    List<CourseTeacherVO> queryTeacherOfCourse(Long courseId,Boolean see);
+    List<CourseTeacherVO> queryTeacherOfCourse(Long courseId, Boolean see);
 
     /**
      * 课程老师上架
      * @param courseId 课程id
      */
     void copyToShelf(Long courseId, Boolean isFirstShelf);
-
 }

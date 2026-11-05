@@ -1,6 +1,5 @@
 package com.tianji.common.autoconfigure.mybatis;
 
-
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
@@ -14,9 +13,11 @@ import org.springframework.context.annotation.Bean;
 
 // MP's default aggregator otherwise sees the learning dynamic-table bean first,
 // installs a dynamic-only chain, and makes our missing-bean condition back off.
-@AutoConfiguration(beforeName={
-        "com.baomidou.mybatisplus.autoconfigure.MybatisPlusInnerInterceptorAutoConfiguration",
-        "com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration"})
+@AutoConfiguration(
+        beforeName = {
+            "com.baomidou.mybatisplus.autoconfigure.MybatisPlusInnerInterceptorAutoConfiguration",
+            "com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration"
+        })
 @ConditionalOnClass({MybatisPlusInterceptor.class, BaseMapper.class})
 public class MybatisConfig {
 
@@ -26,19 +27,21 @@ public class MybatisConfig {
      */
     // @Bean
     // @ConditionalOnMissingBean
-    public BaseMetaObjectHandler baseMetaObjectHandler(){
+    public BaseMetaObjectHandler baseMetaObjectHandler() {
         return new BaseMetaObjectHandler();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public MybatisPlusInterceptor mybatisPlusInterceptor(@Autowired(required = false) DynamicTableNameInnerInterceptor innerInterceptor) {
+    public MybatisPlusInterceptor mybatisPlusInterceptor(
+            @Autowired(required = false) DynamicTableNameInnerInterceptor innerInterceptor) {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
-        PaginationInnerInterceptor paginationInnerInterceptor = new PaginationInnerInterceptor(DbType.MYSQL);
+        PaginationInnerInterceptor paginationInnerInterceptor =
+                new PaginationInnerInterceptor(DbType.MYSQL);
         paginationInnerInterceptor.setMaxLimit(100L);
         interceptor.addInnerInterceptor(paginationInnerInterceptor);
         interceptor.addInnerInterceptor(new MyBatisAutoFillInterceptor());
-        if(innerInterceptor != null){
+        if (innerInterceptor != null) {
             interceptor.addInnerInterceptor(innerInterceptor);
         }
         return interceptor;

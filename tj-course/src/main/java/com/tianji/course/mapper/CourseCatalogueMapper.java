@@ -11,6 +11,4 @@ import com.tianji.course.domain.po.CourseCatalogue;
  * @author wusongsong
  * @since 2022-07-19
  */
-public interface CourseCatalogueMapper extends BaseMapper<CourseCatalogue> {
-
-}
+public interface CourseCatalogueMapper extends BaseMapper<CourseCatalogue> {}

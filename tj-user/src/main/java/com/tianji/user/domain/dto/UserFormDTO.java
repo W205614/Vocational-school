@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotNull;
 public class UserFormDTO extends UserDTO {
     @Schema(description = "原始密码", example = "123321")
     private String oldPassword;
+
     @Schema(description = "新密码", example = "123321")
     private String password;
 }

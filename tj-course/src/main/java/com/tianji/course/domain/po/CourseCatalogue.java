@@ -123,6 +123,4 @@ public class CourseCatalogue implements Serializable {
      * 逻辑删除
      */
     private Integer deleted;
-
-
 }

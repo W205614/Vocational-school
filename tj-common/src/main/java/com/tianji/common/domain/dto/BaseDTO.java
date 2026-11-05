@@ -8,10 +8,13 @@ import java.time.LocalDateTime;
 public class BaseDTO {
     @Schema(description = "创建人id")
     private Long creater;
+
     @Schema(description = "更新人id")
     private Long updater;
+
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
+
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;
 }

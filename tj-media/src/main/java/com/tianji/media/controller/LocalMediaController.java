@@ -1,42 +1,134 @@
 package com.tianji.media.controller;
-import com.tianji.media.storage.local.LocalObjectStore;import com.tianji.common.utils.UserContext;import com.tianji.common.autoconfigure.reliability.OperationStore;
-import lombok.RequiredArgsConstructor;import org.springframework.web.bind.annotation.*;import org.springframework.http.*;import org.springframework.core.io.Resource;import org.springframework.web.multipart.MultipartFile;import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;import java.util.*;
-@RestController @ConditionalOnProperty(name="tj.local-storage.enabled",havingValue="true")
+
+import com.tianji.media.storage.local.LocalObjectStore;
+import com.tianji.common.utils.UserContext;
+import com.tianji.common.autoconfigure.reliability.OperationStore;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.*;
+import org.springframework.core.io.Resource;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import java.util.*;
+
+@RestController
+@ConditionalOnProperty(name = "tj.local-storage.enabled", havingValue = "true")
 public class LocalMediaController {
- private final LocalObjectStore store;private final OperationStore operations;private final com.tianji.media.storage.local.LocalCourseCoverStore covers;
- private final com.tianji.api.client.learning.LearningClient learning;
- private final com.tianji.media.storage.local.OwnerStreamLimiter streams;
- public LocalMediaController(LocalObjectStore store,OperationStore operations,com.tianji.media.storage.local.LocalCourseCoverStore covers,com.tianji.api.client.learning.LearningClient learning,com.tianji.media.storage.local.OwnerStreamLimiter streams){this.store=store;this.operations=operations;this.covers=covers;this.learning=learning;this.streams=streams;}
- @PostMapping("/api/v2/admin/course-cover-upload") public Map<String,String> uploadCover(@RequestParam MultipartFile file)throws java.io.IOException{
-  UserContext.requireAdmin();try(var input=file.getInputStream()){return Map.of("path",covers.upload(input,file.getSize()));}
- }
- @GetMapping("/course-covers/{key}") public ResponseEntity<Resource> cover(@PathVariable String key){
-  Resource resource=covers.read(key);return ResponseEntity.ok().contentType(key.endsWith(".png")?MediaType.IMAGE_PNG:MediaType.IMAGE_JPEG).header("X-Content-Type-Options","nosniff").cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(30)).cachePublic().immutable()).body(resource);
- }
- @PostMapping("/api/v2/admin/media-upload") public ResponseEntity<?> upload(@RequestParam MultipartFile file,@RequestParam(required=false) Float duration,@RequestHeader("Idempotency-Key") String key)throws java.io.IOException{
-  UserContext.requireAdmin();if(key==null || !key.matches("[A-Za-z0-9_.:-]{1,128}"))throw new com.tianji.common.exceptions.BadRequestException("需要有效的 Idempotency-Key");String name=file.getOriginalFilename();
-  if(name==null || name.length()>255 || !name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|webm)"))throw new com.tianji.common.exceptions.BadRequestException("请提供 MP4 或 WebM 视频，时长由服务器读取");
-  try(var input=file.getInputStream()){var media=store.uploadMedia(name,input,file.getSize(),key);
-   return ResponseEntity.accepted().body(operations.submit(UserContext.requireUser(),"LOCAL_MEDIA_CREATE",key,Map.of("fileId",media.getFileId(),"filename",name,"duration",media.getDuration())));
-  }
- }
- @GetMapping("/local-content/{key}") public ResponseEntity<Resource> content(@PathVariable String key,@RequestParam long expires,@RequestParam String signature,@RequestParam(required=false) Long owner,@RequestParam(required=false) Long course){
-  Resource resource;
-  if(owner==null && course==null)resource=store.readSigned(key,expires,signature);
-  else {
-   if(owner==null || course==null)throw new com.tianji.common.exceptions.ForbiddenException("课程播放地址不完整");
-   // Authenticate the ticket before deriving identity or making the internal call.
-   resource=store.readSignedCourse(key,expires,signature,owner,course);
-   Long user=UserContext.getUser(),role=UserContext.getRole();String session=UserContext.getSession();int depth=UserContext.getCallDepth();
-   try {
-    UserContext.setUser(owner);UserContext.setRole(2L);UserContext.setSession(null);
-    if(learning.isLessonValid(course)==null)throw new com.tianji.common.exceptions.ForbiddenException("课程权益已失效，请重新报名后播放");
-   }finally {
-    UserContext.removeUser();if(user!=null)UserContext.setUser(user);if(role!=null)UserContext.setRole(role);if(session!=null)UserContext.setSession(session);UserContext.setCallDepth(depth);
-   }
-   resource=streams.wrap(resource,owner);
-  }
-  MediaType type=key.endsWith(".webm")?MediaType.parseMediaType("video/webm"):key.endsWith(".mp4")?MediaType.parseMediaType("video/mp4"):MediaType.APPLICATION_OCTET_STREAM;
-  return ResponseEntity.ok().contentType(type).cacheControl(CacheControl.noStore()).body(resource);
- }
+    private final LocalObjectStore store;
+    private final OperationStore operations;
+    private final com.tianji.media.storage.local.LocalCourseCoverStore covers;
+    private final com.tianji.api.client.learning.LearningClient learning;
+    private final com.tianji.media.storage.local.OwnerStreamLimiter streams;
+
+    public LocalMediaController(
+            LocalObjectStore store,
+            OperationStore operations,
+            com.tianji.media.storage.local.LocalCourseCoverStore covers,
+            com.tianji.api.client.learning.LearningClient learning,
+            com.tianji.media.storage.local.OwnerStreamLimiter streams) {
+        this.store = store;
+        this.operations = operations;
+        this.covers = covers;
+        this.learning = learning;
+        this.streams = streams;
+    }
+
+    @PostMapping("/api/v2/admin/course-cover-upload")
+    public Map<String, String> uploadCover(@RequestParam MultipartFile file)
+            throws java.io.IOException {
+        UserContext.requireAdmin();
+        try (var input = file.getInputStream()) {
+            return Map.of("path", covers.upload(input, file.getSize()));
+        }
+    }
+
+    @GetMapping("/course-covers/{key}")
+    public ResponseEntity<Resource> cover(@PathVariable String key) {
+        Resource resource = covers.read(key);
+        return ResponseEntity.ok()
+                .contentType(key.endsWith(".png") ? MediaType.IMAGE_PNG : MediaType.IMAGE_JPEG)
+                .header("X-Content-Type-Options", "nosniff")
+                .cacheControl(
+                        CacheControl.maxAge(java.time.Duration.ofDays(30))
+                                .cachePublic()
+                                .immutable())
+                .body(resource);
+    }
+
+    @PostMapping("/api/v2/admin/media-upload")
+    public ResponseEntity<?> upload(
+            @RequestParam MultipartFile file,
+            @RequestParam(required = false) Float duration,
+            @RequestHeader("Idempotency-Key") String key)
+            throws java.io.IOException {
+        UserContext.requireAdmin();
+        if (key == null || !key.matches("[A-Za-z0-9_.:-]{1,128}"))
+            throw new com.tianji.common.exceptions.BadRequestException("需要有效的 Idempotency-Key");
+        String name = file.getOriginalFilename();
+        if (name == null
+                || name.length() > 255
+                || !name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|webm)"))
+            throw new com.tianji.common.exceptions.BadRequestException(
+                    "请提供 MP4 或 WebM 视频，时长由服务器读取");
+        try (var input = file.getInputStream()) {
+            var media = store.uploadMedia(name, input, file.getSize(), key);
+            return ResponseEntity.accepted()
+                    .body(
+                            operations.submit(
+                                    UserContext.requireUser(),
+                                    "LOCAL_MEDIA_CREATE",
+                                    key,
+                                    Map.of(
+                                            "fileId",
+                                            media.getFileId(),
+                                            "filename",
+                                            name,
+                                            "duration",
+                                            media.getDuration())));
+        }
+    }
+
+    @GetMapping("/local-content/{key}")
+    public ResponseEntity<Resource> content(
+            @PathVariable String key,
+            @RequestParam long expires,
+            @RequestParam String signature,
+            @RequestParam(required = false) Long owner,
+            @RequestParam(required = false) Long course) {
+        Resource resource;
+        if (owner == null && course == null) resource = store.readSigned(key, expires, signature);
+        else {
+            if (owner == null || course == null)
+                throw new com.tianji.common.exceptions.ForbiddenException("课程播放地址不完整");
+            // Authenticate the ticket before deriving identity or making the internal call.
+            resource = store.readSignedCourse(key, expires, signature, owner, course);
+            Long user = UserContext.getUser(), role = UserContext.getRole();
+            String session = UserContext.getSession();
+            int depth = UserContext.getCallDepth();
+            try {
+                UserContext.setUser(owner);
+                UserContext.setRole(2L);
+                UserContext.setSession(null);
+                if (learning.isLessonValid(course) == null)
+                    throw new com.tianji.common.exceptions.ForbiddenException("课程权益已失效，请重新报名后播放");
+            } finally {
+                UserContext.removeUser();
+                if (user != null) UserContext.setUser(user);
+                if (role != null) UserContext.setRole(role);
+                if (session != null) UserContext.setSession(session);
+                UserContext.setCallDepth(depth);
+            }
+            resource = streams.wrap(resource, owner);
+        }
+        MediaType type =
+                key.endsWith(".webm")
+                        ? MediaType.parseMediaType("video/webm")
+                        : key.endsWith(".mp4")
+                                ? MediaType.parseMediaType("video/mp4")
+                                : MediaType.APPLICATION_OCTET_STREAM;
+        return ResponseEntity.ok()
+                .contentType(type)
+                .cacheControl(CacheControl.noStore())
+                .body(resource);
+    }
 }

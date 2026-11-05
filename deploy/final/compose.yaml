@@ -4,28 +4,28 @@ services:
     image: tianji-final/data:ee045c7
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23895'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23895:23895
+      - 127.0.0.1:23895:23895
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/data.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/data.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -41,28 +41,28 @@ services:
     image: tianji-final/pay:ux-20261007
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23883'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23883:23883
+      - 127.0.0.1:23883:23883
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/pay.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/pay.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -78,28 +78,28 @@ services:
     image: tianji-final/promotion:ee045c7
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23892'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23892:23892
+      - 127.0.0.1:23892:23892
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/promotion.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/promotion.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -115,28 +115,28 @@ services:
     image: tianji-final/learning:ee045c7
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23890'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23890:23890
+      - 127.0.0.1:23890:23890
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/learning.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/learning.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -152,28 +152,28 @@ services:
     image: tianji-final/trade:ee045c7
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23888'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23888:23888
+      - 127.0.0.1:23888:23888
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/trade.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/trade.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -189,28 +189,28 @@ services:
     image: tianji-final/exam:ux-draft-20261007
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23885'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23885:23885
+      - 127.0.0.1:23885:23885
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/exam.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/exam.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -226,28 +226,28 @@ services:
     image: tianji-final/course:ux-course-20261007
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23881'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23881:23881
+      - 127.0.0.1:23881:23881
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/course.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/course.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -263,28 +263,28 @@ services:
     image: tianji-final/user:ee045c7
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23882'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23882:23882
+      - 127.0.0.1:23882:23882
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/user.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/user.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -300,28 +300,28 @@ services:
     image: tianji-final/auth:ee045c7
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23884'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23884:23884
+      - 127.0.0.1:23884:23884
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/auth.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/auth.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -337,28 +337,28 @@ services:
     image: tianji-final/media:ux-admin-20261007
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23886'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23886:23886
+      - 127.0.0.1:23886:23886
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/media.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/media.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -374,28 +374,28 @@ services:
     image: tianji-final/remark:ee045c7
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23891'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23891:23891
+      - 127.0.0.1:23891:23891
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/remark.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/remark.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -411,28 +411,28 @@ services:
     image: tianji-final/search:ee045c7
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23889'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23889:23889
+      - 127.0.0.1:23889:23889
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/search.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/search.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -450,28 +450,28 @@ services:
     image: tianji-final/message:ee045c7
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23887'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23887:23887
+      - 127.0.0.1:23887:23887
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/message.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/message.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -487,28 +487,28 @@ services:
     image: tianji-final/gateway:ux-dns-20261007
     restart: unless-stopped
     env_file:
-    - ./.local/app.env
+      - ./.local/app.env
     environment:
       APP_PORT: '23310'
       JAVA_TOOL_OPTIONS: -Djava.security.properties=/run/acceptance/dns.security
     ports:
-    - 127.0.0.1:23310:23310
+      - 127.0.0.1:23310:23310
     volumes:
-    - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
-    - ./.local/configs/gateway.yml:/run/acceptance/application.yml:ro
-    - ./.local/signing.jks:/run/acceptance/signing.jks:ro
-    - ./.local/objects:/run/objects
+      - ./.local/configs/dns.security:/run/acceptance/dns.security:ro
+      - ./.local/configs/gateway.yml:/run/acceptance/application.yml:ro
+      - ./.local/signing.jks:/run/acceptance/signing.jks:ro
+      - ./.local/objects:/run/objects
     mem_limit: 768m
     cpus: 2
     healthcheck:
       test:
-      - CMD
-      - java
-      - -Xms16m
-      - -Xmx32m
-      - -cp
-      - /app/health
-      - HealthProbe
+        - CMD
+        - java
+        - -Xms16m
+        - -Xmx32m
+        - -cp
+        - /app/health
+        - HealthProbe
       interval: 10s
       timeout: 4s
       start_period: 40s
@@ -528,17 +528,17 @@ services:
       MYSQL_ROOT_PASSWORD: ${FINAL_DB_PASSWORD:?Set private final .env}
       TZ: Asia/Shanghai
     command:
-    - --default-time-zone=+08:00
-    - --innodb-buffer-pool-size=256M
-    - --max-connections=200
+      - --default-time-zone=+08:00
+      - --innodb-buffer-pool-size=256M
+      - --max-connections=200
     ports:
-    - 127.0.0.1:23316:3306
+      - 127.0.0.1:23316:3306
     volumes:
-    - final_mysql:/var/lib/mysql
+      - final_mysql:/var/lib/mysql
     healthcheck:
       test:
-      - CMD-SHELL
-      - MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -uroot -N -e 'SELECT 1'
+        - CMD-SHELL
+        - MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -uroot -N -e 'SELECT 1'
       interval: 5s
       timeout: 3s
       retries: 60
@@ -547,22 +547,22 @@ services:
   redis:
     image: redis:7.4-alpine
     ports:
-    - 127.0.0.1:23379:6379
+      - 127.0.0.1:23379:6379
     volumes:
-    - final_redis:/data
+      - final_redis:/data
     command:
-    - redis-server
-    - --appendonly
-    - 'yes'
-    - --maxmemory
-    - 96mb
-    - --maxmemory-policy
-    - noeviction
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --maxmemory
+      - 96mb
+      - --maxmemory-policy
+      - noeviction
     healthcheck:
       test:
-      - CMD
-      - redis-cli
-      - ping
+        - CMD
+        - redis-cli
+        - ping
       interval: 5s
       timeout: 3s
       retries: 20
@@ -574,16 +574,16 @@ services:
       RABBITMQ_DEFAULT_USER: tianji
       RABBITMQ_DEFAULT_PASS: ${FINAL_MQ_PASSWORD:?Set private final .env}
     ports:
-    - 127.0.0.1:23372:15672
-    - 127.0.0.1:23373:5672
+      - 127.0.0.1:23372:15672
+      - 127.0.0.1:23373:5672
     volumes:
-    - final_rabbit:/var/lib/rabbitmq
+      - final_rabbit:/var/lib/rabbitmq
     healthcheck:
       test:
-      - CMD
-      - rabbitmq-diagnostics
-      - -q
-      - ping
+        - CMD
+        - rabbitmq-diagnostics
+        - -q
+        - ping
       interval: 5s
       timeout: 5s
       retries: 30
@@ -596,14 +596,14 @@ services:
       xpack.security.enabled: 'false'
       ES_JAVA_OPTS: -Xms512m -Xmx512m
     ports:
-    - 127.0.0.1:23920:9200
+      - 127.0.0.1:23920:9200
     volumes:
-    - final_search:/usr/share/elasticsearch/data
+      - final_search:/usr/share/elasticsearch/data
     mem_limit: 1536m
     healthcheck:
       test:
-      - CMD-SHELL
-      - curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=2s'
+        - CMD-SHELL
+        - curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=2s'
       interval: 5s
       timeout: 3s
       retries: 60
@@ -611,18 +611,18 @@ services:
   prometheus:
     image: prom/prometheus:v3.10.0
     ports:
-    - 127.0.0.1:23909:9090
+      - 127.0.0.1:23909:9090
     volumes:
-    - ./.local/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    - ../acceptance/observability/alerts.yml:/etc/prometheus/alerts.yml:ro
-    - ./.local/observability/internal-token:/etc/prometheus/internal-token:ro
-    - final_prometheus:/prometheus
+      - ./.local/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../acceptance/observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./.local/observability/internal-token:/etc/prometheus/internal-token:ro
+      - final_prometheus:/prometheus
     restart: unless-stopped
     mem_limit: 256m
     healthcheck:
       test:
-      - CMD-SHELL
-      - wget -q -O /dev/null http://127.0.0.1:9090/-/ready
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:9090/-/ready
       interval: 10s
       timeout: 5s
       start_period: 20s
@@ -635,17 +635,17 @@ services:
       GF_USERS_ALLOW_SIGN_UP: 'false'
       GF_PLUGINS_PREINSTALL_DISABLED: 'true'
     ports:
-    - 127.0.0.1:23930:3000
+      - 127.0.0.1:23930:3000
     volumes:
-    - ../acceptance/observability/grafana:/etc/grafana/provisioning:ro
-    - ../acceptance/observability/dashboards:/var/lib/grafana/dashboards:ro
-    - final_grafana:/var/lib/grafana
+      - ../acceptance/observability/grafana:/etc/grafana/provisioning:ro
+      - ../acceptance/observability/dashboards:/var/lib/grafana/dashboards:ro
+      - final_grafana:/var/lib/grafana
     restart: unless-stopped
     mem_limit: 256m
     healthcheck:
       test:
-      - CMD-SHELL
-      - wget -q -O /dev/null http://127.0.0.1:3000/api/health
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:3000/api/health
       interval: 10s
       timeout: 5s
       start_period: 20s
@@ -656,8 +656,8 @@ services:
     environment:
       GW_UPSTREAM: app-gateway:23310
     ports:
-    - 127.0.0.1:23500:8080
-    - 127.0.0.1:80:8080
+      - 127.0.0.1:23500:8080
+      - 127.0.0.1:80:8080
     mem_limit: 128m
     depends_on:
       app-gateway:
@@ -668,8 +668,8 @@ services:
     environment:
       GW_UPSTREAM: app-gateway:23310
     ports:
-    - 127.0.0.1:23501:8080
-    - 127.0.0.1:81:8080
+      - 127.0.0.1:23501:8080
+      - 127.0.0.1:81:8080
     mem_limit: 128m
     depends_on:
       app-gateway:

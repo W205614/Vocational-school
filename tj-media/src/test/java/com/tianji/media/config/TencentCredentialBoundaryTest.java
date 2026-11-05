@@ -10,13 +10,15 @@ import static org.junit.jupiter.api.Assertions.*;
 /** No request is sent: prove the supported explicit credential path does not
  * require the vulnerable optional INI profile parser removed from the SDK graph. */
 class TencentCredentialBoundaryTest {
-    @Test void explicitCredentialsInitializeWithoutIniProfileParsing() {
+    @Test
+    void explicitCredentialsInitializeWithoutIniProfileParsing() {
         assertThrows(ClassNotFoundException.class, () -> Class.forName("org.ini4j.Ini"));
         var credentials = new Credential("synthetic-unit-test-id", "synthetic-unit-test-key");
         assertNotNull(new VodClient(credentials, "ap-shanghai", new ClientProfile()));
     }
 
-    @Test void genericCosClientUsesHttpsAndBoundedResourcesWithoutMakingRequests() {
+    @Test
+    void genericCosClientUsesHttpsAndBoundedResourcesWithoutMakingRequests() {
         var properties = new TencentProperties();
         properties.setSecretId("synthetic-unit-test-id");
         properties.setSecretKey("synthetic-unit-test-key");

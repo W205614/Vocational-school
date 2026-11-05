@@ -1,6 +1,5 @@
 package com.tianji.message.api.config;
 
-
 import com.tianji.common.autoconfigure.reliability.OutboxStore;
 import org.springframework.transaction.PlatformTransactionManager;
 import com.tianji.message.api.client.AsyncSmsClient;
@@ -19,14 +18,14 @@ public class MessageClientConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public RequestInterceptor requestIdInterceptor(){
-        return template -> template
-                .header(REQUEST_ID_HEADER, MDC.get(REQUEST_ID_HEADER))
-                .header(REQUEST_FROM_HEADER, FEIGN_ORIGIN_NAME);
+    public RequestInterceptor requestIdInterceptor() {
+        return template ->
+                template.header(REQUEST_ID_HEADER, MDC.get(REQUEST_ID_HEADER))
+                        .header(REQUEST_FROM_HEADER, FEIGN_ORIGIN_NAME);
     }
 
     @Bean
-    public AsyncSmsClient smsClient(OutboxStore outbox, PlatformTransactionManager transactions){
+    public AsyncSmsClient smsClient(OutboxStore outbox, PlatformTransactionManager transactions) {
         return new AsyncSmsClient(outbox, transactions);
     }
 }

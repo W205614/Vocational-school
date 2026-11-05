@@ -12,6 +12,7 @@ public class TradeProperties {
      * 单次允许购买的最大课程数量
      */
     private int maxCourseAmount = 10;
+
     /**
      * 订单支付的最大等待时间，单位分钟
      */

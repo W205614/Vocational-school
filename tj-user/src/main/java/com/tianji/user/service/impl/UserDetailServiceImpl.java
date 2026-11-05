@@ -22,7 +22,8 @@ import java.util.List;
  * @since 2022-08-15
  */
 @Service
-public class UserDetailServiceImpl extends ServiceImpl<UserDetailMapper, UserDetail> implements IUserDetailService {
+public class UserDetailServiceImpl extends ServiceImpl<UserDetailMapper, UserDetail>
+        implements IUserDetailService {
 
     @Override
     public UserDetail queryById(Long userId) {
@@ -42,13 +43,17 @@ public class UserDetailServiceImpl extends ServiceImpl<UserDetailMapper, UserDet
         Integer status = query.getStatus();
         String name = query.getName();
         String phone = query.getPhone();
-        var values=types==null?List.<Integer>of():java.util.Arrays.stream(types)
-                .filter(java.util.Objects::nonNull).map(UserType::getValue).toList();
+        var values =
+                types == null
+                        ? List.<Integer>of()
+                        : java.util.Arrays.stream(types)
+                                .filter(java.util.Objects::nonNull)
+                                .map(UserType::getValue)
+                                .toList();
         QueryWrapper<UserDetail> wrapper = new QueryWrapper<>();
-        wrapper
-                .in(!values.isEmpty(), "u.type", values)
+        wrapper.in(!values.isEmpty(), "u.type", values)
                 .eq(status != null, "u.status", status)
-                .eq(StringUtils.isNotBlank(phone),"u.cell_phone", phone)
+                .eq(StringUtils.isNotBlank(phone), "u.cell_phone", phone)
                 .like(StringUtils.isNotBlank(name), "ud.name", name);
         // 3.查询
         p = getBaseMapper().queryByPage(p, wrapper);

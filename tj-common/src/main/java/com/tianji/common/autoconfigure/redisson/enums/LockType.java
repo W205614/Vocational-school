@@ -4,25 +4,25 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
 public enum LockType {
-    DEFAULT(){
+    DEFAULT() {
         @Override
         public RLock getLock(RedissonClient redissonClient, String name) {
             return redissonClient.getLock(name);
         }
     },
-    FAIR_LOCK(){
+    FAIR_LOCK() {
         @Override
         public RLock getLock(RedissonClient redissonClient, String name) {
             return redissonClient.getFairLock(name);
         }
     },
-    READ_LOCK(){
+    READ_LOCK() {
         @Override
         public RLock getLock(RedissonClient redissonClient, String name) {
             return redissonClient.getReadWriteLock(name).readLock();
         }
     },
-    WRITE_LOCK(){
+    WRITE_LOCK() {
         @Override
         public RLock getLock(RedissonClient redissonClient, String name) {
             return redissonClient.getReadWriteLock(name).writeLock();

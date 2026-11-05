@@ -18,7 +18,8 @@ import java.util.List;
  * @since 2022-06-16
  */
 @Service
-public class RoleMenuServiceImpl extends ServiceImpl<RoleMenuMapper, RoleMenu> implements IRoleMenuService {
+public class RoleMenuServiceImpl extends ServiceImpl<RoleMenuMapper, RoleMenu>
+        implements IRoleMenuService {
 
     @Override
     public void removeByRoleId(Long id) {
@@ -31,7 +32,6 @@ public class RoleMenuServiceImpl extends ServiceImpl<RoleMenuMapper, RoleMenu> i
         remove(
                 new LambdaQueryWrapper<RoleMenu>()
                         .eq(RoleMenu::getRoleId, roleId)
-                        .in(RoleMenu::getMenuId, menuIds)
-        );
+                        .in(RoleMenu::getMenuId, menuIds));
     }
 }

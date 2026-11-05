@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>com.tianji</groupId>
     <artifactId>tjxt</artifactId>
     <version>1.0.0</version>
@@ -26,15 +23,12 @@
         <module>tj-promotion</module>
     </modules>
     <packaging>pom</packaging>
-
     <!-- 继承 Spring Boot 父工程 -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>4.0.9</version>
     </parent>
-
-
     <properties>
         <java.version>21</java.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -76,23 +70,39 @@
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
                 <version>${spring-cloud-alibaba.version}</version>
-                <exclusions><exclusion><groupId>com.alibaba.nacos</groupId><artifactId>nacos-client</artifactId></exclusion></exclusions>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.alibaba.nacos</groupId>
+                        <artifactId>nacos-client</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
                 <version>${spring-cloud-alibaba.version}</version>
-                <exclusions><exclusion><groupId>com.alibaba.nacos</groupId><artifactId>nacos-client</artifactId></exclusion></exclusions>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.alibaba.nacos</groupId>
+                        <artifactId>nacos-client</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
-                <groupId>com.alibaba.nacos</groupId><artifactId>nacos-client</artifactId>
-                <version>${nacos.version}</version><classifier>pure</classifier>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-client</artifactId>
+                <version>${nacos.version}</version>
+                <classifier>pure</classifier>
             </dependency>
             <dependency>
-                <groupId>com.alibaba.nacos</groupId><artifactId>nacos-api</artifactId><version>${nacos.version}</version>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-api</artifactId>
+                <version>${nacos.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.alibaba.nacos</groupId><artifactId>nacos-common</artifactId><version>${nacos.version}</version>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-common</artifactId>
+                <version>${nacos.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -115,7 +125,9 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>co.elastic.clients</groupId><artifactId>elasticsearch-java</artifactId><version>${elasticsearch-java.version}</version>
+                <groupId>co.elastic.clients</groupId>
+                <artifactId>elasticsearch-java</artifactId>
+                <version>${elasticsearch-java.version}</version>
             </dependency>
             <!-- 数据库驱动包管理 -->
             <dependency>
@@ -123,7 +135,6 @@
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.version}</version>
             </dependency>
-
             <!-- mybatis plus 管理 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
@@ -131,7 +142,11 @@
                 <version>${mybatis-plus.version}</version>
             </dependency>
             <!--knife4j-->
-            <dependency><groupId>org.springdoc</groupId><artifactId>springdoc-openapi-starter-webmvc-ui</artifactId><version>3.0.3</version></dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>3.0.3</version>
+            </dependency>
             <!--腾讯云-->
             <dependency>
                 <groupId>com.tencentcloudapi</groupId>
@@ -140,7 +155,10 @@
                 <!-- Explicit Credential(secretId,secretKey) is used. Local INI
                      profile credential discovery is outside the supported path. -->
                 <exclusions>
-                    <exclusion><groupId>org.ini4j</groupId><artifactId>ini4j</artifactId></exclusion>
+                    <exclusion>
+                        <groupId>org.ini4j</groupId>
+                        <artifactId>ini4j</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -156,7 +174,10 @@
                 <!-- OSS and SMS use explicit static credentials, never the
                      SDK's local INI profile credentials provider. -->
                 <exclusions>
-                    <exclusion><groupId>org.ini4j</groupId><artifactId>ini4j</artifactId></exclusion>
+                    <exclusion>
+                        <groupId>org.ini4j</groupId>
+                        <artifactId>ini4j</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -198,17 +219,31 @@
                 <artifactId>vod_api</artifactId>
                 <version>${tencent.sdk.vod.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.xuxueli</groupId>
                 <artifactId>xxl-job-core</artifactId>
                 <version>${xxl-job-version}</version>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
     <dependencies>
-<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency><dependency><groupId>io.micrometer</groupId><artifactId>micrometer-registry-prometheus</artifactId></dependency><dependency><groupId>org.springframework</groupId><artifactId>spring-jdbc</artifactId></dependency><dependency><groupId>io.swagger.core.v3</groupId><artifactId>swagger-annotations-jakarta</artifactId><version>2.2.38</version></dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>2.2.38</version>
+        </dependency>
         <!-- lombok 管理 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -222,9 +257,7 @@
             <scope>test</scope>
         </dependency>
         <!--开启bootstrap文件读取-->
-
     </dependencies>
-
     <build>
         <pluginManagement>
             <plugins>
@@ -233,25 +266,49 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.14.1</version>
                     <configuration>
-                        <release>21</release> <!-- depending on your project -->
-                        <parameters>true</parameters> <!-- depending on your project -->
+                        <release>21</release>
+                        <!-- depending on your project -->
+                        <parameters>true</parameters>
+                        <!-- depending on your project -->
                     </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
     </build>
-<profiles><profile><id>compact</id><modules><module>tj-compact</module></modules>
-    <build><pluginManagement><plugins><plugin>
-        <groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration>
-            <!-- Compact and worker disable Nacos, including its external gRPC transport. -->
-            <excludeGroupIds>com.alibaba.nacos,io.grpc,com.google.api.grpc,com.google.protobuf,io.perfmark</excludeGroupIds>
-            <excludes>
-                <exclude><groupId>com.alibaba.cloud</groupId><artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId></exclude>
-                <exclude><groupId>com.alibaba.cloud</groupId><artifactId>spring-alibaba-nacos-config</artifactId></exclude>
-                <exclude><groupId>com.alibaba.cloud</groupId><artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId></exclude>
-            </excludes>
-        </configuration>
-    </plugin></plugins></pluginManagement></build>
-</profile></profiles>
+    <profiles>
+        <profile>
+            <id>compact</id>
+            <modules>
+                <module>tj-compact</module>
+            </modules>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-maven-plugin</artifactId>
+                            <configuration>
+                                <!-- Compact and worker disable Nacos, including its external gRPC transport. -->
+                                <excludeGroupIds>com.alibaba.nacos,io.grpc,com.google.api.grpc,com.google.protobuf,io.perfmark</excludeGroupIds>
+                                <excludes>
+                                    <exclude>
+                                        <groupId>com.alibaba.cloud</groupId>
+                                        <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+                                    </exclude>
+                                    <exclude>
+                                        <groupId>com.alibaba.cloud</groupId>
+                                        <artifactId>spring-alibaba-nacos-config</artifactId>
+                                    </exclude>
+                                    <exclude>
+                                        <groupId>com.alibaba.cloud</groupId>
+                                        <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+                                    </exclude>
+                                </excludes>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
 </project>

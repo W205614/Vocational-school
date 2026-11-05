@@ -7,5 +7,4 @@ package com.tianji.course.utils;
  * @Date 2022/7/18 21:04
  * @Version
  **/
-public interface CourseSaveBaseGroup {
-}
+public interface CourseSaveBaseGroup {}

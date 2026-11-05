@@ -8,8 +8,10 @@ import lombok.Data;
 public class PointsBoardItemVO {
     @Schema(description = "积分值")
     private Integer points;
+
     @Schema(description = "名次")
     private Integer rank;
+
     @Schema(description = "学生姓名")
     private String name;
 }

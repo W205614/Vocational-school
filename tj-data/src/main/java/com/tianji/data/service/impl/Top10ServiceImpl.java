@@ -25,8 +25,7 @@ import java.util.stream.Collectors;
 @Service
 public class Top10ServiceImpl implements Top10Service {
 
-    @Autowired
-    private StringRedisTemplate redisTemplate;
+    @Autowired private StringRedisTemplate redisTemplate;
 
     @Override
     public Top10DataVO getTop10Data() {
@@ -43,15 +42,17 @@ public class Top10ServiceImpl implements Top10Service {
         // 4.数据组装
         Top10DataVO top10DataVO = new Top10DataVO();
         // 4.1.设置热门课程
-        top10DataVO.setHot(data.stream()
-                .sorted(Comparator.comparing(CourseInfo::getNewStuNum).reversed())
-                .limit(10)
-                .collect(Collectors.toList()));
+        top10DataVO.setHot(
+                data.stream()
+                        .sorted(Comparator.comparing(CourseInfo::getNewStuNum).reversed())
+                        .limit(10)
+                        .collect(Collectors.toList()));
         // 4.2.设置热销课程
-        top10DataVO.setHotSales(data.stream()
-                .sorted(Comparator.comparing(CourseInfo::getOrderAmount).reversed())
-                .limit(10)
-                .collect(Collectors.toList()));
+        top10DataVO.setHotSales(
+                data.stream()
+                        .sorted(Comparator.comparing(CourseInfo::getOrderAmount).reversed())
+                        .limit(10)
+                        .collect(Collectors.toList()));
         return top10DataVO;
     }
 
@@ -60,12 +61,10 @@ public class Top10ServiceImpl implements Top10Service {
         // 1.数据redis存储key
         String key = RedisConstants.KEY_TOP10 + top10DataSetDTO.getVersion();
         // 2.数据转化
-        List<CourseInfo> courseInfoList = BeanUtils.copyList(top10DataSetDTO.getData(), CourseInfo.class);
+        List<CourseInfo> courseInfoList =
+                BeanUtils.copyList(top10DataSetDTO.getData(), CourseInfo.class);
 
-        //3.新增或重置数据
-        redisTemplate.opsForValue().set(
-                key,
-                JsonUtils.toJsonStr(courseInfoList)
-        );
+        // 3.新增或重置数据
+        redisTemplate.opsForValue().set(key, JsonUtils.toJsonStr(courseInfoList));
     }
 }

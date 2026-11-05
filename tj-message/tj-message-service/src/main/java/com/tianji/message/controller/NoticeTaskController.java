@@ -1,6 +1,5 @@
 package com.tianji.message.controller;
 
-
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.message.domain.dto.NoticeTaskDTO;
 import com.tianji.message.domain.dto.NoticeTaskFormDTO;
@@ -31,29 +30,38 @@ public class NoticeTaskController {
 
     @PostMapping
     @Operation(summary = "新增通知任务")
-    public org.springframework.http.ResponseEntity<?> saveNoticeTask(@RequestBody NoticeTaskFormDTO noticeTaskFormDTO,@RequestHeader("Idempotency-Key") String key){
+    public org.springframework.http.ResponseEntity<?> saveNoticeTask(
+            @RequestBody NoticeTaskFormDTO noticeTaskFormDTO,
+            @RequestHeader("Idempotency-Key") String key) {
         com.tianji.common.utils.UserContext.requireAdmin();
-        return org.springframework.http.ResponseEntity.accepted().body(operations.submit(com.tianji.common.utils.UserContext.requireUser(),"NOTICE_TASK_CREATE",key,noticeTaskFormDTO));
+        return org.springframework.http.ResponseEntity.accepted()
+                .body(
+                        operations.submit(
+                                com.tianji.common.utils.UserContext.requireUser(),
+                                "NOTICE_TASK_CREATE",
+                                key,
+                                noticeTaskFormDTO));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "更新通知任务")
     public void updateNoticeTask(
             @RequestBody NoticeTaskFormDTO noticeTaskFormDTO,
-            @Parameter(description = "任务id", example = "1") @PathVariable("id") Long id){
+            @Parameter(description = "任务id", example = "1") @PathVariable("id") Long id) {
         noticeTaskFormDTO.setId(id);
         noticeTaskService.updateNoticeTask(noticeTaskFormDTO);
     }
 
     @GetMapping
     @Operation(summary = "分页查询通知任务")
-    public PageDTO<NoticeTaskDTO> queryNoticeTasks(NoticeTaskPageQuery pageQuery){
+    public PageDTO<NoticeTaskDTO> queryNoticeTasks(NoticeTaskPageQuery pageQuery) {
         return noticeTaskService.queryNoticeTasks(pageQuery);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "根据id查询任务")
-    public NoticeTaskDTO queryNoticeTask(@Parameter(description = "任务id", example = "1") @PathVariable("id") Long id){
+    public NoticeTaskDTO queryNoticeTask(
+            @Parameter(description = "任务id", example = "1") @PathVariable("id") Long id) {
         return noticeTaskService.queryNoticeTask(id);
     }
 }

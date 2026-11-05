@@ -1,6 +1,5 @@
 package com.tianji.trade.controller;
 
-
 import com.tianji.api.dto.course.CoursePurchaseInfoDTO;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.trade.domain.query.OrderDetailPageQuery;
@@ -24,7 +23,6 @@ import java.util.Map;
  * @author 虎哥
  * @since 2022-08-29
  */
-
 @Tag(name = "订单明细相关接口")
 @RestController
 @RequestMapping("/order-details")
@@ -41,30 +39,33 @@ public class OrderDetailController {
 
     @Operation(summary = "根据订单明细id获取详细信息")
     @GetMapping("/{id}")
-    public OrderDetailAdminVO queryOrdersDetailProgress( @Parameter(description = "订单明细id")@PathVariable("id") Long id) {
+    public OrderDetailAdminVO queryOrdersDetailProgress(
+            @Parameter(description = "订单明细id") @PathVariable("id") Long id) {
         return detailService.queryOrdersDetailProgress(id);
     }
 
     @Operation(summary = "校验课程是否购买，是否过期")
     @GetMapping("/course/{id}")
-    public Boolean checkCourseOrderInfo(@PathVariable("id") Long courseId){
+    public Boolean checkCourseOrderInfo(@PathVariable("id") Long courseId) {
         return detailService.checkCourseOrderInfo(courseId);
     }
 
     @Operation(summary = "统计课程报名人数")
     @GetMapping("/enrollNum")
-    public Map<Long, Integer> countEnrollNumOfCourse(@RequestParam("courseIdList") List<Long> courseIdList){
+    public Map<Long, Integer> countEnrollNumOfCourse(
+            @RequestParam("courseIdList") List<Long> courseIdList) {
         return detailService.countEnrollNumOfCourse(courseIdList);
     }
 
     @Operation(summary = "统计学生报名课程数量")
     @GetMapping("/enrollCourse")
-    public Map<Long, Integer> countEnrollCourseOfStudent(@RequestParam("studentIds") List<Long> studentIds){
+    public Map<Long, Integer> countEnrollCourseOfStudent(
+            @RequestParam("studentIds") List<Long> studentIds) {
         return detailService.countEnrollCourseOfStudent(studentIds);
     }
 
     @GetMapping("purchaseInfo")
-    public CoursePurchaseInfoDTO getPurchaseInfoOfCourse(@RequestParam("courseId") Long courseId){
+    public CoursePurchaseInfoDTO getPurchaseInfoOfCourse(@RequestParam("courseId") Long courseId) {
         return detailService.getPurchaseInfoOfCourse(courseId);
     }
 }

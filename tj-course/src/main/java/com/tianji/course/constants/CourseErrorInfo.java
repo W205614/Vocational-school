@@ -7,7 +7,7 @@ package com.tianji.course.constants;
  **/
 public class CourseErrorInfo {
 
-    //错误信息
+    // 错误信息
     public class Msg {
         public static final String CATEGORY_PARENT_NOT_FOUND = "课程分类父分类没有找到";
         public static final String CATEGORY_CREATE_ON_THIRD = "三级分类下不能再创建子分类";
@@ -74,7 +74,7 @@ public class CourseErrorInfo {
         public static final String COURSE_SUBJECT_SAVE_CATALOGUE_ID_NULL = "题目未指定练习id";
         public static final String COURSE_TEACHER_SAVE_COURSE_ID_NULL = "课程id不能为空";
         public static final String COURSE_TEACHER_SAVE_TEACHERS_NULL = "请至少设置一名教师";
-//        public static final String COURSE_TEACHER_SAVE_TEACHERS_NUM_MAX = "最多可设置5名课程老师";
+        //        public static final String COURSE_TEACHER_SAVE_TEACHERS_NUM_MAX = "最多可设置5名课程老师";
         public static final String COURSE_TEACHER_SAVE_TEACHERS_NUM_MAX = "必须设置老师1-到5人";
         public static final String COURSE_TEACHER_SAVE_TEACHER_SHOW = "老师用户端显示不能为空";
         public static final String COURSE_TEACHER_SAVE_TEACHER_ID_NULL = "老师id不能为空";

@@ -32,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 import static com.tianji.user.constants.UserConstants.*;
 import static com.tianji.user.constants.UserErrorInfo.Msg.*;
 
-
 /**
  * <p>
  * 学员用户表 服务实现类
@@ -44,16 +43,11 @@ import static com.tianji.user.constants.UserErrorInfo.Msg.*;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private TemporaryCredentialService temporaryCredentials;
-    @Autowired
-    private ICodeService codeService;
-    @Autowired
-    private AuthClient authClient;
-    @Autowired
-    private IUserDetailService detailService;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private TemporaryCredentialService temporaryCredentials;
+    @Autowired private ICodeService codeService;
+    @Autowired private AuthClient authClient;
+    @Autowired private IUserDetailService detailService;
 
     @Override
     public LoginUserDTO queryUserDetail(LoginFormDTO loginDTO, boolean isStaff) {
@@ -76,7 +70,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (isStaff ^ user.getType() != UserType.STUDENT) {
             throw new BadRequestException(isStaff ? "非管理端用户" : "非学生端用户");
         }
-        if(Boolean.TRUE.equals(user.getMustChangePassword()))temporaryCredentials.requireActive(user);
+        if (Boolean.TRUE.equals(user.getMustChangePassword()))
+            temporaryCredentials.requireActive(user);
         // 6.封装返回
         LoginUserDTO userDTO = new LoginUserDTO();
         userDTO.setUserId(user.getId());
@@ -129,7 +124,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 1.验证码校验
         codeService.verifyCode(user.getCellPhone(), code);
         // 2.判断手机号是否存在
-        Integer count = Math.toIntExact(lambdaQuery().eq(User::getCellPhone, user.getCellPhone()).count());
+        Integer count =
+                Math.toIntExact(lambdaQuery().eq(User::getCellPhone, user.getCellPhone()).count());
         if (count > 0) {
             throw new BadRequestException(PHONE_ALREADY_EXISTS);
         }
@@ -157,10 +153,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Transactional
     public com.tianji.api.dto.user.TemporaryCredentialDTO saveUser(UserDTO userDTO) {
         UserType type = UserType.of(userDTO.getType());
-        if(type!=UserType.STAFF && type!=UserType.TEACHER)throw new BadRequestException("此入口仅创建教师或员工");
+        if (type != UserType.STAFF && type != UserType.TEACHER)
+            throw new BadRequestException("此入口仅创建教师或员工");
         // 1.保存用户基本信息
         User user = new User();
-        String temporaryPassword=temporaryCredentials.initialize(user);
+        String temporaryPassword = temporaryCredentials.initialize(user);
         user.setCellPhone(userDTO.getCellPhone());
         user.setUsername(userDTO.getCellPhone());
         user.setType(type);
@@ -169,15 +166,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         UserDetail detail = BeanUtils.toBean(userDTO, UserDetail.class);
         detail.setId(user.getId());
         detail.setType(type);
-        if(type == UserType.TEACHER){
+        if (type == UserType.TEACHER) {
             detail.setRoleId(TEACHER_ROLE_ID);
-        }else{
+        } else {
             if (userDTO.getRoleId() == null) {
                 throw new BadRequestException("员工角色信息不能为空");
             }
         }
         detailService.save(detail);
-        return temporaryCredentials.receipt(user,temporaryPassword);
+        return temporaryCredentials.receipt(user, temporaryPassword);
     }
 
     @Override
@@ -185,7 +182,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public void updateUser(UserDTO userDTO) {
         // 1.如果传递了手机号，则修改手机号
         String cellphone = userDTO.getCellPhone();
-        if(StringUtils.isNotBlank(cellphone)){
+        if (StringUtils.isNotBlank(cellphone)) {
             User user = new User();
             user.setId(userDTO.getId());
             user.setCellPhone(cellphone);
@@ -201,13 +198,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Override
     @Transactional
     public void updateUserWithPassword(UserFormDTO userDTO) {
-        long currentUser=UserContext.requireUser();
+        long currentUser = UserContext.requireUser();
         // 1.尝试更新密码
         String pw = userDTO.getPassword();
         String oldPw = userDTO.getOldPassword();
-        if(StringUtils.isNotBlank(pw)) {
-            if(StringUtils.isBlank(oldPw) || pw.length()<8 || pw.length()>72)
-                throw new com.tianji.common.exceptions.BadRequestException("修改密码需要原密码，新密码长度须为 8 到 72 个字符");
+        if (StringUtils.isNotBlank(pw)) {
+            if (StringUtils.isBlank(oldPw) || pw.length() < 8 || pw.length() > 72)
+                throw new com.tianji.common.exceptions.BadRequestException(
+                        "修改密码需要原密码，新密码长度须为 8 到 72 个字符");
             Long userId = UserContext.getUser();
             // 1.1.查询用户
             User user = getById(userId);
@@ -216,7 +214,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
                 throw new UnauthorizedException(USER_ID_NOT_EXISTS);
             }
             // Temporary credentials can only be changed through the dedicated no-session setup.
-            if(Boolean.TRUE.equals(user.getMustChangePassword()))throw new com.tianji.common.exceptions.InitialPasswordRequiredException();
+            if (Boolean.TRUE.equals(user.getMustChangePassword()))
+                throw new com.tianji.common.exceptions.InitialPasswordRequiredException();
             // 1.3.校验密码
             if (!passwordEncoder.matches(oldPw, user.getPassword())) {
                 // 密码不一致
@@ -239,10 +238,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     private void updateDetailIfPresent(UserDetail detail) {
         // Password/phone-only requests have no detail columns. MyBatis would otherwise
         // generate an invalid UPDATE with an empty SET clause; null still means unchanged.
-        if (java.util.stream.Stream.of(detail.getName(), detail.getGender(), detail.getIcon(),
-                detail.getEmail(), detail.getQq(), detail.getBirthday(), detail.getJob(),
-                detail.getProvince(), detail.getCity(), detail.getDistrict(), detail.getIntro(),
-                detail.getPhoto(), detail.getRoleId(), detail.getDepId()).anyMatch(java.util.Objects::nonNull)) {
+        if (java.util.stream.Stream.of(
+                        detail.getName(),
+                        detail.getGender(),
+                        detail.getIcon(),
+                        detail.getEmail(),
+                        detail.getQq(),
+                        detail.getBirthday(),
+                        detail.getJob(),
+                        detail.getProvince(),
+                        detail.getCity(),
+                        detail.getDistrict(),
+                        detail.getIntro(),
+                        detail.getPhoto(),
+                        detail.getRoleId(),
+                        detail.getDepId())
+                .anyMatch(java.util.Objects::nonNull)) {
             detailService.updateById(detail);
         }
     }
@@ -255,13 +266,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             throw new BadRequestException(INVALID_UN);
         }
         // 2.根据用户名或手机号查询
-        User user = lambdaQuery()
-                .select(User::getId, User::getUsername, User::getCellPhone, User::getPassword,
-                        User::getType, User::getStatus, User::getMustChangePassword,
-                        User::getTemporaryPasswordExpiresAt, User::getAuthVersion)
-                .eq(StrUtil.isNotBlank(username), User::getUsername, username)
-                .eq(StrUtil.isNotBlank(cellPhone), User::getCellPhone, cellPhone)
-                .one();
+        User user =
+                lambdaQuery()
+                        .select(
+                                User::getId,
+                                User::getUsername,
+                                User::getCellPhone,
+                                User::getPassword,
+                                User::getType,
+                                User::getStatus,
+                                User::getMustChangePassword,
+                                User::getTemporaryPasswordExpiresAt,
+                                User::getAuthVersion)
+                        .eq(StrUtil.isNotBlank(username), User::getUsername, username)
+                        .eq(StrUtil.isNotBlank(cellPhone), User::getCellPhone, cellPhone)
+                        .one();
         AssertUtils.isNotNull(user, INVALID_UN_OR_PW);
         // 3.校验是否禁用
         if (user.getStatus() == UserStatus.FROZEN) {
@@ -296,11 +315,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 1.校验验证码
         codeService.verifyCode(phone, code);
         // 2.根据手机号查询
-        User user = lambdaQuery()
-                .select(User::getId, User::getUsername, User::getCellPhone, User::getPassword,
-                        User::getType, User::getStatus, User::getMustChangePassword,
-                        User::getTemporaryPasswordExpiresAt, User::getAuthVersion)
-                .eq(User::getCellPhone, phone).one();
+        User user =
+                lambdaQuery()
+                        .select(
+                                User::getId,
+                                User::getUsername,
+                                User::getCellPhone,
+                                User::getPassword,
+                                User::getType,
+                                User::getStatus,
+                                User::getMustChangePassword,
+                                User::getTemporaryPasswordExpiresAt,
+                                User::getAuthVersion)
+                        .eq(User::getCellPhone, phone)
+                        .one();
         if (user == null) {
             throw new BadRequestException(PHONE_NOT_EXISTS);
         }

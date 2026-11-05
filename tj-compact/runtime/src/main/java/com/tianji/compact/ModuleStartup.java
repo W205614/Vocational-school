@@ -12,7 +12,8 @@ import java.util.List;
 final class ModuleStartup {
     private ModuleStartup() {}
 
-    static void run(List<ApplicationContext> contexts, ApplicationArguments arguments) throws Exception {
+    static void run(List<ApplicationContext> contexts, ApplicationArguments arguments)
+            throws Exception {
         var runners = new LinkedHashSet<Object>();
         for (var context : contexts) {
             runners.addAll(context.getBeansOfType(ApplicationRunner.class).values());

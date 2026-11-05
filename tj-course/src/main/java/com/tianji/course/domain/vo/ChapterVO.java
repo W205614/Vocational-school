@@ -10,10 +10,13 @@ import java.util.List;
 public class ChapterVO {
     @Schema(description = "章id")
     private Long id;
+
     @Schema(description = "章索引")
     private Integer index;
+
     @Schema(description = "章名称")
     private String name;
+
     @Schema(description = "本章视频总时长")
     private Integer mediaDuration;
 

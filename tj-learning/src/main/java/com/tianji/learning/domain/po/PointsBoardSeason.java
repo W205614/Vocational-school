@@ -11,7 +11,7 @@ import lombok.experimental.Accessors;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author 虎哥
@@ -45,6 +45,4 @@ public class PointsBoardSeason implements Serializable {
      * 赛季结束时间
      */
     private LocalDate endTime;
-
-
 }

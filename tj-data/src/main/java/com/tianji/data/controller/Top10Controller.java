@@ -20,8 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/data/top10")
 public class Top10Controller {
 
-    @Autowired
-    private Top10Service top10Service;
+    @Autowired private Top10Service top10Service;
 
     @GetMapping("")
     @Operation(summary = "top10数据获取")
@@ -34,5 +33,4 @@ public class Top10Controller {
     public void setTop10Data(@RequestBody @Validated Top10DataSetDTO top10DataSetDTO) {
         top10Service.setTop10Data(top10DataSetDTO);
     }
-
 }

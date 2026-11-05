@@ -16,11 +16,10 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class CourseJobHandler {
 
-    @Autowired
-    private ICourseService courseService;
+    @Autowired private ICourseService courseService;
 
     @XxlJob("courseFinished")
-    public void courseFinished(){
+    public void courseFinished() {
         courseService.courseFinished();
     }
 }

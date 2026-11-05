@@ -1,6 +1,5 @@
 package com.tianji.message.controller;
 
-
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.message.domain.dto.NoticeTemplateDTO;
 import com.tianji.message.domain.dto.NoticeTemplateFormDTO;
@@ -30,7 +29,7 @@ public class NoticeTemplateController {
 
     @PostMapping
     @Operation(summary = "新增通知模板")
-    public Long saveNoticeTemplate(@RequestBody NoticeTemplateFormDTO noticeTemplateFormDTO){
+    public Long saveNoticeTemplate(@RequestBody NoticeTemplateFormDTO noticeTemplateFormDTO) {
         return noticeTemplateService.saveNoticeTemplate(noticeTemplateFormDTO);
     }
 
@@ -38,20 +37,21 @@ public class NoticeTemplateController {
     @Operation(summary = "更新通知模板")
     public void updateNoticeTemplate(
             @RequestBody NoticeTemplateFormDTO noticeTemplateFormDTO,
-            @Parameter(description = "模板id", example = "1") @PathVariable("id") Long id){
+            @Parameter(description = "模板id", example = "1") @PathVariable("id") Long id) {
         noticeTemplateFormDTO.setId(id);
         noticeTemplateService.updateNoticeTemplate(noticeTemplateFormDTO);
     }
 
     @GetMapping
     @Operation(summary = "分页查询通知模板")
-    public PageDTO<NoticeTemplateDTO> queryNoticeTemplates(NoticeTemplatePageQuery pageQuery){
+    public PageDTO<NoticeTemplateDTO> queryNoticeTemplates(NoticeTemplatePageQuery pageQuery) {
         return noticeTemplateService.queryNoticeTemplates(pageQuery);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "根据id查询模板")
-    public NoticeTemplateDTO queryNoticeTemplate(@Parameter(description = "模板id", example = "1") @PathVariable("id") Long id){
+    public NoticeTemplateDTO queryNoticeTemplate(
+            @Parameter(description = "模板id", example = "1") @PathVariable("id") Long id) {
         return noticeTemplateService.queryNoticeTemplate(id);
     }
 }

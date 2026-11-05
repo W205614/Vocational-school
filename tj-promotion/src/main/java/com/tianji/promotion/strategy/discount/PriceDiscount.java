@@ -6,10 +6,9 @@ import com.tianji.promotion.domain.po.Coupon;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class PriceDiscount implements Discount{
+public class PriceDiscount implements Discount {
 
     private static final String RULE_TEMPLATE = "满{}减{}";
-
 
     @Override
     public boolean canUse(int totalAmount, Coupon coupon) {
@@ -26,7 +25,6 @@ public class PriceDiscount implements Discount{
         return StringUtils.format(
                 RULE_TEMPLATE,
                 NumberUtils.scaleToStr(coupon.getThresholdAmount(), 2),
-                NumberUtils.scaleToStr(coupon.getDiscountValue(), 2)
-        );
+                NumberUtils.scaleToStr(coupon.getDiscountValue(), 2));
     }
 }

@@ -18,6 +18,5 @@ public class PayApplication {
         SpringApplication app = new SpringApplicationBuilder(PayApplication.class).build(args);
         Environment env = app.run(args).getEnvironment();
         StartupLogger.log(env, log);
-
     }
 }

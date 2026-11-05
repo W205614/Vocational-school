@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 public class ParamCheckerConfig {
 
     @Bean
-    public CheckerAspect checkerAspect(){
+    public CheckerAspect checkerAspect() {
         return new CheckerAspect();
     }
 }

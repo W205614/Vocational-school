@@ -1,4 +1,5 @@
 """Retire obsolete owned images after verifying the one current recovery bundle."""
+
 import datetime
 import hashlib
 import gzip
@@ -16,152 +17,314 @@ def output(arguments):
 
 
 def candidates(images, owned, referenced):
-    prefixes=('tianji-compact/', 'tianji-opt/', 'tianji-final/', 'tianji-acceptance/', 'tianji-release/', 'tianji-rollback/')
-    infrastructure=('mysql:', 'redis:', 'rabbitmq:', 'docker.elastic.co/elasticsearch/elasticsearch:')
-    return {item['Id'] for item in images if item['Id'] not in referenced and
-            all(tag.startswith(prefixes+infrastructure) for tag in item.get('RepoTags') or []) and
-            (item['Id'] in owned or any(tag.startswith(prefixes) for tag in item.get('RepoTags') or []))}
+    prefixes = (
+        'tianji-compact/',
+        'tianji-opt/',
+        'tianji-final/',
+        'tianji-acceptance/',
+        'tianji-release/',
+        'tianji-rollback/',
+    )
+    infrastructure = (
+        'mysql:',
+        'redis:',
+        'rabbitmq:',
+        'docker.elastic.co/elasticsearch/elasticsearch:',
+    )
+    return {
+        item['Id']
+        for item in images
+        if item['Id'] not in referenced
+        and all(
+            tag.startswith(prefixes + infrastructure)
+            for tag in item.get('RepoTags') or []
+        )
+        and (
+            item['Id'] in owned
+            or any(tag.startswith(prefixes) for tag in item.get('RepoTags') or [])
+        )
+    }
 
 
 def verify_descriptor_graph(archive, expected, configs, platforms):
     """Bind containerd image IDs to their archived local-platform config/layers."""
-    if not platforms or set(platforms)!=set(expected):raise RuntimeError('Recorded image platforms are required for OCI archives')
-    index=json.load(archive.extractfile('index.json'))
-    descriptors=index.get('manifests',[])
-    if {item['digest'] for item in descriptors}!=set(expected):raise RuntimeError('Archived image roots differ from the removal inventory')
-    checked=set()
+    if not platforms or set(platforms) != set(expected):
+        raise RuntimeError('Recorded image platforms are required for OCI archives')
+    index = json.load(archive.extractfile('index.json'))
+    descriptors = index.get('manifests', [])
+    if {item['digest'] for item in descriptors} != set(expected):
+        raise RuntimeError('Archived image roots differ from the removal inventory')
+    checked = set()
+
     def blob(item):
-        digest=item['digest']
-        if not re.fullmatch(r'sha256:[0-9a-f]{64}',digest):raise RuntimeError('Invalid archived descriptor digest')
-        name='blobs/sha256/'+digest.split(':')[1];member=archive.getmember(name)
-        if not member.isfile() or member.size!=item['size']:raise RuntimeError('Incomplete archived descriptor')
+        digest = item['digest']
+        if not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+            raise RuntimeError('Invalid archived descriptor digest')
+        name = 'blobs/sha256/' + digest.split(':')[1]
+        member = archive.getmember(name)
+        if not member.isfile() or member.size != item['size']:
+            raise RuntimeError('Incomplete archived descriptor')
         if digest not in checked:
-            with archive.extractfile(member) as source:actual='sha256:'+hashlib.file_digest(source,'sha256').hexdigest()
-            if actual!=digest:raise RuntimeError('Archived descriptor content differs from its image digest')
+            with archive.extractfile(member) as source:
+                actual = 'sha256:' + hashlib.file_digest(source, 'sha256').hexdigest()
+            if actual != digest:
+                raise RuntimeError(
+                    'Archived descriptor content differs from its image digest'
+                )
             checked.add(digest)
         return member
-    def walk(item,platform,required=True):
-        member=blob(item)
-        with archive.extractfile(member) as source:document=json.load(source)
+
+    def walk(item, platform, required=True):
+        member = blob(item)
+        with archive.extractfile(member) as source:
+            document = json.load(source)
         if 'manifests' in document:
-            result=set();matched=False
+            result = set()
+            matched = False
             for child in document['manifests']:
-                child_platform=child.get('platform',{})
-                local=all(child_platform.get(key)==value for key,value in platform.items())
-                nested=not child_platform and 'index' in child.get('mediaType','')
+                child_platform = child.get('platform', {})
+                local = all(
+                    child_platform.get(key) == value for key, value in platform.items()
+                )
+                nested = not child_platform and 'index' in child.get('mediaType', '')
                 if local or nested:
-                    result.update(walk(child,platform));matched=True
-                elif child_platform.get('architecture')=='unknown':
+                    result.update(walk(child, platform))
+                    matched = True
+                elif child_platform.get('architecture') == 'unknown':
                     # Attestations are checked when present; they are not executable platforms.
-                    try:archive.getmember('blobs/sha256/'+child['digest'].split(':')[1])
-                    except KeyError:continue
-                    walk(child,platform,False)
-            if required and (not matched or not result):raise RuntimeError('Recorded executable image platform is missing')
+                    try:
+                        archive.getmember(
+                            'blobs/sha256/' + child['digest'].split(':')[1]
+                        )
+                    except KeyError:
+                        continue
+                    walk(child, platform, False)
+            if required and (not matched or not result):
+                raise RuntimeError('Recorded executable image platform is missing')
             return result
-        if 'config' not in document or 'layers' not in document:raise RuntimeError('Unknown archived image descriptor')
-        config_member=blob(document['config'])
-        for layer in document['layers']:blob(layer)
-        if document.get('artifactType'):return set()
-        with archive.extractfile(config_member) as source:configuration=json.load(source)
+        if 'config' not in document or 'layers' not in document:
+            raise RuntimeError('Unknown archived image descriptor')
+        config_member = blob(document['config'])
+        for layer in document['layers']:
+            blob(layer)
+        if document.get('artifactType'):
+            return set()
+        with archive.extractfile(config_member) as source:
+            configuration = json.load(source)
         if not required:
-            if configuration.get('architecture') not in (None,'unknown') or configuration.get('os') not in (None,'unknown'):
+            if configuration.get('architecture') not in (
+                None,
+                'unknown',
+            ) or configuration.get('os') not in (None, 'unknown'):
                 raise RuntimeError('Unexpected executable platform in an attestation')
             return set()
-        if any(configuration.get(key)!=value for key,value in platform.items()):raise RuntimeError('Archived configuration platform differs from inventory')
+        if any(configuration.get(key) != value for key, value in platform.items()):
+            raise RuntimeError('Archived configuration platform differs from inventory')
         return {document['config']['digest']}
-    reachable=set()
-    for item in descriptors:reachable.update(walk(item,platforms[item['digest']]))
-    if reachable!=configs:raise RuntimeError('Archive configs are not bound to the recorded image roots')
+
+    reachable = set()
+    for item in descriptors:
+        reachable.update(walk(item, platforms[item['digest']]))
+    if reachable != configs:
+        raise RuntimeError('Archive configs are not bound to the recorded image roots')
 
 
 def verify_archive(path, expected, platforms=None):
-    configs=set();layers={}
+    configs = set()
+    layers = {}
     with tarfile.open(path, 'r') as archive:
-        entries=json.load(archive.extractfile('manifest.json'))
+        entries = json.load(archive.extractfile('manifest.json'))
         for entry in entries:
-            if not archive.getmember(entry['Config']).isfile():raise RuntimeError('Invalid image config in archive')
+            if not archive.getmember(entry['Config']).isfile():
+                raise RuntimeError('Invalid image config in archive')
             with archive.extractfile(entry['Config']) as source:
-                config=source.read();configs.add('sha256:'+hashlib.sha256(config).hexdigest())
-            roots=json.loads(config).get('rootfs',{})
-            if roots.get('type')!='layers' or len(roots.get('diff_ids',[]))!=len(entry['Layers']):
+                config = source.read()
+                configs.add('sha256:' + hashlib.sha256(config).hexdigest())
+            roots = json.loads(config).get('rootfs', {})
+            if roots.get('type') != 'layers' or len(roots.get('diff_ids', [])) != len(
+                entry['Layers']
+            ):
                 raise RuntimeError('Image root filesystem provenance is unavailable')
             # diff_ids bind the uncompressed tar bytes, including shared layers.
-            for layer,diff_id in zip(entry['Layers'],roots['diff_ids']):
-                if not archive.getmember(layer).isfile():raise RuntimeError('Incomplete image archive')
+            for layer, diff_id in zip(entry['Layers'], roots['diff_ids']):
+                if not archive.getmember(layer).isfile():
+                    raise RuntimeError('Incomplete image archive')
                 if layer not in layers:
                     with archive.extractfile(layer) as source:
-                        compressed=source.read(2)==b'\x1f\x8b';source.seek(0)
+                        compressed = source.read(2) == b'\x1f\x8b'
+                        source.seek(0)
                         if compressed:
-                            with gzip.GzipFile(fileobj=source) as plain:layers[layer]='sha256:'+hashlib.file_digest(plain,'sha256').hexdigest()
-                        else:layers[layer]='sha256:'+hashlib.file_digest(source,'sha256').hexdigest()
-                if layers[layer]!=diff_id:raise RuntimeError('Archived layer content differs from its image root filesystem')
-        if configs!=set(expected):
-            if 'index.json' not in archive.getnames():raise RuntimeError('Archived images differ from the removal inventory')
-            verify_descriptor_graph(archive,expected,configs,platforms)
-    with Path(path).open('rb') as source:return hashlib.file_digest(source, 'sha256').hexdigest()
+                            with gzip.GzipFile(fileobj=source) as plain:
+                                layers[layer] = (
+                                    'sha256:'
+                                    + hashlib.file_digest(plain, 'sha256').hexdigest()
+                                )
+                        else:
+                            layers[layer] = (
+                                'sha256:'
+                                + hashlib.file_digest(source, 'sha256').hexdigest()
+                            )
+                if layers[layer] != diff_id:
+                    raise RuntimeError(
+                        'Archived layer content differs from its image root filesystem'
+                    )
+        if configs != set(expected):
+            if 'index.json' not in archive.getnames():
+                raise RuntimeError('Archived images differ from the removal inventory')
+            verify_descriptor_graph(archive, expected, configs, platforms)
+    with Path(path).open('rb') as source:
+        return hashlib.file_digest(source, 'sha256').hexdigest()
 
 
 def main():
-    if PROJECT!='tianji-compact':raise RuntimeError('Image retirement requires the final deployment')
-    expected=json.loads((LOCAL/'release-run.json').read_text(encoding='utf8'))
-    gate=json.loads((LOCAL/'evidence'/expected['releaseRunId']/'release-gate.json').read_text(encoding='utf8'))
-    if not validate(gate, expected):raise RuntimeError('Final bound acceptance must pass before image retirement')
-    live=manifest(LOCAL, COMPOSE, ROOT, expected['snapshotPath'])
-    if any(live[key]!=expected[key] for key in ('sourceCommit','imageDigests','configFingerprint','baseSnapshotFingerprint')):
+    if PROJECT != 'tianji-compact':
+        raise RuntimeError('Image retirement requires the final deployment')
+    expected = json.loads((LOCAL / 'release-run.json').read_text(encoding='utf8'))
+    gate = json.loads(
+        (LOCAL / 'evidence' / expected['releaseRunId'] / 'release-gate.json').read_text(
+            encoding='utf8'
+        )
+    )
+    if not validate(gate, expected):
+        raise RuntimeError('Final bound acceptance must pass before image retirement')
+    live = manifest(LOCAL, COMPOSE, ROOT, expected['snapshotPath'])
+    if any(
+        live[key] != expected[key]
+        for key in (
+            'sourceCommit',
+            'imageDigests',
+            'configFingerprint',
+            'baseSnapshotFingerprint',
+        )
+    ):
         raise RuntimeError('Final deployment changed after acceptance')
-    retirement=json.loads((LOCAL/'retirement-result.json').read_text(encoding='utf8'))
-    if retirement.get('status')!='PASSED':raise RuntimeError('Container retirement must complete first')
-    owned=set()
-    for folder in (LOCAL/'retirement').iterdir():
-        path=folder/'containers-private.json'
-        if path.exists():owned.update(item['Image'] for item in json.loads(path.read_text(encoding='utf8')))
-    for name in ('build-source.json','images.json','standalone-images.json','runtime-images.json'):
+    retirement = json.loads(
+        (LOCAL / 'retirement-result.json').read_text(encoding='utf8')
+    )
+    if retirement.get('status') != 'PASSED':
+        raise RuntimeError('Container retirement must complete first')
+    owned = set()
+    for folder in (LOCAL / 'retirement').iterdir():
+        path = folder / 'containers-private.json'
+        if path.exists():
+            owned.update(
+                item['Image'] for item in json.loads(path.read_text(encoding='utf8'))
+            )
+    for name in (
+        'build-source.json',
+        'images.json',
+        'standalone-images.json',
+        'runtime-images.json',
+    ):
         for path in LOCAL.rglob(name):
-            value=json.loads(path.read_text(encoding='utf8'))
-            if name=='build-source.json':owned.update(value.get('imageDigests',{}).values())
-            elif name=='runtime-images.json':
+            value = json.loads(path.read_text(encoding='utf8'))
+            if name == 'build-source.json':
+                owned.update(value.get('imageDigests', {}).values())
+            elif name == 'runtime-images.json':
                 # Updating the final Compose project replaces its old containers.
                 # Their immutable image ownership remains in the captured backup,
                 # even when later builds have moved all application tags.
-                if (path.parent/'manifest.json').exists():
-                    __import__('sys').path.insert(0,str(ROOT/'deploy/operations'))
+                if (path.parent / 'manifest.json').exists():
+                    __import__('sys').path.insert(0, str(ROOT / 'deploy/operations'))
                     from runtime_backup import verify
+
                     verify(path.parent)
-                    owned.update(image for image in value.values() if isinstance(image,str) and re.fullmatch(r'sha256:[0-9a-f]{64}',image))
-            else:owned.update(item['imageId'] for item in value.values() if isinstance(item,dict) and 'imageId' in item)
+                    owned.update(
+                        image
+                        for image in value.values()
+                        if isinstance(image, str)
+                        and re.fullmatch(r'sha256:[0-9a-f]{64}', image)
+                    )
+            else:
+                owned.update(
+                    item['imageId']
+                    for item in value.values()
+                    if isinstance(item, dict) and 'imageId' in item
+                )
+
     def referenced():
-        ids=output(['docker','ps','-aq']).splitlines()
-        return {item['Image'] for item in json.loads(output(['docker','inspect',*ids]))} if ids else set()
-    ids=output(['docker','image','ls','-aq','--no-trunc']).splitlines()
-    inventory=json.loads(output(['docker','image','inspect',*sorted(set(ids))])) if ids else []
-    selected=candidates(inventory, owned, referenced())
-    at=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-    folder=LOCAL/'retirement'/('images-'+at);folder.mkdir(parents=True)
-    plan={'imageIds':sorted(selected),'images':[{key:item.get(key) for key in ('Id','RepoTags','Size')} for item in inventory if item['Id'] in selected],
-          'preservedReferencedImages':sorted(referenced()),'archive':None,'releaseRunId':expected['releaseRunId'],
-          'retentionPolicy':'current-version-only'}
-    (folder/'plan.json').write_text(json.dumps(plan,indent=2),encoding='utf8')
+        ids = output(['docker', 'ps', '-aq']).splitlines()
+        return (
+            {item['Image'] for item in json.loads(output(['docker', 'inspect', *ids]))}
+            if ids
+            else set()
+        )
+
+    ids = output(['docker', 'image', 'ls', '-aq', '--no-trunc']).splitlines()
+    inventory = (
+        json.loads(output(['docker', 'image', 'inspect', *sorted(set(ids))]))
+        if ids
+        else []
+    )
+    selected = candidates(inventory, owned, referenced())
+    at = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    folder = LOCAL / 'retirement' / ('images-' + at)
+    folder.mkdir(parents=True)
+    plan = {
+        'imageIds': sorted(selected),
+        'images': [
+            {key: item.get(key) for key in ('Id', 'RepoTags', 'Size')}
+            for item in inventory
+            if item['Id'] in selected
+        ],
+        'preservedReferencedImages': sorted(referenced()),
+        'archive': None,
+        'releaseRunId': expected['releaseRunId'],
+        'retentionPolicy': 'current-version-only',
+    }
+    (folder / 'plan.json').write_text(json.dumps(plan, indent=2), encoding='utf8')
     if selected:
         # A current complete backup replaces historical rollback tar packages.
         from backup_images import refresh
         from runtime_backup import verify
-        backup=Path(json.loads((LOCAL/'ops-status/backup.json').read_text(encoding='utf8'))['lastBundle'])
-        if not verify(backup).get('quiesced'):raise RuntimeError('A current complete data backup is required')
+
+        backup = Path(
+            json.loads((LOCAL / 'ops-status/backup.json').read_text(encoding='utf8'))[
+                'lastBundle'
+            ]
+        )
+        if not verify(backup).get('quiesced'):
+            raise RuntimeError('A current complete data backup is required')
         refresh(LOCAL, PROJECT, backup)
-        recovery=json.loads((LOCAL/'current-runtime-backup/recovery.json').read_text(encoding='utf8'))
-        if selected & set(recovery['services'].values()):raise RuntimeError('Current recovery images cannot be retired')
+        recovery = json.loads(
+            (LOCAL / 'current-runtime-backup/recovery.json').read_text(encoding='utf8')
+        )
+        if selected & set(recovery['services'].values()):
+            raise RuntimeError('Current recovery images cannot be retired')
         for item in inventory:
-            if item['Id'] not in selected:continue
-            if item['Id'] in referenced():raise RuntimeError('Image gained a container reference; removal stopped')
-            tags=item.get('RepoTags') or []
-            subprocess.run(['docker','image','rm','--no-prune',*(tags or [item['Id']])],check=True,stdout=subprocess.DEVNULL)
-        remaining=set(output(['docker','image','ls','-aq','--no-trunc']).splitlines())
-        if selected & remaining:raise RuntimeError('Unreferenced project images remain')
-    result={'status':'PASSED','removedImages':len(selected),'archive':None,'retentionPolicy':'current-version-only',
-            'rollbackPreservedInArchive':False,'otherProjectContainersChanged':False,'volumeDeletion':False,'at':at}
-    (folder/'result.json').write_text(json.dumps(result,indent=2),encoding='utf8')
-    (LOCAL/'image-retirement-result.json').write_text(json.dumps(result,indent=2),encoding='utf8')
+            if item['Id'] not in selected:
+                continue
+            if item['Id'] in referenced():
+                raise RuntimeError(
+                    'Image gained a container reference; removal stopped'
+                )
+            tags = item.get('RepoTags') or []
+            subprocess.run(
+                ['docker', 'image', 'rm', '--no-prune', *(tags or [item['Id']])],
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+        remaining = set(
+            output(['docker', 'image', 'ls', '-aq', '--no-trunc']).splitlines()
+        )
+        if selected & remaining:
+            raise RuntimeError('Unreferenced project images remain')
+    result = {
+        'status': 'PASSED',
+        'removedImages': len(selected),
+        'archive': None,
+        'retentionPolicy': 'current-version-only',
+        'rollbackPreservedInArchive': False,
+        'otherProjectContainersChanged': False,
+        'volumeDeletion': False,
+        'at': at,
+    }
+    (folder / 'result.json').write_text(json.dumps(result, indent=2), encoding='utf8')
+    (LOCAL / 'image-retirement-result.json').write_text(
+        json.dumps(result, indent=2), encoding='utf8'
+    )
     print(json.dumps(result))
 
 
-if __name__=='__main__':main()
+if __name__ == '__main__':
+    main()

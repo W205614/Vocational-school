@@ -1,26 +1,230 @@
 <script setup lang="ts">
-import {ref,computed,onMounted} from 'vue';import {useSession} from '../../../../packages/shared/src/session';import {get} from '../../../../packages/shared/src/client';import {useOperations} from '../../../../packages/shared/src/operations';import {useTask,examStatus,type Row} from '../../../../packages/shared/src/ui';import Status from '../../../../packages/shared/src/Status.vue';import EntityPicker from '../components/EntityPicker.vue';
-const session=useSession(),task=useTask(),ops=useOperations(),course=ref(''),sections=ref<Row[]>([]),section=ref(''),ids=ref<string[]>([]),graders=ref<string[]>([]),questionRows=ref<Row[]>([]),percent=ref(60),pending=ref<Row[]>([]),attempt=ref<Row>(),scores=ref<Record<string,number>>({}),feedback=ref<Record<string,string>>({});
-const page=ref(1),total=ref(0),filterCourse=ref(''),filterStudent=ref('');
-const totalScore=computed(()=>questionRows.value.reduce((sum,row)=>sum+Number(row.score||0),0)),subjective=computed(()=>questionRows.value.some(row=>Number(row.type)===5));
-async function selectCourse(){section.value='';sections.value=[];await task.run(async()=>{const value=await get<Row>('/services/course/course/'+course.value+'?withCatalogue=true');sections.value=(value.chapters||[]).flatMap((chapter:Row)=>(chapter.sections||[]).filter((s:Row)=>Number(s.type)===3).map((s:Row)=>({...s,label:chapter.name+' / '+s.name})));});}
-async function publish(){await task.run(async()=>{const result=await ops.begin('exam','发布新试卷版本','/admin/exam-papers',{courseId:course.value,sectionId:section.value,questionIds:ids.value,passPercent:percent.value,graders:graders.value});task.message.value=result.status==='SUCCEEDED'?'试卷版本已发布':'试卷发布处理中';});}
-async function loadPending(){const params=new URLSearchParams({pageNo:String(page.value),pageSize:'20'});if(filterCourse.value)params.set('courseId',filterCourse.value);if(filterStudent.value)params.set('studentId',filterStudent.value);let result=await get<Row>('/teacher/exam-attempts/page?'+params);const lastPage=Math.max(1,Math.ceil(Number(result.total)/20));if(page.value>lastPage){page.value=lastPage;params.set('pageNo',String(page.value));result=await get<Row>('/teacher/exam-attempts/page?'+params);}pending.value=result.list;total.value=Number(result.total);}
-async function load(){await task.run(loadPending);}
-async function view(id:string){await task.run(async()=>{attempt.value=await get<Row>('/teacher/exam-attempts/'+id);scores.value={};feedback.value={};});}
-function validScore(answer:Row){const score=scores.value[answer.question_id],max=attempt.value?.questions.find((q:Row)=>q.question_id===answer.question_id)?.score;return typeof score==='number'&&Number.isInteger(score)&&score>=0&&score<=Number(max);}
-async function grade(answer:Row){if(!validScore(answer))return;await task.run(async()=>{if(!attempt.value)return;const result=await ops.begin('exam','教师评分','/teacher/exam-attempts/'+attempt.value.id+'/grades',{questionId:answer.question_id,score:scores.value[answer.question_id],version:answer.version,feedback:feedback.value[answer.question_id]||''});if(result.status==='SUCCEEDED'){attempt.value=await get<Row>('/teacher/exam-attempts/'+attempt.value.id);await loadPending();}});}
+import { ref, computed, onMounted } from 'vue';
+import { useSession } from '../../../../packages/shared/src/session';
+import { get } from '../../../../packages/shared/src/client';
+import { useOperations } from '../../../../packages/shared/src/operations';
+import { useTask, examStatus, type Row } from '../../../../packages/shared/src/ui';
+import Status from '../../../../packages/shared/src/Status.vue';
+import EntityPicker from '../components/EntityPicker.vue';
+const session = useSession(),
+  task = useTask(),
+  ops = useOperations(),
+  course = ref(''),
+  sections = ref<Row[]>([]),
+  section = ref(''),
+  ids = ref<string[]>([]),
+  graders = ref<string[]>([]),
+  questionRows = ref<Row[]>([]),
+  percent = ref(60),
+  pending = ref<Row[]>([]),
+  attempt = ref<Row>(),
+  scores = ref<Record<string, number>>({}),
+  feedback = ref<Record<string, string>>({});
+const page = ref(1),
+  total = ref(0),
+  filterCourse = ref(''),
+  filterStudent = ref('');
+const totalScore = computed(() =>
+    questionRows.value.reduce((sum, row) => sum + Number(row.score || 0), 0),
+  ),
+  subjective = computed(() => questionRows.value.some((row) => Number(row.type) === 5));
+async function selectCourse() {
+  section.value = '';
+  sections.value = [];
+  await task.run(async () => {
+    const value = await get<Row>('/services/course/course/' + course.value + '?withCatalogue=true');
+    sections.value = (value.chapters || []).flatMap((chapter: Row) =>
+      (chapter.sections || [])
+        .filter((s: Row) => Number(s.type) === 3)
+        .map((s: Row) => ({ ...s, label: chapter.name + ' / ' + s.name })),
+    );
+  });
+}
+async function publish() {
+  await task.run(async () => {
+    const result = await ops.begin('exam', '发布新试卷版本', '/admin/exam-papers', {
+      courseId: course.value,
+      sectionId: section.value,
+      questionIds: ids.value,
+      passPercent: percent.value,
+      graders: graders.value,
+    });
+    task.message.value = result.status === 'SUCCEEDED' ? '试卷版本已发布' : '试卷发布处理中';
+  });
+}
+async function loadPending() {
+  const params = new URLSearchParams({ pageNo: String(page.value), pageSize: '20' });
+  if (filterCourse.value) params.set('courseId', filterCourse.value);
+  if (filterStudent.value) params.set('studentId', filterStudent.value);
+  let result = await get<Row>('/teacher/exam-attempts/page?' + params);
+  const lastPage = Math.max(1, Math.ceil(Number(result.total) / 20));
+  if (page.value > lastPage) {
+    page.value = lastPage;
+    params.set('pageNo', String(page.value));
+    result = await get<Row>('/teacher/exam-attempts/page?' + params);
+  }
+  pending.value = result.list;
+  total.value = Number(result.total);
+}
+async function load() {
+  await task.run(loadPending);
+}
+async function view(id: string) {
+  await task.run(async () => {
+    attempt.value = await get<Row>('/teacher/exam-attempts/' + id);
+    scores.value = {};
+    feedback.value = {};
+  });
+}
+function validScore(answer: Row) {
+  const score = scores.value[answer.question_id],
+    max = attempt.value?.questions.find((q: Row) => q.question_id === answer.question_id)?.score;
+  return typeof score === 'number' && Number.isInteger(score) && score >= 0 && score <= Number(max);
+}
+async function grade(answer: Row) {
+  if (!validScore(answer)) return;
+  await task.run(async () => {
+    if (!attempt.value) return;
+    const result = await ops.begin(
+      'exam',
+      '教师评分',
+      '/teacher/exam-attempts/' + attempt.value.id + '/grades',
+      {
+        questionId: answer.question_id,
+        score: scores.value[answer.question_id],
+        version: answer.version,
+        feedback: feedback.value[answer.question_id] || '',
+      },
+    );
+    if (result.status === 'SUCCEEDED') {
+      attempt.value = await get<Row>('/teacher/exam-attempts/' + attempt.value.id);
+      await loadPending();
+    }
+  });
+}
 onMounted(load);
 </script>
-<template><section class="card"><h2>试卷版本与教师评分</h2><Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value"/>
-<el-form v-if="session.role===1" label-position="top" class="exam-publish-form">
- <p class="muted">选择课程与考试小节，从题库组卷。发布后生成独立快照，题库后续修改不会影响已经发布的试卷。</p>
- <div class="grid"><el-form-item label="考试课程"><EntityPicker v-model="course" kind="courses" label="选择考试课程" :disabled="task.busy.value" @change="selectCourse"/></el-form-item>
- <el-form-item label="考试小节"><el-select v-model="section" aria-label="选择考试小节" :disabled="!course || task.busy.value" placeholder="先选择课程，再选择考试小节"><el-option v-for="item in sections" :key="item.id" :value="String(item.id)" :label="item.label"/></el-select><small v-if="course && !sections.length && !task.busy.value" class="muted">该课程没有考试小节，请先配置课程目录。</small></el-form-item>
- <el-form-item label="试卷题目"><EntityPicker v-model="ids" kind="questions" label="选择试卷题目" multiple :disabled="task.busy.value" @change="questionRows=$event"/></el-form-item>
- <el-form-item label="评分教师"><EntityPicker v-model="graders" kind="teachers" label="选择评分教师" multiple :limit="20" :disabled="task.busy.value"/><small class="muted">{{subjective?'包含主观题，请指定评分教师':'纯客观题会自动评分'}}</small></el-form-item>
- <el-form-item label="及格百分比"><el-input-number v-model="percent" aria-label="及格百分比" :min="1" :max="100"/></el-form-item></div>
- <p v-if="ids.length" class="selection-summary">共 {{ids.length}} 题 · 总分 {{totalScore}} · {{Math.ceil(totalScore*percent/100)}} 分及格</p>
- <el-button type="primary" @click="publish" :disabled="!course || !section || !ids.length || subjective && !graders.length || task.busy.value">发布不可变试卷版本</el-button></el-form>
-<el-divider/><h3>待评分考试</h3><el-input v-model="filterCourse" placeholder="课程编号筛选"/><el-input v-model="filterStudent" placeholder="学生编号筛选"/><el-button @click="page=1;load()" :disabled="task.busy.value">刷新待评分列表</el-button><el-table :data="pending"><el-table-column prop="id" label="考试记录"/><el-table-column prop="user_id" label="学生编号"/><el-table-column prop="course_id" label="课程编号"/><el-table-column label="操作"><template #default="{row}"><el-button @click="view(row.id)">查看答卷</el-button></template></el-table-column></el-table>
-<el-pagination v-model:current-page="page" :page-size="20" :total="total" layout="prev, pager, next, total" @current-change="load"/><article v-if="attempt"><h3>考试 {{attempt.id}} · {{examStatus(attempt.status)}}</h3><div v-for="answer in attempt.answers" :key="answer.question_id" class="section"><h4>{{attempt.questions.find((q:Row)=>q.question_id===answer.question_id)?.name}}</h4><p class="content">{{answer.response}}</p><p v-if="answer.score!==null">已评分 {{answer.score}} · {{answer.feedback}}</p><template v-else><el-input-number v-model="scores[answer.question_id]" :min="0" :max="attempt.questions.find((q:Row)=>q.question_id===answer.question_id)?.score||0"/><el-input v-model="feedback[answer.question_id]" placeholder="评分反馈"/><el-button @click="grade(answer)" :disabled="task.busy.value||!validScore(answer)">提交评分</el-button></template></div></article></section></template>
+<template>
+  <section class="card">
+    <h2>试卷版本与教师评分</h2>
+    <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
+    <el-form v-if="session.role === 1" label-position="top" class="exam-publish-form">
+      <p class="muted">
+        选择课程与考试小节，从题库组卷。发布后生成独立快照，题库后续修改不会影响已经发布的试卷。
+      </p>
+      <div class="grid">
+        <el-form-item label="考试课程"
+          ><EntityPicker
+            v-model="course"
+            kind="courses"
+            label="选择考试课程"
+            :disabled="task.busy.value"
+            @change="selectCourse"
+        /></el-form-item>
+        <el-form-item label="考试小节"
+          ><el-select
+            v-model="section"
+            aria-label="选择考试小节"
+            :disabled="!course || task.busy.value"
+            placeholder="先选择课程，再选择考试小节"
+            ><el-option
+              v-for="item in sections"
+              :key="item.id"
+              :value="String(item.id)"
+              :label="item.label" /></el-select
+          ><small v-if="course && !sections.length && !task.busy.value" class="muted"
+            >该课程没有考试小节，请先配置课程目录。</small
+          ></el-form-item
+        >
+        <el-form-item label="试卷题目"
+          ><EntityPicker
+            v-model="ids"
+            kind="questions"
+            label="选择试卷题目"
+            multiple
+            :disabled="task.busy.value"
+            @change="questionRows = $event"
+        /></el-form-item>
+        <el-form-item label="评分教师"
+          ><EntityPicker
+            v-model="graders"
+            kind="teachers"
+            label="选择评分教师"
+            multiple
+            :limit="20"
+            :disabled="task.busy.value"
+          /><small class="muted">{{
+            subjective ? '包含主观题，请指定评分教师' : '纯客观题会自动评分'
+          }}</small></el-form-item
+        >
+        <el-form-item label="及格百分比"
+          ><el-input-number v-model="percent" aria-label="及格百分比" :min="1" :max="100"
+        /></el-form-item>
+      </div>
+      <p v-if="ids.length" class="selection-summary">
+        共 {{ ids.length }} 题 · 总分 {{ totalScore }} ·
+        {{ Math.ceil((totalScore * percent) / 100) }} 分及格
+      </p>
+      <el-button
+        type="primary"
+        @click="publish"
+        :disabled="
+          !course || !section || !ids.length || (subjective && !graders.length) || task.busy.value
+        "
+        >发布不可变试卷版本</el-button
+      ></el-form
+    >
+    <el-divider />
+    <h3>待评分考试</h3>
+    <el-input v-model="filterCourse" placeholder="课程编号筛选" /><el-input
+      v-model="filterStudent"
+      placeholder="学生编号筛选"
+    /><el-button
+      @click="
+        page = 1;
+        load();
+      "
+      :disabled="task.busy.value"
+      >刷新待评分列表</el-button
+    ><el-table :data="pending"
+      ><el-table-column prop="id" label="考试记录" /><el-table-column
+        prop="user_id"
+        label="学生编号"
+      /><el-table-column prop="course_id" label="课程编号" /><el-table-column label="操作"
+        ><template #default="{ row }"
+          ><el-button @click="view(row.id)">查看答卷</el-button></template
+        ></el-table-column
+      ></el-table
+    >
+    <el-pagination
+      v-model:current-page="page"
+      :page-size="20"
+      :total="total"
+      layout="prev, pager, next, total"
+      @current-change="load"
+    />
+    <article v-if="attempt">
+      <h3>考试 {{ attempt.id }} · {{ examStatus(attempt.status) }}</h3>
+      <div v-for="answer in attempt.answers" :key="answer.question_id" class="section">
+        <h4>
+          {{ attempt.questions.find((q: Row) => q.question_id === answer.question_id)?.name }}
+        </h4>
+        <p class="content">{{ answer.response }}</p>
+        <p v-if="answer.score !== null">已评分 {{ answer.score }} · {{ answer.feedback }}</p>
+        <template v-else
+          ><el-input-number
+            v-model="scores[answer.question_id]"
+            :min="0"
+            :max="
+              attempt.questions.find((q: Row) => q.question_id === answer.question_id)?.score || 0
+            "
+          /><el-input v-model="feedback[answer.question_id]" placeholder="评分反馈" /><el-button
+            @click="grade(answer)"
+            :disabled="task.busy.value || !validScore(answer)"
+            >提交评分</el-button
+          ></template
+        >
+      </div>
+    </article>
+  </section>
+</template>

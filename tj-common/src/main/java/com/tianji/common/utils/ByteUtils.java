@@ -9,8 +9,8 @@ public class ByteUtils extends ByteUtil {
      * @param content 字节内容
      * @return 字符串值
      */
-    public static String parse(byte[] content){
-        if(content == null || content.length <= 0) {
+    public static String parse(byte[] content) {
+        if (content == null || content.length <= 0) {
             return StringUtils.EMPTY;
         }
         return new String(content);

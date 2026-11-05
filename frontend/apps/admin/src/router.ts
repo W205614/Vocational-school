@@ -1,5 +1,44 @@
-import {createRouter,createWebHistory} from 'vue-router';import {resources} from './resources';const ResourceManagementView=()=>import('./views/ResourceManagementView.vue');const Dashboard=()=>import('./views/Dashboard.vue');const Reliability=()=>import('./views/Reliability.vue');const ExamAdmin=()=>import('./views/ExamAdmin.vue');const CourseEditor=()=>import('./views/CourseEditor.vue');const CouponIssue=()=>import('./views/CouponIssue.vue');const OperationsPanel=()=>import('../../../packages/shared/src/OperationsPanel.vue');
-export const router=createRouter({history:createWebHistory(),routes:[{path:'/',component:Dashboard},{path:'/teaching',component:()=>import('./views/Teaching.vue')},{path:'/seasons',component:()=>import('./views/Seasons.vue')},...Object.keys(resources).map(resource=>({path:'/'+resource,component:ResourceManagementView,props:{resource}})),{path:'/role-permissions',component:()=>import('./views/RolePermissions.vue')},{path:'/audit',component:()=>import('./views/Audit.vue')},{path:'/reliability',component:Reliability},{path:'/exams',component:ExamAdmin},{path:'/course-editor',component:CourseEditor},{path:'/coupon-issue',component:CouponIssue},{path:'/operations',component:OperationsPanel}]});
+import { createRouter, createWebHistory } from 'vue-router';
+import { resources } from './resources';
+const ResourceManagementView = () => import('./views/ResourceManagementView.vue');
+const Dashboard = () => import('./views/Dashboard.vue');
+const Reliability = () => import('./views/Reliability.vue');
+const ExamAdmin = () => import('./views/ExamAdmin.vue');
+const CourseEditor = () => import('./views/CourseEditor.vue');
+const CouponIssue = () => import('./views/CouponIssue.vue');
+const OperationsPanel = () => import('../../../packages/shared/src/OperationsPanel.vue');
+export const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: '/', component: Dashboard },
+    { path: '/teaching', component: () => import('./views/Teaching.vue') },
+    { path: '/seasons', component: () => import('./views/Seasons.vue') },
+    ...Object.keys(resources).map((resource) => ({
+      path: '/' + resource,
+      component: ResourceManagementView,
+      props: { resource },
+    })),
+    { path: '/role-permissions', component: () => import('./views/RolePermissions.vue') },
+    { path: '/audit', component: () => import('./views/Audit.vue') },
+    { path: '/reliability', component: Reliability },
+    { path: '/exams', component: ExamAdmin },
+    { path: '/course-editor', component: CourseEditor },
+    { path: '/coupon-issue', component: CouponIssue },
+    { path: '/operations', component: OperationsPanel },
+  ],
+});
 
-import {useSession} from '../../../packages/shared/src/session';router.beforeEach(to=>{const session=useSession();if(session.token && session.role===3 && !['/exams','/operations','/teaching'].includes(to.path))return '/exams';});
-router.addRoute({path:'/privacy-requests',component:()=>import('./views/PrivacyRequests.vue')});
+import { useSession } from '../../../packages/shared/src/session';
+router.beforeEach((to) => {
+  const session = useSession();
+  if (
+    session.token &&
+    session.role === 3 &&
+    !['/exams', '/operations', '/teaching'].includes(to.path)
+  )
+    return '/exams';
+});
+router.addRoute({
+  path: '/privacy-requests',
+  component: () => import('./views/PrivacyRequests.vue'),
+});

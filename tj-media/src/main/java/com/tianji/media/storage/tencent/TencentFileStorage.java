@@ -26,7 +26,10 @@ public class TencentFileStorage implements IFileStorage {
     private final TransferManager transferManager;
     private final String bucketName;
 
-    public TencentFileStorage(COSClient tencentCosClient, TransferManager transferManager, TencentProperties properties) {
+    public TencentFileStorage(
+            COSClient tencentCosClient,
+            TransferManager transferManager,
+            TencentProperties properties) {
         this.cosClient = tencentCosClient;
         this.transferManager = transferManager;
         this.bucketName = properties.getCos().getBucket() + "-" + properties.getAppId();
@@ -44,7 +47,8 @@ public class TencentFileStorage implements IFileStorage {
         objectMetadata.setContentLength(contentLength);
 
         // 3.请求对象
-        PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, key, inputStream, objectMetadata);
+        PutObjectRequest putObjectRequest =
+                new PutObjectRequest(bucketName, key, inputStream, objectMetadata);
 
         try {
             // 4.异步发起上传，返回异步结果upload
@@ -88,17 +92,16 @@ public class TencentFileStorage implements IFileStorage {
             log.error("删除文件[{}]时发生异常：", key, e);
             throw new CommonException("删除异常。", e);
         }
-
     }
 
     @Override
     public void deleteFiles(List<String> keys) {
         // 1.数据校验
-        if(CollUtils.isEmpty(keys)){
+        if (CollUtils.isEmpty(keys)) {
             return;
         }
         AssertUtils.isNotBlank(bucketName, BUCKET_NAME_IS_NULL);
-        if(keys.size() > 1000){
+        if (keys.size() > 1000) {
             throw new BadRequestException(FILE_KEY_TOO_MANY);
         }
         // 2.准备request

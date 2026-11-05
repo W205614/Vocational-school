@@ -17,20 +17,27 @@ import java.time.format.DateTimeFormatter;
 public class LearningSeasonMetrics {
     private final JdbcTemplate jdbc;
     private final Clock clock;
-    private volatile double blocked=Double.NaN;
+    private volatile double blocked = Double.NaN;
 
-    public LearningSeasonMetrics(JdbcTemplate jdbc,@Qualifier("learningClock") Clock clock,MeterRegistry meters) {
-        this.jdbc=jdbc;this.clock=clock;
-        meters.gauge("tj.seasons.blocked",this,metrics->metrics.blocked);
+    public LearningSeasonMetrics(
+            JdbcTemplate jdbc, @Qualifier("learningClock") Clock clock, MeterRegistry meters) {
+        this.jdbc = jdbc;
+        this.clock = clock;
+        meters.gauge("tj.seasons.blocked", this, metrics -> metrics.blocked);
     }
-    @Scheduled(fixedDelayString="${tj.learning.season-metrics-interval-ms:15000}")
+
+    @Scheduled(fixedDelayString = "${tj.learning.season-metrics-interval-ms:15000}")
     public void refresh() {
         try {
-            String month=YearMonth.now(clock).format(DateTimeFormatter.ofPattern("yyyyMM"));
-            Long sample=jdbc.queryForObject("SELECT COUNT(*) FROM learning_season WHERE state='BLOCKED' AND board_month<?",Long.class,month);
-            if(sample!=null)blocked=sample;
-        } catch(RuntimeException unavailable) {
-            log.warn("赛季阻塞指标采样失败: {}",unavailable.getClass().getSimpleName());
+            String month = YearMonth.now(clock).format(DateTimeFormatter.ofPattern("yyyyMM"));
+            Long sample =
+                    jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM learning_season WHERE state='BLOCKED' AND board_month<?",
+                            Long.class,
+                            month);
+            if (sample != null) blocked = sample;
+        } catch (RuntimeException unavailable) {
+            log.warn("赛季阻塞指标采样失败: {}", unavailable.getClass().getSimpleName());
         }
     }
 }

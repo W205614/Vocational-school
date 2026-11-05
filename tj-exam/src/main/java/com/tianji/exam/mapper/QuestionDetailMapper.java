@@ -11,6 +11,4 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 虎哥
  * @since 2022-09-02
  */
-public interface QuestionDetailMapper extends BaseMapper<QuestionDetail> {
-
-}
+public interface QuestionDetailMapper extends BaseMapper<QuestionDetail> {}

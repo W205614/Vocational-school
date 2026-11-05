@@ -1,6 +1,5 @@
 package com.tianji.learning.controller;
 
-
 import com.tianji.learning.domain.po.PointsBoardSeason;
 import com.tianji.learning.service.IPointsBoardSeasonService;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -6,13 +6,12 @@ import com.tianji.common.exceptions.BadRequestException;
 import lombok.Getter;
 
 @Getter
-public enum UserType implements BaseEnum{
+public enum UserType implements BaseEnum {
     STAFF(1, "其他员工"),
     STUDENT(2, "学生"),
     TEACHER(3, "老师"),
     ;
-    @EnumValue
-    int value;
+    @EnumValue int value;
     String desc;
 
     UserType(int value, String desc) {

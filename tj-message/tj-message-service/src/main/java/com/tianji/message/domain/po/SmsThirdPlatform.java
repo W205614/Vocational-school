@@ -53,15 +53,12 @@ public class SmsThirdPlatform implements Serializable {
     /**
      * 创建人
      */
-
     private Long creater;
 
     /**
      * 更新人
      */
-
     private Long updater;
-
 
     /**
      * 创建时间
@@ -72,6 +69,4 @@ public class SmsThirdPlatform implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
-
-
 }

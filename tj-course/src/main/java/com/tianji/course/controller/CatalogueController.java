@@ -22,8 +22,7 @@ import java.util.List;
 @RequestMapping("catalogues")
 public class CatalogueController {
 
-    @Autowired
-    private ICourseCatalogueService courseCatalogueService;
+    @Autowired private ICourseCatalogueService courseCatalogueService;
 
     @GetMapping("batchQuery")
     @Operation(summary = "根据章节目录批量查询基础信息")

@@ -20,7 +20,10 @@ public class CategoryDisableOrEnableDTO {
     @Schema(description = "课程分类id")
     @NotNull(message = CourseErrorInfo.Msg.CATEGORY_ID_NOT_NULL)
     private Long id;
+
     @Schema(description = "课程分类状态，1：启用，0：禁用")
-    @EnumValid(enumeration = {0,1}, message = CourseErrorInfo.Msg.CATEGORY_DISABLE_ENABLE_STATUS_ENUM)
+    @EnumValid(
+            enumeration = {0, 1},
+            message = CourseErrorInfo.Msg.CATEGORY_DISABLE_ENABLE_STATUS_ENUM)
     private Integer status;
 }

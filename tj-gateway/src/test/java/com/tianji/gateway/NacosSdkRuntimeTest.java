@@ -13,12 +13,25 @@ import static org.junit.jupiter.api.Assertions.*;
 class NacosSdkRuntimeTest {
     @Test
     void pureSdkInitializesConfigAndDiscoveryWithManagedDependencies() throws Exception {
-        assertTrue(NacosFactory.class.getProtectionDomain().getCodeSource().getLocation().toString()
-                .contains("nacos-api-"));
-        assertTrue(Class.forName("com.alibaba.nacos.client.config.NacosConfigService")
-                .getProtectionDomain().getCodeSource().getLocation().toString().endsWith("-pure.jar"));
-        assertThrows(ClassNotFoundException.class,
-                () -> Class.forName("com.alibaba.nacos.shaded.com.google.common.collect.CompactHashMap"));
+        assertTrue(
+                NacosFactory.class
+                        .getProtectionDomain()
+                        .getCodeSource()
+                        .getLocation()
+                        .toString()
+                        .contains("nacos-api-"));
+        assertTrue(
+                Class.forName("com.alibaba.nacos.client.config.NacosConfigService")
+                        .getProtectionDomain()
+                        .getCodeSource()
+                        .getLocation()
+                        .toString()
+                        .endsWith("-pure.jar"));
+        assertThrows(
+                ClassNotFoundException.class,
+                () ->
+                        Class.forName(
+                                "com.alibaba.nacos.shaded.com.google.common.collect.CompactHashMap"));
 
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:1");

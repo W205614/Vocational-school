@@ -31,7 +31,8 @@ import static com.tianji.promotion.constants.PromotionConstants.*;
  * @since 2026-02-11
  */
 @Service
-public class ExchangeCodeServiceImpl extends ServiceImpl<ExchangeCodeMapper, ExchangeCode> implements IExchangeCodeService {
+public class ExchangeCodeServiceImpl extends ServiceImpl<ExchangeCodeMapper, ExchangeCode>
+        implements IExchangeCodeService {
 
     private final StringRedisTemplate redisTemplate;
     private BoundValueOperations<String, String> serialOps;
@@ -47,7 +48,7 @@ public class ExchangeCodeServiceImpl extends ServiceImpl<ExchangeCodeMapper, Exc
         Integer totalNum = coupon.getTotalNum();
         // 1. 获取redis自增序列号
         Long result = serialOps.increment(totalNum);
-        if(result == null) {
+        if (result == null) {
             return;
         }
         int maxSerialNum = result.intValue();
@@ -73,10 +74,11 @@ public class ExchangeCodeServiceImpl extends ServiceImpl<ExchangeCodeMapper, Exc
     @Override
     public PageDTO<ExchangeCodeVO> queryExchangeCodeByPage(CodeQuery query) {
         // 1. 分页查询兑换码
-        Page<ExchangeCode> page = this.lambdaQuery()
-                .eq(ExchangeCode::getExchangeTargetId, query.getCouponId())
-                .eq(ExchangeCode::getStatus, query.getStatus())
-                .page(query.toMpPage());
+        Page<ExchangeCode> page =
+                this.lambdaQuery()
+                        .eq(ExchangeCode::getExchangeTargetId, query.getCouponId())
+                        .eq(ExchangeCode::getStatus, query.getStatus())
+                        .page(query.toMpPage());
 
         // 2. 封装vo返回
         return PageDTO.of(page, c -> new ExchangeCodeVO(c.getId(), c.getCode()));
@@ -91,8 +93,10 @@ public class ExchangeCodeServiceImpl extends ServiceImpl<ExchangeCodeMapper, Exc
     @Override
     public Long exchangeTargetId(long serialNum) {
         // 1.查询score值比当前序列号大的第一个优惠券
-        Set<String> results = redisTemplate.opsForZSet().rangeByScore(
-                COUPON_RANGE_KEY, serialNum, serialNum + 5000, 0L, 1L);
+        Set<String> results =
+                redisTemplate
+                        .opsForZSet()
+                        .rangeByScore(COUPON_RANGE_KEY, serialNum, serialNum + 5000, 0L, 1L);
         if (CollUtils.isEmpty(results)) {
             return null;
         }

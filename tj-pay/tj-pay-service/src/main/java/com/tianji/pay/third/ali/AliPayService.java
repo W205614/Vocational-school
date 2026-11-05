@@ -29,7 +29,9 @@ import static com.tianji.pay.sdk.constants.PayConstants.ALI_CHANNEL_CODE;
 @Slf4j
 @Service(ALI_CHANNEL_CODE)
 @RequiredArgsConstructor
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="tj.pay.ali.enabled",havingValue="true")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "tj.pay.ali.enabled",
+        havingValue = "true")
 public class AliPayService implements IPayService {
 
     private final CommonPayProperties commonPayProperties;
@@ -37,14 +39,16 @@ public class AliPayService implements IPayService {
     @Override
     public PrepayResponse createPrepayOrder(String title, String orderNo, Integer amount) {
         // 1.动态获取回调地址
-        String notifyUrl = commonPayProperties.getNotifyHost() + "/notify/" + PayConstants.ALI_CHANNEL_CODE;
+        String notifyUrl =
+                commonPayProperties.getNotifyHost() + "/notify/" + PayConstants.ALI_CHANNEL_CODE;
 
         // 2. 发起API调用（以创建当面付收款二维码为例）
         AlipayTradePrecreateResponse response = null;
         try {
-            response = Factory.Payment.FaceToFace()
-                    .asyncNotify(notifyUrl)
-                    .preCreate(title, orderNo, transferAmount2String(amount));
+            response =
+                    Factory.Payment.FaceToFace()
+                            .asyncNotify(notifyUrl)
+                            .preCreate(title, orderNo, transferAmount2String(amount));
         } catch (Exception e) {
             log.error("支付宝预下单失败，订单id：{}", orderNo, e);
             throw new CommonException("支付宝预下单失败", e);
@@ -61,8 +65,6 @@ public class AliPayService implements IPayService {
         return builder.build();
     }
 
-
-
     @Override
     public PayStatusResponse queryPayOrderStatus(String payOrderNo) {
         // 1.发起请求
@@ -76,29 +78,38 @@ public class AliPayService implements IPayService {
         // 2.解析
         if (!ResponseChecker.success(response)) {
             // 2.1.响应结果异常
-            return PayStatusResponse.builder().success(false).code(response.getCode()).msg(response.getMsg()).build();
+            return PayStatusResponse.builder()
+                    .success(false)
+                    .code(response.getCode())
+                    .msg(response.getMsg())
+                    .build();
         }
         // 2.2.响应结果正常
         String success_time = response.getSendPayDate();
-        LocalDateTime successTime = StringUtils.isBlank(success_time) ?
-                null : DateUtils.parse(success_time, DateUtils.DEFAULT_DATE_TIME_FORMAT);
-        return PayStatusResponse.builder().success(true)
-                        .payStatus(PayStatus.valueOf(response.getTradeStatus()).getValue())
-                        .payOrderNo(response.getOutTradeNo())
-                        .totalAmount(transferStringAmount2Int(response.getTotalAmount()))
-                        .successTime(successTime)
-                        .build();
+        LocalDateTime successTime =
+                StringUtils.isBlank(success_time)
+                        ? null
+                        : DateUtils.parse(success_time, DateUtils.DEFAULT_DATE_TIME_FORMAT);
+        return PayStatusResponse.builder()
+                .success(true)
+                .payStatus(PayStatus.valueOf(response.getTradeStatus()).getValue())
+                .payOrderNo(response.getOutTradeNo())
+                .totalAmount(transferStringAmount2Int(response.getTotalAmount()))
+                .successTime(successTime)
+                .build();
     }
 
     @Override
-    public RefundResponse refundOrder(String payOrderNo, String refundOrderNo, Integer refundAmount, Integer totalAmount) {
+    public RefundResponse refundOrder(
+            String payOrderNo, String refundOrderNo, Integer refundAmount, Integer totalAmount) {
         // 1.发起请求
         AlipayTradeRefundResponse response = null;
         try {
-            response = Factory.Payment.Common()
-                    .optional("query_options", List.of("refund_detail_item_list"))
-                    .optional("out_request_no", refundOrderNo)
-                    .refund(payOrderNo, transferAmount2String(refundAmount));
+            response =
+                    Factory.Payment.Common()
+                            .optional("query_options", List.of("refund_detail_item_list"))
+                            .optional("out_request_no", refundOrderNo)
+                            .refund(payOrderNo, transferAmount2String(refundAmount));
         } catch (Exception e) {
             log.error("支付宝申请退款失败，订单id：{} ，退款订单id：{}", payOrderNo, refundOrderNo, e);
             throw new CommonException("支付宝申请退款失败", e);
@@ -106,7 +117,11 @@ public class AliPayService implements IPayService {
         // 2.解析响应
         if (!ResponseChecker.success(response)) {
             // 2.1.响应结果异常
-            return RefundResponse.builder().success(false).code(response.getSubCode()).msg(response.getSubMsg()).build();
+            return RefundResponse.builder()
+                    .success(false)
+                    .code(response.getSubCode())
+                    .msg(response.getSubMsg())
+                    .build();
         }
         // 2.2.响应结果正常，获取响应细节数据
         List<TradeFundBill> refundDetailItemList = response.getRefundDetailItemList();
@@ -115,9 +130,15 @@ public class AliPayService implements IPayService {
         boolean success = StringUtils.equals(response.getFundChange(), "Y");
         return RefundResponse.builder()
                 .success(true)
-                .status(success ? RefundStatus.SUCCESS.getValue(): RefundStatus.UN_KNOWN.getValue())
+                .status(
+                        success
+                                ? RefundStatus.SUCCESS.getValue()
+                                : RefundStatus.UN_KNOWN.getValue())
                 .channel(hasDetail ? null : refundDetailItemList.get(0).fundChannel)
-                .amount(hasDetail ? null : transferStringAmount2Int(refundDetailItemList.get(0).getAmount()))
+                .amount(
+                        hasDetail
+                                ? null
+                                : transferStringAmount2Int(refundDetailItemList.get(0).getAmount()))
                 .build();
     }
 
@@ -138,7 +159,11 @@ public class AliPayService implements IPayService {
     static RefundResponse parseRefundQuery(AlipayTradeFastpayRefundQueryResponse response) {
         if (!ResponseChecker.success(response)) {
             // 2.1.响应结果异常
-            return RefundResponse.builder().success(false).code(response.getCode()).msg(response.getMsg()).build();
+            return RefundResponse.builder()
+                    .success(false)
+                    .code(response.getCode())
+                    .msg(response.getMsg())
+                    .build();
         }
         // 2.2.响应结果正常
         String refundStatus = response.getRefundStatus();
@@ -148,17 +173,26 @@ public class AliPayService implements IPayService {
         return RefundResponse.builder()
                 .success(true)
                 .status(refundSuccess ? 2 : 1)
-                .channel(refundSuccess && !CollUtils.isEmpty(details) ? details.get(0).fundChannel : null)
-                .amount(refundSuccess && StringUtils.isNotBlank(response.getRefundAmount()) ? transferStringAmount2Int(response.getRefundAmount()) : null)
+                .channel(
+                        refundSuccess && !CollUtils.isEmpty(details)
+                                ? details.get(0).fundChannel
+                                : null)
+                .amount(
+                        refundSuccess && StringUtils.isNotBlank(response.getRefundAmount())
+                                ? transferStringAmount2Int(response.getRefundAmount())
+                                : null)
                 .build();
     }
-
 
     public static int transferStringAmount2Int(String totalAmount) {
         return new BigDecimal(totalAmount).movePointRight(2).intValueExact();
     }
+
     public static String transferAmount2String(Integer amount) {
-        if(amount==null || amount<0)throw new IllegalArgumentException("金额必须是非负整数分");
-        return BigDecimal.valueOf(amount).movePointLeft(2).setScale(2,RoundingMode.UNNECESSARY).toPlainString();
+        if (amount == null || amount < 0) throw new IllegalArgumentException("金额必须是非负整数分");
+        return BigDecimal.valueOf(amount)
+                .movePointLeft(2)
+                .setScale(2, RoundingMode.UNNECESSARY)
+                .toPlainString();
     }
 }

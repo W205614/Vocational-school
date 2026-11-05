@@ -74,7 +74,10 @@ kubectl --context <候选集群> apply --dry-run=server -f <输出目录>/resour
 每个应用的 `*-service-identity` Secret 只含该应用的 `service-identities.json`：
 
 ```json
-{"outbound":{"identity":"<独立边密钥，至少32字符>"},"inbound":{"gateway":["<当前边密钥>","<轮换前边密钥>"]}}
+{
+  "outbound": { "identity": "<独立边密钥，至少32字符>" },
+  "inbound": { "gateway": ["<当前边密钥>", "<轮换前边密钥>"] }
+}
 ```
 
 调用方向分别分配密钥；同组模块的 loopback 调用使用自己的 self edge。接收方只持有所需 inbound，发送方只持有所需 outbound，不创建全局令牌。worker 没有内部调用时使用空对象。监控调用身份为 `observability`，每个目标应用持有对应 inbound edge；Prometheus 只持有自己的 outbound edge。认证签名 JKS 只挂载到 identity。MFA 加密键是独立的 base64 32 字节密钥，不与服务令牌或媒资签名键复用。

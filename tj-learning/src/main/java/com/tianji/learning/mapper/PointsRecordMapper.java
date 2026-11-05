@@ -20,8 +20,11 @@ import java.util.List;
 public interface PointsRecordMapper extends BaseMapper<PointsRecord> {
 
     @Select("select sum(points) from points_record ${ew.customSqlSegment}")
-    Integer queryUserPointsByTypeAndDate(@Param(Constants.WRAPPER) QueryWrapper<PointsRecord> wrapper);
+    Integer queryUserPointsByTypeAndDate(
+            @Param(Constants.WRAPPER) QueryWrapper<PointsRecord> wrapper);
 
-    @Select("select type, sum(points) as points from points_record ${ew.customSqlSegment} group by type")
-    List<PointsRecord> queryUserPointsByDate(@Param(Constants.WRAPPER) QueryWrapper<PointsRecord> wrapper);
+    @Select(
+            "select type, sum(points) as points from points_record ${ew.customSqlSegment} group by type")
+    List<PointsRecord> queryUserPointsByDate(
+            @Param(Constants.WRAPPER) QueryWrapper<PointsRecord> wrapper);
 }

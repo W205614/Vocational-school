@@ -1,6 +1,5 @@
 package com.tianji.promotion.controller;
 
-
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.promotion.domain.query.CodeQuery;
 import com.tianji.promotion.domain.vo.ExchangeCodeVO;

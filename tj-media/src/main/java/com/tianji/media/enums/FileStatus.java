@@ -5,14 +5,12 @@ import com.tianji.common.exceptions.BadRequestException;
 
 import static com.tianji.media.enums.FileErrorInfo.Msg.INVALID_FILE_STATUS;
 
-
 public enum FileStatus {
     UPLOADING(1, "上传中"),
     UPLOADED(2, "已上传"),
     PROCESSED(3, "已处理"),
     ;
-    @EnumValue
-    private int value;
+    @EnumValue private int value;
     private String desc;
 
     FileStatus(int value, String desc) {

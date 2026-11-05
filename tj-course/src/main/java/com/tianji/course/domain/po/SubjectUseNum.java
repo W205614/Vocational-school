@@ -16,5 +16,4 @@ import lombok.*;
 public class SubjectUseNum {
     private Long id;
     private Integer num;
-
 }

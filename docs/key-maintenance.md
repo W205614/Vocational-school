@@ -48,7 +48,7 @@ MFA 的当前写入键仍为 `tj.auth.mfa.encryption-key` / `TJ_MFA_ENCRYPTION_K
   "username": "<独立维护账号>",
   "password": "<维护凭据>",
   "activeKey": "<当前写入键base64>",
-  "decryptionKeys": {"<旧key-id>": "<旧键base64>"},
+  "decryptionKeys": { "<旧key-id>": "<旧键base64>" },
   "legacyKeyId": "<无版本密文对应的旧key-id>"
 }
 ```

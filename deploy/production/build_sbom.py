@@ -1,4 +1,5 @@
 """Build the actual reactor and bind a resolved SBOM to clean committed source."""
+
 from __future__ import annotations
 
 import argparse
@@ -22,20 +23,35 @@ def bind_resolved_bom(path, commit, started, completed=None):
     completed = completed or dt.datetime.now(dt.timezone.utc)
     bom = json.loads(path.read_text(encoding="utf8"))
     components = bom.get("components", [])
-    if bom.get("bomFormat") != "CycloneDX" or not components or path.stat().st_mtime < started.timestamp() - 2:
+    if (
+        bom.get("bomFormat") != "CycloneDX"
+        or not components
+        or path.stat().st_mtime < started.timestamp() - 2
+    ):
         raise ValueError("A freshly generated resolved BOM is required")
     if any(not value.get("purl") or not value.get("version") for value in components):
         raise ValueError("Unresolved runtime components cannot pass the security build")
     metadata = bom.setdefault("metadata", {})
     metadata["timestamp"] = completed.isoformat()
     properties = metadata.setdefault("properties", [])
-    properties[:] = [value for value in properties if value.get("name") != "tianji:source:revision"]
+    properties[:] = [
+        value for value in properties if value.get("name") != "tianji:source:revision"
+    ]
     properties.append({"name": "tianji:source:revision", "value": commit})
     path.write_text(json.dumps(bom, indent=2) + "\n", encoding="utf8")
-    binding = {"schema": "tianji-security-sbom-v1", "commit": commit, "started_at": started.isoformat(),
-        "completed_at": completed.isoformat(), "bom_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "components": len(components), "resolved_runtime": True, "maven_exit_code": 0}
-    (path.parent / "security-bom-binding.json").write_text(json.dumps(binding, indent=2) + "\n", encoding="utf8")
+    binding = {
+        "schema": "tianji-security-sbom-v1",
+        "commit": commit,
+        "started_at": started.isoformat(),
+        "completed_at": completed.isoformat(),
+        "bom_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "components": len(components),
+        "resolved_runtime": True,
+        "maven_exit_code": 0,
+    }
+    (path.parent / "security-bom-binding.json").write_text(
+        json.dumps(binding, indent=2) + "\n", encoding="utf8"
+    )
     return binding
 
 
@@ -46,24 +62,47 @@ def main(argv=None):
     if not re.fullmatch(r"[0-9a-f]{40}", args.commit):
         parser.error("An exact source commit is required")
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-    if head != args.commit or subprocess.run(["git", "diff", "--quiet", "HEAD", "--"]).returncode:
-        print("SBOM build refused: source differs from the requested clean commit", file=sys.stderr)
+    if (
+        head != args.commit
+        or subprocess.run(["git", "diff", "--quiet", "HEAD", "--"]).returncode
+    ):
+        print(
+            "SBOM build refused: source differs from the requested clean commit",
+            file=sys.stderr,
+        )
         return 1
     started = dt.datetime.now(dt.timezone.utc)
-    command = [shutil.which("mvn") or "mvn", "-B", "-Pcompact", "-DskipTests", "package",
-        "org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeAggregateBom", "-DincludeProvidedScope=false",
-        "-DincludeTestScope=false", "-DincludeSystemScope=false", "-DincludeRuntimeScope=true", "-DincludeCompileScope=true"]
+    command = [
+        shutil.which("mvn") or "mvn",
+        "-B",
+        "-Pcompact",
+        "-DskipTests",
+        "package",
+        "org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeAggregateBom",
+        "-DincludeProvidedScope=false",
+        "-DincludeTestScope=false",
+        "-DincludeSystemScope=false",
+        "-DincludeRuntimeScope=true",
+        "-DincludeCompileScope=true",
+    ]
     if subprocess.run(command).returncode:
         return 1
     path = Path("target/bom.json")
     try:
-        if subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip() != head or subprocess.run(["git", "diff", "--quiet", "HEAD", "--"]).returncode:
+        if (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+            != head
+            or subprocess.run(["git", "diff", "--quiet", "HEAD", "--"]).returncode
+        ):
             raise ValueError("Source changed during the security build")
         bind_resolved_bom(path, head, started)
         print("Resolved runtime SBOM bound to " + head)
         return 0
     except (OSError, ValueError):
-        print("SBOM build failed: fresh resolved components/source binding unavailable", file=sys.stderr)
+        print(
+            "SBOM build failed: fresh resolved components/source binding unavailable",
+            file=sys.stderr,
+        )
         return 1
 
 

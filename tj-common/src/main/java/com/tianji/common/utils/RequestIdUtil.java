@@ -5,12 +5,11 @@ import org.slf4j.MDC;
 
 import static com.tianji.common.constants.Constant.REQUEST_ID_HEADER;
 
-
 public class RequestIdUtil {
     public static void markRequest() {
         // 1.判断是否已经存在
         String requestId = MDC.get(REQUEST_ID_HEADER);
-        if(requestId != null){
+        if (requestId != null) {
             return;
         }
         // 2.尝试从请求头获取
@@ -23,7 +22,8 @@ public class RequestIdUtil {
         // 4.保存
         MDC.put(REQUEST_ID_HEADER, requestId);
     }
-    public static void clear(){
+
+    public static void clear() {
         MDC.clear();
     }
 }

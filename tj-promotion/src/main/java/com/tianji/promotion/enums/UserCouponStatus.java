@@ -14,10 +14,9 @@ public enum UserCouponStatus implements BaseEnum {
     USED(2, "已使用"),
     EXPIRED(3, "已过期"),
     ;
-    @EnumValue
-    @JsonValue
-    private final int value;
+    @EnumValue @JsonValue private final int value;
     private final String desc;
+
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static UserCouponStatus of(Integer value) {
         if (value == null) {

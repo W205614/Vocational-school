@@ -26,13 +26,13 @@ import java.util.stream.Collectors;
  * @since 2022-09-02
  */
 @Service
-public class QuestionBizServiceImpl extends ServiceImpl<QuestionBizMapper, QuestionBiz> implements IQuestionBizService {
+public class QuestionBizServiceImpl extends ServiceImpl<QuestionBizMapper, QuestionBiz>
+        implements IQuestionBizService {
 
     @Override
     public int countUsedTimes(Long questionId) {
-        Integer count = Math.toIntExact(lambdaQuery()
-                .eq(QuestionBiz::getQuestionId, questionId)
-                .count());
+        Integer count =
+                Math.toIntExact(lambdaQuery().eq(QuestionBiz::getQuestionId, questionId).count());
         return count == null ? 0 : count;
     }
 
@@ -46,9 +46,7 @@ public class QuestionBizServiceImpl extends ServiceImpl<QuestionBizMapper, Quest
 
     @Override
     public List<QuestionBizDTO> queryQuestionIdsByBizId(Long bizId) {
-        List<QuestionBiz> list = lambdaQuery()
-                .eq(QuestionBiz::getBizId, bizId)
-                .list();
+        List<QuestionBiz> list = lambdaQuery().eq(QuestionBiz::getBizId, bizId).list();
         return BeanUtils.copyList(list, QuestionBizDTO.class);
     }
 
@@ -57,9 +55,7 @@ public class QuestionBizServiceImpl extends ServiceImpl<QuestionBizMapper, Quest
         if (CollUtils.isEmpty(bizIds)) {
             return CollUtils.emptyList();
         }
-        List<QuestionBiz> list = lambdaQuery()
-                .in(QuestionBiz::getBizId, bizIds)
-                .list();
+        List<QuestionBiz> list = lambdaQuery().in(QuestionBiz::getBizId, bizIds).list();
         return BeanUtils.copyList(list, QuestionBizDTO.class);
     }
 
@@ -74,9 +70,10 @@ public class QuestionBizServiceImpl extends ServiceImpl<QuestionBizMapper, Quest
         // 2.删除旧数据
         remove(new LambdaQueryWrapper<QuestionBiz>().in(QuestionBiz::getBizId, bizIds));
         // 3.插入新数据
-        List<QuestionBiz> list = qbs.stream()
-                .map(q -> QuestionBiz.of(null, q.getBizId(), q.getQuestionId()))
-                .collect(Collectors.toList());
+        List<QuestionBiz> list =
+                qbs.stream()
+                        .map(q -> QuestionBiz.of(null, q.getBizId(), q.getQuestionId()))
+                        .collect(Collectors.toList());
         saveBatch(list);
     }
 

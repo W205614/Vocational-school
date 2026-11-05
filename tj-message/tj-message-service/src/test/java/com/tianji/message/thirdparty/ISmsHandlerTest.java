@@ -12,17 +12,17 @@ import java.util.HashMap;
 import java.util.List;
 
 @SpringBootTest
-@EnabledIfEnvironmentVariable(named="TJ_REAL_SMS_TESTS", matches="true")
+@EnabledIfEnvironmentVariable(named = "TJ_REAL_SMS_TESTS", matches = "true")
 class ISmsHandlerTest {
 
-    @Autowired
-    private ISmsService smsService;
+    @Autowired private ISmsService smsService;
 
     @Test
     void send() {
         SmsInfoDTO dto = new SmsInfoDTO();
-        String phones=System.getenv("TJ_TEST_SMS_PHONES");
-        if(phones==null || !phones.matches("1\\d{10}(,1\\d{10})*"))throw new IllegalStateException("Explicit test SMS recipients required");
+        String phones = System.getenv("TJ_TEST_SMS_PHONES");
+        if (phones == null || !phones.matches("1\\d{10}(,1\\d{10})*"))
+            throw new IllegalStateException("Explicit test SMS recipients required");
         dto.setPhones(List.of(phones.split(",")));
         dto.setTemplateCode(SmsTemplate.VERIFY_CODE.name());
         HashMap<String, String> params = new HashMap<>(1);

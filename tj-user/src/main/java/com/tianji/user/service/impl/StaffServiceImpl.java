@@ -27,15 +27,22 @@ public class StaffServiceImpl implements IStaffService {
 
     private final IUserDetailService detailService;
     private final RoleCache roleCache;
+
     @Override
     public PageDTO<StaffVO> queryStaffPage(UserPageQuery query) {
         // 1.搜索
-        Page<UserDetail> p = detailService.queryUserDetailByPage(query, UserType.STAFF, UserType.TEACHER);
+        Page<UserDetail> p =
+                detailService.queryUserDetailByPage(query, UserType.STAFF, UserType.TEACHER);
         // 2.处理vo
-        return PageDTO.of(p, u -> {
-            StaffVO v = BeanUtils.toBean(u, StaffVO.class);
-            v.setRoleName(u.getType()==UserType.TEACHER?com.tianji.user.constants.UserConstants.TEACHER_ROLE_NAME:roleCache.getRoleName(u.getRoleId()));
-            return v;
-        });
+        return PageDTO.of(
+                p,
+                u -> {
+                    StaffVO v = BeanUtils.toBean(u, StaffVO.class);
+                    v.setRoleName(
+                            u.getType() == UserType.TEACHER
+                                    ? com.tianji.user.constants.UserConstants.TEACHER_ROLE_NAME
+                                    : roleCache.getRoleName(u.getRoleId()));
+                    return v;
+                });
     }
 }

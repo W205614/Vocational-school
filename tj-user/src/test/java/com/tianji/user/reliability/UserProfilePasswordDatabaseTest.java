@@ -24,82 +24,210 @@ import java.util.regex.Pattern;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Real mapper regression for the password-only profile request used after initial setup. */
-@EnabledIfEnvironmentVariable(named="ACCEPTANCE_DB_PASSWORD",matches=".+")
+@EnabledIfEnvironmentVariable(named = "ACCEPTANCE_DB_PASSWORD", matches = ".+")
 class UserProfilePasswordDatabaseTest {
- @org.springframework.context.annotation.Configuration(proxyBeanMethods=false)
- @org.springframework.boot.autoconfigure.ImportAutoConfiguration({
-  com.tianji.common.autoconfigure.mybatis.MybatisConfig.class,
-  com.baomidou.mybatisplus.autoconfigure.MybatisPlusInnerInterceptorAutoConfiguration.class,
-  com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration.class})
- static class FactoryConfiguration {}
- private JdbcTemplate jdbc;private UserServiceImpl users;private TransactionTemplate transactions;
- private org.springframework.context.ConfigurableApplicationContext context;
- private final BCryptPasswordEncoder passwords=new BCryptPasswordEncoder(4);
- private final List<Long> ids=new ArrayList<>();
- @BeforeEach void setup()throws Exception {
-  String base="jdbc:mysql://127.0.0.1:"+System.getenv().getOrDefault("ACCEPTANCE_DB_PORT","23316")+"/";
-  String options="?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true";
-  new JdbcTemplate(new DriverManagerDataSource(base+options,"root",System.getenv("ACCEPTANCE_DB_PASSWORD"))).execute("CREATE DATABASE IF NOT EXISTS acceptance_profile_password");
-  var source=new DriverManagerDataSource(base+"acceptance_profile_password"+options,"root",System.getenv("ACCEPTANCE_DB_PASSWORD"));jdbc=new JdbcTemplate(source);
-  assertEquals("acceptance_profile_password",jdbc.queryForObject("SELECT DATABASE()",String.class));
-  Path root=Path.of(System.getProperty("user.dir")).toAbsolutePath();
-  while(root!=null&&!Files.isRegularFile(root.resolve("deploy/compact/schema.sql")))root=root.getParent();assertNotNull(root);
-  String schema=Files.readString(root.resolve("deploy/compact/schema.sql"));
-  for(String table:List.of("user","user_detail")){
-   var definition=Pattern.compile("CREATE TABLE `"+table+"` \\(.*?\\) ENGINE=.*?;",Pattern.DOTALL).matcher(schema);
-   assertTrue(definition.find());jdbc.execute(definition.group().replaceFirst("CREATE TABLE","CREATE TABLE IF NOT EXISTS"));
-  }
-  for(var field:Map.of("must_change_password","TINYINT NOT NULL DEFAULT 0","temporary_password_expires_at","DATETIME(3) NULL","auth_version","BIGINT NOT NULL DEFAULT 0").entrySet())
-   if(jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='user' AND column_name=?",Integer.class,field.getKey())==0)
-    jdbc.execute("ALTER TABLE `user` ADD COLUMN "+field.getKey()+" "+field.getValue());
-  for(int n=0;n<2;n++){
-   long id=IdWorker.getId();ids.add(id);
-   jdbc.update("INSERT INTO `user`(id,username,cell_phone,password,type,status) VALUES(?,?,?,?,2,1)",id,"profile-"+id,String.format("131%08d",Math.floorMod(id,100000000L)),passwords.encode("original-profile-password"));
-   jdbc.update("INSERT INTO user_detail(id,type,name,email,role_id) VALUES(?,2,?,?,2)",id,"Original profile "+n,"profile"+n+"@example.test");
-  }
-  var application=new org.springframework.context.annotation.AnnotationConfigApplicationContext();
-  application.registerBean("dataSource",javax.sql.DataSource.class,()->source);
-  application.register(FactoryConfiguration.class);application.refresh();context=application;
-  var factory=context.getBean(SqlSessionFactory.class);
-  for(var mapper:List.of(UserMapper.class,UserDetailMapper.class))if(!factory.getConfiguration().hasMapper(mapper))factory.getConfiguration().addMapper(mapper);
-  var sessions=new SqlSessionTemplate(factory);var details=new UserDetailServiceImpl();ReflectionTestUtils.setField(details,"baseMapper",sessions.getMapper(UserDetailMapper.class));
-  users=new UserServiceImpl();ReflectionTestUtils.setField(users,"baseMapper",sessions.getMapper(UserMapper.class));
-  ReflectionTestUtils.setField(users,"detailService",details);ReflectionTestUtils.setField(users,"passwordEncoder",passwords);
-  transactions=new TransactionTemplate(new DataSourceTransactionManager(source));UserContext.setUser(ids.getFirst());
- }
- @AfterEach void cleanup(){
-  UserContext.removeUser();if(context!=null)context.close();if(jdbc!=null)for(long id:ids){jdbc.update("DELETE FROM user_detail WHERE id=?",id);jdbc.update("DELETE FROM `user` WHERE id=?",id);}
- }
- private Map<String,Object> detail(long id){return jdbc.queryForMap("SELECT * FROM user_detail WHERE id=?",id);}
- private String hash(){return jdbc.queryForObject("SELECT password FROM `user` WHERE id=?",String.class,ids.getFirst());}
- private UserFormDTO form(){var form=new UserFormDTO();form.setType(2);form.setOldPassword("original-profile-password");form.setPassword("changed-profile-password");return form;}
- private void update(UserFormDTO form){transactions.executeWithoutResult(status->users.updateUserWithPassword(form));}
- @Test void passwordOnlyChangesHashWithoutWritingOrClearingProfile(){
-  var before=detail(ids.getFirst());String originalHash=hash();var invalid=form();invalid.setOldPassword("incorrect-profile-password");
-  assertThrows(UnauthorizedException.class,()->update(invalid));assertEquals(originalHash,hash());assertEquals(before,detail(ids.getFirst()));
-  update(form());assertTrue(passwords.matches("changed-profile-password",hash()));assertNotEquals(originalHash,hash());assertEquals(before,detail(ids.getFirst()));
- }
- @Test void combinedPasswordAndProfileUpdateKeepsUnspecifiedFieldsAndCannotChangeIdentityOrRole(){
-  var other=detail(ids.getLast());var form=form();form.setId(ids.getLast());form.setType(1);form.setRoleId(1L);form.setName("Updated own profile");
-  update(form);var changed=detail(ids.getFirst());assertEquals("Updated own profile",changed.get("name"));assertEquals("profile0@example.test",changed.get("email"));
-  assertEquals(2,((Number)changed.get("type")).intValue());assertEquals(2L,((Number)changed.get("role_id")).longValue());
-  assertEquals(other,detail(ids.getLast()));assertTrue(passwords.matches("changed-profile-password",hash()));
- }
- @Test void credentialVersionComesFromThePasswordRowRatherThanALaterIdentityRead(){
-  long id=ids.getFirst();jdbc.update("UPDATE `user` SET auth_version=7 WHERE id=?",id);
-  var checking=org.mockito.Mockito.spy(passwords);
-  org.mockito.Mockito.doAnswer(call->{
-   // Commit a reset after the real mapper has read the credential row, while
-   // verification of that row is still in progress.
-   boolean accepted=passwords.matches(call.getArgument(0),call.getArgument(1));
-   jdbc.update("UPDATE `user` SET password=?,auth_version=8 WHERE id=?",passwords.encode("reset-profile-password"),id);
-   return accepted;
-  }).when(checking).matches(org.mockito.ArgumentMatchers.any(CharSequence.class),org.mockito.ArgumentMatchers.anyString());
-  ReflectionTestUtils.setField(users,"passwordEncoder",checking);
-  var form=new com.tianji.api.dto.user.LoginFormDTO();form.setType(1);form.setUsername("profile-"+id);form.setPassword("original-profile-password");
-  var verified=users.queryUserDetail(form,false);
-  assertEquals(7L,verified.getAuthVersion());assertEquals(2L,verified.getRoleId());assertEquals(2,verified.getUserType());
-  assertEquals(8L,jdbc.queryForObject("SELECT auth_version FROM `user` WHERE id=?",Long.class,id));
-  assertTrue(passwords.matches("reset-profile-password",hash()));
- }
+    @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+    @org.springframework.boot.autoconfigure.ImportAutoConfiguration({
+        com.tianji.common.autoconfigure.mybatis.MybatisConfig.class,
+        com.baomidou.mybatisplus.autoconfigure.MybatisPlusInnerInterceptorAutoConfiguration.class,
+        com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration.class
+    })
+    static class FactoryConfiguration {}
+
+    private JdbcTemplate jdbc;
+    private UserServiceImpl users;
+    private TransactionTemplate transactions;
+    private org.springframework.context.ConfigurableApplicationContext context;
+    private final BCryptPasswordEncoder passwords = new BCryptPasswordEncoder(4);
+    private final List<Long> ids = new ArrayList<>();
+
+    @BeforeEach
+    void setup() throws Exception {
+        String base =
+                "jdbc:mysql://127.0.0.1:"
+                        + System.getenv().getOrDefault("ACCEPTANCE_DB_PORT", "23316")
+                        + "/";
+        String options = "?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true";
+        new JdbcTemplate(
+                        new DriverManagerDataSource(
+                                base + options, "root", System.getenv("ACCEPTANCE_DB_PASSWORD")))
+                .execute("CREATE DATABASE IF NOT EXISTS acceptance_profile_password");
+        var source =
+                new DriverManagerDataSource(
+                        base + "acceptance_profile_password" + options,
+                        "root",
+                        System.getenv("ACCEPTANCE_DB_PASSWORD"));
+        jdbc = new JdbcTemplate(source);
+        assertEquals(
+                "acceptance_profile_password",
+                jdbc.queryForObject("SELECT DATABASE()", String.class));
+        Path root = Path.of(System.getProperty("user.dir")).toAbsolutePath();
+        while (root != null && !Files.isRegularFile(root.resolve("deploy/compact/schema.sql")))
+            root = root.getParent();
+        assertNotNull(root);
+        String schema = Files.readString(root.resolve("deploy/compact/schema.sql"));
+        for (String table : List.of("user", "user_detail")) {
+            var definition =
+                    Pattern.compile(
+                                    "CREATE TABLE `" + table + "` \\(.*?\\) ENGINE=.*?;",
+                                    Pattern.DOTALL)
+                            .matcher(schema);
+            assertTrue(definition.find());
+            jdbc.execute(
+                    definition.group().replaceFirst("CREATE TABLE", "CREATE TABLE IF NOT EXISTS"));
+        }
+        for (var field :
+                Map.of(
+                                "must_change_password",
+                                "TINYINT NOT NULL DEFAULT 0",
+                                "temporary_password_expires_at",
+                                "DATETIME(3) NULL",
+                                "auth_version",
+                                "BIGINT NOT NULL DEFAULT 0")
+                        .entrySet())
+            if (jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='user' AND column_name=?",
+                            Integer.class,
+                            field.getKey())
+                    == 0)
+                jdbc.execute(
+                        "ALTER TABLE `user` ADD COLUMN " + field.getKey() + " " + field.getValue());
+        for (int n = 0; n < 2; n++) {
+            long id = IdWorker.getId();
+            ids.add(id);
+            jdbc.update(
+                    "INSERT INTO `user`(id,username,cell_phone,password,type,status) VALUES(?,?,?,?,2,1)",
+                    id,
+                    "profile-" + id,
+                    String.format("131%08d", Math.floorMod(id, 100000000L)),
+                    passwords.encode("original-profile-password"));
+            jdbc.update(
+                    "INSERT INTO user_detail(id,type,name,email,role_id) VALUES(?,2,?,?,2)",
+                    id,
+                    "Original profile " + n,
+                    "profile" + n + "@example.test");
+        }
+        var application =
+                new org.springframework.context.annotation.AnnotationConfigApplicationContext();
+        application.registerBean("dataSource", javax.sql.DataSource.class, () -> source);
+        application.register(FactoryConfiguration.class);
+        application.refresh();
+        context = application;
+        var factory = context.getBean(SqlSessionFactory.class);
+        for (var mapper : List.of(UserMapper.class, UserDetailMapper.class))
+            if (!factory.getConfiguration().hasMapper(mapper))
+                factory.getConfiguration().addMapper(mapper);
+        var sessions = new SqlSessionTemplate(factory);
+        var details = new UserDetailServiceImpl();
+        ReflectionTestUtils.setField(
+                details, "baseMapper", sessions.getMapper(UserDetailMapper.class));
+        users = new UserServiceImpl();
+        ReflectionTestUtils.setField(users, "baseMapper", sessions.getMapper(UserMapper.class));
+        ReflectionTestUtils.setField(users, "detailService", details);
+        ReflectionTestUtils.setField(users, "passwordEncoder", passwords);
+        transactions = new TransactionTemplate(new DataSourceTransactionManager(source));
+        UserContext.setUser(ids.getFirst());
+    }
+
+    @AfterEach
+    void cleanup() {
+        UserContext.removeUser();
+        if (context != null) context.close();
+        if (jdbc != null)
+            for (long id : ids) {
+                jdbc.update("DELETE FROM user_detail WHERE id=?", id);
+                jdbc.update("DELETE FROM `user` WHERE id=?", id);
+            }
+    }
+
+    private Map<String, Object> detail(long id) {
+        return jdbc.queryForMap("SELECT * FROM user_detail WHERE id=?", id);
+    }
+
+    private String hash() {
+        return jdbc.queryForObject(
+                "SELECT password FROM `user` WHERE id=?", String.class, ids.getFirst());
+    }
+
+    private UserFormDTO form() {
+        var form = new UserFormDTO();
+        form.setType(2);
+        form.setOldPassword("original-profile-password");
+        form.setPassword("changed-profile-password");
+        return form;
+    }
+
+    private void update(UserFormDTO form) {
+        transactions.executeWithoutResult(status -> users.updateUserWithPassword(form));
+    }
+
+    @Test
+    void passwordOnlyChangesHashWithoutWritingOrClearingProfile() {
+        var before = detail(ids.getFirst());
+        String originalHash = hash();
+        var invalid = form();
+        invalid.setOldPassword("incorrect-profile-password");
+        assertThrows(UnauthorizedException.class, () -> update(invalid));
+        assertEquals(originalHash, hash());
+        assertEquals(before, detail(ids.getFirst()));
+        update(form());
+        assertTrue(passwords.matches("changed-profile-password", hash()));
+        assertNotEquals(originalHash, hash());
+        assertEquals(before, detail(ids.getFirst()));
+    }
+
+    @Test
+    void combinedPasswordAndProfileUpdateKeepsUnspecifiedFieldsAndCannotChangeIdentityOrRole() {
+        var other = detail(ids.getLast());
+        var form = form();
+        form.setId(ids.getLast());
+        form.setType(1);
+        form.setRoleId(1L);
+        form.setName("Updated own profile");
+        update(form);
+        var changed = detail(ids.getFirst());
+        assertEquals("Updated own profile", changed.get("name"));
+        assertEquals("profile0@example.test", changed.get("email"));
+        assertEquals(2, ((Number) changed.get("type")).intValue());
+        assertEquals(2L, ((Number) changed.get("role_id")).longValue());
+        assertEquals(other, detail(ids.getLast()));
+        assertTrue(passwords.matches("changed-profile-password", hash()));
+    }
+
+    @Test
+    void credentialVersionComesFromThePasswordRowRatherThanALaterIdentityRead() {
+        long id = ids.getFirst();
+        jdbc.update("UPDATE `user` SET auth_version=7 WHERE id=?", id);
+        var checking = org.mockito.Mockito.spy(passwords);
+        org.mockito.Mockito.doAnswer(
+                        call -> {
+                            // Commit a reset after the real mapper has read the credential row,
+                            // while
+                            // verification of that row is still in progress.
+                            boolean accepted =
+                                    passwords.matches(call.getArgument(0), call.getArgument(1));
+                            jdbc.update(
+                                    "UPDATE `user` SET password=?,auth_version=8 WHERE id=?",
+                                    passwords.encode("reset-profile-password"),
+                                    id);
+                            return accepted;
+                        })
+                .when(checking)
+                .matches(
+                        org.mockito.ArgumentMatchers.any(CharSequence.class),
+                        org.mockito.ArgumentMatchers.anyString());
+        ReflectionTestUtils.setField(users, "passwordEncoder", checking);
+        var form = new com.tianji.api.dto.user.LoginFormDTO();
+        form.setType(1);
+        form.setUsername("profile-" + id);
+        form.setPassword("original-profile-password");
+        var verified = users.queryUserDetail(form, false);
+        assertEquals(7L, verified.getAuthVersion());
+        assertEquals(2L, verified.getRoleId());
+        assertEquals(2, verified.getUserType());
+        assertEquals(
+                8L,
+                jdbc.queryForObject("SELECT auth_version FROM `user` WHERE id=?", Long.class, id));
+        assertTrue(passwords.matches("reset-profile-password", hash()));
+    }
 }

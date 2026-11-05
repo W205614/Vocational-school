@@ -45,7 +45,8 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class NotifyServiceImpl implements INotifyService {
-    private final org.springframework.beans.factory.ObjectProvider<CertificatesManager> certificates;
+    private final org.springframework.beans.factory.ObjectProvider<CertificatesManager>
+            certificates;
     private final org.springframework.core.env.Environment environment;
     private final WxPayProperties properties;
     private final IPayOrderService payOrderService;
@@ -57,7 +58,8 @@ public class NotifyServiceImpl implements INotifyService {
     public void handleWxPayNotify(NotificationRequest request) {
         // 1.尝试校验微信通知请求参数，安全校验
         Notification notification = checkWxNotifyRequest(request);
-        if (notification == null || !StringUtils.equals(notification.getEventType(), "TRANSACTION.SUCCESS")) {
+        if (notification == null
+                || !StringUtils.equals(notification.getEventType(), "TRANSACTION.SUCCESS")) {
             // 通知类型不是支付成功，不做处理
             return;
         }
@@ -75,16 +77,19 @@ public class NotifyServiceImpl implements INotifyService {
         LocalDateTime successTime = data.getLocalDateTime("success_time", LocalDateTime.now());
 
         // 4.校验通知数据，主要是业务校验、幂等校验
-        settlement.paid(tradingOrderNo,amount,successTime);
+        settlement.paid(tradingOrderNo, amount, successTime);
     }
-
 
     @Override
     public void handleWxPayRefundNotify(NotificationRequest request) {
         // 1.尝试校验微信通知请求参数，安全校验
         Notification notification = checkWxNotifyRequest(request);
-        if (notification == null || !StringUtils.equalsAny(
-                notification.getEventType(), "REFUND.SUCCESS", "REFUND.ABNORMAL", "REFUND.CLOSED")) {
+        if (notification == null
+                || !StringUtils.equalsAny(
+                        notification.getEventType(),
+                        "REFUND.SUCCESS",
+                        "REFUND.ABNORMAL",
+                        "REFUND.CLOSED")) {
             // 通知类型错误，直接返回
             log.debug("微信退款通知类型异常");
             return;
@@ -104,15 +109,19 @@ public class NotifyServiceImpl implements INotifyService {
         RefundStatus status = handleWxRefundStatus(statusStr);
 
         // 3.幂等性校验
-        settlement.refund(refundOrderNo,status.getValue(),null,data.getStr("msg"),null);
+        settlement.refund(refundOrderNo, status.getValue(), null, data.getStr("msg"), null);
     }
 
     @Override
     public void handleAliPayNotify(Map<String, String> request) {
-        var payment=aliNotifications.verify(request);
-        if(payment.paid())settlement.paid(payment.number(),payment.cents(),payment.occurred(),PayConstants.ALI_CHANNEL_CODE);
+        var payment = aliNotifications.verify(request);
+        if (payment.paid())
+            settlement.paid(
+                    payment.number(),
+                    payment.cents(),
+                    payment.occurred(),
+                    PayConstants.ALI_CHANNEL_CODE);
     }
-
 
     private RefundStatus handleWxRefundStatus(String statusStr) {
         if (StringUtils.equalsAny(statusStr, "REFUND.CLOSED", "REFUND.ABNORMAL")) {
@@ -124,15 +133,15 @@ public class NotifyServiceImpl implements INotifyService {
         return RefundStatus.UN_KNOWN;
     }
 
-
     @Nullable
     private Notification checkWxNotifyRequest(NotificationRequest request) {
-        var certificatesManager=certificates.getIfAvailable();
-        if(certificatesManager==null)throw new BadRequestException("微信支付渠道未配置");
+        var certificatesManager = certificates.getIfAvailable();
+        if (certificatesManager == null) throw new BadRequestException("微信支付渠道未配置");
         try {
             Verifier verifier = certificatesManager.getVerifier(properties.getMchId());
             String apiV3Key = properties.getApiV3Key();
-            NotificationHandler handler = new NotificationHandler(verifier, apiV3Key.getBytes(StandardCharsets.UTF_8));
+            NotificationHandler handler =
+                    new NotificationHandler(verifier, apiV3Key.getBytes(StandardCharsets.UTF_8));
             // 验签和解析请求体
             return handler.parse(request);
 
@@ -150,5 +159,4 @@ public class NotifyServiceImpl implements INotifyService {
             throw new BadRequestException(400, "微信回调结果处理失败", e);
         }
     }
-
 }

@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 public class MediaQuoteDTO {
     @Schema(description = "媒资id")
     private Long mediaId;
+
     @Schema(description = "引用数")
     private Integer quoteNum;
 }

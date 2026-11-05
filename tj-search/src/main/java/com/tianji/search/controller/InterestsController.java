@@ -1,6 +1,5 @@
 package com.tianji.search.controller;
 
-
 import com.tianji.search.domain.vo.CourseVO;
 import com.tianji.search.service.IInterestsService;
 import com.tianji.search.service.ISearchService;
@@ -31,20 +30,19 @@ public class InterestsController {
 
     @Operation(summary = "新增兴趣爱好")
     @PostMapping
-    public void saveMyInterests(@RequestParam("interestedIds") List<Long>interestedIds){
+    public void saveMyInterests(@RequestParam("interestedIds") List<Long> interestedIds) {
         interestsService.saveInterests(interestedIds);
     }
 
     @Operation(summary = "查询我的兴趣爱好")
     @GetMapping
-    public List<CategoryBasicDTO> queryMyInterests(){
+    public List<CategoryBasicDTO> queryMyInterests() {
         return interestsService.queryMyInterests();
     }
 
-
     @Operation(summary = "根据二级分类id查询课程TOP10")
     @GetMapping("/{id}/courses")
-    public List<CourseVO> queryCourseByCateId(@PathVariable("id") Long cateLv2Id){
+    public List<CourseVO> queryCourseByCateId(@PathVariable("id") Long cateLv2Id) {
         return searchService.queryCourseByCateId(cateLv2Id);
     }
 }

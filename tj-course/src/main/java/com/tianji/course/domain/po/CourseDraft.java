@@ -125,6 +125,7 @@ public class CourseDraft implements Serializable {
     private Boolean canUpdate;
 
     private Integer cVersion;
+
     /**
      * 部门id
      */
@@ -154,7 +155,4 @@ public class CourseDraft implements Serializable {
      * 更新人
      */
     private Long updater;
-
-
-
 }

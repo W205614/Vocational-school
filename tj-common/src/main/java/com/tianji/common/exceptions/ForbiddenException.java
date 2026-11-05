@@ -3,7 +3,7 @@ package com.tianji.common.exceptions;
 import lombok.Getter;
 
 @Getter
-public class ForbiddenException extends CommonException{
+public class ForbiddenException extends CommonException {
     private final int status = 403;
 
     public ForbiddenException(String message) {

@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class OrderProgressNodeVO {
     @Schema(description = "订单进度节点名称")
     private String name;
+
     @Schema(description = "订单进度节点名称对应的时间")
     private LocalDateTime time;
 }

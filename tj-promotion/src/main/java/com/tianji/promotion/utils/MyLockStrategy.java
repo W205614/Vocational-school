@@ -16,7 +16,7 @@ public enum MyLockStrategy {
         @Override
         public boolean tryLock(RLock lock, MyLock prop) throws InterruptedException {
             boolean isLock = lock.tryLock(0, prop.leaseTime(), prop.unit());
-            if(!isLock) {
+            if (!isLock) {
                 throw new BizIllegalException("请求太频繁");
             }
             return true;
@@ -42,7 +42,7 @@ public enum MyLockStrategy {
         @Override
         public boolean tryLock(RLock lock, MyLock prop) throws InterruptedException {
             boolean isLock = lock.tryLock(prop.waitTime(), prop.leaseTime(), prop.unit());
-            if(!isLock) {
+            if (!isLock) {
                 throw new BizIllegalException("请求太频繁");
             }
             return true;

@@ -1,7 +1,7 @@
 server:
-  port: 8087  #端口
+  port: 8087 #端口
   tomcat:
-    uri-encoding: UTF-8   #服务编码
+    uri-encoding: UTF-8 #服务编码
   error:
     include-message: always #返回的响应体带上message
 spring:
@@ -37,12 +37,12 @@ tj:
   pay:
     notifyHost: https://6b9f16dd.r2.cpolar.top/ps
     ali:
-      appId: "2021002173680104"
+      appId: '2021002173680104'
       merchantPrivateKey: ${TJ_PAY_TJ_PAY_ALI_MERCHANTPRIVATEKEY:}
       publicKey: ${TJ_PAY_TJ_PAY_ALI_PUBLICKEY:}
     wx:
-      appId: "wx0ca99a203b1e9943"
-      mchId: "1561414331"
-      mchSerialNo: "4B3B3DC35414AD50B1B755BAF8DE9CC7CF407606"
+      appId: 'wx0ca99a203b1e9943'
+      mchId: '1561414331'
+      mchSerialNo: '4B3B3DC35414AD50B1B755BAF8DE9CC7CF407606'
       privateKey: ${TJ_PAY_TJ_PAY_WX_PRIVATEKEY:}
       apiV3Key: ${TJ_PAY_TJ_PAY_WX_APIV3KEY:}

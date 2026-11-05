@@ -141,10 +141,12 @@ public class Subject implements Serializable {
      * 引用次数
      */
     private Integer useTimes;
+
     /**
      * 作答次数
      */
     private Integer answerTimes;
+
     /**
      * 创建人
      */
@@ -158,12 +160,14 @@ public class Subject implements Serializable {
     /**
      * 逻辑删除
      */
-    @TableLogic
-    private Integer deleted;
+    @TableLogic private Integer deleted;
 
     public List<String> getOptions() {
-        return Stream.of(option1, option2, option3, option4, option5, option6, option7, option8, option9, option10)
-                .filter(StringUtils::isNotBlank).collect(Collectors.toList());
+        return Stream.of(
+                        option1, option2, option3, option4, option5, option6, option7, option8,
+                        option9, option10)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
     }
 
     public List<Integer> getAnswers() {

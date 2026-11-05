@@ -26,19 +26,22 @@ import java.util.List;
  * @since 2022-08-19
  */
 @Service
-public class SmsThirdPlatformServiceImpl extends ServiceImpl<SmsThirdPlatformMapper, SmsThirdPlatform> implements ISmsThirdPlatformService {
+public class SmsThirdPlatformServiceImpl
+        extends ServiceImpl<SmsThirdPlatformMapper, SmsThirdPlatform>
+        implements ISmsThirdPlatformService {
 
-    @Resource
-    private Cache<String, List<SmsThirdPlatform>> platformCache;
+    @Resource private Cache<String, List<SmsThirdPlatform>> platformCache;
 
     @Override
-    public List<SmsThirdPlatform> queryAllPlatform(){
-        return platformCache.get("PLATFORM", key -> lambdaQuery().orderByAsc(SmsThirdPlatform::getPriority).list());
+    public List<SmsThirdPlatform> queryAllPlatform() {
+        return platformCache.get(
+                "PLATFORM", key -> lambdaQuery().orderByAsc(SmsThirdPlatform::getPriority).list());
     }
 
     @Override
     public Long saveSmsThirdPlatform(SmsThirdPlatformFormDTO thirdPlatformDTO) {
-        SmsThirdPlatform thirdPlatform = BeanUtils.copyBean(thirdPlatformDTO, SmsThirdPlatform.class);
+        SmsThirdPlatform thirdPlatform =
+                BeanUtils.copyBean(thirdPlatformDTO, SmsThirdPlatform.class);
         save(thirdPlatform);
         return thirdPlatform.getId();
     }
@@ -53,10 +56,17 @@ public class SmsThirdPlatformServiceImpl extends ServiceImpl<SmsThirdPlatformMap
         // 1.分页条件
         Page<SmsThirdPlatform> page = query.toMpPage();
         // 2.过滤条件
-        page = lambdaQuery()
-                .eq(query.getStatus() != null, SmsThirdPlatform::getStatus, query.getStatus())
-                .like(StringUtils.isNotBlank(query.getKeyword()), SmsThirdPlatform::getName, query.getKeyword())
-                .page(page);
+        page =
+                lambdaQuery()
+                        .eq(
+                                query.getStatus() != null,
+                                SmsThirdPlatform::getStatus,
+                                query.getStatus())
+                        .like(
+                                StringUtils.isNotBlank(query.getKeyword()),
+                                SmsThirdPlatform::getName,
+                                query.getKeyword())
+                        .page(page);
         // 3.数据转换
         return PageDTO.of(page, SmsThirdPlatformDTO.class);
     }

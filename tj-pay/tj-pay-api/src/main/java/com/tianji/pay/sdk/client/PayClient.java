@@ -17,6 +17,7 @@ public interface PayClient {
      */
     @GetMapping("/pay-channels/list")
     List<PayChannelDTO> listAllPayChannels();
+
     /**
      * 扫码支付申请支付单，返回支付url地址，用于生产二维码
      *
