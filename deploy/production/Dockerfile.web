@@ -4,7 +4,7 @@ FROM ${NGINX_IMAGE}
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
 USER root
-RUN apk add --no-cache --upgrade 'brotli-libs>=1.2.1-r0' 'curl>=8.23.0-r0' 'libcurl>=8.23.0-r0'
+RUN apk add --no-cache --upgrade 'brotli-libs>=1.2.1-r0' 'curl>=8.23.0-r0' 'libcurl>=8.23.0-r0' 'libexpat>=2.10.0-r0'
 RUN addgroup -g 10001 app && adduser -D -u 10001 -G app app \
     && mkdir -p /var/cache/nginx /var/run /etc/nginx/conf.d \
     && chown -R app:app /var/cache/nginx /var/run /etc/nginx/conf.d
