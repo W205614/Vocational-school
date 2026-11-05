@@ -25,7 +25,7 @@ test('management sign-in waits for the initial course route before preserving it
  test.skip(info.project.name!=='admin');
  let fetched!:()=>void,release!:()=>void;
  const started=new Promise<void>(resolve=>fetched=resolve),held=new Promise<void>(resolve=>release=resolve);
- const initialCourseModule=/\/(?:assets\/Resource-[^/]+\.js|src\/views\/Resource\.vue)(?:\?|$)/;
+ const initialCourseModule=/\/(?:assets\/ResourceManagementView-[^/]+\.js|src\/views\/ResourceManagementView\.vue)(?:\?|$)/;
  await page.route(initialCourseModule,async route=>{const response=await route.fetch();fetched();await held;await route.fulfill({response});});
  try{
   await page.goto('/courses',{waitUntil:'domcontentloaded'});await started;
