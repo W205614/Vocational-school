@@ -11,6 +11,8 @@ LOCAL = BASE / '.local'
 
 def main():
     prepare = configure()
+    from migrate import apply_migrations
+
     prepare.mysql('CREATE DATABASE IF NOT EXISTS acceptance_pay')
     for table in [
         'pay_order',
@@ -31,10 +33,10 @@ def main():
             prepare.mysql(
                 'CREATE TABLE ' + table + ' LIKE tj_pay.' + table, 'acceptance_pay'
             )
-    for migration in sorted(
-        (BASE.parent / 'acceptance/migrations/common').glob('V*.sql')
-    ):
-        prepare.mysql(migration.read_text(encoding='utf8'), 'acceptance_pay')
+    apply_migrations(
+        'acceptance_pay',
+        list((BASE.parent / 'acceptance/migrations/common').glob('V*.sql')),
+    )
     env = os.environ.copy()
     env['ACCEPTANCE_DB_PASSWORD'] = prepare.local_secrets()['ACCEPTANCE_DB_PASSWORD']
     env.setdefault('JAVA_HOME', 'E:/Program Files/jdk')

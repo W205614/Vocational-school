@@ -849,8 +849,16 @@ def build(package=True, group=None):
         packages = 'apt libapt-pkg6.0t64 libbrotli1' + (
             ' ffmpeg' if group == 'support' else ''
         )
+        apt = (
+            'apt-get -o Acquire::Retries=3 '
+            '-o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
+        )
         media_probe = (
-            'RUN apt-get -o Acquire::Retries=0 update && apt-get -o Acquire::Retries=0 install -y --no-install-recommends '
+            'RUN '
+            + apt
+            + ' update && '
+            + apt
+            + ' install -y --no-install-recommends '
             + packages
             + ' && rm -rf /var/lib/apt/lists/*\n'
         )

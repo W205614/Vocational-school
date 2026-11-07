@@ -60,6 +60,8 @@ class LoginRecordDeliveryDatabaseTest {
         jdbc = new JdbcTemplate(source);
         assertEquals(
                 "acceptance_login_records", jdbc.queryForObject("SELECT DATABASE()", String.class));
+        // This fixture replays common migrations in its isolated schema for every test case.
+        jdbc.execute("DROP TABLE IF EXISTS privacy_domain_execution");
         Path root = Path.of(System.getProperty("user.dir")).toAbsolutePath();
         while (root != null && !Files.isRegularFile(root.resolve("deploy/compact/schema.sql")))
             root = root.getParent();
