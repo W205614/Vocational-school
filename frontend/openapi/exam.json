@@ -2103,6 +2103,34 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "分页或课程参数无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/R",
+                  "additionalProperties": {
+                    "default": ""
+                  },
+                  "default": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请先登录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/R",
+                  "additionalProperties": {
+                    "default": ""
+                  },
+                  "default": ""
+                }
+              }
+            }
           }
         }
       }
@@ -3212,6 +3240,35 @@
           "nextOffset": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "R": {
+        "type": "object",
+        "default": null,
+        "description": "通用响应结果",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "业务状态码，200-成功，其它-失败"
+          },
+          "msg": {
+            "type": "string",
+            "default": "",
+            "description": "响应消息",
+            "example": "OK"
+          },
+          "data": {
+            "default": "",
+            "description": "响应数据"
+          },
+          "requestId": {
+            "type": "string",
+            "default": "",
+            "description": "请求id",
+            "example": "1af123c11412e"
           }
         }
       },

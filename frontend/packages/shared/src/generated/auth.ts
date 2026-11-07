@@ -728,6 +728,35 @@ export interface components {
             provisioningUri?: string;
         };
         /**
+         * @description 通用响应结果
+         * @default null
+         */
+        R: {
+            /**
+             * Format: int32
+             * @description 业务状态码，200-成功，其它-失败
+             * @default
+             */
+            code: number;
+            /**
+             * @description 响应消息
+             * @default
+             * @example OK
+             */
+            msg: string;
+            /**
+             * @description 响应数据
+             * @default
+             */
+            data: unknown;
+            /**
+             * @description 请求id
+             * @default
+             * @example 1af123c11412e
+             */
+            requestId: string;
+        };
+        /**
          * @description 分页请求参数
          * @default null
          */
@@ -1717,6 +1746,15 @@ export interface operations {
                     };
                 };
             };
+            /** @description 请先修改临时密码后重新登录 */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["R"];
+                };
+            };
         };
     };
     adminLoginByPw: {
@@ -1744,6 +1782,15 @@ export interface operations {
                         requestId: string;
                         data: string;
                     };
+                };
+            };
+            /** @description 请先修改临时密码后重新登录 */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["R"];
                 };
             };
         };
