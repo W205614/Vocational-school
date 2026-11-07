@@ -81,7 +81,7 @@ class PrivacyDomainDatabaseTest {
                             "root",
                             System.getenv("ACCEPTANCE_DB_PASSWORD"));
             var jdbc = new JdbcTemplate(source);
-            int start = schema.indexOf("USE `zxt_" + alias + "`;");
+            int start = schema.indexOf("USE `tj_" + alias + "`;");
             assertTrue(start >= 0, "Missing schema for " + alias);
             int end = schema.indexOf("\nUSE `", start + 5);
             String section = schema.substring(start, end < 0 ? schema.length() : end);
