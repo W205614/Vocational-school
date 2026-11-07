@@ -11,7 +11,7 @@ class OperationsConfigurationTest(unittest.TestCase):
     def test_existing_privacy_and_trial_configuration_is_upgraded_idempotently(self):
         user = module_defaults('user', {})
         self.assertEqual(
-            {'provider': 'LOCAL', 'directory': '/run/privacy-exports'},
+            {'provider': 'LOCAL', 'directory': '/run/privacy-exports/private'},
             user['tj']['privacy']['archive'],
         )
         self.assertEqual(user, module_defaults('user', user))

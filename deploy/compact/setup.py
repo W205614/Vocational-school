@@ -389,7 +389,10 @@ def prepare():
             ]
         if alias == 'user':
             tj['privacy'] = {
-                'archive': {'provider': 'LOCAL', 'directory': '/run/privacy-exports'}
+                'archive': {
+                    'provider': 'LOCAL',
+                    'directory': '/run/privacy-exports/private',
+                }
             }
         if alias == 'media':
             tj['platform'] = {'file': 'LOCAL', 'media': 'LOCAL'}

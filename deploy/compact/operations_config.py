@@ -175,7 +175,7 @@ def module_defaults(alias, config):
             .setdefault('archive', {})
         )
         archive.setdefault('provider', 'LOCAL')
-        archive.setdefault('directory', '/run/privacy-exports')
+        archive.setdefault('directory', '/run/privacy-exports/private')
     if alias == 'media':
         paths = (
             config.setdefault('tj', {})

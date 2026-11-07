@@ -238,6 +238,17 @@ class OwnerStreamLimiterTest {
     void renewalFailureClosesSourceInsteadOfContinuingWithoutQuota() throws Exception {
         var unavailable = new AtomicBoolean();
         var transport = spy(redis);
+        var released = new CompletableFuture<Long>();
+        var permits = spy(redis.opsForZSet());
+        doAnswer(
+                        call -> {
+                            Long removed = (Long) call.callRealMethod();
+                            released.complete(removed);
+                            return removed;
+                        })
+                .when(permits)
+                .remove(anyString(), any(Object[].class));
+        doReturn(permits).when(transport).opsForZSet();
         doAnswer(
                         call -> {
                             if (unavailable.get())
@@ -273,6 +284,8 @@ class OwnerStreamLimiterTest {
             unavailable.set(true);
             await(closed::get);
             assertThrows(IOException.class, input::read);
+            // Source closure precedes permit release; observing it does not join the cleanup.
+            assertEquals(1L, released.get(5, TimeUnit.SECONDS));
             assertFalse(Boolean.TRUE.equals(redis.hasKey("media:streams:owner:" + owner)));
         }
     }

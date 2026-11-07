@@ -57,7 +57,7 @@
 
 任务在全部域完成后才进入 READY；每页有校验值，ZIP 包含 manifest.json，任务另保存整包 SHA-256。下载需要本人或管理员身份及当前操作人密码，运营需另行登记向申请人的实际交付。下载有效期为就绪后 24 小时；到期拒绝下载并清理数据库中间页。交付完成后，运营在原申请中记录真实交付证据；历史任务详情向管理员展示该证据引用、处理依据、操作人与登记时间。存在失败域时任务保持失败状态，可修复后续办。
 
-生产通过身份应用独立的 PRIVACY_COS_SECRET_ID、PRIVACY_COS_SECRET_KEY 写入现有私有桶的 privacy-exports/ 前缀。身份 IAM 仅需此专用前缀的 PUT、GET、HEAD，以及核对桶 ACL/policy 的只读权限，不能复制媒体 worker 凭据。为该前缀配置对象及历史版本的短期生命周期，覆盖未提交成功的孤立包；不得将生产导出挂载成公开静态目录。工作 ZIP 仅在受保护临时目录创建，上传后清理。本地包保存在独立受保护目录，本机维护时将过期包移入回收站；导出包不属于日常业务数据备份。
+生产通过身份应用独立的 PRIVACY_COS_SECRET_ID、PRIVACY_COS_SECRET_KEY 写入现有私有桶的 privacy-exports/ 前缀。身份 IAM 仅需此专用前缀的 PUT、GET、HEAD，以及核对桶 ACL/policy 的只读权限，不能复制媒体 worker 凭据。为该前缀配置对象及历史版本的短期生命周期，覆盖未提交成功的孤立包；不得将生产导出挂载成公开静态目录。工作 ZIP 仅在受保护临时目录创建，上传后清理。本机默认导出目录为 deploy/compact/.local/privacy-exports/private/：父目录由部署工具收紧权限，private 子目录由容器应用创建并设置权限。维护时将过期包移入回收站；导出包不属于日常业务数据备份。
 
 生产 settings 的 privacy.retention 明确声明规则版本和 domain.dataset：
 
