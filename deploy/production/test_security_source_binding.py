@@ -1,9 +1,11 @@
+import base64
 import copy
 import datetime as dt
 import hashlib
 import io
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -11,6 +13,8 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from contextlib import redirect_stdout
+
+import yaml
 
 import build_sbom
 import security_scan
@@ -291,10 +295,44 @@ class SourceBindingTest(unittest.TestCase):
                 )
             secret, web, maven = [call.args[0] for call in scanner.call_args_list]
             self.assertIn("--offline-scan", secret)
+            self.assertEqual(
+                str(root / "deploy" / "production" / "trivy-secret.yaml"),
+                secret[secret.index("--secret-config") + 1],
+            )
             self.assertEqual(str(root), secret[-1])
             self.assertFalse(any(value.startswith("--skip") for value in secret))
             self.assertNotIn("--offline-scan", web)
             self.assertNotIn("--offline-scan", maven)
+
+    def test_raw_private_key_assignments_without_pem_markers_are_detected(self):
+        configuration = yaml.safe_load(
+            Path(__file__).with_name("trivy-secret.yaml").read_text(encoding="utf8")
+        )
+        self.assertNotIn("enable-builtin-rules", configuration)
+        self.assertNotIn("disable-rules", configuration)
+        rule = configuration["rules"][0]
+        pattern = re.compile(rule["regex"])
+        # This canary is assembled at runtime and is not a parseable key.
+        canary = "MII" + base64.b64encode(bytes(range(192))).decode("ascii")
+        for assignment in [
+            f'private-key: {canary}\n',
+            f'privateKey: "{canary}"\r\n',
+            f'config.appPrivateKey = "{canary}";',
+            f'private_key = \'{canary}\'',
+            f'static final String APP_PRIVATE_KEY = "{canary}";',
+            f'"privateKey": "{canary}",',
+        ]:
+            with self.subTest(assignment=assignment.split(canary)[0]):
+                self.assertEqual(canary, pattern.search(assignment).group("secret"))
+        for assignment in [
+            f'public-key: {canary}\n',
+            f'config.appPublicKey = "{canary}";',
+            'private-key: ${APP_PRIVATE_KEY}\n',
+            'APP_PRIVATE_KEY = "<private-key>";',
+            'privateKey: "MIIshort"\n',
+        ]:
+            with self.subTest(assignment=assignment.split(canary)[0]):
+                self.assertIsNone(pattern.search(assignment))
 
 
 if __name__ == "__main__":

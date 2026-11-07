@@ -522,7 +522,15 @@ def main(argv=None):
                 tasks += [
                     (
                         "repository-secrets",
-                        ["fs", "--scanners", "secret", "--offline-scan", str(snapshot)],
+                        [
+                            "fs",
+                            "--scanners",
+                            "secret",
+                            "--offline-scan",
+                            "--secret-config",
+                            str(snapshot / "deploy" / "production" / "trivy-secret.yaml"),
+                            str(snapshot),
+                        ],
                     ),
                     (
                         "web-python-dependencies",
