@@ -19,7 +19,7 @@
 - OpenAPI 由真实隔离应用通过 `deploy/acceptance/export_openapi.py` 导出，再运行 `node frontend/scripts/generate-types.mjs` 生成前端类型。修改契约源头后重新生成，避免手工维护生成文件。
 - 执行覆盖变更及直接影响范围的测试。后端与数据库验证按[验收工具说明](deploy/acceptance/README.md)和[部署工具索引](deploy/compact/TOOLS.md)选择入口；数据库测试需要专用环境，执行结果注明跳过项和原因。
 
-完整后端回归包含真实文件和目录符号链接测试。Windows 运行这些用例需要操作系统授予创建符号链接的权限；缺少权限会使测试明确失败。普通 Windows 环境可执行适用的定向测试，并由同一提交的 Linux CI 完成符号链接及完整回归，报告中分别记录两者的范围与结果。
+完整后端回归需要 `ffmpeg` 和 `ffprobe` 位于 `PATH`，并包含真实文件和目录符号链接测试。Windows 运行符号链接用例需要操作系统授予创建符号链接的权限；缺少权限会使测试明确失败。普通 Windows 环境可执行适用的定向测试，并由同一提交的 Linux CI 完成符号链接及完整回归，报告中分别记录两者的范围与结果。
 
 前端常用检查在仓库根目录执行：
 

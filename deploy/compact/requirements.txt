@@ -4,3 +4,4 @@ bcrypt==4.2.1
 PyMySQL==1.1.2
 Send2Trash==2.1.0; sys_platform == 'win32'
 pywin32==312; sys_platform == 'win32'
+tzdata==2026.6; sys_platform == 'win32'
