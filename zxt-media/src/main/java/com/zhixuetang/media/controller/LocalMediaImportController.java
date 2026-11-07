@@ -90,7 +90,7 @@ public class LocalMediaImportController {
         } catch (InvalidPathException error) {
             throw new BadRequestException("导入路径无效");
         }
-        if (path.isAbsolute()) throw new BadRequestException("导入路径必须是相对路径");
+        if (path.getRoot() != null) throw new BadRequestException("导入路径必须是相对路径");
         Path source = root;
         for (Path part : path) {
             if (part.toString().equals("..") || part.toString().equals("."))
