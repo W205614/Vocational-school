@@ -120,22 +120,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/services/promotion/user-coupons/quote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["quote"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/services/promotion/user-coupons/discount": {
         parameters: {
             query?: never;
@@ -1429,37 +1413,6 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: Record<string, never>;
-                    };
-                };
-            };
-        };
-    };
-    quote: {
-        parameters: {
-            query?: {
-                couponIds?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OrderCourseDTO"][];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: components["schemas"]["CouponQuoteDTO"];
                     };
                 };
             };

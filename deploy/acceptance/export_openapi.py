@@ -34,6 +34,9 @@ for name in args.services:
             ('/pay-orders', '/refund-orders', '/pay-channels')
         ):
             continue
+        # Coupon quotes are a commerce-to-promotion RPC.
+        if name == 'promotion' and path == '/user-coupons/quote':
+            continue
         if name == 'auth' and not path.startswith('/api/v2/'):
             external = (
                 '/api/v2/'

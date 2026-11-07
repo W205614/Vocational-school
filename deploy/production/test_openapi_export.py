@@ -84,6 +84,13 @@ class OpenApiBinaryExportTest(unittest.TestCase):
                     '/account-privacy/requests/{id}': {'put': response()},
                 },
             },
+            'promotion': {
+                'openapi': '3.1.0',
+                'paths': {
+                    '/user-coupons/quote': {'post': response()},
+                    '/user-coupons/available': {'post': response()},
+                },
+            },
         }
         with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
             root = Path(directory)
@@ -105,13 +112,22 @@ class OpenApiBinaryExportTest(unittest.TestCase):
             )
             with patch.dict(
                 sys.modules, {'start_service': startup, 'prepare': prepare}
-            ), patch.object(sys, 'argv', [str(script), 'media', 'user']):
+            ), patch.object(sys, 'argv', [str(script), *specs]):
                 runpy.run_path(str(script), run_name='__main__')
             media = json.loads(
                 (root / 'frontend/openapi/media.json').read_text(encoding='utf8')
             )
             user = json.loads(
                 (root / 'frontend/openapi/user.json').read_text(encoding='utf8')
+            )
+            promotion = json.loads(
+                (root / 'frontend/openapi/promotion.json').read_text(encoding='utf8')
+            )
+            self.assertNotIn(
+                '/api/v2/services/promotion/user-coupons/quote', promotion['paths']
+            )
+            self.assertIn(
+                '/api/v2/services/promotion/user-coupons/available', promotion['paths']
             )
             for path in ('/trial-content/{id}', '/cloud-content/{id}'):
                 operation = media['paths']['/api/v2/services/media' + path]['get']

@@ -12,7 +12,7 @@ for alias, role, path in [
 ]:
     actor = accounts[role]['id']
     count = mysql(
-        "SELECT COUNT(*) FROM zxt_"
+        "SELECT COUNT(*) FROM tj_"
         + alias
         + ".admin_audit WHERE actor_id="
         + actor
@@ -24,9 +24,9 @@ for alias, role, path in [
         raise RuntimeError('Required asynchronous audit missing: ' + alias + '/' + role)
     checks.append(alias + '/' + role)
     mismatches = mysql(
-        "SELECT COUNT(*) FROM zxt_"
+        "SELECT COUNT(*) FROM tj_"
         + alias
-        + ".admin_audit a JOIN zxt_"
+        + ".admin_audit a JOIN tj_"
         + alias
         + ".reliability_operation o USING(operation_id) WHERE o.status IN('SUCCEEDED','FAILED') AND a.result<>o.status"
     )
