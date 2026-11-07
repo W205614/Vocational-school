@@ -200,6 +200,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/public/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["courses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/operations/search/{id}": {
         parameters: {
             query?: never;
@@ -248,6 +264,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/operation-failures/search/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/events/search/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/admin/events/search/failures": {
         parameters: {
             query?: never;
@@ -280,40 +328,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/admin/operation-failures/search/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_operation_failures"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/events/search/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_events"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/admin/consumer-failures/search/page": {
         parameters: {
             query?: never;
@@ -321,8 +335,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询持久失败记录 */
-        get: operations["page_consumer_failures"];
+        get: operations["page_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/audit/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -335,6 +364,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Cleanup: {
+            requestId?: string;
+            userId?: string;
+            policyVersion?: string;
+            cutoffs?: {
+                [key: string]: string;
+            };
+        };
         /**
          * @description 课程信息
          * @default null
@@ -397,6 +434,27 @@ export interface components {
              * @example 3920
              */
             sold: number;
+        };
+        Dataset: {
+            name?: string;
+            select?: string;
+            count?: string;
+            eligible?: string;
+            cleanup?: string;
+        };
+        Definition: {
+            domain?: string;
+            note?: string;
+            datasets?: components["schemas"]["Dataset"][];
+        };
+        Page: {
+            domain?: string;
+            dataset?: string;
+            rows?: {
+                [key: string]: unknown;
+            }[];
+            /** Format: int32 */
+            nextOffset?: number;
         };
         /**
          * @description 分类id和名称信息
@@ -519,6 +577,16 @@ export interface components {
             result?: unknown;
             errorCode?: string;
             errorMessage?: string;
+        };
+        FailurePage: {
+            list?: {
+                [key: string]: unknown;
+            }[];
+            total?: string;
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
         };
     };
     responses: never;
@@ -881,6 +949,33 @@ export interface operations {
             };
         };
     };
+    courses: {
+        parameters: {
+            query: {
+                query: components["schemas"]["CoursePageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["PageDTOCourseVO"];
+                    };
+                };
+            };
+        };
+    };
     get: {
         parameters: {
             query?: never;
@@ -958,6 +1053,65 @@ export interface operations {
             };
         };
     };
+    page: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+                errorCode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
+    page_1: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
     failures: {
         parameters: {
             query?: {
@@ -1016,14 +1170,12 @@ export interface operations {
             };
         };
     };
-    page_operation_failures: {
+    page_2: {
         parameters: {
             query?: {
                 pageNo?: number;
                 pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
                 identifier?: string;
-                errorCode?: "BUSINESS_FAILED" | "RETRY_EXHAUSTED";
             };
             header?: never;
             path?: never;
@@ -1041,27 +1193,20 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
+                        data: components["schemas"]["FailurePage"];
                     };
                 };
             };
         };
     };
-    page_events: {
+    page_3: {
         parameters: {
             query?: {
                 pageNo?: number;
                 pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
+                actor?: string;
+                result?: string;
+                requestId?: string;
             };
             header?: never;
             path?: never;
@@ -1080,51 +1225,7 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
-                    };
-                };
-            };
-        };
-    };
-    page_consumer_failures: {
-        parameters: {
-            query?: {
-                pageNo?: number;
-                pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
+                            [key: string]: unknown;
                         };
                     };
                 };

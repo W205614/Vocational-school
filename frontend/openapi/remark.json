@@ -1,12 +1,11 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "天机学堂 - 评价中心接口文档",
+    "title": "职学堂 - 评价中心接口文档",
     "description": "该服务包含用户评价, 点赞等功能",
     "contact": {
-      "name": "传智教育·研究院",
-      "url": "http://www.itcast.cn/",
-      "email": "zhanghuyi@itcast.cn"
+      "name": "职学堂维护者",
+      "url": "https://github.com/W205614/Vocational-school"
     },
     "version": "v1.0"
   },
@@ -380,6 +379,154 @@
         }
       }
     },
+    "/api/v2/admin/operation-failures/remark/page": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "page",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "errorCode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FailurePage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/remark/page": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "page_1",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FailurePage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/admin/events/remark/failures": {
       "get": {
         "tags": [
@@ -492,242 +639,126 @@
         }
       }
     },
-    "/api/v2/admin/operation-failures/remark/page": {
-      "get": {
-        "tags": [
-          "operation-failure-controller"
-        ],
-        "operationId": "page_operation_failures",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "list",
-                        "total",
-                        "pageNo",
-                        "pageSize"
-                      ],
-                      "properties": {
-                        "list": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "total": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "pageNo": {
-                          "type": "integer"
-                        },
-                        "pageSize": {
-                          "type": "integer"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "分页查询持久失败记录",
-        "parameters": [
-          {
-            "name": "pageNo",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            }
-          },
-          {
-            "name": "identifier",
-            "in": "query",
-            "description": "Exact failure, event, operation or business identifier",
-            "schema": {
-              "type": "string",
-              "maxLength": 200
-            }
-          },
-          {
-            "name": "errorCode",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "BUSINESS_FAILED",
-                "RETRY_EXHAUSTED"
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "/api/v2/admin/events/remark/page": {
-      "get": {
-        "tags": [
-          "event-admin-controller"
-        ],
-        "operationId": "page_events",
-        "parameters": [
-          {
-            "name": "pageNo",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            }
-          },
-          {
-            "name": "identifier",
-            "in": "query",
-            "description": "Exact failure, event, operation or business identifier",
-            "schema": {
-              "type": "string",
-              "maxLength": 200
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "list",
-                        "total",
-                        "pageNo",
-                        "pageSize"
-                      ],
-                      "properties": {
-                        "list": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "total": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "pageNo": {
-                          "type": "integer"
-                        },
-                        "pageSize": {
-                          "type": "integer"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "分页查询持久失败记录"
-      }
-    },
     "/api/v2/admin/consumer-failures/remark/page": {
       "get": {
         "tags": [
           "consumer-failure-controller"
         ],
-        "operationId": "page_consumer_failures",
+        "operationId": "page_2",
         "parameters": [
           {
             "name": "pageNo",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
-              "minimum": 1,
+              "format": "int32",
               "default": 1
             }
           },
           {
             "name": "pageSize",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
+              "format": "int32",
               "default": 20
             }
           },
           {
             "name": "identifier",
             "in": "query",
-            "description": "Exact failure, event, operation or business identifier",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FailurePage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/audit/remark": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "operationId": "page_3",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
-              "maxLength": 200
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "result",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -756,39 +787,14 @@
                     },
                     "data": {
                       "type": "object",
-                      "required": [
-                        "list",
-                        "total",
-                        "pageNo",
-                        "pageSize"
-                      ],
-                      "properties": {
-                        "list": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "total": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "pageNo": {
-                          "type": "integer"
-                        },
-                        "pageSize": {
-                          "type": "integer"
-                        }
-                      }
+                      "additionalProperties": {}
                     }
                   }
                 }
               }
             }
           }
-        },
-        "summary": "分页查询持久失败记录"
+        }
       }
     }
   },
@@ -822,6 +828,86 @@
           "liked"
         ]
       },
+      "Cleanup": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "cutoffs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Dataset": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "select": {
+            "type": "string"
+          },
+          "count": {
+            "type": "string"
+          },
+          "eligible": {
+            "type": "string"
+          },
+          "cleanup": {
+            "type": "string"
+          }
+        }
+      },
+      "Definition": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "datasets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Dataset"
+            }
+          }
+        }
+      },
+      "Page": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "dataset": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "nextOffset": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "View": {
         "type": "object",
         "properties": {
@@ -837,6 +923,30 @@
           },
           "errorMessage": {
             "type": "string"
+          }
+        }
+      },
+      "FailurePage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pageNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       }

@@ -1,4 +1,20 @@
 export interface paths {
+    "/api/v2/admin/provider-payments/anomalies/{number}/{reason}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["resolve"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/simulator/payments/{business}/confirm": {
         parameters: {
             query?: never;
@@ -15,7 +31,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/admin/operation-failures/pay/{id}/replay": {
+    "/api/v2/admin/provider-payments/reconciliations/{number}/replay": {
         parameters: {
             query?: never;
             header?: never;
@@ -31,7 +47,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/admin/events/pay/{id}/replay": {
+    "/api/v2/admin/operation-failures/pay/{id}/replay": {
         parameters: {
             query?: never;
             header?: never;
@@ -47,7 +63,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/admin/consumer-failures/pay/{id}/replay": {
+    "/api/v2/admin/events/pay/{id}/replay": {
         parameters: {
             query?: never;
             header?: never;
@@ -57,6 +73,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["replay_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/consumer-failures/pay/{id}/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["replay_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -79,6 +111,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/provider-payments/reconciliations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["tasks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/provider-payments/anomalies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["anomalies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/admin/operation-failures/pay": {
         parameters: {
             query?: never;
@@ -87,6 +151,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/operation-failures/pay/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/events/pay/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -127,40 +223,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/admin/operation-failures/pay/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_operation_failures"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/events/pay/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_events"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/admin/consumer-failures/pay/page": {
         parameters: {
             query?: never;
@@ -168,8 +230,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询持久失败记录 */
-        get: operations["page_consumer_failures"];
+        get: operations["page_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/audit/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -219,6 +296,10 @@ export interface components {
              * @default
              */
             status: number;
+        };
+        Resolution: {
+            version?: string;
+            resolution?: string;
         };
         /**
          * @description 退款请求参数
@@ -327,6 +408,14 @@ export interface components {
              */
             orderInfo: string;
         };
+        Cleanup: {
+            requestId?: string;
+            userId?: string;
+            policyVersion?: string;
+            cutoffs?: {
+                [key: string]: string;
+            };
+        };
         /**
          * @description 支付结果
          * @default null
@@ -365,12 +454,43 @@ export interface components {
              */
             successTime: string;
         };
+        Dataset: {
+            name?: string;
+            select?: string;
+            count?: string;
+            eligible?: string;
+            cleanup?: string;
+        };
+        Definition: {
+            domain?: string;
+            note?: string;
+            datasets?: components["schemas"]["Dataset"][];
+        };
+        Page: {
+            domain?: string;
+            dataset?: string;
+            rows?: {
+                [key: string]: unknown;
+            }[];
+            /** Format: int32 */
+            nextOffset?: number;
+        };
         View: {
             operationId?: string;
             status?: string;
             result?: unknown;
             errorCode?: string;
             errorMessage?: string;
+        };
+        FailurePage: {
+            list?: {
+                [key: string]: unknown;
+            }[];
+            total?: string;
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
         };
     };
     responses: never;
@@ -381,6 +501,38 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+                reason: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Resolution"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
     confirm: {
         parameters: {
             query?: never;
@@ -410,6 +562,37 @@ export interface operations {
     };
     replay: {
         parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Resolution"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    replay_1: {
+        parameters: {
             query: {
                 version: string;
             };
@@ -437,7 +620,7 @@ export interface operations {
             };
         };
     };
-    replay_1: {
+    replay_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -464,7 +647,7 @@ export interface operations {
             };
         };
     };
-    replay_2: {
+    replay_3: {
         parameters: {
             query: {
                 version: string;
@@ -520,6 +703,64 @@ export interface operations {
             };
         };
     };
+    tasks: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    anomalies: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
     list: {
         parameters: {
             query?: never;
@@ -540,6 +781,65 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    page: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+                errorCode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
+    page_1: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
                     };
                 };
             };
@@ -603,14 +903,12 @@ export interface operations {
             };
         };
     };
-    page_operation_failures: {
+    page_2: {
         parameters: {
             query?: {
                 pageNo?: number;
                 pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
                 identifier?: string;
-                errorCode?: "BUSINESS_FAILED" | "RETRY_EXHAUSTED";
             };
             header?: never;
             path?: never;
@@ -628,27 +926,20 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
+                        data: components["schemas"]["FailurePage"];
                     };
                 };
             };
         };
     };
-    page_events: {
+    page_3: {
         parameters: {
             query?: {
                 pageNo?: number;
                 pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
+                actor?: string;
+                result?: string;
+                requestId?: string;
             };
             header?: never;
             path?: never;
@@ -667,51 +958,7 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
-                    };
-                };
-            };
-        };
-    };
-    page_consumer_failures: {
-        parameters: {
-            query?: {
-                pageNo?: number;
-                pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
+                            [key: string]: unknown;
                         };
                     };
                 };

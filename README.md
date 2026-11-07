@@ -118,4 +118,24 @@ Get-Content deploy/compact/.local/accounts.json
 
 完成本地部署后，可在[学生门户](http://127.0.0.1:24500/)查看选课与学习页面，在[管理工作台](http://127.0.0.1:24501/)查看教学与管理页面。
 
+以下为 2026-11-07 从独立合成环境实际拍摄的匿名页面，候选源码为 `7db0b79`。门户中的功能片段标注为“界面示例”；[截图说明](docs/assets/20261107/README.md)记录实际版本、拍摄时间、检查范围和校验值。
+
+**学生门户 · 桌面**
+
+![职学堂学生门户桌面截图](docs/assets/20261107/portal-1440.png)
+
+**管理端 · 登录入口**
+
+![职学堂管理端桌面登录截图](docs/assets/20261107/admin-login-1440.png)
+
+<details>
+<summary>查看移动端：学生门户与管理登录</summary>
+
+<p>
+  <img src="docs/assets/20261107/portal-390.png" alt="职学堂学生门户移动端截图" width="300">
+  <img src="docs/assets/20261107/admin-login-390.png" alt="职学堂管理端移动登录截图" width="300">
+</p>
+
+</details>
+
 [2026-10-16 界面截图](deploy/compact/reports/assets/20261016/)作为历史记录保留，包含当时的品牌与合成演示数据；不代表本轮页面或验证结果。

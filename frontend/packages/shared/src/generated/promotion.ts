@@ -120,6 +120,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/services/promotion/user-coupons/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["quote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/promotion/user-coupons/discount": {
         parameters: {
             query?: never;
@@ -368,6 +384,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/operation-failures/promotion/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/events/promotion/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/admin/events/promotion/failures": {
         parameters: {
             query?: never;
@@ -400,40 +448,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/admin/operation-failures/promotion/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_operation_failures"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/events/promotion/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_events"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/admin/consumer-failures/promotion/page": {
         parameters: {
             query?: never;
@@ -441,8 +455,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询持久失败记录 */
-        get: operations["page_consumer_failures"];
+        get: operations["page_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/audit/promotion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -573,23 +602,6 @@ export interface components {
             termEndTime: string;
         };
         /**
-         * @description 订单中课程及优惠券信息
-         * @default null
-         */
-        OrderCouponDTO: {
-            /**
-             * @description 用户优惠券id
-             * @default
-             */
-            userCouponIds: string[];
-            /**
-             * @description 订单中的课程列表
-             * @default
-             */
-            courseList: components["schemas"]["OrderCourseDTO"][];
-            orderId?: string;
-        };
-        /**
          * @description 订单中的课程信息
          * @default null
          */
@@ -640,6 +652,39 @@ export interface components {
                 [key: string]: number;
             };
         };
+        CouponQuoteDTO: {
+            discounts?: components["schemas"]["CouponDiscountDTO"][];
+            availableCoupons?: {
+                [key: string]: unknown;
+            }[];
+            couponSelectionRequired?: boolean;
+            discountError?: string;
+        };
+        /**
+         * @description 订单中课程及优惠券信息
+         * @default null
+         */
+        OrderCouponDTO: {
+            /**
+             * @description 用户优惠券id
+             * @default
+             */
+            userCouponIds: string[];
+            /**
+             * @description 订单中的课程列表
+             * @default
+             */
+            courseList: components["schemas"]["OrderCourseDTO"][];
+            orderId?: string;
+        };
+        Cleanup: {
+            requestId?: string;
+            userId?: string;
+            policyVersion?: string;
+            cutoffs?: {
+                [key: string]: string;
+            };
+        };
         View: {
             operationId?: string;
             status?: string;
@@ -664,7 +709,7 @@ export interface components {
             sortBy?: string;
             /**
              * Format: int32
-             * @description 优惠券状态，1：未使用，2：已使用，3：已过期
+             * @description 优惠券状态，1：未使用，2：已使用，3：已过期；省略时查询本人全部状态
              * @default
              */
             status: number;
@@ -757,6 +802,27 @@ export interface components {
              * @default
              */
             list: components["schemas"]["CouponVO"][];
+        };
+        Dataset: {
+            name?: string;
+            select?: string;
+            count?: string;
+            eligible?: string;
+            cleanup?: string;
+        };
+        Definition: {
+            domain?: string;
+            note?: string;
+            datasets?: components["schemas"]["Dataset"][];
+        };
+        Page: {
+            domain?: string;
+            dataset?: string;
+            rows?: {
+                [key: string]: unknown;
+            }[];
+            /** Format: int32 */
+            nextOffset?: number;
         };
         /**
          * @description 优惠券详细数据
@@ -1094,6 +1160,16 @@ export interface components {
              */
             list: components["schemas"]["ExchangeCodeVO"][];
         };
+        FailurePage: {
+            list?: {
+                [key: string]: unknown;
+            }[];
+            total?: string;
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -1353,6 +1429,37 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    quote: {
+        parameters: {
+            query?: {
+                couponIds?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderCourseDTO"][];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CouponQuoteDTO"];
                     };
                 };
             };
@@ -1776,6 +1883,65 @@ export interface operations {
             };
         };
     };
+    page: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+                errorCode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
+    page_1: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
     failures: {
         parameters: {
             query?: {
@@ -1834,14 +2000,12 @@ export interface operations {
             };
         };
     };
-    page_operation_failures: {
+    page_2: {
         parameters: {
             query?: {
                 pageNo?: number;
                 pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
                 identifier?: string;
-                errorCode?: "BUSINESS_FAILED" | "RETRY_EXHAUSTED";
             };
             header?: never;
             path?: never;
@@ -1859,27 +2023,20 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
+                        data: components["schemas"]["FailurePage"];
                     };
                 };
             };
         };
     };
-    page_events: {
+    page_3: {
         parameters: {
             query?: {
                 pageNo?: number;
                 pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
+                actor?: string;
+                result?: string;
+                requestId?: string;
             };
             header?: never;
             path?: never;
@@ -1898,51 +2055,7 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
-                    };
-                };
-            };
-        };
-    };
-    page_consumer_failures: {
-        parameters: {
-            query?: {
-                pageNo?: number;
-                pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
+                            [key: string]: unknown;
                         };
                     };
                 };

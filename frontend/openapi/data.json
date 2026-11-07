@@ -1,12 +1,11 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "天机学堂 - 数据中心接口文档",
+    "title": "职学堂 - 数据中心接口文档",
     "description": "该服务包含数据看板统计的功能",
     "contact": {
-      "name": "传智教育·研究院",
-      "url": "http://www.itcast.cn/",
-      "email": "zhanghuyi@itcast.cn"
+      "name": "职学堂维护者",
+      "url": "https://github.com/W205614/Vocational-school"
     },
     "version": "v1.0"
   },
@@ -399,6 +398,86 @@
           "type",
           "version"
         ]
+      },
+      "Cleanup": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "cutoffs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Dataset": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "select": {
+            "type": "string"
+          },
+          "count": {
+            "type": "string"
+          },
+          "eligible": {
+            "type": "string"
+          },
+          "cleanup": {
+            "type": "string"
+          }
+        }
+      },
+      "Definition": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "datasets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Dataset"
+            }
+          }
+        }
+      },
+      "Page": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "dataset": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "nextOffset": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "CourseInfo": {
         "type": "object",

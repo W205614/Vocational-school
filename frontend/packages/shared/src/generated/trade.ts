@@ -616,6 +616,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/operation-failures/trade/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/events/trade/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/admin/events/trade/failures": {
         parameters: {
             query?: never;
@@ -664,6 +696,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/consumer-failures/trade/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/admin/compensations/{kind}": {
         parameters: {
             query?: never;
@@ -672,6 +720,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/audit/trade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -692,57 +756,6 @@ export interface paths {
         post?: never;
         /** 删除指定的购物车条目 */
         delete: operations["deleteCartById_1"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/operation-failures/trade/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_operation_failures"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/events/trade/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_events"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/consumer-failures/trade/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_consumer_failures"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -863,6 +876,14 @@ export interface components {
              * @default
              */
             orderId: string;
+        };
+        Cleanup: {
+            requestId?: string;
+            userId?: string;
+            policyVersion?: string;
+            cutoffs?: {
+                [key: string]: string;
+            };
         };
         /**
          * @description 课程加入购物车
@@ -1287,6 +1308,16 @@ export interface components {
              */
             realAmount: number;
             /**
+             * @description 支付渠道，ZERO表示优惠抵扣后的零元成交
+             * @default
+             */
+            payChannel: string;
+            /**
+             * @description 支付流水；零元成交没有外部支付流水
+             * @default
+             */
+            payOrderNo: string;
+            /**
              * Format: int32
              * @description 订单明细金额
              * @default
@@ -1393,6 +1424,11 @@ export interface components {
          * @default null
          */
         OrderConfirmVO: {
+            availableCoupons?: {
+                [key: string]: unknown;
+            }[];
+            couponSelectionRequired?: boolean;
+            discountError?: string;
             /**
              * @description 订单id
              * @default
@@ -1482,6 +1518,11 @@ export interface components {
              * @default
              */
             realAmount: number;
+            /**
+             * @description 支付渠道，ZERO表示优惠抵扣后的零元成交
+             * @default
+             */
+            payChannel: string;
             /**
              * Format: int32
              * @description 订单明细金额
@@ -1759,6 +1800,11 @@ export interface components {
              */
             name: string;
             /**
+             * @description 下单时的课程名称快照
+             * @default
+             */
+            courseName: string;
+            /**
              * @description 手机号
              * @default
              */
@@ -1830,6 +1876,38 @@ export interface components {
              */
             list: components["schemas"]["OrderDetailPageVO"][];
         };
+        Dataset: {
+            name?: string;
+            select?: string;
+            count?: string;
+            eligible?: string;
+            cleanup?: string;
+        };
+        Definition: {
+            domain?: string;
+            note?: string;
+            datasets?: components["schemas"]["Dataset"][];
+        };
+        Page: {
+            domain?: string;
+            dataset?: string;
+            rows?: {
+                [key: string]: unknown;
+            }[];
+            /** Format: int32 */
+            nextOffset?: number;
+        };
+        OrderEntitlementDTO: {
+            orderId?: string;
+            detailId?: string;
+            userId?: string;
+            courseId?: string;
+            /** Format: int32 */
+            validDuration?: number;
+            /** Format: date-time */
+            purchasedAt?: string;
+            revoked?: boolean;
+        };
         /**
          * @description 购物车条目信息
          * @default null
@@ -1872,6 +1950,16 @@ export interface components {
              * @default false
              */
             expired: boolean;
+        };
+        FailurePage: {
+            list?: {
+                [key: string]: unknown;
+            }[];
+            total?: string;
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
         };
     };
     responses: never;
@@ -2931,6 +3019,7 @@ export interface operations {
         parameters: {
             query: {
                 courseIds: string[];
+                couponIds?: string[];
             };
             header?: never;
             path?: never;
@@ -3035,6 +3124,65 @@ export interface operations {
             };
         };
     };
+    page: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+                errorCode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
+    page_1: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
     failures: {
         parameters: {
             query?: {
@@ -3118,6 +3266,35 @@ export interface operations {
             };
         };
     };
+    page_2: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
     list_4: {
         parameters: {
             query?: never;
@@ -3147,6 +3324,39 @@ export interface operations {
             };
         };
     };
+    page_3: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                actor?: string;
+                result?: string;
+                requestId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+    };
     deleteCartById_1: {
         parameters: {
             query?: never;
@@ -3170,121 +3380,6 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: null;
-                    };
-                };
-            };
-        };
-    };
-    page_operation_failures: {
-        parameters: {
-            query?: {
-                pageNo?: number;
-                pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
-                errorCode?: "BUSINESS_FAILED" | "RETRY_EXHAUSTED";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
-                    };
-                };
-            };
-        };
-    };
-    page_events: {
-        parameters: {
-            query?: {
-                pageNo?: number;
-                pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
-                    };
-                };
-            };
-        };
-    };
-    page_consumer_failures: {
-        parameters: {
-            query?: {
-                pageNo?: number;
-                pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
                     };
                 };
             };

@@ -626,7 +626,7 @@ export interface components {
             /**
              * @description 个人介绍
              * @default
-             * @example 黑马高级Java讲师
+             * @example Java课程讲师
              */
             intro: string;
             /**
@@ -738,7 +738,7 @@ export interface components {
             /**
              * @description 个人介绍
              * @default
-             * @example 黑马高级Java讲师
+             * @example Java课程讲师
              */
             intro: string;
             /**
@@ -1044,7 +1044,7 @@ export interface components {
             /**
              * @description 介绍
              * @default
-             * @example 黑马高级Java讲师
+             * @example Java课程讲师
              */
             intro: string;
             /**

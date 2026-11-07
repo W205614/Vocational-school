@@ -1,12 +1,11 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "天机学堂 - 促销中心接口文档",
+    "title": "职学堂 - 促销中心接口文档",
     "description": "该服务包含用户优惠卷促销的各种辅助功能",
     "contact": {
-      "name": "传智教育·研究院",
-      "url": "http://www.itcast.cn/",
-      "email": "zhanghuyi@itcast.cn"
+      "name": "职学堂维护者",
+      "url": "https://github.com/W205614/Vocational-school"
     },
     "version": "v1.0"
   },
@@ -492,6 +491,73 @@
                     },
                     "data": {
                       "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/promotion/user-coupons/quote": {
+      "post": {
+        "tags": [
+          "优惠卷相关接口"
+        ],
+        "operationId": "quote",
+        "parameters": [
+          {
+            "name": "couponIds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-?[0-9]+$"
+              }
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/OrderCourseDTO"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CouponQuoteDTO"
                     }
                   }
                 }
@@ -1290,6 +1356,154 @@
         }
       }
     },
+    "/api/v2/admin/operation-failures/promotion/page": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "page",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "errorCode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FailurePage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/promotion/page": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "page_1",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FailurePage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/admin/events/promotion/failures": {
       "get": {
         "tags": [
@@ -1402,242 +1616,126 @@
         }
       }
     },
-    "/api/v2/admin/operation-failures/promotion/page": {
-      "get": {
-        "tags": [
-          "operation-failure-controller"
-        ],
-        "operationId": "page_operation_failures",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "list",
-                        "total",
-                        "pageNo",
-                        "pageSize"
-                      ],
-                      "properties": {
-                        "list": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "total": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "pageNo": {
-                          "type": "integer"
-                        },
-                        "pageSize": {
-                          "type": "integer"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "分页查询持久失败记录",
-        "parameters": [
-          {
-            "name": "pageNo",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            }
-          },
-          {
-            "name": "identifier",
-            "in": "query",
-            "description": "Exact failure, event, operation or business identifier",
-            "schema": {
-              "type": "string",
-              "maxLength": 200
-            }
-          },
-          {
-            "name": "errorCode",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "BUSINESS_FAILED",
-                "RETRY_EXHAUSTED"
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "/api/v2/admin/events/promotion/page": {
-      "get": {
-        "tags": [
-          "event-admin-controller"
-        ],
-        "operationId": "page_events",
-        "parameters": [
-          {
-            "name": "pageNo",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            }
-          },
-          {
-            "name": "identifier",
-            "in": "query",
-            "description": "Exact failure, event, operation or business identifier",
-            "schema": {
-              "type": "string",
-              "maxLength": 200
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "list",
-                        "total",
-                        "pageNo",
-                        "pageSize"
-                      ],
-                      "properties": {
-                        "list": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "total": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "pageNo": {
-                          "type": "integer"
-                        },
-                        "pageSize": {
-                          "type": "integer"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "分页查询持久失败记录"
-      }
-    },
     "/api/v2/admin/consumer-failures/promotion/page": {
       "get": {
         "tags": [
           "consumer-failure-controller"
         ],
-        "operationId": "page_consumer_failures",
+        "operationId": "page_2",
         "parameters": [
           {
             "name": "pageNo",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
-              "minimum": 1,
+              "format": "int32",
               "default": 1
             }
           },
           {
             "name": "pageSize",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
+              "format": "int32",
               "default": 20
             }
           },
           {
             "name": "identifier",
             "in": "query",
-            "description": "Exact failure, event, operation or business identifier",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FailurePage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/audit/promotion": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "operationId": "page_3",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
-              "maxLength": 200
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "result",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1666,39 +1764,14 @@
                     },
                     "data": {
                       "type": "object",
-                      "required": [
-                        "list",
-                        "total",
-                        "pageNo",
-                        "pageSize"
-                      ],
-                      "properties": {
-                        "list": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "total": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "pageNo": {
-                          "type": "integer"
-                        },
-                        "pageSize": {
-                          "type": "integer"
-                        }
-                      }
+                      "additionalProperties": {}
                     }
                   }
                 }
               }
             }
           }
-        },
-        "summary": "分页查询持久失败记录"
+        }
       }
     }
   },
@@ -1861,34 +1934,6 @@
           "issueEndTime"
         ]
       },
-      "OrderCouponDTO": {
-        "type": "object",
-        "default": null,
-        "description": "订单中课程及优惠券信息",
-        "properties": {
-          "userCouponIds": {
-            "type": "array",
-            "default": "",
-            "description": "用户优惠券id",
-            "items": {
-              "type": "string",
-              "pattern": "^-?[0-9]+$"
-            }
-          },
-          "courseList": {
-            "type": "array",
-            "default": "",
-            "description": "订单中的课程列表",
-            "items": {
-              "$ref": "#/components/schemas/OrderCourseDTO"
-            }
-          },
-          "orderId": {
-            "type": "string",
-            "pattern": "^-?[0-9]+$"
-          }
-        }
-      },
       "OrderCourseDTO": {
         "type": "object",
         "default": null,
@@ -1953,6 +1998,79 @@
           }
         }
       },
+      "CouponQuoteDTO": {
+        "type": "object",
+        "properties": {
+          "discounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponDiscountDTO"
+            }
+          },
+          "availableCoupons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "couponSelectionRequired": {
+            "type": "boolean"
+          },
+          "discountError": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderCouponDTO": {
+        "type": "object",
+        "default": null,
+        "description": "订单中课程及优惠券信息",
+        "properties": {
+          "userCouponIds": {
+            "type": "array",
+            "default": "",
+            "description": "用户优惠券id",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "courseList": {
+            "type": "array",
+            "default": "",
+            "description": "订单中的课程列表",
+            "items": {
+              "$ref": "#/components/schemas/OrderCourseDTO"
+            }
+          },
+          "orderId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "Cleanup": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "cutoffs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "View": {
         "type": "object",
         "properties": {
@@ -2009,7 +2127,7 @@
             "type": "integer",
             "format": "int32",
             "default": "",
-            "description": "优惠券状态，1：未使用，2：已使用，3：已过期"
+            "description": "优惠券状态，1：未使用，2：已使用，3：已过期；省略时查询本人全部状态"
           }
         }
       },
@@ -2112,6 +2230,65 @@
             "items": {
               "$ref": "#/components/schemas/CouponVO"
             }
+          }
+        }
+      },
+      "Dataset": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "select": {
+            "type": "string"
+          },
+          "count": {
+            "type": "string"
+          },
+          "eligible": {
+            "type": "string"
+          },
+          "cleanup": {
+            "type": "string"
+          }
+        }
+      },
+      "Definition": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "datasets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Dataset"
+            }
+          }
+        }
+      },
+      "Page": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "dataset": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "nextOffset": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -2521,6 +2698,30 @@
             "items": {
               "$ref": "#/components/schemas/ExchangeCodeVO"
             }
+          }
+        }
+      },
+      "FailurePage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pageNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       }

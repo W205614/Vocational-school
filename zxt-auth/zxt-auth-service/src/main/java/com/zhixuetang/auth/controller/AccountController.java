@@ -3,10 +3,15 @@ package com.zhixuetang.auth.controller;
 import com.zhixuetang.api.dto.user.LoginFormDTO;
 import com.zhixuetang.auth.common.constants.JwtConstants;
 import com.zhixuetang.auth.service.IAccountService;
+import com.zhixuetang.common.domain.R;
 import com.zhixuetang.common.exceptions.BadRequestException;
 import com.zhixuetang.common.utils.WebUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +35,16 @@ public class AccountController {
     }
 
     @Operation(summary = "登录并获取token")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "OK", useReturnTypeSchema = true),
+        @ApiResponse(
+                responseCode = "428",
+                description = "请先修改临时密码后重新登录",
+                content =
+                        @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = R.class)))
+    })
     @PostMapping(value = "/login")
     public String loginByPw(@jakarta.validation.Valid @RequestBody LoginFormDTO loginFormDTO) {
         com.zhixuetang.common.utils.InternalAuth.requireService();
@@ -37,6 +52,16 @@ public class AccountController {
     }
 
     @Operation(summary = "管理端登录并获取token")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "OK", useReturnTypeSchema = true),
+        @ApiResponse(
+                responseCode = "428",
+                description = "请先修改临时密码后重新登录",
+                content =
+                        @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = R.class)))
+    })
     @PostMapping(value = "/admin/login")
     public String adminLoginByPw(@jakarta.validation.Valid @RequestBody LoginFormDTO loginFormDTO) {
         com.zhixuetang.common.utils.InternalAuth.requireService();

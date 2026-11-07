@@ -3,10 +3,15 @@ package com.zhixuetang.exam.controller;
 import com.zhixuetang.api.client.course.CourseClient;
 import com.zhixuetang.api.client.learning.LearningClient;
 import com.zhixuetang.common.autoconfigure.reliability.OperationStore;
+import com.zhixuetang.common.domain.R;
 import com.zhixuetang.common.exceptions.*;
 import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.exam.service.impl.ExamWorkflowService;
 import com.zhixuetang.exam.service.impl.ExamWorkflowService.*;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -92,6 +97,23 @@ public class ExamWorkflowController {
     }
 
     @GetMapping("/exam-attempts/page")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "OK", useReturnTypeSchema = true),
+        @ApiResponse(
+                responseCode = "400",
+                description = "分页或课程参数无效",
+                content =
+                        @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = R.class))),
+        @ApiResponse(
+                responseCode = "401",
+                description = "请先登录",
+                content =
+                        @Content(
+                                mediaType = "application/json",
+                                schema = @Schema(implementation = R.class)))
+    })
     public Map<String, Object> history(
             @RequestParam(defaultValue = "1") int pageNo,
             @RequestParam(defaultValue = "20") int pageSize,

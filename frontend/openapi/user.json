@@ -1,12 +1,11 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "天机学堂 - 用户中心接口文档",
+    "title": "职学堂 - 用户中心接口文档",
     "description": "该服务用户管理、用户信息管理",
     "contact": {
-      "name": "传智教育·研究院",
-      "url": "http://www.itcast.cn/",
-      "email": "zhanghuyi@itcast.cn"
+      "name": "职学堂维护者",
+      "url": "https://github.com/W205614/Vocational-school"
     },
     "version": "v1.0"
   },
@@ -2148,7 +2147,7 @@
             "type": "string",
             "default": "",
             "description": "个人介绍",
-            "example": "黑马高级Java讲师"
+            "example": "Java课程讲师"
           },
           "photo": {
             "type": "string",
@@ -2267,7 +2266,7 @@
             "type": "string",
             "default": "",
             "description": "个人介绍",
-            "example": "黑马高级Java讲师"
+            "example": "Java课程讲师"
           },
           "photo": {
             "type": "string",
@@ -2719,7 +2718,7 @@
             "type": "string",
             "default": "",
             "description": "介绍",
-            "example": "黑马高级Java讲师"
+            "example": "Java课程讲师"
           },
           "courseAmount": {
             "type": "integer",

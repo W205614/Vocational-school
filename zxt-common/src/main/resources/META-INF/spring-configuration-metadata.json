@@ -103,12 +103,6 @@
       "defaultValue": "/zhixuetang"
     },
     {
-      "name": "zxt.mq.username",
-      "type": "java.lang.String",
-      "description": "rabbitmq的用户名",
-      "defaultValue": "tjxt"
-    },
-    {
       "name": "zxt.mq.password",
       "type": "java.lang.String",
       "description": "rabbitmq的密码",

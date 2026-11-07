@@ -4,12 +4,12 @@ import cn.hutool.core.convert.impl.TemporalAccessorConverter;
 
 import java.time.temporal.TemporalAccessor;
 
-public class TjTemporalConverter extends TemporalAccessorConverter {
-    public TjTemporalConverter(Class<?> targetType) {
+public class ZxtTemporalConverter extends TemporalAccessorConverter {
+    public ZxtTemporalConverter(Class<?> targetType) {
         super(targetType);
     }
 
-    public TjTemporalConverter(Class<?> targetType, String format) {
+    public ZxtTemporalConverter(Class<?> targetType, String format) {
         super(targetType, format);
     }
 

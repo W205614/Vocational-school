@@ -1,7 +1,7 @@
 package com.zhixuetang.common.autoconfigure.swagger;
 
 import cn.hutool.core.convert.ConverterRegistry;
-import com.zhixuetang.common.utils.TjTemporalConverter;
+import com.zhixuetang.common.utils.ZxtTemporalConverter;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
@@ -30,7 +30,7 @@ public class Knife4jConfiguration {
     @Bean
     public OpenAPI platformOpenApi(SwaggerConfigProperties p) {
         ConverterRegistry.getInstance()
-                .putCustom(LocalDateTime.class, new TjTemporalConverter(LocalDateTime.class));
+                .putCustom(LocalDateTime.class, new ZxtTemporalConverter(LocalDateTime.class));
         return new OpenAPI()
                 .info(
                         new Info()
