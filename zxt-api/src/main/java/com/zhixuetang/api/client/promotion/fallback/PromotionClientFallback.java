@@ -1,0 +1,59 @@
+package com.zhixuetang.api.client.promotion.fallback;
+
+import com.zhixuetang.api.client.promotion.PromotionClient;
+import com.zhixuetang.api.dto.promotion.CouponDiscountDTO;
+import com.zhixuetang.api.dto.promotion.OrderCouponDTO;
+import com.zhixuetang.api.dto.promotion.OrderCourseDTO;
+import com.zhixuetang.common.exceptions.BizIllegalException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.openfeign.FallbackFactory;
+
+import java.util.Collections;
+import java.util.List;
+
+@Slf4j
+public class PromotionClientFallback implements FallbackFactory<PromotionClient> {
+    @Override
+    public PromotionClient create(Throwable cause) {
+        log.error("查询促销服务出现异常, ", cause);
+        return new PromotionClient() {
+            @Override
+            public com.zhixuetang.api.dto.promotion.CouponQuoteDTO quote(
+                    List<OrderCourseDTO> courses, List<Long> couponIds) {
+                throw new com.zhixuetang.common.exceptions.ServiceUnavailableException(
+                        "优惠方案暂时不可用，可以不使用优惠券购买");
+            }
+
+            @Override
+            public java.util.Map<String, Object> reserveCoupons(
+                    Long order, com.zhixuetang.api.dto.promotion.CouponReservationDTO request) {
+                throw new com.zhixuetang.common.exceptions.CommonException("优惠券预占暂不可用", cause);
+            }
+
+            @Override
+            public List<CouponDiscountDTO> findDiscountSolution(List<OrderCourseDTO> orderCourses) {
+                throw new com.zhixuetang.common.exceptions.CommonException("促销服务暂不可用", cause);
+            }
+
+            @Override
+            public CouponDiscountDTO queryDiscountDetailByOrder(OrderCouponDTO orderCouponDTO) {
+                throw new com.zhixuetang.common.exceptions.CommonException("促销服务暂不可用", cause);
+            }
+
+            @Override
+            public void writeOffCoupon(List<Long> userCouponIds) {
+                throw new BizIllegalException(500, "核销优惠券异常", cause);
+            }
+
+            @Override
+            public void refundCoupon(List<Long> userCouponIds) {
+                throw new BizIllegalException(500, "退还优惠券异常", cause);
+            }
+
+            @Override
+            public List<String> queryDiscountRules(List<Long> userCouponIds) {
+                throw new com.zhixuetang.common.exceptions.CommonException("促销服务暂不可用", cause);
+            }
+        };
+    }
+}

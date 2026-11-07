@@ -155,14 +155,14 @@ class ImportLocalCourseTest(unittest.TestCase):
             home=home,
             local=home / '.local',
             objects=objects,
-            project='tianji-import-unit',
-            binding={'home': str(home), 'project': 'tianji-import-unit'},
+            project='zhixuetang-import-unit',
+            binding={'home': str(home), 'project': 'zhixuetang-import-unit'},
         )
         options = {
             'name': 'Java微服务实战-隔离验证',
             'categoryId': '3',
             'teacherId': '3',
-            'coverUrl': '/brand-logo.png',
+            'coverUrl': '/brand-logo.svg',
             'purchaseEnd': '2099-12-31T23:59:59',
         }
         return runtime, inventory, options
@@ -265,7 +265,7 @@ class ImportLocalCourseTest(unittest.TestCase):
     def test_partial_sample_cannot_target_daily_project(self):
         with tempfile.TemporaryDirectory() as folder:
             runtime, inventory, options = self.fixture(Path(folder), sample=True)
-            runtime.project = 'tianji-compact'
+            runtime.project = 'zhixuetang-compact'
             with self.assertRaises(module.ImportFailure):
                 module.Importer(
                     runtime,
@@ -273,6 +273,22 @@ class ImportLocalCourseTest(unittest.TestCase):
                     inventory,
                     options,
                 )
+
+    def test_existing_import_keeps_original_ownership_marker_on_resume(self):
+        with tempfile.TemporaryDirectory() as folder:
+            runtime, inventory, options = self.fixture(Path(folder))
+            path = runtime.local / 'import' / 'manifest.json'
+            module.Importer(runtime, path, inventory, options)
+            manifest = json.loads(path.read_text(encoding='utf8'))
+            manifest['owner'] = 'tianji-offline-course-import-v1'
+            path.write_text(json.dumps(manifest), encoding='utf8')
+            before = path.read_bytes()
+            importer = module.Importer(runtime, path, inventory, options)
+            self.assertEqual(
+                'tianji-offline-course-import-v1:' + inventory['sourceFingerprint'],
+                importer.marker,
+            )
+            self.assertEqual(before, path.read_bytes())
 
     def test_quota_retry_keeps_same_key_and_does_not_log_or_return_credentials(self):
         runtime = SimpleNamespace(

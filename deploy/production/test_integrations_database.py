@@ -14,16 +14,16 @@ from test_integrations import spec
 
 
 @unittest.skipUnless(
-    os.getenv("TJ_READINESS_MYSQL_CONTAINER"),
+    os.getenv("ZXT_READINESS_MYSQL_CONTAINER"),
     "requires explicit isolated MySQL container",
 )
 class IntegrationDatabaseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        container = os.environ["TJ_READINESS_MYSQL_CONTAINER"]
-        if not re.fullmatch(r"tianji-readiness-test-[a-z0-9-]+", container):
+        container = os.environ["ZXT_READINESS_MYSQL_CONTAINER"]
+        if not re.fullmatch(r"zhixuetang-readiness-test-[a-z0-9-]+", container):
             raise ValueError("Only the disposable readiness test container is allowed")
-        password = os.environ["TJ_READINESS_MYSQL_PASSWORD"]
+        password = os.environ["ZXT_READINESS_MYSQL_PASSWORD"]
 
         class Session(database.MysqlSession):
             def __enter__(self):

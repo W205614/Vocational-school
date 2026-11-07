@@ -385,7 +385,7 @@ def validate_bom(path, binding_path, commit, now=None):
     ):
         raise ValueError("Unresolved or empty BOM")
     if (
-        binding.get("schema") != "tianji-security-sbom-v1"
+        binding.get("schema") != "zhixuetang-security-sbom-v1"
         or binding.get("commit") != commit
         or binding.get("resolved_runtime") is not True
         or binding.get("maven_exit_code") != 0
@@ -397,7 +397,7 @@ def validate_bom(path, binding_path, commit, now=None):
         raise ValueError("BOM changed after the resolved build")
     properties = bom.get("metadata", {}).get("properties", [])
     if not any(
-        v.get("name") == "tianji:source:revision" and v.get("value") == commit
+        v.get("name") == "zhixuetang:source:revision" and v.get("value") == commit
         for v in properties
     ):
         raise ValueError("SBOM source property is absent")
@@ -496,7 +496,7 @@ def main(argv=None):
     if not re.fullmatch(r"[0-9a-f]{40}", args.commit):
         parser.error("--commit must identify the exact source")
     findings, scans, errors, diagnostics = [], [], [], []
-    with tempfile.TemporaryDirectory(prefix="tianji-security-") as raw:
+    with tempfile.TemporaryDirectory(prefix="zhixuetang-security-") as raw:
         root = Path(raw)
         tasks = []
         if args.mode == "source":
@@ -643,7 +643,7 @@ def main(argv=None):
                     diagnostic = {"code": "scanner-report-invalid"}
                 diagnostics.append({"scan": name, **diagnostic})
     output = {
-        "schema": "tianji-security-v1",
+        "schema": "zhixuetang-security-v1",
         "commit": args.commit,
         "observed_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "status": "PASSED" if not errors and not findings else "FAILED",

@@ -93,7 +93,7 @@ def capture(runtime=None, source_base=None, quiesced=False):
     p = runtime
     source = Path(source_base).resolve()
     local = source / '.local'
-    base = Path(os.environ.get('TJ_BACKUP_HOME', str(local / 'backup'))).resolve()
+    base = Path(os.environ.get('ZXT_BACKUP_HOME', str(local / 'backup'))).resolve()
     base.mkdir(parents=True, exist_ok=True)
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
     directory = Path(tempfile.mkdtemp(prefix='.incomplete-', dir=base))

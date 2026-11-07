@@ -19,7 +19,7 @@ class RecordedRecoveryTest(unittest.TestCase):
                         'password': 'unchanged:27001',
                     }
                 },
-                'tj': {
+                'zxt': {
                     'feign': {'url': 'http://app-education:27003/_modules/learning'},
                     'reliability': {'operation-interval-ms': 750},
                 },
@@ -41,7 +41,7 @@ class RecordedRecoveryTest(unittest.TestCase):
                 compose,
                 configs,
                 base / 'clone',
-                'tianji-recovery-test',
+                'zhixuetang-recovery-test',
                 1000,
                 {'app-gateway': 'sha256:gateway', 'rabbitmq': 'sha256:broker'},
                 'recorded-node',
@@ -52,15 +52,15 @@ class RecordedRecoveryTest(unittest.TestCase):
             self.assertEqual(25001, actual['server']['port'])
             self.assertEqual(
                 'http://app-education:25003/_modules/learning',
-                actual['tj']['feign']['url'],
+                actual['zxt']['feign']['url'],
             )
             self.assertEqual(old['spring'], actual['spring'])
-            self.assertEqual(old['tj']['reliability'], actual['tj']['reliability'])
-            self.assertNotIn('internal-port', actual['tj'])
+            self.assertEqual(old['zxt']['reliability'], actual['zxt']['reliability'])
+            self.assertNotIn('internal-port', actual['zxt'])
             self.assertEqual(
                 '25310', restored['services']['app-gateway']['environment']['APP_PORT']
             )
-            self.assertEqual('tianji-recovery-test', restored['name'])
+            self.assertEqual('zhixuetang-recovery-test', restored['name'])
             self.assertEqual(
                 'recorded-node', restored['services']['rabbitmq']['hostname']
             )
@@ -80,7 +80,7 @@ class RecordedRecoveryTest(unittest.TestCase):
             ],
         )
         value = {
-            'tj': {
+            'zxt': {
                 'compact': {'internal-port': 28001},
                 'feign': {
                     'internal-ports': '28001,28002,28003,28004',
@@ -90,7 +90,7 @@ class RecordedRecoveryTest(unittest.TestCase):
         }
         self.assertEqual(
             '26001,26002,26003,26004',
-            translated(value, 3000, 1000)['tj']['feign']['internal-ports'],
+            translated(value, 3000, 1000)['zxt']['feign']['internal-ports'],
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -104,7 +104,7 @@ class RecordedRecoveryTest(unittest.TestCase):
                     compose,
                     root / 'saved',
                     root / 'clone',
-                    'tianji-recovery-test',
+                    'zhixuetang-recovery-test',
                     1000,
                     {'app-gateway': 'image'},
                     'node',
@@ -117,7 +117,7 @@ class RecordedRecoveryTest(unittest.TestCase):
                     compose,
                     root / 'saved',
                     root / 'clone',
-                    'tianji-recovery-test',
+                    'zhixuetang-recovery-test',
                     1000,
                     {'app-gateway': 'image'},
                     'node',
@@ -129,7 +129,7 @@ class RecordedRecoveryTest(unittest.TestCase):
                     compose,
                     root / 'saved',
                     root / 'clone',
-                    'tianji-recovery-test',
+                    'zhixuetang-recovery-test',
                     1000,
                     {'app-gateway': 'image'},
                     'node',

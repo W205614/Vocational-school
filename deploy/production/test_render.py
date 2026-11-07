@@ -11,14 +11,27 @@ import yaml
 import render
 
 
+class StorageCompatibilityTest(unittest.TestCase):
+    def test_new_brand_keeps_original_database_names(self):
+        settings = render.validate(fixture())
+        for alias in render.MODULES:
+            config = render.module_config(alias, settings)
+            self.assertNotIn("tj", config)
+            self.assertIn("zxt", config)
+            if alias not in {"data", "gateway"}:
+                self.assertIn(
+                    "/tj_" + alias + "?", config["spring"]["datasource"]["url"]
+                )
+
+
 def fixture():
     # Synthetic identities only. No account, Secret, running endpoint or capacity
     # claim is represented by this renderer fixture.
     return {
-        "namespace": "tianji-production",
+        "namespace": "zhixuetang-production",
         "commit": "a" * 40,
         "images": {
-            name: "registry.acme.test/tianji/" + name + "@sha256:" + "b" * 64
+            name: "registry.acme.test/zhixuetang/" + name + "@sha256:" + "b" * 64
             for name in render.WORKLOADS
             + ["student", "admin", "media-worker", "java-agent"]
         },
@@ -31,7 +44,7 @@ def fixture():
         "public": {
             "student_host": "learn.acme.test",
             "admin_host": "admin.acme.test",
-            "tls_secret": "tianji-public-tls",
+            "tls_secret": "zhixuetang-public-tls",
             "trusted_proxy_addresses": ["ingress-peers.istio-system.svc.cluster.local"],
         },
         "managed": {
@@ -57,7 +70,7 @@ def fixture():
             "service_account": "prometheus",
             "collector_configmap": "otel-collector",
             "otlp_endpoint": "https://otlp.acme.test",
-            "alert_webhook": "https://alerts.acme.test/tianji",
+            "alert_webhook": "https://alerts.acme.test/zhixuetang",
         },
     }
 
@@ -117,7 +130,7 @@ class ProductionRenderTest(unittest.TestCase):
 
     def test_no_global_token_or_secret_values_are_rendered(self):
         serialized = yaml.safe_dump_all(self.resources)
-        self.assertNotIn("TJ_INTERNAL_TOKEN", serialized)
+        self.assertNotIn("ZXT_INTERNAL_TOKEN", serialized)
         self.assertFalse(self.resources_of("Secret"))
         for deployment in self.resources_of("Deployment"):
             name = deployment["metadata"]["name"]
@@ -143,7 +156,7 @@ class ProductionRenderTest(unittest.TestCase):
                 "https://"
             )
         )
-        self.assertEqual("db,redis", auth["tj"]["compact"]["readiness"]["required"])
+        self.assertEqual("db,redis", auth["zxt"]["compact"]["readiness"]["required"])
 
     def test_static_workloads_disable_registration_health_probe_without_disabling_discovery(
         self,
@@ -157,14 +170,14 @@ class ProductionRenderTest(unittest.TestCase):
             self.assertFalse(discovery["client"]["health-indicator"]["enabled"])
 
     def test_real_channels_and_mfa_are_explicit(self):
-        self.assertFalse(self.config("pay")["tj"]["pay"]["simulated"])
-        self.assertFalse(self.config("message")["tj"]["sms"]["simulated"])
-        self.assertTrue(self.config("auth")["tj"]["auth"]["cookie"]["require-secure"])
-        self.assertTrue(self.config("auth")["tj"]["auth"]["mfa"]["required"])
-        self.assertTrue(self.config("user")["tj"]["accounts"]["public"]["enabled"])
+        self.assertFalse(self.config("pay")["zxt"]["pay"]["simulated"])
+        self.assertFalse(self.config("message")["zxt"]["sms"]["simulated"])
+        self.assertTrue(self.config("auth")["zxt"]["auth"]["cookie"]["require-secure"])
+        self.assertTrue(self.config("auth")["zxt"]["auth"]["mfa"]["required"])
+        self.assertTrue(self.config("user")["zxt"]["accounts"]["public"]["enabled"])
         self.assertEqual(
             "provider",
-            self.config("user")["tj"]["accounts"]["public"]["sms-delivery-mode"],
+            self.config("user")["zxt"]["accounts"]["public"]["sms-delivery-mode"],
         )
 
     def test_key_rotation_is_explicit_and_does_not_publish_secret_values(self):
@@ -181,11 +194,11 @@ class ProductionRenderTest(unittest.TestCase):
             if v["kind"] == "ConfigMap" and "auth.yml" in v["data"]
         )
         self.assertEqual("next", auth["encrypt"]["key-store"]["alias"])
-        self.assertEqual("previous", auth["tj"]["auth"]["jwt"]["verification-aliases"])
-        self.assertIn("TJ_AUTH_MFA_DECRYPTION_KEYS", secrets["identity-credentials"])
-        self.assertIn("TJ_AUTH_MFA_LEGACY_KEY_ID", secrets["identity-credentials"])
+        self.assertEqual("previous", auth["zxt"]["auth"]["jwt"]["verification-aliases"])
+        self.assertIn("ZXT_AUTH_MFA_DECRYPTION_KEYS", secrets["identity-credentials"])
+        self.assertIn("ZXT_AUTH_MFA_LEGACY_KEY_ID", secrets["identity-credentials"])
         self.assertNotIn(
-            "TJ_AUTH_MFA_DECRYPTION_KEYS", self.secrets["identity-credentials"]
+            "ZXT_AUTH_MFA_DECRYPTION_KEYS", self.secrets["identity-credentials"]
         )
         for aliases in (["next"], ["previous", "previous"], ["bad,alias"]):
             with self.subTest(aliases=aliases):
@@ -194,13 +207,15 @@ class ProductionRenderTest(unittest.TestCase):
                     render.render(settings)
 
     def test_cloud_media_worker_has_separate_permissions_and_bounded_storage(self):
-        self.assertEqual("CLOUD_COS", self.config("media")["tj"]["platform"]["media"])
-        exclusions = self.config("media")["tj"]["auth"]["resource"]["excludeLoginPaths"]
+        self.assertEqual("CLOUD_COS", self.config("media")["zxt"]["platform"]["media"])
+        exclusions = self.config("media")["zxt"]["auth"]["resource"][
+            "excludeLoginPaths"
+        ]
         self.assertIn("/cloud-content/**", exclusions)
         self.assertIn("/course-covers/*", exclusions)
         worker = self.config("media-worker")
-        self.assertEqual("worker", worker["tj"]["cloud-media"]["role"])
-        self.assertNotIn("signing-key", worker["tj"]["cloud-media"])
+        self.assertEqual("worker", worker["zxt"]["cloud-media"]["role"])
+        self.assertNotIn("signing-key", worker["zxt"]["cloud-media"])
         self.assertNotIn(
             "CLOUD_MEDIA_SIGNING_KEY", self.secrets["media-worker-credentials"]
         )
@@ -432,7 +447,7 @@ class ProductionRenderTest(unittest.TestCase):
         )
         retention = json.loads(configmap["data"]["privacy-retention.json"])
         self.assertEqual({"version": "UNCONFIGURED", "rules": {}}, retention)
-        privacy = self.config("user")["tj"]["privacy"]
+        privacy = self.config("user")["zxt"]["privacy"]
         self.assertEqual("COS", privacy["archive"]["provider"])
         self.assertEqual(
             fixture()["providers"]["cos_bucket"], privacy["archive"]["bucket"]
@@ -519,18 +534,18 @@ class ProductionRenderTest(unittest.TestCase):
 
     def test_backup_proof_alerts_are_scoped_to_this_namespace(self):
         settings = fixture()
-        settings["namespace"] = "tianji-candidate-two"
+        settings["namespace"] = "zhixuetang-candidate-two"
         rules = render.observability_config(settings)["alerts.yml"]["groups"][0][
             "rules"
         ]
         by_name = {rule["alert"]: rule for rule in rules if "alert" in rule}
-        selector = 'tianji_backup_last_verified_timestamp_seconds{namespace="tianji-candidate-two"}'
+        selector = 'zhixuetang_backup_last_verified_timestamp_seconds{namespace="zhixuetang-candidate-two"}'
         self.assertEqual(
-            "absent(" + selector + ")", by_name["TianjiBackupProofMissing"]["expr"]
+            "absent(" + selector + ")", by_name["ZhixuetangBackupProofMissing"]["expr"]
         )
         self.assertEqual(
             "time() - " + selector + " > 86400",
-            by_name["TianjiBackupProofExpired"]["expr"],
+            by_name["ZhixuetangBackupProofExpired"]["expr"],
         )
 
 

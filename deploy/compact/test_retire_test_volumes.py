@@ -45,7 +45,7 @@ class TestVolumeRetirementTest(unittest.TestCase):
         self.local = self.home / '.local'
         self.local.mkdir(parents=True)
         (self.primary / '.local').mkdir(parents=True)
-        self.project = 'tianji-demo-test'
+        self.project = 'zhixuetang-demo-test'
         self.names = [self.project + '_compact_mysql', self.project + '_compact_redis']
         self.write(
             self.primary / '.local/accounts.json',
@@ -184,7 +184,7 @@ class TestVolumeRetirementTest(unittest.TestCase):
         self,
     ):
         extra = [
-            ('tianji-compact_compact_mysql', 'tianji-compact'),
+            ('zhixuetang-compact_compact_mysql', 'zhixuetang-compact'),
             ('other_mysql', 'other'),
             ('anonymous_hash', None),
         ]
@@ -205,7 +205,7 @@ class TestVolumeRetirementTest(unittest.TestCase):
     def test_primary_or_unknown_project_cannot_be_selected_even_if_no_containers_exist(
         self,
     ):
-        for project in ['tianji-compact', 'another-project']:
+        for project in ['zhixuetang-compact', 'another-project']:
             with self.assertRaises(RuntimeError):
                 make_plan(
                     [project],

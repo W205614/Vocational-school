@@ -20,7 +20,7 @@ from test_render import fixture
 
 def spec():
     return {
-        "namespace": "tianji-production",
+        "namespace": "zhixuetang-production",
         "operator_id": 123,
         "alipay": {"name": "支付宝", "priority": 1, "icon": "/alipay.svg"},
         "sms": {
@@ -87,9 +87,9 @@ class IntegrationConfigurationTest(unittest.TestCase):
 class RuntimeChecksTest(unittest.TestCase):
     def scenario(self):
         return {
-            "schema": "tianji-runtime-checks-v1",
+            "schema": "zhixuetang-runtime-checks-v1",
             "suite": "notifications",
-            "namespace": "tianji-production",
+            "namespace": "zhixuetang-production",
             "environment": "isolated-production-candidate",
             "test_identity": "isolated_student_01",
             "test_recipient": "13900000000",
@@ -115,7 +115,7 @@ class RuntimeChecksTest(unittest.TestCase):
         self,
     ):
         scenario = self.scenario()
-        runtime_checks.validate(scenario, "tianji-production", {"learn.acme.test"})
+        runtime_checks.validate(scenario, "zhixuetang-production", {"learn.acme.test"})
         statuses = iter(("ACCEPTED", "DELIVERED"))
 
         def response(url, method, headers, body):
@@ -178,7 +178,7 @@ class RuntimeChecksTest(unittest.TestCase):
             value = self.scenario()
             change(value)
             with self.assertRaises(ValueError):
-                runtime_checks.validate(value, "tianji-production", {"learn.acme.test"})
+                runtime_checks.validate(value, "zhixuetang-production", {"learn.acme.test"})
 
     def test_missing_response_field_and_network_failure_are_failed_not_skipped(self):
         for caller in (
@@ -224,23 +224,23 @@ class RuntimeChecksTest(unittest.TestCase):
     def test_read_polling_has_an_explicit_upper_bound_and_writes_never_retry(self):
         scenario = self.scenario()
         scenario["steps"][0]["attempts"] = 300
-        runtime_checks.validate(scenario, "tianji-production", {"learn.acme.test"})
+        runtime_checks.validate(scenario, "zhixuetang-production", {"learn.acme.test"})
         scenario["steps"][0]["attempts"] = 301
         with self.assertRaises(ValueError):
-            runtime_checks.validate(scenario, "tianji-production", {"learn.acme.test"})
+            runtime_checks.validate(scenario, "zhixuetang-production", {"learn.acme.test"})
         scenario["steps"][0].update(method="POST", attempts=2)
         with self.assertRaises(ValueError):
             runtime_checks.validate(
-                scenario, "tianji-production", {"learn.acme.test"}, allow_writes=True
+                scenario, "zhixuetang-production", {"learn.acme.test"}, allow_writes=True
             )
 
 
 class RuntimeBinaryChecksTest(unittest.TestCase):
     def test_binary_download_stream_hash_and_protected_body_bindings(self):
         scenario = {
-            "schema": "tianji-runtime-checks-v1",
+            "schema": "zhixuetang-runtime-checks-v1",
             "suite": "media_revocation",
-            "namespace": "tianji-production",
+            "namespace": "zhixuetang-production",
             "environment": "isolated-production-candidate",
             "test_identity": "synthetic media owner",
             "base_url": "https://learn.acme.test",
@@ -260,7 +260,7 @@ class RuntimeBinaryChecksTest(unittest.TestCase):
         raw = b"synthetic private binary artifact"
         expected = hashlib.sha256(raw).hexdigest()
         runtime_checks.validate(
-            scenario, "tianji-production", {"learn.acme.test"}, allow_writes=True
+            scenario, "zhixuetang-production", {"learn.acme.test"}, allow_writes=True
         )
 
         def caller(url, method, headers, body):
@@ -354,7 +354,7 @@ class RuntimeBinaryChecksTest(unittest.TestCase):
             if name == "notifications":
                 scenario["test_recipient"] = "13900000000"
             runtime_checks.validate(
-                scenario, "tianji-production", {"learn.acme.test"}, allow_writes=True
+                scenario, "zhixuetang-production", {"learn.acme.test"}, allow_writes=True
             )
 
     def test_expired_original_ticket_cannot_prove_revocation(self):
@@ -389,13 +389,13 @@ class BackupProofTest(unittest.TestCase):
         self.folder = Path(self.temporary.name)
         self.attachment = self.folder / "provider.json"
         self.attachment.write_text('{"synthetic_provider_record":true}')
-        self.binding = ("a" * 40, "b" * 64, "tianji-production")
+        self.binding = ("a" * 40, "b" * 64, "zhixuetang-production")
         self.proof = {
-            "schema": "tianji-managed-backup-proof-v1",
+            "schema": "zhixuetang-managed-backup-proof-v1",
             "status": "VERIFIED",
             "commit": "a" * 40,
             "manifest_sha256": "b" * 64,
-            "namespace": "tianji-production",
+            "namespace": "zhixuetang-production",
             "provider": "synthetic-test",
             "resource_id": "synthetic-db",
             "backup_id": "synthetic-backup",
@@ -413,11 +413,11 @@ class BackupProofTest(unittest.TestCase):
         self,
     ):
         timestamp = backup_proof.validate(self.proof, self.folder, self.binding)
-        target = self.folder / "tianji.prom"
+        target = self.folder / "zhixuetang.prom"
         backup_proof.publish(target, timestamp, self.proof["namespace"])
         content = target.read_text()
         self.assertIn(
-            'tianji_backup_last_verified_timestamp_seconds{namespace="tianji-production"}',
+            'zhixuetang_backup_last_verified_timestamp_seconds{namespace="zhixuetang-production"}',
             content,
         )
         self.assertNotIn("synthetic-db", content)

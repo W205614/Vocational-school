@@ -51,7 +51,7 @@ def main():
         i
         for i in items
         if i['Config'].get('Labels', {}).get('com.docker.compose.project')
-        == 'tianji-final'
+        == 'zhixuetang-final'
         and i['Config']['Labels'].get('com.docker.compose.service') in services
     ]
     if len(active) != 22 or any(
@@ -67,7 +67,7 @@ def main():
         service = labels.get('com.docker.compose.service')
         if (
             project in ['tianji-desktop', 'vocational-acceptance']
-            or project == 'tianji-final'
+            or project == 'zhixuetang-final'
             and service not in services
         ):
             obsolete.append(i)
@@ -112,7 +112,7 @@ def main():
     print(
         'Removed '
         + str(len(obsolete))
-        + ' obsolete Tianji containers; recovery volumes and other projects preserved',
+        + ' obsolete Zhixuetang containers; recovery volumes and other projects preserved',
         flush=True,
     )
 

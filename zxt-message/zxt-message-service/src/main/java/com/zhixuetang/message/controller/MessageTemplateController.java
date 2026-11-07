@@ -1,0 +1,57 @@
+package com.zhixuetang.message.controller;
+
+import com.zhixuetang.common.domain.dto.PageDTO;
+import com.zhixuetang.message.domain.dto.MessageTemplateDTO;
+import com.zhixuetang.message.domain.dto.MessageTemplateFormDTO;
+import com.zhixuetang.message.domain.query.MessageTemplatePageQuery;
+import com.zhixuetang.message.service.IMessageTemplateService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * <p>
+ * 第三方短信平台模板信息管理 前端控制器
+ * </p>
+ *
+ * @author 虎哥
+ * @since 2022-08-19
+ */
+@Tag(name = "短信模板管理接口")
+@RestController
+@RequestMapping("/message-templates")
+@RequiredArgsConstructor
+public class MessageTemplateController {
+
+    private final IMessageTemplateService messageTemplateService;
+
+    @PostMapping
+    @Operation(summary = "新增短信模板")
+    public Long saveMessageTemplate(@RequestBody MessageTemplateFormDTO messageTemplateDTO) {
+        return messageTemplateService.saveMessageTemplate(messageTemplateDTO);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "更新短信模板")
+    public void updateMessageTemplate(
+            @RequestBody MessageTemplateFormDTO messageTemplateDTO,
+            @Parameter(description = "短信模板id", example = "1") @PathVariable("id") Long id) {
+        messageTemplateDTO.setId(id);
+        messageTemplateService.updateMessageTemplate(messageTemplateDTO);
+    }
+
+    @GetMapping
+    @Operation(summary = "分页查询短信模板")
+    public PageDTO<MessageTemplateDTO> queryMessageTemplates(MessageTemplatePageQuery pageQuery) {
+        return messageTemplateService.queryMessageTemplates(pageQuery);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "根据id查询短信模板")
+    public MessageTemplateDTO queryMessageTemplate(
+            @Parameter(description = "模板id", example = "1") @PathVariable("id") Long id) {
+        return messageTemplateService.queryMessageTemplate(id);
+    }
+}

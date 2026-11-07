@@ -131,7 +131,7 @@ def main():
     # Actual byte persistence and signed HTTP range, independent of transcoding claims.
     content = (
         Path(__file__).resolve().parents[2]
-        / 'tj-media/src/test/resources/media-probe/recorder.webm'
+        / 'zxt-media/src/test/resources/media-probe/recorder.webm'
     ).read_bytes()
     key = uuid.uuid4().hex[:12]
     response = admin.post(

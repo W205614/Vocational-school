@@ -103,7 +103,7 @@ def build_standalone(tag):
             ],
             'probe-' + alias,
         )
-        image = 'tianji-opt/standalone-' + alias + ':' + tag
+        image = 'zhixuetang-opt/standalone-' + alias + ':' + tag
         run(
             ['docker', 'build', '--pull=false', '-t', image, str(folder)],
             'standalone-image-' + alias,
@@ -178,7 +178,7 @@ def standalone(ref='HEAD'):
             encoding='utf8',
         )
         config = standalone_configuration(config, original)
-        config.setdefault('tj', {}).setdefault('feign', {}).pop('internal-ports', None)
+        config.setdefault('zxt', {}).setdefault('feign', {}).pop('internal-ports', None)
         config['server']['port'] = (
             PORTS['gateway'] if alias == 'gateway' else ports[alias]
         )
@@ -274,7 +274,7 @@ def freeze_compact(tag):
         raise RuntimeError('Compact images do not match the fresh packaged source')
     compose = yaml.safe_load(active_compose(BASE).read_text(encoding='utf8'))
     for alias, value in images.items():
-        image = 'tianji-opt/compact-' + alias + ':' + tag
+        image = 'zhixuetang-opt/compact-' + alias + ':' + tag
         subprocess.run(['docker', 'tag', value['imageId'], image], check=True)
         compose['services'][
             ('web-' if alias in ('student', 'admin') else 'app-') + alias

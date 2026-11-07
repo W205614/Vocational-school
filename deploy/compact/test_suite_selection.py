@@ -12,14 +12,14 @@ class TestSelectionTest(unittest.TestCase):
     def test_old_default_and_explicit_selection_remain_available(self):
         default = parse_arguments([])
         self.assertEqual(
-            ('tj-common', 'PageQueryTest,ReliabilityDatabaseTest'),
+            ('zxt-common', 'PageQueryTest,ReliabilityDatabaseTest'),
             (default.modules, default.tests),
         )
         explicit = parse_arguments(
-            ['--modules', 'tj-exam', '--tests', 'ExamReliabilityTest']
+            ['--modules', 'zxt-exam', '--tests', 'ExamReliabilityTest']
         )
         self.assertEqual(
-            ('tj-exam', 'ExamReliabilityTest'), (explicit.modules, explicit.tests)
+            ('zxt-exam', 'ExamReliabilityTest'), (explicit.modules, explicit.tests)
         )
 
     def test_named_suites_select_the_reactor_and_preserve_core_coverage(self):

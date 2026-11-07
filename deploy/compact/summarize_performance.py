@@ -62,8 +62,8 @@ def summarize(path):
                         (
                             'hikaricp_connections_pending',
                             'executor_queued_tasks',
-                            'tj_events_',
-                            'tj_operations_pending',
+                            'zxt_events_',
+                            'zxt_operations_pending',
                         )
                     ):
                         peaks[key] = max(peaks.get(key, 0), float(number))

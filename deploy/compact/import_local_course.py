@@ -5,6 +5,7 @@ uses business SQL, broad cleanup, or publishes credentials/playback signatures.
 """
 
 from __future__ import annotations
+from runtime_compose import PRIMARY_PROJECTS
 import argparse
 import hashlib
 import json
@@ -191,9 +192,9 @@ class Runtime:
         self.compose = yaml.safe_load(path.read_text(encoding='utf8'))
         self.project = self.compose.get('name')
         if not isinstance(self.project, str) or not self.project.startswith(
-            ('tianji-', 'vocational-')
+            ('zhixuetang-', 'tianji-', 'vocational-')
         ):
-            raise ImportFailure('An explicitly owned Tianji deployment is required')
+            raise ImportFailure('An explicitly owned Zhixuetang deployment is required')
         services = self.compose['services']
         self.gateway = self.origin(services['app-gateway'])
         self.media = self.origin(services['app-support']) + '/_modules/media'
@@ -344,7 +345,7 @@ class Api:
             .splitlines()
             if '=' in line
         )
-        self.internal_token = env.get('TJ_INTERNAL_TOKEN', '')
+        self.internal_token = env.get('ZXT_INTERNAL_TOKEN', '')
         if not self.actor.isdigit() or len(self.internal_token) < 32:
             raise ImportFailure('Local service identity is incomplete')
         environment = self.request('GET', '/environment')
@@ -458,7 +459,7 @@ class Importer:
             raise ImportFailure(
                 'Import manifests must stay in this deployment ignored .local directory'
             )
-        if inventory['sample'] and runtime.project == 'tianji-compact':
+        if inventory['sample'] and runtime.project in PRIMARY_PROJECTS:
             raise ImportFailure(
                 'Partial samples are allowed only in a separately named isolated deployment'
             )
@@ -496,7 +497,11 @@ class Importer:
 
     @property
     def marker(self):
-        return OWNER + ':' + self.document['inventory']['sourceFingerprint']
+        return (
+            self.document['owner']
+            + ':'
+            + self.document['inventory']['sourceFingerprint']
+        )
 
     def save(self):
         atomic_json(self.path, self.document)
@@ -929,7 +934,7 @@ def arguments(argv=None):
     parser.add_argument('--course-name', default=DEFAULT_NAME)
     parser.add_argument('--category-id')
     parser.add_argument('--teacher-id')
-    parser.add_argument('--cover-url', default='/brand-logo.png')
+    parser.add_argument('--cover-url', default='/brand-logo.svg')
     parser.add_argument('--purchase-end', default='2099-12-31T23:59:59')
     parser.add_argument(
         '--include',

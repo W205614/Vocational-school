@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const home = process.env.TJ_UI_RUNTIME_HOME || '../deploy/acceptance/.local';
+export const home = process.env.ZXT_UI_RUNTIME_HOME || '../deploy/acceptance/.local';
 export const accounts = JSON.parse(fs.readFileSync(path.join(home, 'accounts.json'), 'utf8'));
 export const fixture = JSON.parse(fs.readFileSync(path.join(home, 'browser-fixture.json'), 'utf8'));
 

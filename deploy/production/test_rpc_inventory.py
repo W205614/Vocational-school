@@ -10,22 +10,22 @@ import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
-POLICY_HOME = ROOT / "tj-common/src/main/resources/META-INF/tianji"
+POLICY_HOME = ROOT / "zxt-common/src/main/resources/META-INF/zhixuetang"
 FEIGN_ROOTS = (
-    "tj-api/src/main/java",
-    "tj-pay/tj-pay-api/src/main/java",
-    "tj-message/tj-message-api/src/main/java",
+    "zxt-api/src/main/java",
+    "zxt-pay/zxt-pay-api/src/main/java",
+    "zxt-message/zxt-message-api/src/main/java",
 )
 DIRECT_AUTH_SOURCES = (
-    "tj-auth/tj-auth-gateway-sdk/src/main/java/com/tianji/authsdk/gateway/util/JwtSignerHolder.java",
-    "tj-auth/tj-auth-gateway-sdk/src/main/java/com/tianji/authsdk/gateway/util/SessionVerifier.java",
+    "zxt-auth/zxt-auth-gateway-sdk/src/main/java/com/zhixuetang/authsdk/gateway/util/JwtSignerHolder.java",
+    "zxt-auth/zxt-auth-gateway-sdk/src/main/java/com/zhixuetang/authsdk/gateway/util/SessionVerifier.java",
 )
 GATEWAY_SOURCES = (
-    "tj-gateway/src/main/resources/access-policy.txt",
-    "tj-gateway/src/main/java/com/tianji/gateway/config/AccessPolicy.java",
-    "tj-gateway/src/main/java/com/tianji/gateway/config/V2Routes.java",
-    "tj-gateway/src/main/java/com/tianji/gateway/config/SimulatorRoutes.java",
-    "tj-gateway/src/main/java/com/tianji/gateway/filter/AccountAuthFilter.java",
+    "zxt-gateway/src/main/resources/access-policy.txt",
+    "zxt-gateway/src/main/java/com/zhixuetang/gateway/config/AccessPolicy.java",
+    "zxt-gateway/src/main/java/com/zhixuetang/gateway/config/V2Routes.java",
+    "zxt-gateway/src/main/java/com/zhixuetang/gateway/config/SimulatorRoutes.java",
+    "zxt-gateway/src/main/java/com/zhixuetang/gateway/filter/AccountAuthFilter.java",
 )
 HEADER = re.compile(r"^# Source-Manifest-SHA256: ([0-9a-f]{64})$", re.MULTILINE)
 
@@ -65,7 +65,7 @@ def rpc_sources():
         + [ROOT / relative for relative in DIRECT_AUTH_SOURCES]
         + [
             ROOT
-            / "tj-api/src/main/java/com/tianji/api/client/privacy/PrivacyDomainClient.java"
+            / "zxt-api/src/main/java/com/zhixuetang/api/client/privacy/PrivacyDomainClient.java"
         ]
     )
 

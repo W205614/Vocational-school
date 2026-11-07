@@ -24,7 +24,8 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-PRIMARY_PROJECT = 'tianji-compact'
+from runtime_compose import PRIMARY_PROJECTS, resolve_project
+
 HEX = re.compile(r'[0-9a-f]{64}')
 NAME = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{1,254}')
 
@@ -120,10 +121,11 @@ def snapshot(volume):
 
 def allowed_project(project):
     return isinstance(project, str) and (
-        project in {'vocational-acceptance', 'tianji-acceptance', 'tianji-final'}
+        project
+        in {'vocational-acceptance', 'zhixuetang-acceptance', 'zhixuetang-final'}
         or bool(
             re.fullmatch(
-                r'tianji-(recovery|final|opt|redis-proof|demo|personal|acceptance)-[a-z0-9-]+',
+                r'zhixuetang-(recovery|final|opt|redis-proof|demo|personal|acceptance)-[a-z0-9-]+',
                 project,
             )
         )
@@ -137,6 +139,7 @@ def check_gate(primary_home, root, docker):
     from runtime_compose import active_compose
 
     home = owned_path(primary_home, root)
+    project = resolve_project(home)
     local = home / '.local'
     expected_path = local / 'release-run.json'
     expected = read_json(expected_path)
@@ -161,14 +164,14 @@ def check_gate(primary_home, root, docker):
         raise RuntimeError('The final gate lacks its original execution reports')
     compose_path = active_compose(home)
     compose = yaml.safe_load(compose_path.read_text(encoding='utf8'))
-    healthy_runtime(docker.containers(PRIMARY_PROJECT), compose, PRIMARY_PROJECT)
+    healthy_runtime(docker.containers(project), compose, project)
     command = [
         'docker',
         'compose',
         '--project-directory',
         str(home),
         '-p',
-        PRIMARY_PROJECT,
+        project,
         '-f',
         str(compose_path),
         '--env-file',
@@ -211,7 +214,7 @@ def validate_proof(path, context, root, primary_home, bundle_verify=verify_bundl
     if (
         proof.get('schemaVersion') != 1
         or not allowed_project(project)
-        or project == PRIMARY_PROJECT
+        or project in PRIMARY_PROJECTS
     ):
         raise RuntimeError('Only explicitly owned test projects are eligible')
     if proof.get('noUniqueUserData') is not True:
@@ -414,7 +417,7 @@ def make_plan(
     projects = sorted(set(projects))
     names = sorted(set(names))
     if not projects or any(
-        project == PRIMARY_PROJECT or not allowed_project(project)
+        project in PRIMARY_PROJECTS or not allowed_project(project)
         for project in projects
     ):
         raise RuntimeError(
@@ -449,7 +452,7 @@ def make_plan(
         proof = proofs.get(project)
         if item is None:
             reason = 'Volume not present; no action'
-        elif project == PRIMARY_PROJECT:
+        elif project in PRIMARY_PROJECTS:
             reason = 'Current deployment volume is protected'
         elif project not in projects:
             reason = 'Foreign, anonymous or unknown ownership'

@@ -6,7 +6,7 @@
 
 - 分类禁用与关联已上架课程的下架在同一事务内完成，任一失败回滚。订单事务中的购物车清理失败直接传播，订单、明细和本地结算事件一起回滚。
 - MFA 设置仅对明确的凭据及权限拒绝累计失败；身份服务不可用不计为凭据失败。登录始终调用必需的 MFA 组件，由组件按配置判断是否需要验证。
-- 网关仅从明确配置的 Nginx 地址接受单跳客户端地址和协议；不信任直连请求的转发头。DNS 更新失败时取消旧信任，本地 HTTP 刷新 Cookie 仍可用，正式安全配置可通过 `tj.auth.cookie.require-secure=true` 强制 Secure。
+- 网关仅从明确配置的 Nginx 地址接受单跳客户端地址和协议；不信任直连请求的转发头。DNS 更新失败时取消旧信任，本地 HTTP 刷新 Cookie 仍可用，正式安全配置可通过 `zxt.auth.cookie.require-secure=true` 强制 Secure。
 - 优惠全额抵扣后按 `PAYED/ZERO` 成交，不创建支付流水；通过原 `order.pay` 事件确认优惠券和学习权益。零金额退款沿用申请／审批，本地完成退款和撤权，不请求渠道退款。
 - 支付核对校验渠道单号、实际金额与成功时间。持久任务每批最多 100 单，失败退避，核对过期／关闭支付单，七天后转待人工处理。关闭业务订单发现已付仍记录冲突，不自动恢复订单或退款。
 - 管理端「可靠性与补偿」可查看渠道异常、记录处理依据和重试 DEAD 核对任务。操作校验管理员权限和版本；处理记录保留原资金事实，并关联实际核对依据。
@@ -25,6 +25,17 @@
 
 公共 `deploy/compact/compose.yaml` 不再保存本机镜像 SHA、搜索卷和 RabbitMQ 主机名。旧版本更新源码前，先按[部署手册](../deploy/compact/README.md#干净启动)的独立复制命令保存原生效文件；旧版本尚无 `migrate-runtime` 命令，不能先拉取新模板再拿它替代原配置。若存在未完成的 `ops-status/resume.json`，先用原版本恢复备份状态，再升级。已经迁移的部署直接使用私有 `.local/compose.runtime.yaml`；所有 Compose 命令必须指定部署目录作为 `--project-directory`，不要直接运行公共模板替换已有容器。
 
+从旧品牌版本升级时，在新 JAR 首次启动前迁移已有私有配置。先查看只读计划，核对目标部署与变更路径，再应用同一目标：
+
+```powershell
+python deploy/compact/brand_migration.py --home deploy/compact
+python deploy/compact/brand_migration.py --home deploy/compact --apply
+```
+
+工具使用维护锁，并在有变更时将原件保存到该部署的受保护 `.local/brand-migration/<UTC批次>/`。它更新应用配置根、Java 包引用、供应商占位变量名及监控展示等已知字段，保留原 Compose 项目、卷、数据库、对象路径、JKS 与普通凭据值。备份、维护和离线导入的持久协议标识、Grafana UID 继续兼容历史记录，不随品牌替换。若另行修改了 JWT issuer，已有用户需重新登录。
+
+计划或应用失败时保留原配置、备份与诊断材料，修复后重新生成计划；不要用首次初始化覆盖已有配置，也不要为改名重建数据卷。这份配置原件备份不等同完整数据备份，后续发布仍遵循下面的受控升级流程。
+
 1. 仅在已明确重新启用备份后，保存当前未提交改动，运行 `python deploy/compact/backup.py` 完成本项目完整备份与校验。完成后读取 `deploy/compact/.local/ops-status/backup.json` 的 `lastBundle` 字段，作为后续 `--backup` 参数；当前停用状态不执行此步。
 2. 提交本次生产源码，运行 `python deploy/compact/setup.py build` 重建全部七个应用／网页镜像。
 3. 运行 `python deploy/compact/upgrade_existing.py stage`，取得已验证候选目录。候选包含源码与七镜像绑定，不修改现有运行部署。
@@ -36,7 +47,7 @@ python deploy/compact/upgrade_existing.py deploy --candidate <本项目.local/ca
 
 发布与备份竞争同一进程锁。增量配置工具保留原镜像引用、存储路径、数据库密码及自定义代理配置，原配置存于本机 `.local/operations-upgrade/`。旧部署会补入 user 的持久私有导出目录及 media 的签名试看路径，已有自定义配置保留；新部署使用相同目录权限设置。仅新增数据库迁移，不改写已执行的校验和迁移。
 
-若此次更新包含监控规则，复用中的 Prometheus 不会自动重载挂载文件。日常项目执行 `docker kill --signal HUP tianji-compact-prometheus-1` 后，检查 `http://127.0.0.1:24590/api/v1/rules` 是否出现 `BusinessOperationBacklog`、`ReliabilityMetricsStale`，并核对 `/api/v1/targets` 全部在线；其他项目必须改用实际容器名和端口。此信号只要求重载配置，不删除容器或数据。以运行中的规则与采集目标状态核对生效结果。
+若此次更新包含监控规则，复用中的 Prometheus 不会自动重载挂载文件。日常项目执行 `docker kill --signal HUP zhixuetang-compact-prometheus-1` 后，检查 `http://127.0.0.1:24590/api/v1/rules` 是否出现 `BusinessOperationBacklog`、`ReliabilityMetricsStale`，并核对 `/api/v1/targets` 全部在线；其他项目必须改用实际容器名和端口。此信号只要求重载配置，不删除容器或数据。以运行中的规则与采集目标状态核对生效结果。
 
 失败时保留数据、事件和诊断材料，不自动用旧 SQL 覆盖新增订单／评分／支付事实。需要回退时先停写并确认旧代码与当前表结构兼容；不兼容则在副本核对增量后制定数据回迁，不能删除新表或丢弃新事实。
 
@@ -46,7 +57,7 @@ python deploy/compact/upgrade_existing.py deploy --candidate <本项目.local/ca
 
 手动完整备份：`python deploy/compact/backup.py`。`--online` 仅是部分在线导出，不计入完整备份成功记录。默认完整备份短暂停止原本运行的业务和网页，捕获 MySQL、Redis、RabbitMQ、配置、签名密钥及真实媒体字节，校验后恢复原状态。
 
-Windows 注册：`powershell -NoProfile -File deploy/compact/register_backup_task.ps1`，任务名 `Tianji-Backup-tianji-compact`。再次注册更新同一个任务，不创建重复任务；采用当前登录用户的有限权限，不保存账户密码。主机时区要求北京时间。Python 安装目录须包含 `pythonw.exe`；任务通过它无窗口启动，备份工作进程及其命令使用隐藏控制台，避免每次检查弹出终端。停用可在 Windows 任务计划程序禁用该任务。
+Windows 注册：`powershell -NoProfile -File deploy/compact/register_backup_task.ps1`，任务名 `Zhixuetang-Backup-zhixuetang-compact`。再次注册更新同一个任务，不创建重复任务；采用当前登录用户的有限权限，不保存账户密码。主机时区要求北京时间。Python 安装目录须包含 `pythonw.exe`；任务通过它无窗口启动，备份工作进程及其命令使用隐藏控制台，避免每次检查弹出终端。停用可在 Windows 任务计划程序禁用该任务。
 
 - 每日 03:30 到期，每 15 分钟检查一次欠缺备份；成功后当日跳过。03:30 是计划时间，电脑、当前用户会话或 Docker 不可用时无法保证准点执行，条件恢复后补执行。检查进程会退出，不保留常驻 Python 进程。
 - Docker Desktop 关闭：记录 `SKIPPED_DOCKER_UNAVAILABLE`，不启动 Docker Desktop，也不追加失败日志。
@@ -67,7 +78,7 @@ Windows 注册：`powershell -NoProfile -File deploy/compact/register_backup_tas
 | ------------ | ----------------------- | ---------------------------------------------------------------------------------- |
 | Prometheus   | http://127.0.0.1:24590/ | 历史块保留目标为 7 天／256 MB；压缩 WAL 和当前数据另占少量空间，不是整个卷的硬配额 |
 | Alertmanager | http://127.0.0.1:24591/ | 本机告警状态，48 小时保留                                                          |
-| Grafana      | http://127.0.0.1:24592/ | 预置 Tianji Reliability 面板，用户 `tianji`                                        |
+| Grafana      | http://127.0.0.1:24592/ | 预置 Zhixuetang Reliability 面板，用户 `zhixuetang`                                        |
 
 Grafana 密码读取本机 `.env` 的 `ACCEPTANCE_GRAFANA_PASSWORD`；采集令牌仅保存在忽略目录，业务指标接口继续要求内部凭证。告警覆盖模块不可用、事件积压、失败持久任务、渠道核对异常和过去赛季阻塞。备份启用时另监测实际备份失败和超过 26 小时未成功完整备份；当前本机备份与对应告警已停用，面板显示停用状态。
 
@@ -77,7 +88,7 @@ Grafana 密码读取本机 `.env` 的 `ACCEPTANCE_GRAFANA_PASSWORD`；采集令�
 
 可靠性页面按模块独立查询业务操作、事件投递和消费失败；身份模块 `auth` 同样可查。三类列表支持分页及精确标识查询，旧列表接口继续保留。业务操作可按 `RETRY_EXHAUSTED` 筛选，正常业务校验拒绝不触发基础设施故障告警。查询失败时只关闭对应区块；切换模块会清空旧记录，重放始终绑定记录来源模块。
 
-关注 `tj_operations_retry_exhausted`、`tj_operations_oldest_seconds` 和 `tj_reliability_metrics_last_success_timestamp_seconds`。采集时间停滞时，先检查该模块数据库连接和采集异常。重试耗尽时先核对请求、事件或业务事实及失败原因，再修复依赖并重放；版本冲突后重新查询，不能反复使用旧版本提交。重放只是重新安排处理，完成与否以刷新后的持久状态及业务结果为准。
+关注 `zxt_operations_retry_exhausted`、`zxt_operations_oldest_seconds` 和 `zxt_reliability_metrics_last_success_timestamp_seconds`。采集时间停滞时，先检查该模块数据库连接和采集异常。重试耗尽时先核对请求、事件或业务事实及失败原因，再修复依赖并重放；版本冲突后重新查询，不能反复使用旧版本提交。重放只是重新安排处理，完成与否以刷新后的持久状态及业务结果为准。
 
 本机告警投递至 Alertmanager 面板；外部接入按[生产接入手册](production-integrations.md#备份证明与外部告警)配置和验证。排障顺序为：确认模块与追踪编号 → 核对失败原因和已有业务结果 → 修复依赖 → 按原标识重放 → 确认状态、业务结果与告警恢复。
 

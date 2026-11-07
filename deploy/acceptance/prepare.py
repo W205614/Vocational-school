@@ -1,16 +1,19 @@
 """Isolated acceptance data clone. Original deployment is only read."""
 
 from pathlib import Path
-import subprocess, secrets, argparse, json, time, os
+import subprocess, secrets, argparse, json, time, os, sys
 
 BASE = Path(__file__).resolve().parent
-RUNTIME = Path(os.environ.get('TJ_RUNTIME_HOME', str(BASE))).resolve()
+sys.path.append(str(BASE.parent / 'compact'))
+from runtime_compose import rabbit_username
+
+RUNTIME = Path(os.environ.get('ZXT_RUNTIME_HOME', str(BASE))).resolve()
 LOCAL = RUNTIME / '.local'
 COMPOSE = [
     'docker',
     'compose',
     '--project-name',
-    os.environ.get('TJ_RUNTIME_PROJECT', 'vocational-acceptance'),
+    os.environ.get('ZXT_RUNTIME_PROJECT', 'vocational-acceptance'),
     '--file',
     str(RUNTIME / 'compose.yaml'),
     '--env-file',
@@ -84,7 +87,7 @@ def local_secrets():
     )
     if 'FINAL_DB_PASSWORD' in values:
         return dict(
-            ACCEPTANCE_MQ_USERNAME='tianji',
+            ACCEPTANCE_MQ_USERNAME=rabbit_username(RUNTIME),
             ACCEPTANCE_DB_PASSWORD=values['FINAL_DB_PASSWORD'],
             ACCEPTANCE_MQ_PASSWORD=values['FINAL_MQ_PASSWORD'],
             ACCEPTANCE_INTERNAL_TOKEN=values['FINAL_INTERNAL_TOKEN'],
@@ -106,6 +109,7 @@ def local_secrets():
                 + values['ACCEPTANCE_GRAFANA_PASSWORD']
                 + '\n'
             )
+    values.setdefault('ACCEPTANCE_MQ_USERNAME', rabbit_username(RUNTIME))
     return values
 
 

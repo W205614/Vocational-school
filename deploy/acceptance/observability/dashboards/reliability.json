@@ -26,7 +26,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "tj_events_pending",
+          "expr": "zxt_events_pending",
           "legendFormat": "{{job}} {{pool}}"
         }
       ]
@@ -48,7 +48,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "tj_events_dead",
+          "expr": "zxt_events_dead",
           "legendFormat": "{{job}} {{pool}}"
         }
       ]
@@ -70,7 +70,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "tj_consumer_failures",
+          "expr": "zxt_consumer_failures",
           "legendFormat": "{{job}} {{pool}}"
         }
       ]
@@ -92,7 +92,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "tj_events_oldest_seconds",
+          "expr": "zxt_events_oldest_seconds",
           "legendFormat": "{{job}} {{pool}}"
         }
       ]
@@ -114,7 +114,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "tj_operations_pending",
+          "expr": "zxt_operations_pending",
           "legendFormat": "{{job}} {{pool}}"
         }
       ]

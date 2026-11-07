@@ -94,7 +94,7 @@ function assertPublicCatalogue(nodes: any[]) {
 
 test.beforeEach(async () => {
   test.skip(
-    process.env.TJ_MOTIVATION_FIXTURE !== '1',
+    process.env.ZXT_MOTIVATION_FIXTURE !== '1',
     'Advanced motivation acceptance requires an isolated synthetic fixture',
   );
 });
@@ -280,7 +280,7 @@ test('finished mistakes keep snapshot feedback and cross-device revision never a
   await expect(row).toHaveCount(0);
 
   const deviceContext = await browser.newContext({
-    baseURL: process.env.TJ_STUDENT_URL || 'http://127.0.0.1:23500',
+    baseURL: process.env.ZXT_STUDENT_URL || 'http://127.0.0.1:23500',
   });
   try {
     const device = await deviceContext.newPage();
@@ -505,7 +505,7 @@ test('admin configures a future rule, current rules stay locked and real reward 
     rewardRow.first().getByRole('button', { name: '重试发奖', exact: true }),
   ).toHaveCount(0);
   const studentContext = await browser.newContext({
-    baseURL: process.env.TJ_STUDENT_URL || 'http://127.0.0.1:23500',
+    baseURL: process.env.ZXT_STUDENT_URL || 'http://127.0.0.1:23500',
   });
   try {
     const student = await studentContext.newPage();

@@ -316,7 +316,7 @@ class MysqlSession:
             raise DatabaseError("Database target is outside the owned schemas")
         if self.process.poll() is not None:
             raise DatabaseError("Managed MySQL session ended; no automatic retry")
-        marker = "__TIANJI_RESULT_" + secrets.token_hex(24) + "__"
+        marker = "__ZHIXUETANG_RESULT_" + secrets.token_hex(24) + "__"
         prefix = "USE `" + database + "`;\n" if database else ""
         self.query_count += 1
         try:
@@ -435,7 +435,7 @@ def forward_migrations(adapter, state_directory):
     # Reuse the existing checksum runner AND its duplicate preflight/main flow.
     sys.path.insert(0, str(ACCEPTANCE))
     spec = importlib.util.spec_from_file_location(
-        "tianji_managed_forward_migrations", ACCEPTANCE / "migrate.py"
+        "zhixuetang_managed_forward_migrations", ACCEPTANCE / "migrate.py"
     )
     engine = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(engine)

@@ -42,7 +42,7 @@ def main():
                     '--name',
                     'vocational-acceptance-probe-' + name,
                     '--label',
-                    'com.tianji.acceptance.probe=true',
+                    'com.zhixuetang.acceptance.probe=true',
                     '--network',
                     'vocational-acceptance_default',
                     '--add-host',

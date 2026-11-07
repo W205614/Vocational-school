@@ -17,7 +17,7 @@ def main():
     env = {
         **os.environ,
         'ACCEPTANCE_DB_PASSWORD': values['ACCEPTANCE_DB_PASSWORD'],
-        'TJ_INTERNAL_TOKEN': values['ACCEPTANCE_INTERNAL_TOKEN'],
+        'ZXT_INTERNAL_TOKEN': values['ACCEPTANCE_INTERNAL_TOKEN'],
     }
     env.setdefault('ACCEPTANCE_DB_PORT', '23316')
     command = [
@@ -25,7 +25,7 @@ def main():
         '-B',
         '-Pcompact',
         '-pl',
-        'tj-compact/identity',
+        'zxt-compact/identity',
         '-am',
         '-Dtest=CompactCredentialStartupDatabaseTest',
         '-Dsurefire.failIfNoSpecifiedTests=false',

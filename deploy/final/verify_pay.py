@@ -40,7 +40,7 @@ def main():
     env = os.environ.copy()
     env['ACCEPTANCE_DB_PASSWORD'] = prepare.local_secrets()['ACCEPTANCE_DB_PASSWORD']
     env.setdefault('JAVA_HOME', 'E:/Program Files/jdk')
-    env.pop('TJ_REAL_PAYMENT_TESTS', None)
+    env.pop('ZXT_REAL_PAYMENT_TESTS', None)
     tests = [
         'AcceptanceFaultsTest',
         'CookieBuilderTest',
@@ -54,7 +54,7 @@ def main():
         '-Dmaven.repo.local='
         + env.get('MAVEN_LOCAL_REPO', 'E:/download/apache-maven-3.9.4/mvn_repo'),
         '-pl',
-        'tj-pay/tj-pay-service',
+        'zxt-pay/zxt-pay-service',
         '-am',
         '-Dtest=' + ','.join(tests),
         '-Dsurefire.failIfNoSpecifiedTests=false',

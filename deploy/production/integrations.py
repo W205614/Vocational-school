@@ -236,7 +236,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     spec = validate(json.loads(args.spec.read_text(encoding="utf8")))
     result = {
-        "schema": "tianji-integrations-v1",
+        "schema": "zhixuetang-integrations-v1",
         "namespace": spec["namespace"],
         "spec_sha256": fingerprint(spec),
         "observed_at": dt.datetime.now(dt.timezone.utc).isoformat(),

@@ -27,7 +27,7 @@ class ScheduledBackupTest(unittest.TestCase):
                 scheduled_backup, '__file__', str(home / 'scheduled_backup.py')
             ):
                 self.assertEqual(
-                    0, scheduled_backup.run(home, 'tianji-test', 0, sys.executable)
+                    0, scheduled_backup.run(home, 'zhixuetang-test', 0, sys.executable)
                 )
             self.assertEqual([0, 0], json.loads((home / 'console.json').read_text()))
 
@@ -48,15 +48,15 @@ class ScheduledBackupTest(unittest.TestCase):
                 self.assertEqual(
                     0,
                     scheduled_backup.run(
-                        home, 'tianji-test', 1000, 'C:/Python Space/python.exe'
+                        home, 'zhixuetang-test', 1000, 'C:/Python Space/python.exe'
                     ),
                 )
             args, kwargs = child.call_args
             self.assertEqual('C:/Python Space/python.exe', args[0][0])
             self.assertEqual('scheduled', args[0][-1])
-            self.assertEqual(str(home.resolve()), kwargs['env']['TJ_COMPACT_HOME'])
-            self.assertEqual('tianji-test', kwargs['env']['TJ_COMPACT_PROJECT'])
-            self.assertEqual('1000', kwargs['env']['TJ_COMPACT_PORT_OFFSET'])
+            self.assertEqual(str(home.resolve()), kwargs['env']['ZXT_COMPACT_HOME'])
+            self.assertEqual('zhixuetang-test', kwargs['env']['ZXT_COMPACT_PROJECT'])
+            self.assertEqual('1000', kwargs['env']['ZXT_COMPACT_PORT_OFFSET'])
             self.assertEqual(
                 subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0,
                 kwargs['creationflags'],
@@ -79,7 +79,7 @@ class ScheduledBackupTest(unittest.TestCase):
                 return_value=subprocess.CompletedProcess([], 7),
             ):
                 self.assertEqual(
-                    7, scheduled_backup.run(home, 'tianji-test', 0, 'python.exe')
+                    7, scheduled_backup.run(home, 'zhixuetang-test', 0, 'python.exe')
                 )
             with patch.object(
                 scheduled_backup.subprocess,
@@ -87,7 +87,7 @@ class ScheduledBackupTest(unittest.TestCase):
                 return_value=subprocess.CompletedProcess([], 0),
             ):
                 self.assertEqual(
-                    0, scheduled_backup.run(home, 'tianji-test', 0, 'python.exe')
+                    0, scheduled_backup.run(home, 'zhixuetang-test', 0, 'python.exe')
                 )
             self.assertEqual(
                 0,
@@ -109,7 +109,7 @@ class ScheduledBackupTest(unittest.TestCase):
                 side_effect=FileNotFoundError('private path or credential'),
             ):
                 self.assertEqual(
-                    1, scheduled_backup.run(home, 'tianji-test', 0, 'missing.exe')
+                    1, scheduled_backup.run(home, 'zhixuetang-test', 0, 'missing.exe')
                 )
             log = (home / '.local/maintenance.log').read_text()
             self.assertNotIn('private path or credential', log)

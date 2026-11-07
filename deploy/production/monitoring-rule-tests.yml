@@ -5,120 +5,120 @@ tests:
   - name: gateway business success excludes expected rejection and health traffic
     interval: 1m
     input_series:
-      - series: 'http_server_requests_seconds_count{namespace="tianji-production",job="gateway",method="GET",status="200",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_count{namespace="zhixuetang-production",job="gateway",method="GET",status="200",uri="/api/v2/courses"}'
         values: 0+120x10
-      - series: 'http_server_requests_seconds_count{namespace="tianji-production",job="gateway",method="GET",status="302",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_count{namespace="zhixuetang-production",job="gateway",method="GET",status="302",uri="/api/v2/courses"}'
         values: 0+60x10
-      - series: 'http_server_requests_seconds_count{namespace="tianji-production",job="gateway",method="GET",status="400",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_count{namespace="zhixuetang-production",job="gateway",method="GET",status="400",uri="/api/v2/courses"}'
         values: 0+600x10
-      - series: 'http_server_requests_seconds_count{namespace="tianji-production",job="gateway",method="GET",status="429",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_count{namespace="zhixuetang-production",job="gateway",method="GET",status="429",uri="/api/v2/courses"}'
         values: 0+60x10
-      - series: 'http_server_requests_seconds_count{namespace="tianji-production",job="gateway",method="GET",status="500",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_count{namespace="zhixuetang-production",job="gateway",method="GET",status="500",uri="/api/v2/courses"}'
         values: 0+60x10
-      - series: 'http_server_requests_seconds_count{namespace="tianji-production",job="gateway",method="GET",status="200",uri="/readyz"}'
+      - series: 'http_server_requests_seconds_count{namespace="zhixuetang-production",job="gateway",method="GET",status="200",uri="/readyz"}'
         values: 0+6000x10
-      - series: 'http_server_requests_seconds_count{namespace="tianji-production",job="gateway",method="GET",status="200",uri="/actuator/health"}'
+      - series: 'http_server_requests_seconds_count{namespace="zhixuetang-production",job="gateway",method="GET",status="200",uri="/actuator/health"}'
         values: 0+6000x10
       - series: 'http_server_requests_seconds_count{namespace="another-platform",job="gateway",method="GET",status="200",uri="/api/v2/courses"}'
         values: 0+6000x10
-      - series: 'http_server_requests_seconds_bucket{namespace="tianji-production",job="gateway",method="GET",le="0.1",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_bucket{namespace="zhixuetang-production",job="gateway",method="GET",le="0.1",uri="/api/v2/courses"}'
         values: 0+0x10
-      - series: 'http_server_requests_seconds_bucket{namespace="tianji-production",job="gateway",method="GET",le="0.5",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_bucket{namespace="zhixuetang-production",job="gateway",method="GET",le="0.5",uri="/api/v2/courses"}'
         values: 0+57x10
-      - series: 'http_server_requests_seconds_bucket{namespace="tianji-production",job="gateway",method="GET",le="1",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_bucket{namespace="zhixuetang-production",job="gateway",method="GET",le="1",uri="/api/v2/courses"}'
         values: 0+60x10
-      - series: 'http_server_requests_seconds_bucket{namespace="tianji-production",job="gateway",method="GET",le="+Inf",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_bucket{namespace="zhixuetang-production",job="gateway",method="GET",le="+Inf",uri="/api/v2/courses"}'
         values: 0+60x10
     promql_expr_test:
-      - expr: 'tianji:gateway_http_success:ratio5m'
+      - expr: 'zhixuetang:gateway_http_success:ratio5m'
         eval_time: 10m
         exp_samples:
-          - labels: '{__name__="tianji:gateway_http_success:ratio5m",namespace="tianji-production"}'
+          - labels: '{__name__="zhixuetang:gateway_http_success:ratio5m",namespace="zhixuetang-production"}'
             value: 0.6
-      - expr: 'tianji:gateway_http_requests:rate5m{status="200"}'
+      - expr: 'zhixuetang:gateway_http_requests:rate5m{status="200"}'
         eval_time: 10m
         exp_samples:
-          - labels: '{__name__="tianji:gateway_http_requests:rate5m",namespace="tianji-production",method="GET",status="200"}'
+          - labels: '{__name__="zhixuetang:gateway_http_requests:rate5m",namespace="zhixuetang-production",method="GET",status="200"}'
             value: 2
-      - expr: 'tianji:gateway_http_latency_p95:seconds'
+      - expr: 'zhixuetang:gateway_http_latency_p95:seconds'
         eval_time: 10m
         exp_samples:
-          - labels: '{__name__="tianji:gateway_http_latency_p95:seconds",namespace="tianji-production",method="GET"}'
+          - labels: '{__name__="zhixuetang:gateway_http_latency_p95:seconds",namespace="zhixuetang-production",method="GET"}'
             value: 0.5
   - name: no successful requests must produce zero rather than missing success data
     interval: 1m
     input_series:
-      - series: 'http_server_requests_seconds_count{namespace="tianji-production",job="gateway",method="GET",status="500",uri="/api/v2/courses"}'
+      - series: 'http_server_requests_seconds_count{namespace="zhixuetang-production",job="gateway",method="GET",status="500",uri="/api/v2/courses"}'
         values: 0+60x10
     promql_expr_test:
-      - expr: 'tianji:gateway_http_success:ratio5m'
+      - expr: 'zhixuetang:gateway_http_success:ratio5m'
         eval_time: 10m
         exp_samples:
-          - labels: '{__name__="tianji:gateway_http_success:ratio5m",namespace="tianji-production"}'
+          - labels: '{__name__="zhixuetang:gateway_http_success:ratio5m",namespace="zhixuetang-production"}'
             value: 0
   - name: absent traffic never becomes a successful availability measurement
     interval: 1m
     input_series: []
     promql_expr_test:
-      - expr: 'tianji:gateway_http_success:ratio5m'
+      - expr: 'zhixuetang:gateway_http_success:ratio5m'
         eval_time: 10m
         exp_samples: []
   - name: SMS and privacy failures and stale sampling fire and recover
     interval: 1m
     input_series:
-      - series: 'tj_sms_unknown{namespace="tianji-production"}'
+      - series: 'zxt_sms_unknown{namespace="zhixuetang-production"}'
         values: 1+0x6 0+0x4
-      - series: 'tj_sms_failed{namespace="tianji-production"}'
+      - series: 'zxt_sms_failed{namespace="zhixuetang-production"}'
         values: 2+0x6 0+0x4
-      - series: 'tj_sms_metrics_last_success_timestamp_seconds{namespace="tianji-production"}'
+      - series: 'zxt_sms_metrics_last_success_timestamp_seconds{namespace="zhixuetang-production"}'
         values: 0+0x6 420+60x4
-      - series: 'tj_sms_unknown{namespace="another-platform"}'
+      - series: 'zxt_sms_unknown{namespace="another-platform"}'
         values: 100+0x10
-      - series: 'tj_privacy_tasks_failed{namespace="tianji-production"}'
+      - series: 'zxt_privacy_tasks_failed{namespace="zhixuetang-production"}'
         values: 2+0x6 0+0x4
-      - series: 'tj_privacy_metrics_last_success_timestamp_seconds{namespace="tianji-production"}'
+      - series: 'zxt_privacy_metrics_last_success_timestamp_seconds{namespace="zhixuetang-production"}'
         values: 0+0x6 420+60x4
-      - series: 'tj_privacy_tasks_failed{namespace="another-platform"}'
+      - series: 'zxt_privacy_tasks_failed{namespace="another-platform"}'
         values: 100+0x10
     alert_rule_test:
       - eval_time: 6m
-        alertname: TianjiSmsOutcomeUnknown
+        alertname: ZhixuetangSmsOutcomeUnknown
         exp_alerts:
-          - exp_labels: { namespace: tianji-production, severity: warning }
+          - exp_labels: { namespace: zhixuetang-production, severity: warning }
             exp_annotations:
               { summary: SMS submission or delivery requires supplier reconciliation }
       - eval_time: 6m
-        alertname: TianjiSmsFailed
+        alertname: ZhixuetangSmsFailed
         exp_alerts:
-          - exp_labels: { namespace: tianji-production, severity: warning }
+          - exp_labels: { namespace: zhixuetang-production, severity: warning }
             exp_annotations: { summary: SMS recipients have confirmed failures }
       - eval_time: 6m
-        alertname: TianjiSmsMetricsStale
+        alertname: ZhixuetangSmsMetricsStale
         exp_alerts:
-          - exp_labels: { namespace: tianji-production, severity: critical }
+          - exp_labels: { namespace: zhixuetang-production, severity: critical }
             exp_annotations: { summary: SMS state metrics are not fresh }
       - eval_time: 9m
-        alertname: TianjiSmsOutcomeUnknown
+        alertname: ZhixuetangSmsOutcomeUnknown
         exp_alerts: []
       - eval_time: 9m
-        alertname: TianjiSmsFailed
+        alertname: ZhixuetangSmsFailed
         exp_alerts: []
       - eval_time: 9m
-        alertname: TianjiSmsMetricsStale
+        alertname: ZhixuetangSmsMetricsStale
         exp_alerts: []
       - eval_time: 6m
-        alertname: TianjiPrivacyTaskFailed
+        alertname: ZhixuetangPrivacyTaskFailed
         exp_alerts:
-          - exp_labels: { namespace: tianji-production, severity: warning }
+          - exp_labels: { namespace: zhixuetang-production, severity: warning }
             exp_annotations: { summary: Durable privacy tasks require operator intervention }
       - eval_time: 6m
-        alertname: TianjiPrivacyMetricsStale
+        alertname: ZhixuetangPrivacyMetricsStale
         exp_alerts:
-          - exp_labels: { namespace: tianji-production, severity: critical }
+          - exp_labels: { namespace: zhixuetang-production, severity: critical }
             exp_annotations: { summary: Privacy task state metrics are not fresh }
       - eval_time: 9m
-        alertname: TianjiPrivacyTaskFailed
+        alertname: ZhixuetangPrivacyTaskFailed
         exp_alerts: []
       - eval_time: 9m
-        alertname: TianjiPrivacyMetricsStale
+        alertname: ZhixuetangPrivacyMetricsStale
         exp_alerts: []

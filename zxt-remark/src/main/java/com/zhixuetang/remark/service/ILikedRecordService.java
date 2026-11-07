@@ -1,0 +1,25 @@
+package com.zhixuetang.remark.service;
+
+import com.zhixuetang.remark.domain.dto.LikeRecordFormDTO;
+import com.zhixuetang.remark.domain.po.LikedRecord;
+import com.baomidou.mybatisplus.spring.service.IService;
+
+import java.util.List;
+import java.util.Set;
+
+/**
+ * <p>
+ * 点赞记录表 服务类
+ * </p>
+ *
+ * @author 虎哥
+ * @since 2026-02-06
+ */
+public interface ILikedRecordService extends IService<LikedRecord> {
+
+    void addLikeRecord(LikeRecordFormDTO recordDTO);
+
+    Set<Long> isBizLiked(List<Long> bizIds);
+
+    void readLikedTimesAndSendMessage(String bizType, int maxBizSize);
+}

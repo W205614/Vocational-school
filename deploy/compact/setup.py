@@ -2,13 +2,18 @@
 No private historical artifact is needed. init refuses an occupied application database.
 """
 
-from runtime_compose import active_compose, compose_command
+from runtime_compose import (
+    active_compose,
+    compose_command,
+    resolve_project,
+    rabbit_username,
+)
 from pathlib import Path
 import argparse, hashlib, json, os, re, secrets, shutil, subprocess, sys, time
 import yaml
 
 SOURCE = Path(__file__).resolve().parent
-BASE = Path(os.environ.get('TJ_COMPACT_HOME', str(SOURCE))).resolve()
+BASE = Path(os.environ.get('ZXT_COMPACT_HOME', str(SOURCE))).resolve()
 BASE.mkdir(parents=True, exist_ok=True)
 ROOT = SOURCE.parents[1]
 ACC = SOURCE.parent / 'acceptance'
@@ -29,11 +34,9 @@ PORTS = {
     'support': 24004,
     'gateway': 24310,
 }
-OFFSET = int(os.environ.get('TJ_COMPACT_PORT_OFFSET', '0'))
+OFFSET = int(os.environ.get('ZXT_COMPACT_PORT_OFFSET', '0'))
 PORTS = {k: v + OFFSET for k, v in PORTS.items()}
-PROJECT = os.environ.get('TJ_COMPACT_PROJECT', 'tianji-compact')
-if not re.fullmatch('[a-z][a-z0-9-]{2,40}', PROJECT):
-    raise ValueError('Invalid isolated project name')
+PROJECT = resolve_project(BASE, os.environ.get('ZXT_COMPACT_PROJECT'))
 COMPOSE = compose_command(BASE, PROJECT)
 
 
@@ -142,7 +145,7 @@ def prepare():
 
     private_export_directory(BASE)
     (LOCAL / 'app.env').write_text(
-        'TJ_INTERNAL_TOKEN=' + env['ACCEPTANCE_INTERNAL_TOKEN'] + '\n', encoding='utf8'
+        'ZXT_INTERNAL_TOKEN=' + env['ACCEPTANCE_INTERNAL_TOKEN'] + '\n', encoding='utf8'
     )
     key = LOCAL / 'signing.jks'
     if not key.exists():
@@ -159,7 +162,7 @@ def prepare():
                 '-validity',
                 '365',
                 '-dname',
-                'CN=Tianji Local Compact',
+                'CN=Zhixuetang Local Compact',
                 '-storetype',
                 'JKS',
                 '-keystore',
@@ -181,13 +184,13 @@ def prepare():
     excludes = [
         line.strip()
         for source in ROOT.glob(
-            'tj-*/**/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports'
+            'zxt-*/**/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports'
         )
         for line in source.read_text(encoding='utf8').splitlines()
         if line.strip()
     ] + [
-        'com.tianji.authsdk.resource.config.ResourceInterceptorConfiguration',
-        'com.tianji.authsdk.resource.config.FeignRelayUserAutoConfiguration',
+        'com.zhixuetang.authsdk.resource.config.ResourceInterceptorConfiguration',
+        'com.zhixuetang.authsdk.resource.config.FeignRelayUserAutoConfiguration',
         'org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration',
         'org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration',
         'org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration',
@@ -280,7 +283,7 @@ def prepare():
                 'readTimeout': 5000,
                 'loggerLevel': 'none',
             }
-        for source in ROOT.glob('tj-*/**/src/main/java/**/*Client.java'):
+        for source in ROOT.glob('zxt-*/**/src/main/java/**/*Client.java'):
             for declaration in re.findall(
                 r'@FeignClient\(([^)]*)\)', source.read_text(encoding='utf8')
             ):
@@ -302,7 +305,7 @@ def prepare():
         s['rabbitmq'] = {
             'host': 'rabbitmq',
             'port': 5672,
-            'username': 'tianji',
+            'username': 'zhixuetang',
             'password': env['ACCEPTANCE_MQ_PASSWORD'],
             'publisher-confirm-type': 'correlated',
             'publisher-returns': True,
@@ -343,14 +346,14 @@ def prepare():
                     'org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration'
                 ]
             }
-        tj = c.setdefault('tj', {})
-        tj['xxljob'] = {'enabled': False}
-        tj.setdefault('swagger', {})['enable'] = False
-        tj['feign'] = {
+        zxt = c.setdefault('zxt', {})
+        zxt['xxljob'] = {'enabled': False}
+        zxt.setdefault('swagger', {})['enable'] = False
+        zxt['feign'] = {
             'max-concurrent': 32,
             'internal-ports': ','.join(str(port) for port in internal_ports.values()),
         }
-        tj['reliability'] = {
+        zxt['reliability'] = {
             'enabled': database is not None,
             'operation-interval-ms': tuning['interval'],
             'dispatch-interval-ms': tuning['interval'],
@@ -360,13 +363,13 @@ def prepare():
             'outbox-max': 2,
         }
         if alias == 'trade':
-            tj.setdefault('trade', {}).update(
+            zxt.setdefault('trade', {}).update(
                 {
                     'creation-interval-ms': tuning['interval'],
                     'financial-interval-ms': tuning['interval'],
                 }
             )
-        resource = tj.setdefault('auth', {}).setdefault('resource', {})
+        resource = zxt.setdefault('auth', {}).setdefault('resource', {})
         resource['enable'] = True
         resource.setdefault('excludeLoginPaths', []).extend(
             ['/actuator/health/**', '/readyz']
@@ -388,17 +391,17 @@ def prepare():
                 '/accounts/sessions/**',
             ]
         if alias == 'user':
-            tj['privacy'] = {
+            zxt['privacy'] = {
                 'archive': {
                     'provider': 'LOCAL',
                     'directory': '/run/privacy-exports/private',
                 }
             }
         if alias == 'media':
-            tj['platform'] = {'file': 'LOCAL', 'media': 'LOCAL'}
-            tj['local-storage'] = {'enabled': True, 'directory': '/run/objects'}
-            tj['tencent']['vod']['enable'] = False
-            tj['tencent']['cos']['enable'] = False
+            zxt['platform'] = {'file': 'LOCAL', 'media': 'LOCAL'}
+            zxt['local-storage'] = {'enabled': True, 'directory': '/run/objects'}
+            zxt['tencent']['vod']['enable'] = False
+            zxt['tencent']['cos']['enable'] = False
             resource['excludeLoginPaths'].extend(
                 ['/local-content/**', '/trial-content/**', '/course-covers/*']
             )
@@ -407,12 +410,12 @@ def prepare():
             }
         if alias == 'search':
             s['elasticsearch'] = {'uris': 'http://elasticsearch:9200'}
-            tj['interests'] = {'top-number': 10}
+            zxt['interests'] = {'top-number': 10}
         if alias == 'message':
-            tj.setdefault('sms', {})['simulated'] = True
+            zxt.setdefault('sms', {})['simulated'] = True
         if alias == 'pay':
-            tj['pay']['simulated'] = True
-            tj['pay']['notifyHost'] = (
+            zxt['pay']['simulated'] = True
+            zxt['pay']['notifyHost'] = (
                 'http://app-gateway:' + str(PORTS['gateway']) + '/api/v2'
             )
             resource['excludeLoginPaths'].extend(
@@ -424,22 +427,22 @@ def prepare():
                 ]
             )
         if alias == 'learning':
-            tj['learning'] = {
+            zxt['learning'] = {
                 'progress-interval-ms': tuning['interval'],
                 'points-interval-ms': tuning['interval'],
             }
         if alias == 'gateway':
             s['main']['web-application-type'] = 'reactive'
             s['cloud']['gateway']['server']['webflux']['routes'] = []
-            tj['routes'] = targets
-            tj['simulators'] = {
+            zxt['routes'] = targets
+            zxt['simulators'] = {
                 'enabled': True,
                 'url': targets['pay'],
                 'storage': True,
                 'video': True,
                 'sms': True,
             }
-            tj['reliability'] = {'enabled': False}
+            zxt['reliability'] = {'enabled': False}
             resource['enable'] = False
         c['springdoc'] = {
             'api-docs': {'enabled': False},
@@ -487,7 +490,7 @@ def prepare():
                     },
                 },
             },
-            'tj': {
+            'zxt': {
                 'compact': {'config-directory': '/run/compact/configs'},
                 'reliability': {'enabled': False},
             },
@@ -508,7 +511,7 @@ def prepare():
                 },
             },
         }
-        c['tj']['compact']['internal-port'] = internal_ports[group]
+        c['zxt']['compact']['internal-port'] = internal_ports[group]
         c['spring']['cloud']['discovery'] = {
             'client': {'health-indicator': {'enabled': False}}
         }
@@ -564,7 +567,7 @@ def prepare():
         'rabbitmq': {
             'image': 'rabbitmq:4.1-management',
             'environment': {
-                'RABBITMQ_DEFAULT_USER': 'tianji',
+                'RABBITMQ_DEFAULT_USER': 'zhixuetang',
                 'RABBITMQ_DEFAULT_PASS': '${ACCEPTANCE_MQ_PASSWORD}',
             },
             'ports': ['127.0.0.1:' + str(24373 + OFFSET) + ':5672'],
@@ -609,7 +612,7 @@ def prepare():
         from application_layout import application_mounts, application_dependencies
 
         services['app-' + group] = {
-            'image': 'tianji-compact/' + group + ':local',
+            'image': 'zhixuetang-compact/' + group + ':local',
             'restart': 'unless-stopped',
             'env_file': ['./.local/app.env'],
             'ports': ['127.0.0.1:' + str(PORTS[group]) + ':' + str(PORTS[group])],
@@ -643,7 +646,7 @@ def prepare():
         )
     for app, port in [('student', 24500 + OFFSET), ('admin', 24501 + OFFSET)]:
         services['web-' + app] = {
-            'image': 'tianji-compact/' + app + ':local',
+            'image': 'zhixuetang-compact/' + app + ':local',
             'environment': {'GW_UPSTREAM': 'app-gateway:' + str(PORTS['gateway'])},
             'ports': ['127.0.0.1:' + str(port) + ':8080'],
             'mem_limit': '128m',
@@ -777,7 +780,9 @@ def configure_acceptance():
     p.LOCAL = LOCAL
     p.COMPOSE = COMPOSE
     p.RUNTIME = BASE
-    p.local_secrets = lambda: dict(secrets_config()[0], ACCEPTANCE_MQ_USERNAME='tianji')
+    p.local_secrets = lambda: dict(
+        secrets_config()[0], ACCEPTANCE_MQ_USERNAME=rabbit_username(BASE)
+    )
     return p
 
 
@@ -809,9 +814,9 @@ def build(package=True, group=None):
             {
                 g: ROOT
                 / (
-                    'tj-gateway/target/tj-gateway.jar'
+                    'zxt-gateway/target/zxt-gateway.jar'
                     if g == 'gateway'
-                    else 'tj-compact/' + g + '/target/tj-' + g + '-app.jar'
+                    else 'zxt-compact/' + g + '/target/zxt-' + g + '-app.jar'
                 )
                 for g in list(GROUPS) + ['gateway']
             },
@@ -827,9 +832,9 @@ def build(package=True, group=None):
     selected = [group] if group else list(GROUPS) + ['gateway']
     for group in selected:
         jar = ROOT / (
-            'tj-gateway/target/tj-gateway.jar'
+            'zxt-gateway/target/zxt-gateway.jar'
             if group == 'gateway'
-            else 'tj-compact/' + group + '/target/tj-' + group + '-app.jar'
+            else 'zxt-compact/' + group + '/target/zxt-' + group + '-app.jar'
         )
         if digest(jar) != journal['jars'].get(group):
             raise RuntimeError('Packaged artifact changed after source binding')
@@ -878,7 +883,7 @@ def build(package=True, group=None):
             encoding='utf8',
         )
         retain_previous_image(group)
-        image = 'tianji-compact/' + group + ':local'
+        image = 'zhixuetang-compact/' + group + ':local'
         run(
             [
                 'docker',
@@ -893,7 +898,7 @@ def build(package=True, group=None):
             'image-' + group,
         )
         run(
-            ['docker', 'tag', image, 'tianji-release/' + group + ':' + commit],
+            ['docker', 'tag', image, 'zhixuetang-release/' + group + ':' + commit],
             'tag-' + group,
         )
         manifest[group] = {
@@ -933,7 +938,7 @@ def build(package=True, group=None):
                     '--label',
                     'org.opencontainers.image.revision=' + commit,
                     '-t',
-                    'tianji-compact/' + app + ':local',
+                    'zhixuetang-compact/' + app + ':local',
                     str(folder),
                 ],
                 'image-' + app,
@@ -942,19 +947,19 @@ def build(package=True, group=None):
                 [
                     'docker',
                     'tag',
-                    'tianji-compact/' + app + ':local',
-                    'tianji-release/' + app + ':' + commit,
+                    'zhixuetang-compact/' + app + ':local',
+                    'zhixuetang-release/' + app + ':' + commit,
                 ],
                 'tag-' + app,
             )
             manifest[app] = {
-                'image': 'tianji-compact/' + app + ':local',
+                'image': 'zhixuetang-compact/' + app + ':local',
                 'imageId': subprocess.check_output(
                     [
                         'docker',
                         'image',
                         'inspect',
-                        'tianji-compact/' + app + ':local',
+                        'zhixuetang-compact/' + app + ':local',
                         '--format',
                         '{{.Id}}',
                     ]

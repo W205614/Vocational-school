@@ -1,0 +1,14 @@
+package com.zhixuetang.exam.service;
+
+import com.zhixuetang.exam.domain.po.QuestionDetail;
+import com.baomidou.mybatisplus.spring.service.IService;
+
+/**
+ * <p>
+ * 题目 服务类
+ * </p>
+ *
+ * @author 虎哥
+ * @since 2022-09-02
+ */
+public interface IQuestionDetailService extends IService<QuestionDetail> {}

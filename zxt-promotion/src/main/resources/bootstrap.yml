@@ -1,0 +1,49 @@
+server:
+  port: 8092 #端口
+  tomcat:
+    uri-encoding: UTF-8 #服务编码
+spring:
+  profiles:
+    active: dev
+  application:
+    name: promotion-service
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+        shared-configs: # 共享配置
+          - data-id: shared-spring.yaml # 共享spring配置
+            refresh: false
+          - data-id: shared-redis.yaml # 共享redis配置
+            refresh: false
+          - data-id: shared-mybatis.yaml # 共享mybatis配置
+            refresh: false
+          - data-id: shared-logs.yaml # 共享日志配置
+            refresh: false
+          - data-id: shared-feign.yaml # 共享feign配置
+            refresh: false
+          - data-id: shared-xxljob.yaml
+            refresh: false
+          - data-id: shared-mq.yaml
+            refresh: false
+zxt:
+  swagger:
+    enable: true
+    enableResponseWrap: true
+    package-path: com.zhixuetang.promotion.controller
+    title: 职学堂 - 促销中心接口文档
+    description: 该服务包含用户优惠卷促销的各种辅助功能
+    contact-name: 职学堂维护者
+    contact-url: https://github.com/W205614/Vocational-school
+    version: v1.0
+  jdbc:
+    database: tj_promotion
+  auth:
+    resource:
+      enable: true # 开启登录拦截的功能
+      excludeLoginPaths:
+        - /coupons/list
+  mq:
+    listener:
+      retry:
+        stateless: false # 无状态

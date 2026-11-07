@@ -25,7 +25,7 @@ def private_export_directory(home):
         raise RuntimeError('Private export directory must not be a link')
     directory.mkdir(parents=True, exist_ok=True)
     specification = importlib.util.spec_from_file_location(
-        'tianji_privacy_permissions',
+        'zhixuetang_privacy_permissions',
         Path(__file__).resolve().parents[1] / 'production/database.py',
     )
     private_files = importlib.util.module_from_spec(specification)
@@ -119,7 +119,7 @@ def observability(compose, offset=0):
             'mem_limit': '256m',
             'ports': [f'127.0.0.1:{24592 + offset}:3000'],
             'environment': {
-                'GF_SECURITY_ADMIN_USER': 'tianji',
+                'GF_SECURITY_ADMIN_USER': 'zhixuetang',
                 'GF_SECURITY_ADMIN_PASSWORD': '${ACCEPTANCE_GRAFANA_PASSWORD:?Existing observability password required}',
                 'GF_USERS_ALLOW_SIGN_UP': 'false',
                 'GF_ANALYTICS_REPORTING_ENABLED': 'false',
@@ -155,7 +155,9 @@ def observability(compose, offset=0):
 
 
 def module_defaults(alias, config):
-    config = copy.deepcopy(config)
+    from brand_migration import module_configuration
+
+    config = module_configuration(config)
     # Static endpoints do not emit InstanceRegisteredEvent. The discovery
     # registration probe would otherwise stay UNKNOWN despite usable clients.
     config.setdefault('spring', {}).setdefault('cloud', {}).setdefault(
@@ -163,14 +165,16 @@ def module_defaults(alias, config):
     ).setdefault('client', {})['health-indicator'] = {'enabled': False}
     if alias == 'gateway':
         config.setdefault('server', {})['forward-headers-strategy'] = 'none'
-        tj = config.setdefault('tj', {})
-        tj.setdefault('gateway', {}).setdefault('proxy', {}).setdefault(
+        zxt = config.setdefault('zxt', {})
+        zxt.setdefault('gateway', {}).setdefault('proxy', {}).setdefault(
             'trusted-addresses', ['web-student', 'web-admin']
         )
-        tj.setdefault('backup', {})['status-file'] = '/run/ops-status/backup.properties'
+        zxt.setdefault('backup', {})[
+            'status-file'
+        ] = '/run/ops-status/backup.properties'
     if alias == 'user':
         archive = (
-            config.setdefault('tj', {})
+            config.setdefault('zxt', {})
             .setdefault('privacy', {})
             .setdefault('archive', {})
         )
@@ -178,7 +182,7 @@ def module_defaults(alias, config):
         archive.setdefault('directory', '/run/privacy-exports/private')
     if alias == 'media':
         paths = (
-            config.setdefault('tj', {})
+            config.setdefault('zxt', {})
             .setdefault('auth', {})
             .setdefault('resource', {})
             .setdefault('excludeLoginPaths', [])

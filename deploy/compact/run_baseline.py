@@ -79,14 +79,14 @@ def main():
         previous = reusable_report(home, mode, commit, batch, snapshot)
         if previous:
             reports[mode] = previous
-            retire(home, 'tianji-opt-pre-' + mode)
+            retire(home, 'zhixuetang-opt-pre-' + mode)
             print('Reused complete bound baseline schedule: ' + mode, flush=True)
             continue
         environment = {
             **os.environ,
-            'TJ_COMPACT_HOME': str(home),
-            'TJ_COMPACT_PROJECT': 'tianji-opt-pre-' + mode,
-            'TJ_COMPACT_PORT_OFFSET': str(offset),
+            'ZXT_COMPACT_HOME': str(home),
+            'ZXT_COMPACT_PROJECT': 'zhixuetang-opt-pre-' + mode,
+            'ZXT_COMPACT_PORT_OFFSET': str(offset),
         }
 
         def run(name, *arguments):
@@ -108,7 +108,7 @@ def main():
                 run('benchmark_deployment.py', 'standalone', '--tag', commit)
         try:
             subprocess.run(
-                compose_command(home, 'tianji-opt-pre-' + mode)
+                compose_command(home, 'zhixuetang-opt-pre-' + mode)
                 + ['up', '-d', '--wait', 'mysql', 'redis', 'rabbitmq', 'elasticsearch'],
                 check=True,
             )
@@ -130,7 +130,7 @@ def main():
                 env=environment,
             )
         finally:
-            retire(home, 'tianji-opt-pre-' + mode)
+            retire(home, 'zhixuetang-opt-pre-' + mode)
         pointer = json.loads(
             (home / ('.local/performance-pre-' + mode + '.json')).read_text(
                 encoding='utf8'

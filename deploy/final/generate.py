@@ -67,7 +67,7 @@ def main():
                 '-validity',
                 '365',
                 '-dname',
-                'CN=Tianji Local Final',
+                'CN=Zhixuetang Local Final',
                 '-storetype',
                 'JKS',
                 '-keystore',
@@ -80,7 +80,7 @@ def main():
             LOCAL / 'keytool.log',
         )
     (LOCAL / 'app.env').write_text(
-        'TJ_INTERNAL_TOKEN=' + env['FINAL_INTERNAL_TOKEN'] + '\n', encoding='utf8'
+        'ZXT_INTERNAL_TOKEN=' + env['FINAL_INTERNAL_TOKEN'] + '\n', encoding='utf8'
     )
     replacement = {
         old['ACCEPTANCE_DB_PASSWORD']: env['FINAL_DB_PASSWORD'],
@@ -112,10 +112,10 @@ def main():
                 )
             )
         )
-        config['spring']['rabbitmq']['username'] = 'tianji'
+        config['spring']['rabbitmq']['username'] = 'zhixuetang'
         if name == 'media':
             excludes = (
-                config.setdefault('tj', {})
+                config.setdefault('zxt', {})
                 .setdefault('auth', {})
                 .setdefault('resource', {})
                 .setdefault('excludeLoginPaths', [])
@@ -135,7 +135,7 @@ def main():
         )
         if actual != image['imageId']:
             raise RuntimeError('Verified image changed ' + name)
-        tag = image.get('finalTag', 'tianji-final/' + name + ':' + RELEASE)
+        tag = image.get('finalTag', 'zhixuetang-final/' + name + ':' + RELEASE)
         subprocess.run(['docker', 'tag', actual, tag], check=True)
         services['app-' + name] = {
             'image': tag,
@@ -213,7 +213,7 @@ def main():
             ]
         if name == 'rabbitmq':
             service['environment'].update(
-                RABBITMQ_DEFAULT_USER='tianji',
+                RABBITMQ_DEFAULT_USER='zhixuetang',
                 RABBITMQ_DEFAULT_PASS='${FINAL_MQ_PASSWORD:?Set private final .env}',
             )
             service['mem_limit'] = '512m'
@@ -268,7 +268,7 @@ def main():
         )
         services[name] = service
     for app, port, alias in [('student', 23500, 80), ('admin', 23501, 81)]:
-        tag = 'tianji-final/' + app + ':ux-20261007'
+        tag = 'zhixuetang-final/' + app + ':ux-20261007'
         services['web-' + app] = {
             'image': tag,
             'restart': 'unless-stopped',
@@ -286,7 +286,7 @@ def main():
     }
     (BASE / 'compose.yaml').write_text(
         yaml.safe_dump(
-            {'name': 'tianji-final', 'services': services, 'volumes': volumes},
+            {'name': 'zhixuetang-final', 'services': services, 'volumes': volumes},
             sort_keys=False,
         ),
         encoding='utf8',

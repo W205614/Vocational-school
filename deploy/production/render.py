@@ -36,17 +36,17 @@ PORTS = {
 OWNERS = {alias: group for group, aliases in GROUPS.items() for alias in aliases}
 MODULES = {
     alias: (
-        f"tj-{alias}"
+        f"zxt-{alias}"
         if alias not in {"auth", "pay", "message"}
         else {
-            "auth": "tj-auth/tj-auth-service",
-            "pay": "tj-pay/tj-pay-service",
-            "message": "tj-message/tj-message-service",
+            "auth": "zxt-auth/zxt-auth-service",
+            "pay": "zxt-pay/zxt-pay-service",
+            "message": "zxt-message/zxt-message-service",
         }[alias]
     )
     for alias in OWNERS
 }
-MODULES["gateway"] = "tj-gateway"
+MODULES["gateway"] = "zxt-gateway"
 WORKLOADS = [*GROUPS, "gateway"]
 IMAGE = re.compile(r"[a-z0-9][a-z0-9./:_-]*@sha256:[0-9a-f]{64}")
 NAME = re.compile(r"[a-z][a-z0-9-]{1,50}")
@@ -96,7 +96,7 @@ def validate(settings):
     ):
         raise ConfigurationError("Production replicas must be 2..20")
     signing = s.setdefault(
-        "signing", {"active_alias": "tianji", "verification_aliases": []}
+        "signing", {"active_alias": "zhixuetang", "verification_aliases": []}
     )
     aliases = signing.get("verification_aliases")
     if (
@@ -202,7 +202,7 @@ def validate(settings):
         source = (
             ROOT
             / MODULES[parts[0]]
-            / "src/main/resources/META-INF/tianji/privacy"
+            / "src/main/resources/META-INF/zhixuetang/privacy"
             / (parts[0] + ".json")
         )
         definitions = (
@@ -264,7 +264,7 @@ def source_config(alias):
 @lru_cache(maxsize=1)
 def feign_declarations():
     declarations = []
-    for path in ROOT.glob("tj-*/**/src/main/java/**/*Client.java"):
+    for path in ROOT.glob("zxt-*/**/src/main/java/**/*Client.java"):
         declarations.extend(
             re.findall(r"@FeignClient\(([^)]*)\)", path.read_text(encoding="utf8"))
         )
@@ -422,17 +422,17 @@ def module_config(alias, s):
         "forward-headers-strategy": "none",
         "error": {"include-message": "never", "include-stacktrace": "never"},
     }
-    tj = c.setdefault("tj", {})
-    tj["production"] = {"enabled": True, "transport": "mesh", "module": alias}
-    tj["compact"] = {"readiness": {"required": "db,redis" if database else "redis"}}
-    tj["xxljob"] = {"enabled": False}
-    tj.setdefault("swagger", {})["enable"] = False
-    tj["feign"] = {
+    zxt = c.setdefault("zxt", {})
+    zxt["production"] = {"enabled": True, "transport": "mesh", "module": alias}
+    zxt["compact"] = {"readiness": {"required": "db,redis" if database else "redis"}}
+    zxt["xxljob"] = {"enabled": False}
+    zxt.setdefault("swagger", {})["enable"] = False
+    zxt["feign"] = {
         "max-concurrent": 32,
         "internal-ports": ",".join(str(PORTS[g] + 1000) for g in GROUPS),
     }
-    tj["reliability"] = {"enabled": database is not None}
-    resource = tj.setdefault("auth", {}).setdefault("resource", {})
+    zxt["reliability"] = {"enabled": database is not None}
+    resource = zxt.setdefault("auth", {}).setdefault("resource", {})
     resource["enable"] = True
     resource.setdefault("excludeLoginPaths", []).extend(
         ["/actuator/health/**", "/readyz"]
@@ -448,18 +448,18 @@ def module_config(alias, s):
                 "secret": env("SIGNING_KEY_PASSWORD"),
             }
         }
-        tj["auth"]["cookie"] = {"require-secure": True}
-        tj["auth"]["jwt"] = {
+        zxt["auth"]["cookie"] = {"require-secure": True}
+        zxt["auth"]["jwt"] = {
             "verification-aliases": ",".join(s["signing"]["verification_aliases"])
         }
-        tj["auth"]["mfa"] = {"required": True}
+        zxt["auth"]["mfa"] = {"required": True}
         resource["includeLoginPaths"] = [
             "/menus/me",
             "/accounts/logout",
             "/accounts/sessions/**",
         ]
     if alias == "user":
-        tj["privacy"] = {
+        zxt["privacy"] = {
             "retention-policy-file": "/run/compact/configs/privacy-retention.json",
             "archive": {
                 "provider": "COS",
@@ -469,7 +469,7 @@ def module_config(alias, s):
                 "secret-key": env("PRIVACY_COS_SECRET_KEY"),
             },
         }
-        tj["accounts"] = {
+        zxt["accounts"] = {
             "public": {"enabled": True, "sms-delivery-mode": "provider"},
             "privacy": {
                 "policy-version": s["privacy"]["policy_version"],
@@ -478,31 +478,31 @@ def module_config(alias, s):
             },
         }
     if alias == "pay":
-        tj["pay"]["simulated"] = False
-        tj["pay"]["wx"] = {"enabled": False}
-        tj["pay"]["ali"]["enabled"] = True
-        tj["pay"]["ali"]["seller-id"] = env("ALIPAY_SELLER_ID")
-        tj["pay"]["notifyHost"] = (
+        zxt["pay"]["simulated"] = False
+        zxt["pay"]["wx"] = {"enabled": False}
+        zxt["pay"]["ali"]["enabled"] = True
+        zxt["pay"]["ali"]["seller-id"] = env("ALIPAY_SELLER_ID")
+        zxt["pay"]["notifyHost"] = (
             "https://" + s["public"]["student_host"] + "/api/v2/services/pay"
         )
     if alias == "message":
-        tj.setdefault("sms", {})["simulated"] = False
+        zxt.setdefault("sms", {})["simulated"] = False
     if alias == "media":
         resource["excludeLoginPaths"].extend(
             ["/cloud-content/**", "/trial-content/**", "/course-covers/*"]
         )
-        tj["platform"] = {"file": "TENCENT", "media": "CLOUD_COS"}
-        tj["local-storage"] = {"enabled": False}
-        tj["tencent"]["vod"] = {"enable": False}
-        tj["tencent"]["cos"].update(
+        zxt["platform"] = {"file": "TENCENT", "media": "CLOUD_COS"}
+        zxt["local-storage"] = {"enabled": False}
+        zxt["tencent"]["vod"] = {"enable": False}
+        zxt["tencent"]["cos"].update(
             {
                 "enable": True,
                 "region": s["providers"]["region"],
                 "bucket": s["providers"]["cos_bucket"].rsplit("-", 1)[0],
             }
         )
-        tj["tencent"]["appId"] = s["providers"]["cos_bucket"].rsplit("-", 1)[1]
-        tj["cloud-media"] = {
+        zxt["tencent"]["appId"] = s["providers"]["cos_bucket"].rsplit("-", 1)[1]
+        zxt["cloud-media"] = {
             "enabled": True,
             "role": "api",
             "bucket": s["providers"]["cos_bucket"],
@@ -521,7 +521,7 @@ def module_config(alias, s):
             "username": env("ELASTICSEARCH_USERNAME"),
             "password": env("ELASTICSEARCH_PASSWORD"),
         }
-        tj["interests"] = {"top-number": 10}
+        zxt["interests"] = {"top-number": 10}
     if alias == "gateway":
         spring.pop("rabbitmq", None)
         spring["main"]["web-application-type"] = "reactive"
@@ -551,18 +551,18 @@ def module_config(alias, s):
                 }
             }
         }
-        tj["routes"] = routes()
-        tj["simulators"] = {
+        zxt["routes"] = routes()
+        zxt["simulators"] = {
             "enabled": False,
             "storage": False,
             "video": False,
             "sms": False,
         }
-        tj["gateway"] = {
+        zxt["gateway"] = {
             "proxy": {"trusted-addresses": s["public"]["trusted_proxy_addresses"]}
         }
-        tj["cloud-media"] = {"enabled": True, "delivery": "ENTITLEMENT_PROXY"}
-        tj["platform"] = {"media": "CLOUD_COS"}
+        zxt["cloud-media"] = {"enabled": True, "delivery": "ENTITLEMENT_PROXY"}
+        zxt["platform"] = {"media": "CLOUD_COS"}
         resource["enable"] = False
     c["mybatis-plus"] = {
         "mapper-locations": "classpath*:mapper/**/*.xml",
@@ -602,14 +602,14 @@ def host_config(group):
     excludes = [
         line.strip()
         for source in ROOT.glob(
-            "tj-*/**/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports"
+            "zxt-*/**/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports"
         )
         for line in source.read_text(encoding="utf8").splitlines()
         if line.strip()
     ]
     excludes += [
-        "com.tianji.authsdk.resource.config.ResourceInterceptorConfiguration",
-        "com.tianji.authsdk.resource.config.FeignRelayUserAutoConfiguration",
+        "com.zhixuetang.authsdk.resource.config.ResourceInterceptorConfiguration",
+        "com.zhixuetang.authsdk.resource.config.FeignRelayUserAutoConfiguration",
         "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
         "org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration",
         "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration",
@@ -640,7 +640,7 @@ def host_config(group):
                 "discovery": {"client": {"health-indicator": {"enabled": False}}},
             },
         },
-        "tj": {
+        "zxt": {
             "compact": {
                 "config-directory": "/run/compact/configs",
                 "internal-port": PORTS[group] + 1000,
@@ -678,31 +678,31 @@ def secret_keys(group, mfa_rotation=False):
         keys += [
             "SIGNING_STORE_PASSWORD",
             "SIGNING_KEY_PASSWORD",
-            "TJ_MFA_ENCRYPTION_KEY",
+            "ZXT_MFA_ENCRYPTION_KEY",
             "PRIVACY_COS_SECRET_ID",
             "PRIVACY_COS_SECRET_KEY",
         ]
         if mfa_rotation:
-            keys += ["TJ_AUTH_MFA_DECRYPTION_KEYS", "TJ_AUTH_MFA_LEGACY_KEY_ID"]
+            keys += ["ZXT_AUTH_MFA_DECRYPTION_KEYS", "ZXT_AUTH_MFA_LEGACY_KEY_ID"]
     if group == "commerce":
         keys += [
-            "TJ_PAY_TJ_PAY_ALI_APPID",
-            "TJ_PAY_TJ_PAY_ALI_MERCHANTPRIVATEKEY",
-            "TJ_PAY_TJ_PAY_ALI_PUBLICKEY",
+            "ZXT_PAY_ZXT_PAY_ALI_APPID",
+            "ZXT_PAY_ZXT_PAY_ALI_MERCHANTPRIVATEKEY",
+            "ZXT_PAY_ZXT_PAY_ALI_PUBLICKEY",
             "ALIPAY_SELLER_ID",
         ]
     if group == "support":
         keys += [
             "ELASTICSEARCH_USERNAME",
             "ELASTICSEARCH_PASSWORD",
-            "TJ_MEDIA_TJ_TENCENT_APPID",
-            "TJ_MEDIA_TJ_TENCENT_SECRETID",
-            "TJ_MEDIA_TJ_TENCENT_SECRETKEY",
+            "ZXT_MEDIA_ZXT_TENCENT_APPID",
+            "ZXT_MEDIA_ZXT_TENCENT_SECRETID",
+            "ZXT_MEDIA_ZXT_TENCENT_SECRETKEY",
             "CLOUD_MEDIA_SECRET_ID",
             "CLOUD_MEDIA_SECRET_KEY",
             "CLOUD_MEDIA_SIGNING_KEY",
-            "TJ_MESSAGE_TJ_SMS_ALI_ACCESSID",
-            "TJ_MESSAGE_TJ_SMS_ALI_ACCESSSECRET",
+            "ZXT_MESSAGE_ZXT_SMS_ALI_ACCESSID",
+            "ZXT_MESSAGE_ZXT_SMS_ALI_ACCESSSECRET",
         ]
     return keys
 
@@ -751,7 +751,7 @@ def render(settings):
         {
             "apiVersion": "opentelemetry.io/v1alpha1",
             "kind": "Instrumentation",
-            "metadata": {"name": "tianji-java", "namespace": ns},
+            "metadata": {"name": "zhixuetang-java", "namespace": ns},
             "spec": {
                 "exporter": {"endpoint": s["observability"]["otlp_endpoint"]},
                 "propagators": ["tracecontext", "baggage"],
@@ -771,7 +771,7 @@ def render(settings):
         }
     )
     transform = observability_config(s)["otel-sanitize.yml"]["processors"][
-        "transform/tianji_redaction"
+        "transform/zhixuetang_redaction"
     ]
     docs.append(
         object_(
@@ -894,7 +894,7 @@ def render(settings):
         port = 8080 if web else PORTS[group]
         labels = {
             "app": name,
-            "app.kubernetes.io/part-of": "tianji",
+            "app.kubernetes.io/part-of": "zhixuetang",
             "app.kubernetes.io/version": commit[:12],
         }
         docs.append(
@@ -966,13 +966,13 @@ def render(settings):
             ]
             envs = [
                 {"name": "APP_PORT", "value": str(port)},
-                {"name": "TJ_SERVICE_ID", "value": group},
-                {"name": "TJ_INTERNAL_AUTH_MODE", "value": "service-tokens"},
+                {"name": "ZXT_SERVICE_ID", "value": group},
+                {"name": "ZXT_INTERNAL_AUTH_MODE", "value": "service-tokens"},
                 {
-                    "name": "TJ_SERVICE_TOKENS_FILE",
+                    "name": "ZXT_SERVICE_TOKENS_FILE",
                     "value": "/run/secrets/service-identities.json",
                 },
-                {"name": "TJ_PRODUCTION_TLS_MODE", "value": "mesh"},
+                {"name": "ZXT_PRODUCTION_TLS_MODE", "value": "mesh"},
                 {"name": "SPRING_PROFILES_ACTIVE", "value": "production"},
             ]
             envs += [
@@ -1100,7 +1100,7 @@ def render(settings):
                                 "sidecar.istio.io/rewriteAppHTTPProbers": "true",
                                 **(
                                     {
-                                        "instrumentation.opentelemetry.io/inject-java": "tianji-java"
+                                        "instrumentation.opentelemetry.io/inject-java": "zhixuetang-java"
                                     }
                                     if not web
                                     else {}
@@ -1308,10 +1308,10 @@ def render(settings):
     worker_config = module_config("media", s)
     worker_config["server"]["port"] = 8086
     worker_config["spring"]["application"] = {"name": "media-worker"}
-    worker_config["tj"]["production"]["module"] = "media-worker"
-    worker_config["tj"]["auth"]["resource"]["enable"] = False
-    worker_config["tj"]["reliability"] = {"enabled": False}
-    worker_config["tj"]["cloud-media"].update(
+    worker_config["zxt"]["production"]["module"] = "media-worker"
+    worker_config["zxt"]["auth"]["resource"]["enable"] = False
+    worker_config["zxt"]["reliability"] = {"enabled": False}
+    worker_config["zxt"]["cloud-media"].update(
         {
             "role": "worker",
             "scanner-command": "/usr/bin/clamscan",
@@ -1320,8 +1320,8 @@ def render(settings):
             "transcode-timeout-seconds": 1800,
         }
     )
-    worker_config["tj"]["cloud-media"].pop("signing-key")
-    worker_config["tj"].pop("tencent", None)
+    worker_config["zxt"]["cloud-media"].pop("signing-key")
+    worker_config["zxt"].pop("tencent", None)
     worker_config["spring"].pop("rabbitmq", None)
     worker_config["spring"].pop("data", None)
     worker_config["spring"]["cloud"] = {
@@ -1336,8 +1336,8 @@ def render(settings):
         "exclude": [
             "org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration",
             "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration",
-            "com.tianji.common.autoconfigure.mq.MqConfig",
-            "com.tianji.common.autoconfigure.redisson.RedissonConfig",
+            "com.zhixuetang.common.autoconfigure.mq.MqConfig",
+            "com.zhixuetang.common.autoconfigure.redisson.RedissonConfig",
         ]
     }
     worker_config["management"]["endpoint"]["health"]["group"]["readiness"][
@@ -1379,18 +1379,18 @@ def render(settings):
     ]
     worker_env += [
         {"name": "APP_PORT", "value": "8086"},
-        {"name": "TJ_SERVICE_ID", "value": "media-worker"},
-        {"name": "TJ_INTERNAL_AUTH_MODE", "value": "service-tokens"},
+        {"name": "ZXT_SERVICE_ID", "value": "media-worker"},
+        {"name": "ZXT_INTERNAL_AUTH_MODE", "value": "service-tokens"},
         {
-            "name": "TJ_SERVICE_TOKENS_FILE",
+            "name": "ZXT_SERVICE_TOKENS_FILE",
             "value": "/run/secrets/service-identities.json",
         },
-        {"name": "TJ_PRODUCTION_TLS_MODE", "value": "mesh"},
+        {"name": "ZXT_PRODUCTION_TLS_MODE", "value": "mesh"},
         {"name": "SPRING_PROFILES_ACTIVE", "value": "production"},
     ]
     worker_labels = {
         "app": "media-worker",
-        "app.kubernetes.io/part-of": "tianji",
+        "app.kubernetes.io/part-of": "zhixuetang",
         "app.kubernetes.io/version": commit[:12],
     }
     docs.append(
@@ -1412,7 +1412,7 @@ def render(settings):
                         "annotations": {
                             "sidecar.istio.io/inject": "true",
                             "sidecar.istio.io/rewriteAppHTTPProbers": "true",
-                            "instrumentation.opentelemetry.io/inject-java": "tianji-java",
+                            "instrumentation.opentelemetry.io/inject-java": "zhixuetang-java",
                             "proxy.istio.io/config": '{"holdApplicationUntilProxyStarts":true,"terminationDrainDuration":"50s"}',
                         },
                     },
@@ -1608,7 +1608,7 @@ def render(settings):
             },
         ),
     ]
-    gateway = "tianji-public"
+    gateway = "zhixuetang-public"
     hosts = [s["public"]["student_host"], s["public"]["admin_host"]]
     docs.append(
         object_(
@@ -1756,9 +1756,9 @@ def observability_config(settings):
                         {"role": "pod", "namespaces": {"names": [ns]}}
                     ],
                     "http_headers": {
-                        "X-TJ-Service": {"values": ["observability"]},
+                        "X-ZXT-Service": {"values": ["observability"]},
                         "X-Internal-Token": {
-                            "files": ["/etc/prometheus/tianji/" + group + "-token"]
+                            "files": ["/etc/prometheus/zhixuetang/" + group + "-token"]
                         },
                     },
                     "relabel_configs": [
@@ -1808,7 +1808,7 @@ def observability_config(settings):
                         "http_config": {
                             "authorization": {
                                 "type": "Bearer",
-                                "credentials_file": "/etc/alertmanager/tianji/receiver-token",
+                                "credentials_file": "/etc/alertmanager/zhixuetang/receiver-token",
                             },
                             "tls_config": {"insecure_skip_verify": False},
                         },
@@ -1820,27 +1820,27 @@ def observability_config(settings):
     rules = {
         "groups": [
             {
-                "name": "tianji-production",
+                "name": "zhixuetang-production",
                 "rules": [
                     {
-                        "record": "tianji:gateway_http_requests:rate5m",
+                        "record": "zhixuetang:gateway_http_requests:rate5m",
                         "expr": 'sum by (namespace,method,status) (rate(http_server_requests_seconds_count{namespace="'
                         + ns
                         + '",job="gateway",uri!~"/actuator.*|/readyz"}[5m]))',
                     },
                     {
-                        "record": "tianji:gateway_http_latency_p95:seconds",
+                        "record": "zhixuetang:gateway_http_latency_p95:seconds",
                         "expr": 'histogram_quantile(0.95,sum by (namespace,method,le) (rate(http_server_requests_seconds_bucket{namespace="'
                         + ns
                         + '",job="gateway",uri!~"/actuator.*|/readyz"}[5m])))',
                     },
                     {
-                        "record": "tianji:gateway_http_success:ratio5m",
-                        "expr": '(sum by (namespace) (tianji:gateway_http_requests:rate5m{status=~"2..|3.."}) or on(namespace) (0 * sum by (namespace) (tianji:gateway_http_requests:rate5m))) / sum by (namespace) (tianji:gateway_http_requests:rate5m{status=~"2..|3..|5..|429"})',
+                        "record": "zhixuetang:gateway_http_success:ratio5m",
+                        "expr": '(sum by (namespace) (zhixuetang:gateway_http_requests:rate5m{status=~"2..|3.."}) or on(namespace) (0 * sum by (namespace) (zhixuetang:gateway_http_requests:rate5m))) / sum by (namespace) (zhixuetang:gateway_http_requests:rate5m{status=~"2..|3..|5..|429"})',
                     },
                     {
-                        "alert": "TianjiPrivacyTaskFailed",
-                        "expr": 'tj_privacy_tasks_failed{namespace="' + ns + '"} > 0',
+                        "alert": "ZhixuetangPrivacyTaskFailed",
+                        "expr": 'zxt_privacy_tasks_failed{namespace="' + ns + '"} > 0',
                         "for": "5m",
                         "labels": {"severity": "warning"},
                         "annotations": {
@@ -1848,8 +1848,8 @@ def observability_config(settings):
                         },
                     },
                     {
-                        "alert": "TianjiPrivacyMetricsStale",
-                        "expr": 'time() - tj_privacy_metrics_last_success_timestamp_seconds{namespace="'
+                        "alert": "ZhixuetangPrivacyMetricsStale",
+                        "expr": 'time() - zxt_privacy_metrics_last_success_timestamp_seconds{namespace="'
                         + ns
                         + '"} > 120',
                         "for": "2m",
@@ -1859,8 +1859,8 @@ def observability_config(settings):
                         },
                     },
                     {
-                        "alert": "TianjiSmsOutcomeUnknown",
-                        "expr": 'tj_sms_unknown{namespace="' + ns + '"} > 0',
+                        "alert": "ZhixuetangSmsOutcomeUnknown",
+                        "expr": 'zxt_sms_unknown{namespace="' + ns + '"} > 0',
                         "for": "5m",
                         "labels": {"severity": "warning"},
                         "annotations": {
@@ -1868,8 +1868,8 @@ def observability_config(settings):
                         },
                     },
                     {
-                        "alert": "TianjiSmsFailed",
-                        "expr": 'tj_sms_failed{namespace="' + ns + '"} > 0',
+                        "alert": "ZhixuetangSmsFailed",
+                        "expr": 'zxt_sms_failed{namespace="' + ns + '"} > 0',
                         "for": "5m",
                         "labels": {"severity": "warning"},
                         "annotations": {
@@ -1877,8 +1877,8 @@ def observability_config(settings):
                         },
                     },
                     {
-                        "alert": "TianjiSmsMetricsStale",
-                        "expr": 'time() - tj_sms_metrics_last_success_timestamp_seconds{namespace="'
+                        "alert": "ZhixuetangSmsMetricsStale",
+                        "expr": 'time() - zxt_sms_metrics_last_success_timestamp_seconds{namespace="'
                         + ns
                         + '"} > 120',
                         "for": "2m",
@@ -1886,7 +1886,7 @@ def observability_config(settings):
                         "annotations": {"summary": "SMS state metrics are not fresh"},
                     },
                     {
-                        "alert": "TianjiMetricsTargetDown",
+                        "alert": "ZhixuetangMetricsTargetDown",
                         "expr": 'up{namespace="' + ns + '"} == 0',
                         "for": "2m",
                         "labels": {"severity": "critical"},
@@ -1895,8 +1895,8 @@ def observability_config(settings):
                         },
                     },
                     {
-                        "alert": "TianjiDeliveryBacklog",
-                        "expr": "tj_events_oldest_seconds > 120",
+                        "alert": "ZhixuetangDeliveryBacklog",
+                        "expr": "zxt_events_oldest_seconds > 120",
                         "for": "5m",
                         "labels": {"severity": "warning"},
                         "annotations": {
@@ -1904,8 +1904,8 @@ def observability_config(settings):
                         },
                     },
                     {
-                        "alert": "TianjiDeadBusinessEvents",
-                        "expr": "tj_events_dead > 0",
+                        "alert": "ZhixuetangDeadBusinessEvents",
+                        "expr": "zxt_events_dead > 0",
                         "for": "1m",
                         "labels": {"severity": "critical"},
                         "annotations": {
@@ -1913,8 +1913,8 @@ def observability_config(settings):
                         },
                     },
                     {
-                        "alert": "TianjiBackupProofMissing",
-                        "expr": 'absent(tianji_backup_last_verified_timestamp_seconds{namespace="'
+                        "alert": "ZhixuetangBackupProofMissing",
+                        "expr": 'absent(zhixuetang_backup_last_verified_timestamp_seconds{namespace="'
                         + s["namespace"]
                         + '"})',
                         "for": "30m",
@@ -1924,8 +1924,8 @@ def observability_config(settings):
                         },
                     },
                     {
-                        "alert": "TianjiBackupProofExpired",
-                        "expr": 'time() - tianji_backup_last_verified_timestamp_seconds{namespace="'
+                        "alert": "ZhixuetangBackupProofExpired",
+                        "expr": 'time() - zhixuetang_backup_last_verified_timestamp_seconds{namespace="'
                         + s["namespace"]
                         + '"} > 86400',
                         "for": "5m",
@@ -1960,7 +1960,7 @@ def observability_config(settings):
         },
         "otel-sanitize.yml": {
             "processors": {
-                "transform/tianji_redaction": {
+                "transform/zhixuetang_redaction": {
                     "error_mode": "propagate",
                     "trace_statements": [
                         {
@@ -1986,7 +1986,7 @@ def observability_config(settings):
             }
         },
         "backup-policy.yml": {
-            "policy": "tianji-managed-backup-v1",
+            "policy": "zhixuetang-managed-backup-v1",
             "pitr_days": 7,
             "daily_retention_days": 30,
             "offsite_retention_days": 30,

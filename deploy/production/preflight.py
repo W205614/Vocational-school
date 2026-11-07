@@ -56,7 +56,7 @@ def inspect(context, namespace, resources, secrets, reader=kubectl):
         "-n",
         namespace,
         "-l",
-        "app.kubernetes.io/part-of=tianji",
+        "app.kubernetes.io/part-of=zhixuetang",
         "-o",
         "json",
     )["items"]
@@ -146,7 +146,7 @@ def inspect(context, namespace, resources, secrets, reader=kubectl):
                 "json",
             )
             config = yaml.safe_load(obj["data"]["collector.yaml"])
-            transform = config["processors"]["transform/tianji_redaction"]
+            transform = config["processors"]["transform/zhixuetang_redaction"]
             observed_hash = hashlib.sha256(
                 json.dumps(transform, sort_keys=True).encode()
             ).hexdigest()
@@ -159,7 +159,7 @@ def inspect(context, namespace, resources, secrets, reader=kubectl):
                 observed_hash != contract["processor-sha256"]
                 or not pipelines
                 or any(
-                    "transform/tianji_redaction" not in v.get("processors", [])
+                    "transform/zhixuetang_redaction" not in v.get("processors", [])
                     for v in pipelines
                 )
             ):

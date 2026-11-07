@@ -39,11 +39,11 @@ class PackageProvenanceTest(unittest.TestCase):
             'build_provenance.subprocess.check_output', return_value=old + '\n'
         ), patch('build_provenance.subprocess.run') as run:
             self.assertEqual(
-                'tianji-rollback/education:before-' + 'a' * 16,
+                'zhixuetang-rollback/education:before-' + 'a' * 16,
                 retain_previous_image('education'),
             )
             self.assertEqual(
-                ['docker', 'tag', old, 'tianji-rollback/education:before-' + 'a' * 16],
+                ['docker', 'tag', old, 'zhixuetang-rollback/education:before-' + 'a' * 16],
                 run.call_args.args[0],
             )
         with patch('build_provenance.subprocess.check_output', return_value=''), patch(

@@ -1,4 +1,4 @@
-name: tianji-compact
+name: zhixuetang-compact
 services:
   mysql:
     image: mysql:8.4
@@ -61,7 +61,7 @@ services:
   rabbitmq:
     image: rabbitmq:4.1-management
     environment:
-      RABBITMQ_DEFAULT_USER: tianji
+      RABBITMQ_DEFAULT_USER: zhixuetang
       RABBITMQ_DEFAULT_PASS: ${ACCEPTANCE_MQ_PASSWORD}
     ports:
       - 127.0.0.1:24373:5672
@@ -110,7 +110,7 @@ services:
         max-file: '3'
     stop_grace_period: 90s
   app-identity:
-    image: tianji-compact/identity:local
+    image: zhixuetang-compact/identity:local
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -156,7 +156,7 @@ services:
         max-file: '3'
     stop_grace_period: 90s
   app-commerce:
-    image: tianji-compact/commerce:local
+    image: zhixuetang-compact/commerce:local
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -201,7 +201,7 @@ services:
         max-file: '3'
     stop_grace_period: 90s
   app-education:
-    image: tianji-compact/education:local
+    image: zhixuetang-compact/education:local
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -247,7 +247,7 @@ services:
         max-file: '3'
     stop_grace_period: 90s
   app-support:
-    image: tianji-compact/support:local
+    image: zhixuetang-compact/support:local
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -296,7 +296,7 @@ services:
         max-file: '3'
     stop_grace_period: 90s
   app-gateway:
-    image: tianji-compact/gateway:local
+    image: zhixuetang-compact/gateway:local
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -337,7 +337,7 @@ services:
         max-file: '3'
     stop_grace_period: 90s
   web-student:
-    image: tianji-compact/student:local
+    image: zhixuetang-compact/student:local
     environment:
       GW_UPSTREAM: app-gateway:24310
     ports:
@@ -354,7 +354,7 @@ services:
         max-file: '3'
     stop_grace_period: 90s
   web-admin:
-    image: tianji-compact/admin:local
+    image: zhixuetang-compact/admin:local
     environment:
       GW_UPSTREAM: app-gateway:24310
     ports:
@@ -439,7 +439,7 @@ services:
     ports:
       - 127.0.0.1:24592:3000
     environment:
-      GF_SECURITY_ADMIN_USER: tianji
+      GF_SECURITY_ADMIN_USER: zhixuetang
       GF_SECURITY_ADMIN_PASSWORD: ${ACCEPTANCE_GRAFANA_PASSWORD:?Existing observability
         password required}
       GF_USERS_ALLOW_SIGN_UP: 'false'

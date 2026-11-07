@@ -25,9 +25,9 @@ def main():
         raise ValueError('Unsupported gate')
     env = {
         **os.environ,
-        'TJ_RUNTIME_HOME': str(BASE),
-        'TJ_RUNTIME_PROJECT': 'tianji-final',
-        'TJ_UI_RUNTIME_HOME': str(LOCAL),
+        'ZXT_RUNTIME_HOME': str(BASE),
+        'ZXT_RUNTIME_PROJECT': 'zhixuetang-final',
+        'ZXT_UI_RUNTIME_HOME': str(LOCAL),
         'ACCEPTANCE_CONTAINER_UI': '1',
     }
     report = LOCAL / 'functional-gates.json'

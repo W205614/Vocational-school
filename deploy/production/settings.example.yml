@@ -1,11 +1,11 @@
 # This is an input contract, deliberately NOT deployable. Replace every REQUIRED
 # value and select actual protected Secret resources before rendering. No cloud
 # resource or supplier account is created by render.py.
-namespace: tianji-production
+namespace: zhixuetang-production
 commit: REQUIRED_40_CHARACTER_COMMIT
 replicas: 2
 signing:
-  active_alias: tianji
+  active_alias: zhixuetang
   verification_aliases: [] # Receiver-first overlap: explicitly list other public certificates in signing.jks.
 mfa_rotation: false # A rotation also requires the two extra identity-credentials keys described in README.
 images:
@@ -26,7 +26,7 @@ mesh:
 public:
   student_host: REQUIRED_STUDENT_DNS
   admin_host: REQUIRED_ADMIN_DNS
-  tls_secret: tianji-public-tls
+  tls_secret: zhixuetang-public-tls
   trusted_proxy_addresses: [REQUIRED_HEADLESS_INGRESS_PEER_DNS]
 managed:
   mysql: { host: REQUIRED_MYSQL_HA_DNS, port: 3306, cidrs: [REQUIRED_PRIVATE_CIDR] }
@@ -53,4 +53,4 @@ observability:
   service_account: prometheus
   collector_configmap: otel-collector
   otlp_endpoint: https://REQUIRED_OTLP_DNS
-  alert_webhook: https://REQUIRED_ONCALL_DNS/tianji
+  alert_webhook: https://REQUIRED_ONCALL_DNS/zhixuetang

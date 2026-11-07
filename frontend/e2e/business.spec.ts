@@ -35,11 +35,11 @@ test('browser purchase, real local video, discussions, exam grading and targeted
   test.skip(info.project.name !== 'student');
   test.setTimeout(180000);
   const adminContext = await browser.newContext({
-      baseURL: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501',
+      baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501',
     }),
     admin = await adminContext.newPage();
   const teacherContext = await browser.newContext({
-      baseURL: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501',
+      baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501',
     }),
     teacher = await teacherContext.newPage();
   try {
@@ -86,9 +86,9 @@ test('browser purchase, real local video, discussions, exam grading and targeted
         ).operation.result.id,
     );
     execFileSync(
-      process.env.TJ_PYTHON || 'python',
+      process.env.ZXT_PYTHON || 'python',
       [
-        process.env.TJ_MEDIA_FIXTURE_SCRIPT || '../deploy/acceptance/attach_browser_media.py',
+        process.env.ZXT_MEDIA_FIXTURE_SCRIPT || '../deploy/acceptance/attach_browser_media.py',
         String(media),
       ],
       { stdio: 'pipe' },
@@ -356,7 +356,7 @@ test('browser purchase, real local video, discussions, exam grading and targeted
       )
       .toBe('Explain reliable transactions');
     const deviceContext = await browser.newContext({
-        baseURL: process.env.TJ_STUDENT_URL || 'http://127.0.0.1:23500',
+        baseURL: process.env.ZXT_STUDENT_URL || 'http://127.0.0.1:23500',
       }),
       device = await deviceContext.newPage();
     try {
@@ -589,7 +589,7 @@ test('browser purchase, real local video, discussions, exam grading and targeted
     // A fresh device has no active-attempt cache. Refunded students still need
     // to discover and read their own graded history through the server list.
     const historyContext = await browser.newContext({
-        baseURL: process.env.TJ_STUDENT_URL || 'http://127.0.0.1:23500',
+        baseURL: process.env.ZXT_STUDENT_URL || 'http://127.0.0.1:23500',
       }),
       historyPage = await historyContext.newPage();
     try {

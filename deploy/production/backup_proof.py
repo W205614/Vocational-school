@@ -23,7 +23,7 @@ from runtime_checks import candidate
 def validate(proof, root, binding, now=None):
     now = now or dt.datetime.now(dt.timezone.utc)
     if (
-        proof.get("schema") != "tianji-managed-backup-proof-v1"
+        proof.get("schema") != "zhixuetang-managed-backup-proof-v1"
         or proof.get("status") != "VERIFIED"
         or proof.get("namespace") != binding[2]
         or proof.get("commit") != binding[0]
@@ -73,11 +73,11 @@ def publish(target, timestamp, namespace):
     descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="ascii") as stream:
         stream.write(
-            "# HELP tianji_backup_last_verified_timestamp_seconds Timestamp of the last artifact-backed managed backup verification.\n"
+            "# HELP zhixuetang_backup_last_verified_timestamp_seconds Timestamp of the last artifact-backed managed backup verification.\n"
         )
-        stream.write("# TYPE tianji_backup_last_verified_timestamp_seconds gauge\n")
+        stream.write("# TYPE zhixuetang_backup_last_verified_timestamp_seconds gauge\n")
         stream.write(
-            'tianji_backup_last_verified_timestamp_seconds{namespace="'
+            'zhixuetang_backup_last_verified_timestamp_seconds{namespace="'
             + namespace
             + '"} '
             + str(timestamp)

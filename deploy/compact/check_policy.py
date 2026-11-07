@@ -3,7 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 policy = set(
-    (ROOT / 'tj-gateway/src/main/resources/access-policy.txt')
+    (ROOT / 'zxt-gateway/src/main/resources/access-policy.txt')
     .read_text(encoding='utf8')
     .splitlines()
 )

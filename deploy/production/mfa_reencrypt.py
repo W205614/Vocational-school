@@ -9,7 +9,7 @@ import zipfile
 
 from database import DatabaseError, new_json, overwrite_private_json, private_file
 
-MAIN = "com.tianji.auth.maintenance.MfaSecretMaintenance"
+MAIN = "com.zhixuetang.auth.maintenance.MfaSecretMaintenance"
 
 
 def maintain(settings, jar, expected_host, expected_database, receipt, java="java"):
@@ -24,7 +24,7 @@ def maintain(settings, jar, expected_host, expected_database, receipt, java="jav
                 "Use a built executable artifact containing the MFA maintenance entry point"
             )
     state = {
-        "schema": "tianji-mfa-maintenance-receipt-v1",
+        "schema": "zhixuetang-mfa-maintenance-receipt-v1",
         "status": "PREPARED_NOT_APPLIED",
         "expectedHost": expected_host,
         "expectedDatabase": expected_database,

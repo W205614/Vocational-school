@@ -86,7 +86,7 @@ def backup():
             '-q',
             'list_queues',
             '-p',
-            '/tjxt',
+            '/zhixuetang',
             'name',
             'messages_ready',
             'messages_unacknowledged',

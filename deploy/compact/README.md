@@ -1,12 +1,12 @@
 # 本机合并部署与验收
 
-本手册说明本机部署、回归、备份恢复与性能工具的操作。默认运行组为 `tianji-compact`，共 11 个业务／基础设施容器和 3 个本机监控容器，使用合成演示数据与模拟支付，所有入口绑定 `127.0.0.1`。既有数据、配置及媒资保留。当前构建来源见本机 `.local/package-source.json`、`.local/images.json`，部署与各轮验证按日期和提交查阅[交付索引](reports/README.md)。外部旧生产正式导入及割接尚未验收，其他项目不在操作范围。
+本手册说明本机部署、回归、备份恢复与性能工具的操作。默认运行组为 `zhixuetang-compact`，共 11 个业务／基础设施容器和 3 个本机监控容器，使用合成演示数据与模拟支付，所有入口绑定 `127.0.0.1`。既有数据、配置及媒资保留。当前构建来源见本机 `.local/package-source.json`、`.local/images.json`，部署与各轮验证按日期和提交查阅[交付索引](reports/README.md)。外部旧生产正式导入及割接尚未验收，其他项目不在操作范围。
 
 功能与架构概览见 [项目 README](../../README.md)；当前部署、真实课程专项和商业化代码的证据范围集中在 [交付索引](reports/README.md)。
 
-本机真实教学视频的清单、三文件隔离演练、可重入全量导入及导入窗口关闭方法见[受控本地课程视频导入](LOCAL_COURSE_IMPORT.md)。视频字节与私有清单保存在 `.local`，不提交 Git；全新初始化不会自动获得本机素材。服务端使用 `ffprobe` 读取真实时长，`support` 构建时安装 FFmpeg 包，首次构建需要访问发行版软件仓库。脱离容器运行媒资模块时，需安装 `ffprobe` 并配置 PATH 或 `tj.local-storage.ffprobe-command`。
+本机真实教学视频的清单、三文件隔离演练、可重入全量导入及导入窗口关闭方法见[受控本地课程视频导入](LOCAL_COURSE_IMPORT.md)。视频字节与私有清单保存在 `.local`，不提交 Git；全新初始化不会自动获得本机素材。服务端使用 `ffprobe` 读取真实时长，`support` 构建时安装 FFmpeg 包，首次构建需要访问发行版软件仓库。脱离容器运行媒资模块时，需安装 `ffprobe` 并配置 PATH 或 `zxt.local-storage.ffprobe-command`。
 
-媒资复制与探测默认分别最多 2 路（`tj.local-storage.upload-concurrency`、`probe-concurrency`，范围 1～4），单次探测默认 30 秒（`probe-timeout-seconds`，范围 1～60）；饱和返回 429，异常释放许可。签名默认 600 秒（`signature-ttl-seconds`，范围 1～600），缩短仅用于隔离过期验证。学生页面续签保留播放状态并重新检查权益，新的计时会话直接使用媒资毫秒时长，目录的整数秒仅用于展示。这些限制用于本机资源保护，容量按实际负载测量。
+媒资复制与探测默认分别最多 2 路（`zxt.local-storage.upload-concurrency`、`probe-concurrency`，范围 1～4），单次探测默认 30 秒（`probe-timeout-seconds`，范围 1～60）；饱和返回 429，异常释放许可。签名默认 600 秒（`signature-ttl-seconds`，范围 1～600），缩短仅用于隔离过期验证。学生页面续签保留播放状态并重新检查权益，新的计时会话直接使用媒资毫秒时长，目录的整数秒仅用于展示。这些限制用于本机资源保护，容量按实际负载测量。
 
 本机自动备份已停用，不保留有效本地恢复集或镜像离线包；业务数据卷、媒资与配置继续保留。既有部署升级、备份工具和本机告警见[稳定性与运维说明](../../docs/stability-operations.md)。不要对已有业务库重复执行首次初始化。
 
@@ -65,6 +65,15 @@ Linux 构建使用当前非 root 用户的 UID/GID 创建镜像用户，匹配�
 
 升级现有库时通过 `python deploy/compact/setup.py migrate` 执行版本化增量迁移。新赛季自动创建月份记录，沿用统一的持久积分事实、榜单投影和最终快照，不为新增月份动态建表，也不要求每月运行迁移。旧月份只读，迁移不补造历史积分或奖励；运行账号仍没有建表权限。数据库触发器更新账号安全版本；改密、禁用或修改角色后，网关最长缓存 5 秒，旧会话随后失效。刷新必须携带 `audience=student` 或 `audience=admin`，会话可独立撤销。
 
+旧品牌部署需在新 JAR 启动前执行私有配置迁移，先计划后应用；新建环境无需执行：
+
+```powershell
+python deploy/compact/brand_migration.py --home deploy/compact
+python deploy/compact/brand_migration.py --home deploy/compact --apply
+```
+
+确认计划目标是实际部署目录；工具保留原 Compose 项目、卷、数据库、密钥及媒资路径，不把已有资源重命名。原配置保存在该部署受保护的 `.local/brand-migration/<UTC批次>/`，故障时保留现场重新核对；完整顺序及持久协议兼容边界见[已有部署升级](../../docs/stability-operations.md#升级已有部署)。
+
 通用受控升级要求先完成停写备份、提交源码及迁移，再于启动新版应用前运行下列配置补全。当前备份保持停用，`upgrade_existing.py deploy` 要求有效完整备份；单次维护记录按日期查阅[本机升级说明](../../docs/stability-operations.md#升级已有部署)。
 
 ```powershell
@@ -75,7 +84,7 @@ python deploy/compact/client_contexts.py
 
 部署配置升级还会为既有 user 模块补入持久私有导出目录，为 media 模块追加 `/trial-content/**` 的签名访问路径，保留已有自定义配置。私有目录权限设置与全新部署一致。
 
-操作独立副本时先设置对应 `TJ_COMPACT_HOME`、`TJ_COMPACT_PROJECT` 和 `TJ_COMPACT_PORT_OFFSET`，确认同步目标属于该副本；默认命令目标为 `deploy/compact`。配置同步后重新绑定最终配置指纹及运行镜像，不把同步前指纹当作新版部署证据。
+操作独立副本时先设置对应 `ZXT_COMPACT_HOME`、`ZXT_COMPACT_PROJECT` 和 `ZXT_COMPACT_PORT_OFFSET`，确认同步目标属于该副本；默认命令目标为 `deploy/compact`。配置同步后重新绑定最终配置指纹及运行镜像，不把同步前指纹当作新版部署证据。
 
 单批启动可用 `setup.py up --group identity`，随后 commerce、education、support、gateway。所有合并组件都应通过验收后才允许历史入口切换。
 
@@ -83,10 +92,10 @@ python deploy/compact/client_contexts.py
 
 ```powershell
 # 查看容器状态
-docker compose -p tianji-compact --project-directory deploy/compact -f deploy/compact/.local/compose.runtime.yaml --env-file deploy/compact/.env ps
+docker compose -p zhixuetang-compact --project-directory deploy/compact -f deploy/compact/.local/compose.runtime.yaml --env-file deploy/compact/.env ps
 
 # 暂停（保留数据）
-docker compose -p tianji-compact --project-directory deploy/compact -f deploy/compact/.local/compose.runtime.yaml --env-file deploy/compact/.env stop
+docker compose -p zhixuetang-compact --project-directory deploy/compact -f deploy/compact/.local/compose.runtime.yaml --env-file deploy/compact/.env stop
 
 # 恢复启动
 python deploy/compact/setup.py up
@@ -120,19 +129,19 @@ Start-Sleep -Seconds 32
 cd frontend
 npx playwright install chromium firefox webkit
 cd ..
-$env:TJ_BROWSER_ENGINE='chromium'
+$env:ZXT_BROWSER_ENGINE='chromium'
 python deploy/compact/run_browser.py
-$env:TJ_BROWSER_ENGINE='firefox'
+$env:ZXT_BROWSER_ENGINE='firefox'
 python deploy/compact/run_browser.py
-$env:TJ_BROWSER_ENGINE='webkit'
+$env:ZXT_BROWSER_ENGINE='webkit'
 python deploy/compact/run_browser.py
-$env:TJ_BROWSER_ENGINE='chromium'
+$env:ZXT_BROWSER_ENGINE='chromium'
 python deploy/compact/audit_smoke.py
 ```
 
 数据库测试仅初始化 `acceptance_*` 专用库；完整后端入口还串行执行真实套接字与模块准入测试，要求指定用例全部执行且没有跳过，失败日志按次保留。普通浏览器每次新建明确标识的合成夹具并重建搜索投影；验证游客选课及登录回跳、购买、媒资、周计划、签到、积分、笔记问答、考试草稿冲突、评分、退款和退款后的考试历史。高级错题、历史榜展示、成就和奖励链路使用独立夹具，仅在明确隔离副本或临时 CI 启用。失效权益保留本人历史读取，页面解释原因；开始考试、保存草稿及收费视频继续受权益限制。管理订单分别显示课程快照和学员，回归同时核对接口字段与表格。管理端新增按模块查询的操作审计；教师待评分列表有分页及课程、学生筛选。异步操作关联操作记录，`ACCEPTED` 表示持久受理，完成结果查看操作状态。
 
-完整、核心和传输清单统一在 `deploy/acceptance/test_suites.py` 维护。`--suite` 与显式 `--tests` 互斥；无参数仍仅运行原 `tj-common` 两项，显式 `--modules/--tests` 保持兼容。真实支付与短信测试仍需分别显式设置 `TJ_REAL_PAYMENT_TESTS=true`、`TJ_REAL_SMS_TESTS=true`，本轮未启用。
+完整、核心和传输清单统一在 `deploy/acceptance/test_suites.py` 维护。`--suite` 与显式 `--tests` 互斥；无参数仍仅运行原 `zxt-common` 两项，显式 `--modules/--tests` 保持兼容。真实支付与短信测试仍需分别显式设置 `ZXT_REAL_PAYMENT_TESTS=true`、`ZXT_REAL_SMS_TESTS=true`，本轮未启用。
 
 重复浏览器运行会累积业务数据。结算返回全部可用券，展示名称、规则及本人券的实际到期时间；最多选择 6 张参与方案计算，也可以不用券。持券超过 6 张时提示选券，显式无券仍可购买，优惠计算超时或不可用时显示原因提示。客户端限制选择数量，服务端再次校验归属及最多 6 张的边界，不能把重复验收累积的券删除后宣称解决问题。
 
@@ -149,7 +158,7 @@ CI 的 `backend`、`frontend`、`compact-browser` 分别验证后端与部署工
 ```powershell
 python deploy/compact/backup.py
 python deploy/final/final_backup.py --verify <完整备份目录>
-python deploy/compact/restore.py <完整备份目录> --home <新的空目录> --project tianji-recovery-demo --offset 1000
+python deploy/compact/restore.py <完整备份目录> --home <新的空目录> --project zhixuetang-recovery-demo --offset 1000
 # 自动演练、保存验收结果，并恢复原来运行的服务：
 python deploy/compact/rehearse_recovery.py <完整备份目录> --pause-source
 # 单独验证非空 Redis 的二进制、多种类型、TTL 及覆盖拒绝：
@@ -211,7 +220,7 @@ python deploy/compact/load_test.py --users 50 --seconds 60
 
 次月 2 日零点后核对生产事件和消费回执再冻结榜单；依赖异常或未完成事件会阻断结算，冻结后迟到积分进入核对，不自动改写名次。奖励默认关闭，仅允许配置未开始的赛季，启用名次区间不重叠，开季后锁定。发券遵守库存、个人限领、发放期及有效期，跨服务失败持久记录并允许管理员重试。旧月份仅保留只读历史，不补造积分或历史奖励。
 
-详细使用规则和证据边界见 [学习体验说明](../../docs/learning-experience.md)。公开截图放在 `reports/assets/20261016/`，均于2026-10-16从生产源码`8dcf8e7d44c6048318ad1e306e1425c8fd40fb70`对应的实际8dc主部署重新捕获，逐张视觉与隐私检查并在复制后核对SHA-256；不含身份、账号、手机号、答卷答案或敏感日志：
+详细使用规则和证据边界见 [学习体验说明](../../docs/learning-experience.md)，当前品牌界面入口见[项目 README](../../README.md#界面预览)。以下历史截图放在 `reports/assets/20261016/`，均于2026-10-16从生产源码`8dcf8e7d44c6048318ad1e306e1425c8fd40fb70`对应的实际8dc主部署重新捕获，逐张视觉与隐私检查并在复制后核对SHA-256；不含身份、账号、手机号、答卷答案或敏感日志：
 
 - [桌面游客门户](reports/assets/20261016/portal-1440.png)
 - [手机游客门户](reports/assets/20261016/portal-390.png)
@@ -223,12 +232,12 @@ python deploy/compact/load_test.py --users 50 --seconds 60
 以下是具备有效完整备份时的隔离升级演练：先完成停写备份及校验，提交生产源码并构建七个应用／网页镜像，再将备份恢复到独立副本，核对原始内容后运行增量迁移和新版本验收。当前备份停用，本轮不创建恢复副本：
 
 ```powershell
-python deploy/compact/restore.py <完整备份目录> --home .local/upgrade-rehearsal-<唯一标识> --project tianji-recovery-upgrade-<唯一标识> --offset 1000 --upgrade-from deploy/compact
+python deploy/compact/restore.py <完整备份目录> --home .local/upgrade-rehearsal-<唯一标识> --project zhixuetang-recovery-upgrade-<唯一标识> --offset 1000 --upgrade-from deploy/compact
 ```
 
 目标目录必须为空且位于源部署目录及备份目录之外。工具验证新镜像的提交、七个镜像标识和本地源码关系；原始恢复证据与升级迁移证据分别记录；新版启动前同步缺失 Feign context 并保留原配置备份，失败保留现场。演练不会更新主部署。需要释放资源时只暂停本项目，并在演练结束后恢复原先运行的服务。
 
-高级激励回归仅允许显式的隔离副本（`TJ_MOTIVATION_FIXTURE=1` 且项目名不是 `tianji-compact`）或临时 GitHub Actions 环境，覆盖真实考试、学习事件、发券及回执。历史榜展示夹具与待发事件重放会明确标为合成数据，自然月结算另由可控时钟数据库测试验证。
+高级激励回归仅允许显式的隔离副本（`ZXT_MOTIVATION_FIXTURE=1` 且项目名不是 `zhixuetang-compact`）或临时 GitHub Actions 环境，覆盖真实考试、学习事件、发券及回执。历史榜展示夹具与待发事件重放会明确标为合成数据，自然月结算另由可控时钟数据库测试验证。
 
 ## 历史部署记录
 

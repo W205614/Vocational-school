@@ -56,7 +56,7 @@ def retain_previous_image(alias):
         'admin',
     }:
         raise ValueError('Only compact application images may be retained')
-    image = 'tianji-compact/' + alias + ':local'
+    image = 'zhixuetang-compact/' + alias + ':local'
     ids = subprocess.check_output(
         [
             'docker',
@@ -74,7 +74,7 @@ def retain_previous_image(alias):
         return None
     if len(ids) != 1 or not re.fullmatch(r'sha256:[0-9a-f]{64}', ids[0]):
         raise RuntimeError('Unexpected previous image identity')
-    retained = 'tianji-rollback/' + alias + ':before-' + ids[0].split(':')[1][:16]
+    retained = 'zhixuetang-rollback/' + alias + ':before-' + ids[0].split(':')[1][:16]
     subprocess.run(
         ['docker', 'tag', ids[0], retained], check=True, stdout=subprocess.DEVNULL
     )

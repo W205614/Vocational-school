@@ -8,6 +8,7 @@ import { useOperations } from '../../../packages/shared/src/operations';
 import { get } from '../../../packages/shared/src/client';
 import { useTask, type Row } from '../../../packages/shared/src/ui';
 import Status from '../../../packages/shared/src/Status.vue';
+import BrandLogo from '../../../packages/shared/src/BrandLogo.vue';
 const router = useRouter(),
   route = useRoute(),
   session = useSession(),
@@ -62,11 +63,7 @@ onMounted(welcome);
     <div class="student-shell">
       <header class="student-header">
         <div class="header-inner">
-          <RouterLink to="/" class="brand"
-            ><img src="/brand-logo.png" alt="天机学堂" /><span
-              >天机学堂<small>TIANJI ONLINE SCHOOL</small></span
-            ></RouterLink
-          >
+          <RouterLink to="/" class="brand"><BrandLogo /></RouterLink>
           <nav class="primary-nav">
             <RouterLink to="/" exact-active-class="active">课程中心</RouterLink
             ><RouterLink to="/learning" active-class="active">学习中心</RouterLink>
@@ -114,7 +111,7 @@ onMounted(welcome);
         />
       </main>
       <footer class="student-footer">
-        <strong>天机学堂</strong><span>学好一门课，完成一个目标</span
+        <strong>职学堂</strong><span>学好一门课，完成一个目标</span
         ><RouterLink to="/learning">继续学习 →</RouterLink>
       </footer>
     </div></el-config-provider

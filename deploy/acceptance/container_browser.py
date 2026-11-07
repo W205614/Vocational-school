@@ -21,7 +21,7 @@ def main():
                     '--name',
                     'vocational-acceptance-web-probe-' + app,
                     '--label',
-                    'com.tianji.acceptance.probe=true',
+                    'com.zhixuetang.acceptance.probe=true',
                     '--network',
                     'vocational-acceptance_default',
                     '--add-host',

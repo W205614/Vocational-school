@@ -1,7 +1,7 @@
 {
-  "schema": "tianji-runtime-checks-v1",
+  "schema": "zhixuetang-runtime-checks-v1",
   "suite": "identity_mfa",
-  "namespace": "tianji-production",
+  "namespace": "zhixuetang-production",
   "environment": "isolated-production-candidate",
   "test_identity": "REPLACE_WITH_ENROLLED_SYNTHETIC_ADMIN",
   "base_url": "https://REPLACE_WITH_ADMIN_HOST",

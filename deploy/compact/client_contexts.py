@@ -109,7 +109,7 @@ if __name__ == '__main__':
             synchronize(
                 LOCAL,
                 MODULES,
-                contexts(ROOT.glob('tj-*/**/src/main/java/**/*Client.java')),
+                contexts(ROOT.glob('zxt-*/**/src/main/java/**/*Client.java')),
             )
         )
     )

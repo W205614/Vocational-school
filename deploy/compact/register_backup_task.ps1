@@ -1,15 +1,19 @@
 param(
     [string]$HomeDirectory = $PSScriptRoot,
-    [string]$Project = 'tianji-compact',
+    [string]$Project = '',
     [int]$PortOffset = 0,
     [string]$PythonPath = (Get-Command python -ErrorAction Stop).Source
 )
 $ErrorActionPreference = 'Stop'
 $resolvedHome = (Resolve-Path -LiteralPath $HomeDirectory).Path
+$Project = & $PythonPath -c 'import sys; sys.path.insert(0,sys.argv[1]); from runtime_compose import resolve_project; print(resolve_project(sys.argv[2],sys.argv[3] or None))' $PSScriptRoot $resolvedHome $Project
+if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve deployment project identity' }
 if ($Project -notmatch '^[a-z][a-z0-9-]{2,40}$') { throw 'Invalid project name' }
 if (-not ((Test-Path -LiteralPath (Join-Path $resolvedHome '.local/compose.runtime.yaml')) -or (Test-Path -LiteralPath (Join-Path $resolvedHome 'compose.yaml')))) { throw 'Existing deployment required' }
 if ((Get-TimeZone).Id -ne 'China Standard Time') { throw 'Task host timezone must be China Standard Time (Asia/Shanghai)' }
-$taskName = 'Tianji-Backup-' + $Project
+$taskName = 'Zhixuetang-Backup-' + $Project
+$legacyTaskName = 'Tianji-Backup-' + $Project
+if (Get-ScheduledTask -TaskName $legacyTaskName -ErrorAction SilentlyContinue) { $taskName = $legacyTaskName }
 $resolvedPython = (Resolve-Path -LiteralPath $PythonPath).Path
 $windowlessPython = Join-Path (Split-Path -Parent $resolvedPython) 'pythonw.exe'
 if (-not (Test-Path -LiteralPath $windowlessPython -PathType Leaf)) {

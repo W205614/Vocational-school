@@ -49,7 +49,7 @@ def main():
         '-Dmaven.repo.local='
         + env.get('MAVEN_LOCAL_REPO', 'E:/download/apache-maven-3.9.4/mvn_repo'),
         '-pl',
-        'tj-exam',
+        'zxt-exam',
         '-am',
         '-Dtest=' + ','.join(tests),
         '-Dsurefire.failIfNoSpecifiedTests=false',

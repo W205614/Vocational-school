@@ -23,7 +23,7 @@ def parse_arguments(arguments=None):
 
         args.tests = ','.join(SUITES[args.suite])
     args.tests = args.tests or 'PageQueryTest,ReliabilityDatabaseTest'
-    args.modules = args.modules or ('all' if args.suite else 'tj-common')
+    args.modules = args.modules or ('all' if args.suite else 'zxt-common')
     return args
 
 
@@ -32,7 +32,7 @@ def main():
     LOCAL.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     for line in (
-        (Path(os.environ.get('TJ_ENV_FILE', str(BASE / '.env'))))
+        (Path(os.environ.get('ZXT_ENV_FILE', str(BASE / '.env'))))
         .read_text()
         .splitlines()
     ):
@@ -41,7 +41,7 @@ def main():
             env[key] = value
     if 'JAVA_HOME' not in env:
         env['JAVA_HOME'] = 'E:/Program Files/jdk'
-    env['TJ_INTERNAL_TOKEN'] = env['ACCEPTANCE_INTERNAL_TOKEN']
+    env['ZXT_INTERNAL_TOKEN'] = env['ACCEPTANCE_INTERNAL_TOKEN']
     env.setdefault('ACCEPTANCE_ES_URL', 'http://127.0.0.1:23920')
     env.setdefault('ACCEPTANCE_REDIS_PORT', '23379')
     env.setdefault(

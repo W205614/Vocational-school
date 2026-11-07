@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 
 def fixture_module():
     setup = types.ModuleType('setup')
-    setup.PROJECT = 'tianji-compact'
+    setup.PROJECT = 'zhixuetang-compact'
     setup.PORTS = {'gateway': 25310}
     setup.mysql = Mock()
     spec = importlib.util.spec_from_file_location(
@@ -52,15 +52,16 @@ class MotivationFixtureTest(unittest.TestCase):
         self,
     ):
         cases = [
-            ('tianji-compact', '0', 'false', False),
+            ('zhixuetang-compact', '0', 'false', False),
+            ('zhixuetang-compact', '1', 'false', False),
             ('tianji-compact', '1', 'false', False),
             ('motivation-clone', '0', 'false', False),
             ('motivation-clone', '1', 'false', True),
-            ('tianji-compact', '0', 'true', True),
+            ('zhixuetang-compact', '0', 'true', True),
         ]
         for project, flag, ci, allowed in cases:
             with self.subTest(project=project, flag=flag, ci=ci), patch.dict(
-                os.environ, {'TJ_MOTIVATION_FIXTURE': flag, 'GITHUB_ACTIONS': ci}
+                os.environ, {'ZXT_MOTIVATION_FIXTURE': flag, 'GITHUB_ACTIONS': ci}
             ):
                 self.setup.PROJECT = project
                 if allowed:

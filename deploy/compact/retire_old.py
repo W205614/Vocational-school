@@ -1,5 +1,7 @@
 """Retire explicitly named legacy/test containers without deleting recovery data."""
 
+from runtime_compose import PRIMARY_PROJECTS
+
 import argparse, datetime, json, subprocess, sys
 import yaml
 from pathlib import Path
@@ -25,18 +27,20 @@ def main():
     parser.add_argument('--compact-backup', type=Path, required=True)
     parser.add_argument('--projects', nargs='+', required=True)
     args = parser.parse_args()
-    if PROJECT != 'tianji-compact':
+    if PROJECT not in PRIMARY_PROJECTS:
         raise RuntimeError('Retirement requires the final compact project')
     projects = set(args.projects)
     if not projects or any(
         p
         not in {
-            'tianji-final',
-            'tianji-desktop',
+            'zhixuetang-final',
+            'zhixuetang-desktop',
             'vocational-acceptance',
-            'tianji-acceptance',
+            'zhixuetang-acceptance',
         }
-        and not p.startswith(('tianji-recovery-', 'tianji-redis-proof-', 'tianji-opt-'))
+        and not p.startswith(
+            ('zhixuetang-recovery-', 'zhixuetang-redis-proof-', 'zhixuetang-opt-')
+        )
         for p in projects
     ):
         raise RuntimeError(

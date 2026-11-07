@@ -1,6 +1,6 @@
 {
   "uid": "tianji-reliability",
-  "title": "Tianji Reliability",
+  "title": "Zhixuetang Reliability",
   "schemaVersion": 39,
   "refresh": "30s",
   "time": { "from": "now-6h", "to": "now" },
@@ -19,7 +19,7 @@
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 0, "w": 12, "h": 7 },
       "datasource": { "type": "prometheus", "uid": "compact-prometheus" },
-      "targets": [{ "expr": "tj_events_oldest_seconds", "legendFormat": "{{job}}" }]
+      "targets": [{ "expr": "zxt_events_oldest_seconds", "legendFormat": "{{job}}" }]
     },
     {
       "id": 3,
@@ -29,7 +29,7 @@
       "datasource": { "type": "prometheus", "uid": "compact-prometheus" },
       "targets": [
         {
-          "expr": "{__name__=~\"tj_events_dead|tj_consumer_failures|tj_operations_retry_exhausted|tj_payment_reconciliation_dead|tj_payment_anomalies|tj_seasons_blocked\"}",
+          "expr": "{__name__=~\"zxt_events_dead|zxt_consumer_failures|zxt_operations_retry_exhausted|zxt_payment_reconciliation_dead|zxt_payment_anomalies|zxt_seasons_blocked\"}",
           "legendFormat": "{{__name__}} {{job}}"
         }
       ]
@@ -40,7 +40,7 @@
       "type": "stat",
       "gridPos": { "x": 12, "y": 7, "w": 12, "h": 7 },
       "datasource": { "type": "prometheus", "uid": "compact-prometheus" },
-      "targets": [{ "expr": "(time() - tj_backup_last_success_timestamp_seconds) / 3600" }]
+      "targets": [{ "expr": "(time() - zxt_backup_last_success_timestamp_seconds) / 3600" }]
     },
     {
       "id": 5,
@@ -48,7 +48,7 @@
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 14, "w": 12, "h": 7 },
       "datasource": { "type": "prometheus", "uid": "compact-prometheus" },
-      "targets": [{ "expr": "tj_operations_oldest_seconds", "legendFormat": "{{job}}" }]
+      "targets": [{ "expr": "zxt_operations_oldest_seconds", "legendFormat": "{{job}}" }]
     },
     {
       "id": 6,
@@ -58,7 +58,7 @@
       "datasource": { "type": "prometheus", "uid": "compact-prometheus" },
       "targets": [
         {
-          "expr": "time() - tj_reliability_metrics_last_success_timestamp_seconds",
+          "expr": "time() - zxt_reliability_metrics_last_success_timestamp_seconds",
           "legendFormat": "{{job}}"
         }
       ]

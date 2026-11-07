@@ -11,21 +11,21 @@ class CandidateBudgetTest(unittest.TestCase):
             profile(
                 12,
                 {
-                    'TJ_PERF_POOL_SIZE': '8',
-                    'TJ_PERF_OPERATION_THREADS': '2',
-                    'TJ_PERF_INTERVAL_MS': '250',
+                    'ZXT_PERF_POOL_SIZE': '8',
+                    'ZXT_PERF_OPERATION_THREADS': '2',
+                    'ZXT_PERF_INTERVAL_MS': '250',
                 },
             )['databaseConnectionCeiling'],
         )
         for value in (
-            {'TJ_PERF_POOL_SIZE': '32'},
-            {'TJ_PERF_OPERATION_THREADS': '20'},
-            {'TJ_PERF_INTERVAL_MS': '1'},
+            {'ZXT_PERF_POOL_SIZE': '32'},
+            {'ZXT_PERF_OPERATION_THREADS': '20'},
+            {'ZXT_PERF_INTERVAL_MS': '1'},
         ):
             with self.assertRaises(ValueError):
                 profile(12, value)
         with self.assertRaises(ValueError):
-            profile(19, {'TJ_PERF_POOL_SIZE': '8'})
+            profile(19, {'ZXT_PERF_POOL_SIZE': '8'})
 
 
 if __name__ == '__main__':

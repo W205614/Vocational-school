@@ -1,0 +1,33 @@
+package com.zhixuetang.learning.controller;
+
+import com.zhixuetang.learning.domain.vo.SignRecordVO;
+import com.zhixuetang.learning.domain.vo.SignResultVO;
+import com.zhixuetang.learning.service.ISignRecordService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@Tag(name = "签到相关接口")
+@RestController
+@RequestMapping("/sign-records")
+@RequiredArgsConstructor
+public class SignRecordController {
+
+    private final ISignRecordService recordService;
+
+    @PostMapping
+    @Operation(summary = "签到功能接口")
+    public SignResultVO addSignRecords() {
+        return recordService.addSignRecords();
+    }
+
+    @Operation(summary = "查询签到记录")
+    @GetMapping
+    public SignRecordVO querySignRecords() {
+        return recordService.querySignRecords();
+    }
+}

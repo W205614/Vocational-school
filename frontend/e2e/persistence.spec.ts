@@ -83,7 +83,7 @@ test('claimed coupons appear in the default own list and survive refresh', async
 }, info) => {
   test.skip(info.project.name !== 'student');
   const adminContext = await browser.newContext({
-      baseURL: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501',
+      baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501',
     }),
     admin = await adminContext.newPage();
   const name = 'Coupon ' + crypto.randomUUID().slice(0, 8);

@@ -1,6 +1,8 @@
-# 天机学堂 · 职业教育在线学习平台
+# 职学堂 · 职业教育在线学习平台
 
-天机学堂是基于 Java 21 / Spring Boot 4 和 Vue 3 的在线学习平台，提供学生门户、教师与管理工作台，串联 **选课 → 购买 → 学习 → 考试 → 错题复习 → 积分激励**。
+职学堂是基于 Java 21 / Spring Boot 4 和 Vue 3 的在线学习平台，提供学生门户、教师与管理工作台，串联 **选课 → 购买 → 学习 → 考试 → 错题复习 → 积分激励**。
+
+当前品牌为 **职学堂 / Zhixuetang**，业务模块使用 `zxt-` 前缀和 `com.zhixuetang` 包名。历史交付记录保留当时的名称、素材来源、截图及验证范围。
 
 适合本地体验在线教育业务、学习 Java 多模块架构与前后端协作。默认部署使用合成演示数据，支付与短信为本地模拟。
 
@@ -62,7 +64,7 @@ python deploy/compact/prepare_search.py
 python deploy/compact/rebuild_search.py
 ```
 
-不需要私有历史 JAR、旧数据库备份或真实支付密钥。构建脚本要求生产源码已提交；首次体验直接使用克隆后的代码即可。默认 Compose 项目名为 `tianji-compact`，包含 11 个业务／基础设施容器和 3 个本机监控容器。
+不需要私有历史 JAR、旧数据库备份或真实支付密钥。构建脚本要求生产源码已提交；首次体验直接使用克隆后的代码即可。默认 Compose 项目名为 `zhixuetang-compact`，包含 11 个业务／基础设施容器和 3 个本机监控容器。
 
 ## 首次登录与体验
 
@@ -71,7 +73,7 @@ python deploy/compact/rebuild_search.py
 | 学生门户         | [http://127.0.0.1:24500/](http://127.0.0.1:24500/)               | 游客可浏览；学生登录后购买、学习                                                         |
 | 教师与管理工作台 | [http://127.0.0.1:24501/](http://127.0.0.1:24501/)               | 教师、管理员                                                                             |
 | API 网关         | [http://127.0.0.1:24310/api/v2/](http://127.0.0.1:24310/api/v2/) | 接口入口，非网页首页                                                                     |
-| 监控面板         | [http://127.0.0.1:24592/](http://127.0.0.1:24592/)               | Grafana 用户 `tianji`，密码在本机 `deploy/compact/.env` 的 `ACCEPTANCE_GRAFANA_PASSWORD` |
+| 监控面板         | [http://127.0.0.1:24592/](http://127.0.0.1:24592/)               | Grafana 用户 `zhixuetang`，密码在本机 `deploy/compact/.env` 的 `ACCEPTANCE_GRAFANA_PASSWORD` |
 | 本机告警         | [http://127.0.0.1:24591/](http://127.0.0.1:24591/)               | Alertmanager，无外部通知                                                                 |
 
 初始化后，在本机查看登录信息：
@@ -96,9 +98,9 @@ Get-Content deploy/compact/.local/accounts.json
 | 想做什么                     | 从哪里开始                                                                                                            |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | 改学生页面、教师或管理员页面 | [学生端](frontend/apps/student/)、[管理端](frontend/apps/admin/)；共用请求和组件在[共享包](frontend/packages/shared/) |
-| 改学习进度、课程或订单规则   | [学习](tj-learning/)、[课程](tj-course/)、[交易](tj-trade/)                                                           |
-| 查请求入口或跨模块调用契约   | [网关](tj-gateway/)、[调用契约](tj-api/)                                                                              |
-| 查业务模块如何组合运行       | [组合应用](tj-compact/)；学习模块由 [education](tj-compact/education/) 装配                                           |
+| 改学习进度、课程或订单规则   | [学习](zxt-learning/)、[课程](zxt-course/)、[交易](zxt-trade/)                                                           |
+| 查请求入口或跨模块调用契约   | [网关](zxt-gateway/)、[调用契约](zxt-api/)                                                                              |
+| 查业务模块如何组合运行       | [组合应用](zxt-compact/)；学习模块由 [education](zxt-compact/education/) 装配                                           |
 | 部署或排障                   | [本机部署手册](deploy/compact/README.md)、[运维工具索引](deploy/compact/TOOLS.md)                                     |
 
 首次读代码可跟着[视频进度保存路径](docs/project-structure.md#视频进度如何保存)，从学生页面走到数据库和测试。
@@ -114,22 +116,6 @@ Get-Content deploy/compact/.local/accounts.json
 
 ## 界面预览
 
-以下为 2026-10-16 本地演示部署截图，使用合成数据；门户中的功能片段标注为“界面示例”。
+完成本地部署后，可在[学生门户](http://127.0.0.1:24500/)查看选课与学习页面，在[管理工作台](http://127.0.0.1:24501/)查看教学与管理页面。
 
-**学生门户 · 桌面**
-
-![学生门户桌面效果](deploy/compact/reports/assets/20261016/portal-1440.png)
-
-**管理工作台 · 赛季与奖励**
-
-![管理端赛季与奖励](deploy/compact/reports/assets/20261016/season-admin-1440.png)
-
-<details>
-<summary>查看移动端：课程门户与积分签到</summary>
-
-<p>
-  <img src="deploy/compact/reports/assets/20261016/portal-390.png" alt="移动端课程门户" width="300">
-  <img src="deploy/compact/reports/assets/20261016/points-calendar-390.png" alt="移动端积分与签到日历" width="300">
-</p>
-
-</details>
+[2026-10-16 界面截图](deploy/compact/reports/assets/20261016/)作为历史记录保留，包含当时的品牌与合成演示数据；不代表本轮页面或验证结果。

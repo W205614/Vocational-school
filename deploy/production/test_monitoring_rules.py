@@ -28,60 +28,60 @@ class MonitoringRulesTest(unittest.TestCase):
         recordings = {
             value["record"]: value["expr"] for value in rules if "record" in value
         }
-        requests = recordings["tianji:gateway_http_requests:rate5m"]
+        requests = recordings["zhixuetang:gateway_http_requests:rate5m"]
         self.assertIn("http_server_requests_seconds_count", requests)
         self.assertIn('job="gateway"', requests)
-        self.assertIn('namespace="tianji-production"', requests)
+        self.assertIn('namespace="zhixuetang-production"', requests)
         self.assertIn('uri!~"/actuator.*|/readyz"', requests)
         self.assertIn(
             "http_server_requests_seconds_bucket",
-            recordings["tianji:gateway_http_latency_p95:seconds"],
+            recordings["zhixuetang:gateway_http_latency_p95:seconds"],
         )
-        ratio = recordings["tianji:gateway_http_success:ratio5m"]
+        ratio = recordings["zhixuetang:gateway_http_success:ratio5m"]
         self.assertIn('status=~"2..|3..|5..|429"', ratio)
         self.assertIn("or on(namespace)", ratio)
 
     def test_sms_failure_unknown_and_staleness_alerts_are_namespace_scoped(self):
         settings = fixture()
-        settings["namespace"] = "tianji-monitoring-candidate"
+        settings["namespace"] = "zhixuetang-monitoring-candidate"
         rules = render.observability_config(settings)["alerts.yml"]["groups"][0][
             "rules"
         ]
         alerts = {value["alert"]: value for value in rules if "alert" in value}
         for name, metric, duration in (
-            ("TianjiSmsOutcomeUnknown", "tj_sms_unknown", "5m"),
-            ("TianjiSmsFailed", "tj_sms_failed", "5m"),
+            ("ZhixuetangSmsOutcomeUnknown", "zxt_sms_unknown", "5m"),
+            ("ZhixuetangSmsFailed", "zxt_sms_failed", "5m"),
             (
-                "TianjiSmsMetricsStale",
-                "tj_sms_metrics_last_success_timestamp_seconds",
+                "ZhixuetangSmsMetricsStale",
+                "zxt_sms_metrics_last_success_timestamp_seconds",
                 "2m",
             ),
-            ("TianjiPrivacyTaskFailed", "tj_privacy_tasks_failed", "5m"),
+            ("ZhixuetangPrivacyTaskFailed", "zxt_privacy_tasks_failed", "5m"),
             (
-                "TianjiPrivacyMetricsStale",
-                "tj_privacy_metrics_last_success_timestamp_seconds",
+                "ZhixuetangPrivacyMetricsStale",
+                "zxt_privacy_metrics_last_success_timestamp_seconds",
                 "2m",
             ),
         ):
             with self.subTest(alert=name):
                 self.assertIn(
-                    metric + '{namespace="tianji-monitoring-candidate"}',
+                    metric + '{namespace="zhixuetang-monitoring-candidate"}',
                     alerts[name]["expr"],
                 )
                 self.assertEqual(duration, alerts[name]["for"])
 
     @unittest.skipUnless(
-        os.environ.get("TJ_PROMTOOL_IMAGE"),
+        os.environ.get("ZXT_PROMTOOL_IMAGE"),
         "requires an explicitly selected local immutable Prometheus image",
     )
     def test_native_promtool_parses_and_evaluates_actual_rendered_rules(self):
-        image = os.environ["TJ_PROMTOOL_IMAGE"]
+        image = os.environ["ZXT_PROMTOOL_IMAGE"]
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", image):
             raise ValueError(
                 "Select an existing immutable local image ID; no pull or daily container is allowed"
             )
         rules = render.observability_config(fixture())["alerts.yml"]
-        with tempfile.TemporaryDirectory(prefix="tianji-promtool-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="zhixuetang-promtool-") as temporary:
             directory = Path(temporary)
             (directory / "alerts.yml").write_text(
                 yaml.safe_dump(rules, sort_keys=False), encoding="utf8"

@@ -5,13 +5,13 @@ import runpy
 import sys
 from setup import configure_acceptance, BASE, ACC, OFFSET
 
-configure_acceptance()
+acceptance = configure_acceptance()
 os.environ.update(
-    TJ_ENV_FILE=str(BASE / '.env'),
+    ZXT_ENV_FILE=str(BASE / '.env'),
     ACCEPTANCE_DB_PORT=str(24316 + OFFSET),
     ACCEPTANCE_REDIS_PORT=str(24379 + OFFSET),
     ACCEPTANCE_MQ_PORT=str(24373 + OFFSET),
-    ACCEPTANCE_MQ_USERNAME='tianji',
+    ACCEPTANCE_MQ_USERNAME=acceptance.local_secrets()['ACCEPTANCE_MQ_USERNAME'],
     ACCEPTANCE_ES_URL='http://127.0.0.1:' + str(24920 + OFFSET),
 )
 runpy.run_path(str(ACC / 'initialize_test_schemas.py'), run_name='__main__')

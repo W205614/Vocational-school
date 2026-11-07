@@ -1,8 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const engine = process.env.TJ_BROWSER_ENGINE || 'chromium';
+const engine = process.env.ZXT_BROWSER_ENGINE || 'chromium';
 if (!['chromium', 'firefox', 'webkit'].includes(engine))
-  throw new Error('TJ_BROWSER_ENGINE must be chromium, firefox or webkit');
+  throw new Error('ZXT_BROWSER_ENGINE must be chromium, firefox or webkit');
 const browserName = engine as 'chromium' | 'firefox' | 'webkit';
 const desktop = {
   chromium: 'Desktop Chrome',
@@ -38,21 +38,21 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'student', use: { baseURL: process.env.TJ_STUDENT_URL || 'http://127.0.0.1:23500' } },
-    { name: 'admin', use: { baseURL: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501' } },
+    { name: 'student', use: { baseURL: process.env.ZXT_STUDENT_URL || 'http://127.0.0.1:23500' } },
+    { name: 'admin', use: { baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501' } },
   ],
   webServer: process.env.ACCEPTANCE_CONTAINER_UI
     ? undefined
     : [
         {
           command: 'npm run dev --workspace @school/student -- --port 23500',
-          url: process.env.TJ_STUDENT_URL || 'http://127.0.0.1:23500',
+          url: process.env.ZXT_STUDENT_URL || 'http://127.0.0.1:23500',
           reuseExistingServer: false,
           timeout: 60000,
         },
         {
           command: 'npm run dev --workspace @school/admin -- --port 23501',
-          url: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501',
+          url: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501',
           reuseExistingServer: false,
           timeout: 60000,
         },

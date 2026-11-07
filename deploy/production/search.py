@@ -88,7 +88,7 @@ def main(argv=None):
     database.new_json(
         args.result,
         {
-            "schema": "tianji-production-search-v1",
+            "schema": "zhixuetang-production-search-v1",
             "status": "RUNNING",
             "host": args.expected_host,
         },
@@ -119,7 +119,7 @@ def main(argv=None):
     database.overwrite_private_json(
         args.result,
         {
-            "schema": "tianji-production-search-v1",
+            "schema": "zhixuetang-production-search-v1",
             "status": status,
             "observed_at": dt.datetime.now(dt.timezone.utc).isoformat(),
             "host": args.expected_host,

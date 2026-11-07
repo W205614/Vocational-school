@@ -4,6 +4,8 @@ Unknown historical grants are listed for review; they are never invented from a 
 aggregated expiry, and no purchase, learning, exam or financial history is replaced.
 """
 
+from runtime_compose import PRIMARY_PROJECTS
+
 import argparse
 import hashlib
 import json
@@ -159,8 +161,8 @@ def main():
             BASE == ROOT / 'deploy/compact'
             or BASE.is_relative_to(ROOT / 'deploy/compact/.local/optimization')
         )
-        or PROJECT != 'tianji-compact'
-        and not PROJECT.startswith('tianji-opt-')
+        or PROJECT not in PRIMARY_PROJECTS
+        and not PROJECT.startswith('zhixuetang-opt-')
     ):
         raise RuntimeError(
             'Historical repair is restricted to this workspace and its audit clones'

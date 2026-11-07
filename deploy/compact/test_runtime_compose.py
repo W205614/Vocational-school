@@ -12,10 +12,92 @@ from runtime_compose import (
     compose_command,
     verify_migration,
     equivalent_commands,
+    resolve_project,
+    rabbit_username,
 )
 
 
 class RuntimeComposeTest(unittest.TestCase):
+    def test_existing_project_identity_keeps_original_volume_names(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / '.local').mkdir()
+            (home / '.env').write_text('')
+            (home / 'compose.yaml').write_text('name: zhixuetang-compact\n')
+            original = {
+                'name': 'tianji-compact',
+                'services': {
+                    'mysql': {
+                        'image': 'mysql:8.4',
+                        'volumes': ['compact_mysql:/var/lib/mysql'],
+                    }
+                },
+                'volumes': {'compact_mysql': {}},
+            }
+            path = home / '.local/compose.runtime.yaml'
+            path.write_text(yaml.safe_dump(original))
+            before = path.read_bytes()
+            self.assertEqual('tianji-compact', resolve_project(home))
+            with self.assertRaisesRegex(ValueError, 'conflicts'):
+                resolve_project(home, 'zhixuetang-compact')
+            parsed = json.loads(
+                subprocess.check_output(
+                    compose_command(home, resolve_project(home))
+                    + ['config', '--format', 'json'],
+                    text=True,
+                )
+            )
+            self.assertEqual(
+                'tianji-compact_compact_mysql',
+                parsed['volumes']['compact_mysql']['name'],
+            )
+            self.assertEqual(before, path.read_bytes())
+
+    def test_fresh_project_default_and_explicit_isolated_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual('zhixuetang-compact', resolve_project(directory))
+            self.assertEqual(
+                'zhixuetang-recovery-test',
+                resolve_project(directory, 'zhixuetang-recovery-test'),
+            )
+
+    def test_existing_rabbit_username_is_read_without_replacing_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            self.assertEqual('zhixuetang', rabbit_username(home))
+            (home / '.local/configs').mkdir(parents=True)
+            (home / '.local/compose.runtime.yaml').write_text(
+                yaml.safe_dump(
+                    {
+                        'name': 'tianji-compact',
+                        'services': {
+                            'rabbitmq': {
+                                'environment': {
+                                    'RABBITMQ_DEFAULT_USER': 'original-broker-user'
+                                }
+                            }
+                        },
+                    }
+                )
+            )
+            self.assertEqual('original-broker-user', rabbit_username(home))
+            config = home / '.local/configs/auth.yml'
+            config.write_text(
+                yaml.safe_dump(
+                    {
+                        'spring': {
+                            'rabbitmq': {
+                                'username': 'actual-app-user',
+                                'password': 'untouched',
+                            }
+                        }
+                    }
+                )
+            )
+            before = config.read_bytes()
+            self.assertEqual('actual-app-user', rabbit_username(home))
+            self.assertEqual(before, config.read_bytes())
+
     def test_legacy_migration_preserves_bytes_and_does_not_rewrite_template(self):
         with tempfile.TemporaryDirectory() as directory:
             home = Path(directory)

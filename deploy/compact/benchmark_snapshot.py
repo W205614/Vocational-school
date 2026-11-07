@@ -10,7 +10,7 @@ from setup import BASE, ROOT, LOCAL, PROJECT, COMPOSE, MODULES, run
 
 def guard():
     allowed = (ROOT / 'deploy/compact/.local/optimization').resolve()
-    if not PROJECT.startswith('tianji-opt-') or allowed not in BASE.resolve().parents:
+    if not PROJECT.startswith('zhixuetang-opt-') or allowed not in BASE.resolve().parents:
         raise RuntimeError('Reset is restricted to owned optimization benchmark homes')
     ids = subprocess.check_output(
         COMPOSE + ['ps', '-q', 'mysql'], text=True

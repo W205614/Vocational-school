@@ -10,19 +10,19 @@ class CohortOwnershipTest(unittest.TestCase):
             root = Path(directory)
             home = root / 'deploy/compact/.local/optimization/pre-compact'
             labels = {
-                'com.docker.compose.project': 'tianji-opt-pre-compact',
+                'com.docker.compose.project': 'zhixuetang-opt-pre-compact',
                 'com.docker.compose.project.config_files': str(home / 'compose.yaml'),
             }
             container = {'Config': {'Labels': labels}}
             self.assertEqual(
                 home.resolve(),
-                validate_cohort(home, 'tianji-opt-pre-compact', [container], root),
+                validate_cohort(home, 'zhixuetang-opt-pre-compact', [container], root),
             )
             with self.assertRaises(RuntimeError):
-                validate_cohort(home, 'tianji-compact', [], root)
+                validate_cohort(home, 'zhixuetang-compact', [], root)
             labels['com.docker.compose.project'] = 'another-project'
             with self.assertRaises(RuntimeError):
-                validate_cohort(home, 'tianji-opt-pre-compact', [container], root)
+                validate_cohort(home, 'zhixuetang-opt-pre-compact', [container], root)
 
     def test_sibling_repository_and_other_compose_file_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -31,12 +31,12 @@ class CohortOwnershipTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 validate_cohort(
                     root.parent / 'another-repository',
-                    'tianji-opt-pre-compact',
+                    'zhixuetang-opt-pre-compact',
                     [],
                     root,
                 )
             labels = {
-                'com.docker.compose.project': 'tianji-opt-pre-compact',
+                'com.docker.compose.project': 'zhixuetang-opt-pre-compact',
                 'com.docker.compose.project.config_files': str(
                     home.parent / 'other/compose.yaml'
                 ),
@@ -44,7 +44,7 @@ class CohortOwnershipTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 validate_cohort(
                     home,
-                    'tianji-opt-pre-compact',
+                    'zhixuetang-opt-pre-compact',
                     [{'Config': {'Labels': labels}}],
                     root,
                 )

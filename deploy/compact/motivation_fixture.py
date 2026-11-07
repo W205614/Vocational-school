@@ -12,6 +12,8 @@ settlement. Clock-controlled database tests verify natural settlement separately
 No successful delivery, earned badge, or user coupon is written by this script.
 """
 
+from runtime_compose import PRIMARY_PROJECTS
+
 from datetime import datetime, timedelta, timezone
 import json
 import os
@@ -29,13 +31,13 @@ SHANGHAI = timezone(timedelta(hours=8))
 
 def require_isolated():
     explicit_clone = (
-        os.environ.get('TJ_MOTIVATION_FIXTURE') == '1'
-        and setup.PROJECT != 'tianji-compact'
+        os.environ.get('ZXT_MOTIVATION_FIXTURE') == '1'
+        and setup.PROJECT not in PRIMARY_PROJECTS
     )
     ephemeral_ci = os.environ.get('GITHUB_ACTIONS') == 'true'
     if not (explicit_clone or ephemeral_ci):
         raise RuntimeError(
-            'Motivation fixtures require TJ_MOTIVATION_FIXTURE=1 and a non-primary project, or ephemeral GitHub Actions'
+            'Motivation fixtures require ZXT_MOTIVATION_FIXTURE=1 and a non-primary project, or ephemeral GitHub Actions'
         )
 
 

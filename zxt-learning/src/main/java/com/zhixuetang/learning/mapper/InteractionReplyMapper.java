@@ -1,0 +1,14 @@
+package com.zhixuetang.learning.mapper;
+
+import com.zhixuetang.learning.domain.po.InteractionReply;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+/**
+ * <p>
+ * 互动问题的回答或评论 Mapper 接口
+ * </p>
+ *
+ * @author 虎哥
+ * @since 2026-02-04
+ */
+public interface InteractionReplyMapper extends BaseMapper<InteractionReply> {}

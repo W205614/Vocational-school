@@ -12,8 +12,8 @@ from retire_images import candidates, verify_archive
 class ImageRetirementTest(unittest.TestCase):
     def test_stopped_and_other_project_references_are_protected(self):
         images = [
-            {'Id': 'final', 'RepoTags': ['tianji-compact/current:local']},
-            {'Id': 'old', 'RepoTags': ['tianji-opt/old:baseline']},
+            {'Id': 'final', 'RepoTags': ['zhixuetang-compact/current:local']},
+            {'Id': 'old', 'RepoTags': ['zhixuetang-opt/old:baseline']},
             {'Id': 'shared', 'RepoTags': ['mysql:8.4']},
             {'Id': 'unrelated', 'RepoTags': ['another-project:local']},
             {'Id': 'dangling', 'RepoTags': []},
@@ -27,7 +27,7 @@ class ImageRetirementTest(unittest.TestCase):
         images = [
             {
                 'Id': 'mixed',
-                'RepoTags': ['tianji-opt/old:baseline', 'another-project:local'],
+                'RepoTags': ['zhixuetang-opt/old:baseline', 'another-project:local'],
             },
             {'Id': 'retagged', 'RepoTags': ['another-project:backup']},
             {

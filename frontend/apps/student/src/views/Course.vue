@@ -848,7 +848,7 @@ onBeforeUnmount(() => {
           @error="coverFailed = true"
         />
         <div v-else class="course-intro-art designed-cover">
-          <small>天机学堂 · 在线课程</small><strong>{{ course.name }}</strong
+          <small>职学堂 · 在线课程</small><strong>{{ course.name }}</strong
           ><span>LEARN AT YOUR OWN PACE</span>
         </div>
         <div class="course-intro-copy">
@@ -859,7 +859,7 @@ onBeforeUnmount(() => {
               (course.teachers || [])
                 .map((t: Row) => t.name)
                 .filter(Boolean)
-                .join('、') || '天机学堂课程团队'
+                .join('、') || '职学堂课程团队'
             }}
           </p>
           <p v-if="course.introduce" class="content">{{ plain(course.introduce) }}</p>

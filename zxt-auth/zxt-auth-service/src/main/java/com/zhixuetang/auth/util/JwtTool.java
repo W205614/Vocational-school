@@ -1,0 +1,102 @@
+package com.zhixuetang.auth.util;
+
+import cn.hutool.json.JSONObject;
+import cn.hutool.jwt.*;
+import cn.hutool.jwt.signers.*;
+import com.zhixuetang.common.domain.dto.LoginUserDTO;
+import com.zhixuetang.auth.common.constants.JwtConstants;
+import com.zhixuetang.auth.service.impl.SessionStore;
+import com.zhixuetang.common.exceptions.UnauthorizedException;
+import com.zhixuetang.common.utils.*;
+import org.springframework.stereotype.Component;
+import java.security.KeyPair;
+import java.time.*;
+import java.util.*;
+
+@Component
+public class JwtTool {
+    private final JWTSigner signer;
+    private final SessionStore sessions;
+    private final String keyId;
+    private final com.zhixuetang.auth.common.util.JwtVerificationKeys verificationKeys;
+
+    public JwtTool(
+            KeyPair pair,
+            SessionStore sessions,
+            com.zhixuetang.auth.common.util.JwtVerificationKeys verificationKeys) {
+        this.signer = JWTSignerUtil.createSigner("rs256", pair);
+        this.sessions = sessions;
+        this.keyId = com.zhixuetang.auth.common.util.JwtVerificationKeys.id(pair.getPublic());
+        this.verificationKeys = verificationKeys;
+    }
+
+    private Map<String, Object> payload(LoginUserDTO user) {
+        var value = new LinkedHashMap<String, Object>();
+        value.put("userId", user.getUserId());
+        value.put("roleId", user.getRoleId());
+        value.put("rememberMe", BooleanUtils.isTrue(user.getRememberMe()));
+        value.put("sessionId", user.getSessionId());
+        value.put("authVersion", user.getAuthVersion());
+        return value;
+    }
+
+    private String token(LoginUserDTO user, String kind, String jti, Instant expiry) {
+        return JWT.create()
+                .setHeader("kid", keyId)
+                .setJWTId(jti)
+                .setPayload("iss", "zhixuetang")
+                .setPayload("aud", user.getRoleId() == 2 ? "student" : "admin")
+                .setPayload("tokenType", kind)
+                .setPayload(JwtConstants.PAYLOAD_USER_KEY, payload(user))
+                .setExpiresAt(Date.from(expiry))
+                .setSigner(signer)
+                .sign();
+    }
+
+    public String createToken(LoginUserDTO user) {
+        return token(
+                user,
+                "access",
+                UUID.randomUUID().toString(),
+                Instant.now().plus(JwtConstants.JWT_TOKEN_TTL));
+    }
+
+    public String createRefreshToken(LoginUserDTO user) {
+        var ttl =
+                BooleanUtils.isTrue(user.getRememberMe())
+                        ? JwtConstants.JWT_REMEMBER_ME_TTL
+                        : JwtConstants.JWT_REFRESH_TTL;
+        var rotation = sessions.rotate(user, ttl);
+        return token(user, "refresh", rotation.jti(), rotation.expires());
+    }
+
+    public LoginUserDTO parseRefreshToken(String value) {
+        try {
+            JWT jwt = JWT.of(value);
+            if (!verificationKeys.verify(jwt)
+                    || !"zhixuetang".equals(jwt.getPayload("iss"))
+                    || !"refresh".equals(jwt.getPayload("tokenType")))
+                throw new UnauthorizedException("刷新令牌无效");
+            JWTValidator.of(jwt).validateDate();
+            var user = ((JSONObject) jwt.getPayload("user")).toBean(LoginUserDTO.class);
+            if (user.getSessionId() == null
+                    || user.getAuthVersion() == null
+                    || jwt.getPayload("jti") == null
+                    || !Objects.equals(
+                            jwt.getPayload("aud"), user.getRoleId() == 2 ? "student" : "admin"))
+                throw new UnauthorizedException("刷新令牌无效");
+            user.setRefreshJti(jwt.getPayload("jti").toString());
+            return user;
+        } catch (UnauthorizedException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new UnauthorizedException("登录状态已失效，请重新登录");
+        }
+    }
+
+    public void cleanJtiCache() {
+        String id = UserContext.getSession();
+        if (id != null) sessions.revoke(id, UserContext.requireUser());
+        else sessions.revokeAll(UserContext.requireUser());
+    }
+}

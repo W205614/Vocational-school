@@ -108,7 +108,7 @@ def profile(index):
         'user-info': admin,
         'user-role': '1',
         'X-User-Id': admin,
-        'X-TJ-Call-Depth': '4',
+        'X-ZXT-Call-Depth': '4',
     }
     response = requests.get(
         BASE + '/api/v2/services/user/users/me', headers=headers, timeout=10

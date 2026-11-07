@@ -77,13 +77,13 @@ class SourceBindingTest(unittest.TestCase):
                 "metadata": {
                     "timestamp": now.isoformat(),
                     "properties": [
-                        {"name": "tianji:source:revision", "value": "a" * 40}
+                        {"name": "zhixuetang:source:revision", "value": "a" * 40}
                     ],
                 },
             }
             path.write_text(json.dumps(bom), encoding="utf8")
             binding = {
-                "schema": "tianji-security-sbom-v1",
+                "schema": "zhixuetang-security-sbom-v1",
                 "commit": "a" * 40,
                 "resolved_runtime": True,
                 "maven_exit_code": 0,

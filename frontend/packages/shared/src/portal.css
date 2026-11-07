@@ -4,12 +4,31 @@
   align-items: center;
   flex-shrink: 0;
 }
-.brand img {
-  height: auto;
-  object-fit: contain;
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink);
+  line-height: 1;
+  white-space: nowrap;
 }
-.brand > span {
-  display: none;
+.brand-lockup img {
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+.brand-wordmark {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.brand-wordmark small {
+  display: block;
+  margin-top: 7px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--quiet);
 }
 .header-inner {
   margin: auto;
@@ -154,10 +173,6 @@
   gap: 16px;
   margin-bottom: 24px !important;
   padding: 10px !important;
-}
-.admin-brand img {
-  width: 150px;
-  height: auto;
 }
 .nav-group {
   padding-top: 18px;

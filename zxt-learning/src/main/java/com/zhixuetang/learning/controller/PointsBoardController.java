@@ -1,0 +1,35 @@
+package com.zhixuetang.learning.controller;
+
+import com.zhixuetang.learning.domain.query.PointsBoardQuery;
+import com.zhixuetang.learning.domain.vo.PointsBoardVO;
+import com.zhixuetang.learning.service.IPointsBoardService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * <p>
+ * 学霸天梯榜 前端控制器
+ * </p>
+ *
+ * @author 虎哥
+ * @since 2026-02-07
+ */
+@Tag(name = "积分相关接口")
+@RestController
+@RequestMapping("/boards")
+@RequiredArgsConstructor
+public class PointsBoardController {
+
+    private final IPointsBoardService pointsBoardService;
+
+    @GetMapping
+    @Operation(summary = "分页查询指定赛季的积分排行榜")
+    public PointsBoardVO queryPointsBoardBySeason(PointsBoardQuery query) {
+        return pointsBoardService.queryPointsBoardBySeason(query);
+    }
+}

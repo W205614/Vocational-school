@@ -1,4 +1,4 @@
-// Explicit acceptance: TJ_MEDIA_RENEWAL_TEST=1, a fresh tianji-recovery-* backend
+// Explicit acceptance: ZXT_MEDIA_RENEWAL_TEST=1, a fresh zhixuetang-recovery-* backend
 // with signature TTL 6-12 seconds, then --project=student --grep 'real short-ticket'.
 // Registration is explicit: ordinary CI does not report this dedicated scenario as skipped.
 import { test, expect, type Page } from '@playwright/test';
@@ -28,17 +28,17 @@ function gate() {
   return { promise, resolve };
 }
 
-if (process.env.TJ_MEDIA_RENEWAL_TEST === '1')
+if (process.env.ZXT_MEDIA_RENEWAL_TEST === '1')
   test('real short-ticket playback renews without changing timing sessions and retains pause, rate and rights', async ({
     page,
     browser,
   }, info) => {
     test.setTimeout(180000);
     expect(info.project.name).toBe('student');
-    expect(process.env.TJ_COMPACT_PROJECT).toMatch(/^tianji-recovery-/);
-    expect(process.env.TJ_STUDENT_URL).not.toContain(':24500');
-    expect(process.env.TJ_ADMIN_URL).not.toContain(':24501');
-    const context = await browser.newContext({ baseURL: process.env.TJ_ADMIN_URL }),
+    expect(process.env.ZXT_COMPACT_PROJECT).toMatch(/^zhixuetang-recovery-/);
+    expect(process.env.ZXT_STUDENT_URL).not.toContain(':24500');
+    expect(process.env.ZXT_ADMIN_URL).not.toContain(':24501');
+    const context = await browser.newContext({ baseURL: process.env.ZXT_ADMIN_URL }),
       admin = await context.newPage();
     let release: ReturnType<typeof gate> | undefined;
     try {
@@ -86,9 +86,9 @@ if (process.env.TJ_MEDIA_RENEWAL_TEST === '1')
           ).operation.result.id,
       );
       execFileSync(
-        process.env.TJ_PYTHON || 'python',
+        process.env.ZXT_PYTHON || 'python',
         [
-          process.env.TJ_MEDIA_FIXTURE_SCRIPT || '../deploy/compact/attach_browser_media.py',
+          process.env.ZXT_MEDIA_FIXTURE_SCRIPT || '../deploy/compact/attach_browser_media.py',
           String(media),
         ],
         { stdio: 'pipe' },

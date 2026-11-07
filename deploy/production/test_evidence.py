@@ -19,7 +19,7 @@ class EvidenceGateTest(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.evidence = {
-            "schema": "tianji-production-acceptance-v1",
+            "schema": "zhixuetang-production-acceptance-v1",
             "commit": "a" * 40,
             "manifest_sha256": "b" * 64,
             "environment": "isolated-production-candidate",
@@ -65,7 +65,7 @@ class EvidenceGateTest(unittest.TestCase):
             }
             moment = self.evidence["observed_at"]
             report = {
-                "schema": "tianji-production-measurement-v1",
+                "schema": "zhixuetang-production-measurement-v1",
                 "suite": name,
                 "commit": "a" * 40,
                 "manifest_sha256": "b" * 64,
@@ -235,7 +235,7 @@ class LivePreflightContractTest(unittest.TestCase):
                     "pipelines": {
                         "traces": {
                             "receivers": ["otlp"],
-                            "processors": ["transform/tianji_redaction", "batch"],
+                            "processors": ["transform/zhixuetang_redaction", "batch"],
                             "exporters": ["otlphttp/backend"],
                         }
                     }
@@ -253,7 +253,7 @@ class LivePreflightContractTest(unittest.TestCase):
     def test_live_preflight_observes_actual_injection_and_zone_distribution(self):
         valid = preflight.inspect(
             "candidate-context",
-            "tianji-production",
+            "zhixuetang-production",
             self.resources,
             self.secrets,
             self.reader(),
@@ -263,7 +263,7 @@ class LivePreflightContractTest(unittest.TestCase):
         for reader in [self.reader(with_sidecar=False), self.reader(two_zones=False)]:
             result = preflight.inspect(
                 "candidate-context",
-                "tianji-production",
+                "zhixuetang-production",
                 self.resources,
                 self.secrets,
                 reader,

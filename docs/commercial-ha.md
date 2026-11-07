@@ -32,7 +32,7 @@ CI 的 `production-security` 生成已解析 Maven CycloneDX SBOM，并扫描 Ja
 
 ```json
 {
-  "schema": "tianji-production-acceptance-v1",
+  "schema": "zhixuetang-production-acceptance-v1",
   "commit": "<准确40位提交>",
   "manifest_sha256": "<resources.yaml哈希>",
   "environment": "isolated-production-candidate",
@@ -55,7 +55,7 @@ CI 的 `production-security` 生成已解析 Maven CycloneDX SBOM，并扫描 Ja
 
 容量需提供 `active_users`、`duration_seconds`、`p95_ms`、`p99_ms`、`error_ratio`、`admitted_active_users`、`workload_model_sha256`、`budget_passed` 和 `workflow_counts`（`purchase`、`learning_heartbeat`、`video`、`exam_submit` 均须实际执行）。附件保存约定预算、观测数据、未通过场景和退出码。门禁检查七天内证据与候选 SHA／配置的一致性，操作员复核来源；历史报告按明确的内容一致性规则核对复用条件。
 
-每个 suite 至少一个 JSON 附件必须是结构化的 `tianji-production-measurement-v1`：包含同名 `suite`、准确 `commit`／`manifest_sha256`，`execution` 内记录 `kind=runtime-experiment`、隔离环境、实际带时区起止时间、`exit_code=0`、`required_skips=0`，`measurements` 与声明指标一致；`observations` 保存实际 HTTP、业务查询、供应商回执、故障事件、负载采样或遥测检索的原始观测。工具校验结构、完整性及候选一致性，操作员负责复核运行记录和附件来源。
+每个 suite 至少一个 JSON 附件必须是结构化的 `zhixuetang-production-measurement-v1`：包含同名 `suite`、准确 `commit`／`manifest_sha256`，`execution` 内记录 `kind=runtime-experiment`、隔离环境、实际带时区起止时间、`exit_code=0`、`required_skips=0`，`measurements` 与声明指标一致；`observations` 保存实际 HTTP、业务查询、供应商回执、故障事件、负载采样或遥测检索的原始观测。工具校验结构、完整性及候选一致性，操作员负责复核运行记录和附件来源。
 
 月度 SLO 根据真实网关业务请求定义分母和错误预算，持续保留用户侧可用性、变更、供应商故障及维护记录。
 

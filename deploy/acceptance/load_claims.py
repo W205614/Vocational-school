@@ -33,8 +33,8 @@ def snapshot():
                     line.startswith(x)
                     for x in [
                         'managed_executor',
-                        'tj_events',
-                        'tj_operations',
+                        'zxt_events',
+                        'zxt_operations',
                         'jvm_memory_used',
                         'jvm_threads',
                         'hikaricp_',

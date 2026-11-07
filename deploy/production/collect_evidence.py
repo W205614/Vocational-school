@@ -17,7 +17,7 @@ from runtime_checks import candidate
 def collect(root, binding):
     root = Path(root).resolve()
     evidence = {
-        "schema": "tianji-production-acceptance-v1",
+        "schema": "zhixuetang-production-acceptance-v1",
         "commit": binding[0],
         "manifest_sha256": binding[1],
         "environment": "isolated-production-candidate",

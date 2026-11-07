@@ -1,7 +1,7 @@
-name: tianji-final
+name: zhixuetang-final
 services:
   app-data:
-    image: tianji-final/data:ee045c7
+    image: zhixuetang-final/data:ee045c7
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -38,7 +38,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-pay:
-    image: tianji-final/pay:ux-20261007
+    image: zhixuetang-final/pay:ux-20261007
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -75,7 +75,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-promotion:
-    image: tianji-final/promotion:ee045c7
+    image: zhixuetang-final/promotion:ee045c7
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -112,7 +112,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-learning:
-    image: tianji-final/learning:ee045c7
+    image: zhixuetang-final/learning:ee045c7
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -149,7 +149,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-trade:
-    image: tianji-final/trade:ee045c7
+    image: zhixuetang-final/trade:ee045c7
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -186,7 +186,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-exam:
-    image: tianji-final/exam:ux-draft-20261007
+    image: zhixuetang-final/exam:ux-draft-20261007
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -223,7 +223,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-course:
-    image: tianji-final/course:ux-course-20261007
+    image: zhixuetang-final/course:ux-course-20261007
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -260,7 +260,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-user:
-    image: tianji-final/user:ee045c7
+    image: zhixuetang-final/user:ee045c7
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -297,7 +297,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-auth:
-    image: tianji-final/auth:ee045c7
+    image: zhixuetang-final/auth:ee045c7
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -334,7 +334,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-media:
-    image: tianji-final/media:ux-admin-20261007
+    image: zhixuetang-final/media:ux-admin-20261007
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -371,7 +371,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-remark:
-    image: tianji-final/remark:ee045c7
+    image: zhixuetang-final/remark:ee045c7
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -408,7 +408,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-search:
-    image: tianji-final/search:ee045c7
+    image: zhixuetang-final/search:ee045c7
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -447,7 +447,7 @@ services:
       elasticsearch:
         condition: service_healthy
   app-message:
-    image: tianji-final/message:ee045c7
+    image: zhixuetang-final/message:ee045c7
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -484,7 +484,7 @@ services:
       rabbitmq:
         condition: service_healthy
   app-gateway:
-    image: tianji-final/gateway:ux-dns-20261007
+    image: zhixuetang-final/gateway:ux-dns-20261007
     restart: unless-stopped
     env_file:
       - ./.local/app.env
@@ -571,7 +571,7 @@ services:
   rabbitmq:
     image: rabbitmq:4.1-management
     environment:
-      RABBITMQ_DEFAULT_USER: tianji
+      RABBITMQ_DEFAULT_USER: zhixuetang
       RABBITMQ_DEFAULT_PASS: ${FINAL_MQ_PASSWORD:?Set private final .env}
     ports:
       - 127.0.0.1:23372:15672
@@ -651,7 +651,7 @@ services:
       start_period: 20s
       retries: 30
   web-student:
-    image: tianji-final/student:ux-20261007
+    image: zhixuetang-final/student:ux-20261007
     restart: unless-stopped
     environment:
       GW_UPSTREAM: app-gateway:23310
@@ -663,7 +663,7 @@ services:
       app-gateway:
         condition: service_healthy
   web-admin:
-    image: tianji-final/admin:ux-20261007
+    image: zhixuetang-final/admin:ux-20261007
     restart: unless-stopped
     environment:
       GW_UPSTREAM: app-gateway:23310

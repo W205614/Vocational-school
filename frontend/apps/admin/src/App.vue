@@ -9,6 +9,7 @@ import { useSession } from '../../../packages/shared/src/session';
 import { useOperations } from '../../../packages/shared/src/operations';
 import { useTask } from '../../../packages/shared/src/ui';
 import Status from '../../../packages/shared/src/Status.vue';
+import BrandLogo from '../../../packages/shared/src/BrandLogo.vue';
 import { resources } from './resources';
 const route = useRoute(),
   router = useRouter(),
@@ -74,8 +75,8 @@ const pageTitle = computed(
   <el-config-provider :locale="zhCn"
     ><div v-if="!session.token || !session.admin" class="admin-login">
       <div class="card login">
-        <img class="login-brand" src="/brand-logo.png" alt="天机学堂" />
-        <h1>天机学堂管理中心</h1>
+        <BrandLogo class="login-brand" />
+        <h1>职学堂管理中心</h1>
         <p class="muted">让教学与管理，更有条理</p>
         <Status
           :busy="task.busy.value"
@@ -133,9 +134,7 @@ const pageTitle = computed(
     </div>
     <div v-else class="layout admin-shell">
       <aside class="sidebar admin-sidebar">
-        <RouterLink to="/" class="admin-brand"
-          ><img src="/brand-logo.png" alt="天机学堂" /><span>教学管理平台</span></RouterLink
-        >
+        <RouterLink to="/" class="admin-brand"><BrandLogo /><small>教学管理平台</small></RouterLink>
         <nav>
           <RouterLink v-if="session.role !== 3" to="/" exact-active-class="selected"
             >▦　数据看板</RouterLink
@@ -173,7 +172,7 @@ const pageTitle = computed(
       <main class="main admin-main">
         <header class="topbar">
           <div>
-            <small class="muted">天机学堂 / 管理工作台</small>
+            <small class="muted">职学堂 / 管理工作台</small>
             <p class="workspace-title">{{ pageTitle }}</p>
           </div>
           <div class="header-actions">

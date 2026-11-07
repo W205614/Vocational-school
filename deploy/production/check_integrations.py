@@ -34,20 +34,20 @@ def inspect(settings, spec, binding, *, connect=False, connector=None):
         )
     _, secrets = render.render(settings)
     required = {
-        "TJ_PAY_TJ_PAY_ALI_APPID",
-        "TJ_PAY_TJ_PAY_ALI_MERCHANTPRIVATEKEY",
-        "TJ_PAY_TJ_PAY_ALI_PUBLICKEY",
+        "ZXT_PAY_ZXT_PAY_ALI_APPID",
+        "ZXT_PAY_ZXT_PAY_ALI_MERCHANTPRIVATEKEY",
+        "ZXT_PAY_ZXT_PAY_ALI_PUBLICKEY",
         "ALIPAY_SELLER_ID",
     }
     if not required <= set(secrets["commerce-credentials"]):
         raise ValueError("Missing payment Secret contract")
     if not {
-        "TJ_MESSAGE_TJ_SMS_ALI_ACCESSID",
-        "TJ_MESSAGE_TJ_SMS_ALI_ACCESSSECRET",
+        "ZXT_MESSAGE_ZXT_SMS_ALI_ACCESSID",
+        "ZXT_MESSAGE_ZXT_SMS_ALI_ACCESSSECRET",
     } <= set(secrets["support-credentials"]):
         raise ValueError("Missing SMS Secret contract")
     result = {
-        "schema": "tianji-integration-preflight-v1",
+        "schema": "zhixuetang-integration-preflight-v1",
         "commit": binding[0],
         "manifest_sha256": binding[1],
         "namespace": binding[2],

@@ -15,7 +15,7 @@ parser.add_argument(
 args = parser.parse_args()
 stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d%H%M%S')
 home = LOCAL / ('recovery-home-' + stamp)
-project = 'tianji-recovery-' + stamp
+project = 'zhixuetang-recovery-' + stamp
 info = {'home': str(home), 'project': project, 'backup': str(args.backup.resolve())}
 LOCAL.mkdir(exist_ok=True)
 (LOCAL / 'recovery-run.json').write_text(json.dumps(info, indent=2), encoding='utf8')

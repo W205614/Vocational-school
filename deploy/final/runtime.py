@@ -9,14 +9,18 @@ ACC = BASE.parent / 'acceptance'
 
 def configure():
     sys.path.insert(0, str(ACC))
+    sys.path.append(str(BASE.parent / 'compact'))
     import prepare
+    from runtime_compose import resolve_project, rabbit_username
 
     prepare.LOCAL = BASE / '.local'
     prepare.COMPOSE = [
         'docker',
         'compose',
         '-p',
-        'tianji-final',
+        resolve_project(
+            BASE, os.environ.get('ZXT_RUNTIME_PROJECT'), 'zhixuetang-final'
+        ),
         '-f',
         str(BASE / 'compose.yaml'),
         '--env-file',
@@ -30,7 +34,7 @@ def configure():
             if '=' in line
         )
         return dict(
-            ACCEPTANCE_MQ_USERNAME='tianji',
+            ACCEPTANCE_MQ_USERNAME=rabbit_username(BASE),
             ACCEPTANCE_DB_PASSWORD=values['FINAL_DB_PASSWORD'],
             ACCEPTANCE_MQ_PASSWORD=values['FINAL_MQ_PASSWORD'],
             ACCEPTANCE_INTERNAL_TOKEN=values['FINAL_INTERNAL_TOKEN'],

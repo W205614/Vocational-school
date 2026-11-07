@@ -55,7 +55,7 @@ def main():
         source = json.loads(
             (home / '.local/build-source.json').read_text(encoding='utf8')
         )
-        project = 'tianji-opt-post-' + mode
+        project = 'zhixuetang-opt-post-' + mode
         compose = compose_command(home, project)
         # Explicitly stop these two owned clones before any formal round.
         subprocess.run(compose + ['stop', '-t', '60'], check=True)
@@ -70,7 +70,7 @@ def main():
             project = container['Config']['Labels'].get(
                 'com.docker.compose.project', ''
             )
-            if project.startswith(('tianji-', 'vocational-acceptance')):
+            if project.startswith(('zhixuetang-', 'vocational-acceptance')):
                 raise RuntimeError(
                     'Another project-owned deployment is running during formal measurement: '
                     + project
@@ -79,9 +79,9 @@ def main():
     for mode, home, offset, project, compose, commit in targets:
         environment = {
             **os.environ,
-            'TJ_COMPACT_HOME': str(home),
-            'TJ_COMPACT_PROJECT': project,
-            'TJ_COMPACT_PORT_OFFSET': str(offset),
+            'ZXT_COMPACT_HOME': str(home),
+            'ZXT_COMPACT_PROJECT': project,
+            'ZXT_COMPACT_PORT_OFFSET': str(offset),
         }
         completed = False
         try:
@@ -134,9 +134,9 @@ def main():
     compact = targets[-1]
     environment = {
         **os.environ,
-        'TJ_COMPACT_HOME': str(compact[1]),
-        'TJ_COMPACT_PROJECT': compact[3],
-        'TJ_COMPACT_PORT_OFFSET': str(compact[2]),
+        'ZXT_COMPACT_HOME': str(compact[1]),
+        'ZXT_COMPACT_PROJECT': compact[3],
+        'ZXT_COMPACT_PORT_OFFSET': str(compact[2]),
     }
     try:
         subprocess.run(

@@ -38,7 +38,7 @@ function passwordChanged() {
       <RouterLink to="/">先浏览课程 →</RouterLink>
     </div>
     <div class="card login">
-      <h2>登录天机学堂</h2>
+      <h2>登录职学堂</h2>
       <Status
         :busy="task.busy.value"
         :error="task.error.value || session.expiredMessage"

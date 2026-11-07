@@ -1,5 +1,7 @@
 """Retire obsolete owned images after verifying the one current recovery bundle."""
 
+from runtime_compose import PRIMARY_PROJECTS
+
 import datetime
 import hashlib
 import gzip
@@ -18,12 +20,12 @@ def output(arguments):
 
 def candidates(images, owned, referenced):
     prefixes = (
-        'tianji-compact/',
-        'tianji-opt/',
-        'tianji-final/',
-        'tianji-acceptance/',
-        'tianji-release/',
-        'tianji-rollback/',
+        'zhixuetang-compact/',
+        'zhixuetang-opt/',
+        'zhixuetang-final/',
+        'zhixuetang-acceptance/',
+        'zhixuetang-release/',
+        'zhixuetang-rollback/',
     )
     infrastructure = (
         'mysql:',
@@ -177,7 +179,7 @@ def verify_archive(path, expected, platforms=None):
 
 
 def main():
-    if PROJECT != 'tianji-compact':
+    if PROJECT not in PRIMARY_PROJECTS:
         raise RuntimeError('Image retirement requires the final deployment')
     expected = json.loads((LOCAL / 'release-run.json').read_text(encoding='utf8'))
     gate = json.loads(

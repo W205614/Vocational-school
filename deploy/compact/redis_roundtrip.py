@@ -33,7 +33,7 @@ try:
     for role, port in [('source', 26479), ('target', 26480)]:
         home = directory / role
         home.mkdir()
-        project = 'tianji-redis-proof-' + stamp + '-' + role
+        project = 'zhixuetang-redis-proof-' + stamp + '-' + role
         compose = {
             'name': project,
             'services': {

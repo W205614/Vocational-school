@@ -35,9 +35,9 @@ def main():
     for candidate in args.candidates:
         pool, workers, interval = candidate.split(':')
         values = dict(
-            TJ_PERF_POOL_SIZE=pool,
-            TJ_PERF_OPERATION_THREADS=workers,
-            TJ_PERF_INTERVAL_MS=interval,
+            ZXT_PERF_POOL_SIZE=pool,
+            ZXT_PERF_OPERATION_THREADS=workers,
+            ZXT_PERF_INTERVAL_MS=interval,
         )
         # setup.prepare applies the real module count and enforces its total budget again.
         profile(12, values)
@@ -120,8 +120,8 @@ def main():
                 'schedulerThreads': actual['spring']['task']['scheduling']['pool'][
                     'size'
                 ],
-                'outboxThreads': actual['tj']['reliability']['outbox-core'],
-                'progressIntervalMs': actual['tj']['learning']['progress-interval-ms'],
+                'outboxThreads': actual['zxt']['reliability']['outbox-core'],
+                'progressIntervalMs': actual['zxt']['learning']['progress-interval-ms'],
                 'processExit': result.returncode,
                 'rawReport': pointer['path'],
                 'warmupSeconds': args.warm_seconds,

@@ -1,9 +1,9 @@
-log_format tianji_safe '$request_method $uri $status $body_bytes_sent $request_time';
+log_format zhixuetang_safe '$request_method $uri $status $body_bytes_sent $request_time';
 server {
     listen 8080;
     server_name _;
     root /usr/share/nginx/html;
-    access_log /dev/stdout tianji_safe;
+    access_log /dev/stdout zhixuetang_safe;
     error_log /dev/stderr crit;
     client_max_body_size 201m;
     add_header X-Content-Type-Options nosniff always;

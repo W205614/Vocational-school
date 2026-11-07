@@ -14,9 +14,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--max-seconds', type=int, default=600)
     args = parser.parse_args()
-    if not PROJECT.startswith('tianji-opt-'):
+    if not PROJECT.startswith('zhixuetang-opt-'):
         raise RuntimeError(
-            'Mixed fixtures require a separately named tianji-opt-* benchmark'
+            'Mixed fixtures require a separately named zhixuetang-opt-* benchmark'
         )
     bound = math.ceil(args.max_seconds / 0.25) + 1
     path = LOCAL / 'load-fixture.json'

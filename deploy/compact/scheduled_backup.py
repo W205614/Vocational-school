@@ -1,6 +1,6 @@
 """Windowless Task Scheduler entry; the worker and its children share a hidden console."""
 
-from runtime_compose import active_compose, compose_command
+from runtime_compose import active_compose, compose_command, resolve_project
 import argparse
 import json
 import logging
@@ -13,12 +13,13 @@ import time
 
 def run(home, project, port_offset, python_path):
     home = Path(home).resolve()
+    project = resolve_project(home, project)
     local = home / '.local'
     environment = os.environ.copy()
     environment.update(
-        TJ_COMPACT_HOME=str(home),
-        TJ_COMPACT_PROJECT=project,
-        TJ_COMPACT_PORT_OFFSET=str(port_offset),
+        ZXT_COMPACT_HOME=str(home),
+        ZXT_COMPACT_PROJECT=project,
+        ZXT_COMPACT_PORT_OFFSET=str(port_offset),
     )
     docker_bin = (
         Path(environment.get('ProgramFiles', r'C:\Program Files'))
@@ -62,7 +63,7 @@ def run(home, project, port_offset, python_path):
             encoding='utf8',
         )
         record = logging.LogRecord(
-            'tianji-scheduler',
+            'zhixuetang-scheduler',
             logging.ERROR,
             __file__,
             0,

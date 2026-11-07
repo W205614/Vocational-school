@@ -22,7 +22,7 @@ class CurrentImagesTest(unittest.TestCase):
         record = {
             'services': binding,
             'sha256': hashlib.sha256(b'current-image').hexdigest(),
-            'tags': {'tianji-compact/identity:local': 'sha256:current'},
+            'tags': {'zhixuetang-compact/identity:local': 'sha256:current'},
         }
         (folder / 'recovery.json').write_text(json.dumps(record))
 
@@ -59,7 +59,7 @@ class CurrentImagesTest(unittest.TestCase):
             with patch('backup_images.subprocess.run') as save, patch(
                 'backup_retention.recycle'
             ) as dispose:
-                result = refresh(local, 'tianji-compact', bundle, runner, save)
+                result = refresh(local, 'zhixuetang-compact', bundle, runner, save)
             self.assertTrue(result['reused'])
             save.assert_not_called()
             dispose.assert_not_called()
@@ -85,7 +85,7 @@ class CurrentImagesTest(unittest.TestCase):
                 'retire_images.verify_archive', side_effect=RuntimeError('corrupt')
             ), patch('backup_retention.recycle') as dispose:
                 with self.assertRaisesRegex(RuntimeError, 'corrupt'):
-                    refresh(local, 'tianji-compact', bundle, runner, execute)
+                    refresh(local, 'zhixuetang-compact', bundle, runner, execute)
             dispose.assert_not_called()
             self.assertEqual(
                 b'current-image', (folder / 'runtime-images.tar').read_bytes()
@@ -116,7 +116,7 @@ class CurrentImagesTest(unittest.TestCase):
 
             with patch('retire_images.verify_archive', side_effect=verified):
                 result = refresh(
-                    local, 'tianji-compact', bundle, runner, execute, dispose
+                    local, 'zhixuetang-compact', bundle, runner, execute, dispose
                 )
             self.assertFalse(result['reused'])
             self.assertEqual(['export', 'verified', 'recycled'], events)
@@ -131,10 +131,10 @@ class CurrentImagesTest(unittest.TestCase):
             with patch('backup_retention.recycle') as dispose:
                 (folder / 'runtime-images.tar').write_bytes(b'corrupt')
                 with self.assertRaisesRegex(RuntimeError, 'corrupt'):
-                    refresh(local, 'tianji-compact', bundle, runner)
+                    refresh(local, 'zhixuetang-compact', bundle, runner)
                 (bundle / 'runtime-images.json').write_text('{"app-identity":"wrong"}')
                 with self.assertRaisesRegex(RuntimeError, 'differ'):
-                    refresh(local, 'tianji-compact', bundle, runner)
+                    refresh(local, 'zhixuetang-compact', bundle, runner)
             dispose.assert_not_called()
 
 

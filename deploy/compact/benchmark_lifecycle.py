@@ -13,7 +13,7 @@ def validate_cohort(home, project, containers, root):
     if home == owned or not home.is_relative_to(owned):
         raise RuntimeError('Measurement home is outside the owned audit directory')
     if project not in {
-        'tianji-opt-' + stage + '-' + mode
+        'zhixuetang-opt-' + stage + '-' + mode
         for stage in ('pre', 'post')
         for mode in ('compact', 'standalone')
     }:

@@ -32,7 +32,7 @@ class ManagedDatabaseTest(unittest.TestCase):
         self.ca.write_text("synthetic-ca")
         self.options = self.folder / "migration.cnf"
         self.options.write_text(
-            "[client]\nhost=mysql.managed.acme.test\nuser=ddl_tianji\npassword=synthetic-private-password\nssl-ca="
+            "[client]\nhost=mysql.managed.acme.test\nuser=ddl_zhixuetang\npassword=synthetic-private-password\nssl-ca="
             + str(self.ca)
             + "\n",
             encoding="utf8",
@@ -49,7 +49,7 @@ class ManagedDatabaseTest(unittest.TestCase):
         self.assertIn("--host=mysql.managed.acme.test", command)
         self.assertIn("--skip-reconnect", command)
         self.assertIn("--local-infile=0", command)
-        self.assertEqual("ddl_tianji", user)
+        self.assertEqual("ddl_zhixuetang", user)
         self.assertNotIn("synthetic-private-password", " ".join(command))
 
     def test_wrong_host_tls_downgrade_and_runtime_identity_are_rejected(self):
@@ -62,7 +62,8 @@ class ManagedDatabaseTest(unittest.TestCase):
         ]:
             content = (
                 self.options.read_text().replace(
-                    "user=ddl_tianji", "user=" + (replacement[1] or "ddl_tianji")
+                    "user=ddl_zhixuetang",
+                    "user=" + (replacement[1] or "ddl_zhixuetang"),
                 )
                 + replacement[0]
             )
@@ -70,7 +71,7 @@ class ManagedDatabaseTest(unittest.TestCase):
             with self.assertRaises(database.DatabaseError):
                 database.client_options(self.options, "mysql.managed.acme.test")
             self.options.write_text(
-                "[client]\nhost=mysql.managed.acme.test\nuser=ddl_tianji\npassword=synthetic-private-password\nssl-ca="
+                "[client]\nhost=mysql.managed.acme.test\nuser=ddl_zhixuetang\npassword=synthetic-private-password\nssl-ca="
                 + str(self.ca)
                 + "\n"
             )
@@ -90,20 +91,22 @@ class ManagedDatabaseTest(unittest.TestCase):
 
     def test_ddl_grants_require_real_privilege_lists_and_all_owned_scopes(self):
         for grants in [
-            "GRANT `CREATE_ALTER_TRIGGER`@`%` TO `ddl_tianji`@`%`",
+            "GRANT `CREATE_ALTER_TRIGGER`@`%` TO `ddl_zhixuetang`@`%`",
             "GRANT SELECT, INSERT, UPDATE, DELETE ON *.* TO `CREATE_ALTER_TRIGGER`@`%`",
-            "GRANT CREATE, ALTER, TRIGGER ON `other`.* TO `ddl_tianji`@`%`",
+            "GRANT CREATE, ALTER, TRIGGER ON `other`.* TO `ddl_zhixuetang`@`%`",
         ]:
             with self.assertRaises(database.DatabaseError):
                 database.require_ddl_grants(grants)
         grants = "\n".join(
             "GRANT SELECT, CREATE, ALTER, TRIGGER ON `"
             + name.replace("_", "\\_")
-            + "`.* TO `ddl_tianji`@`%`"
+            + "`.* TO `ddl_zhixuetang`@`%`"
             for name in database.DATABASES
         )
         database.require_ddl_grants(grants)
-        database.require_ddl_grants("GRANT ALL PRIVILEGES ON *.* TO `ddl_tianji`@`%`")
+        database.require_ddl_grants(
+            "GRANT ALL PRIVILEGES ON *.* TO `ddl_zhixuetang`@`%`"
+        )
 
     def test_public_init_is_schema_only_and_removes_destructive_dump_commands(self):
         sql = database.initialization_sql()
@@ -137,6 +140,7 @@ class ManagedDatabaseTest(unittest.TestCase):
             )
         self.assertEqual(1, len(adapter.calls))
         self.assertTrue(adapter.calls[0][0].startswith("SELECT"))
+        self.assertIn("LEFT(SCHEMA_NAME,3)='tj_'", adapter.calls[0][0])
 
     def test_empty_init_imports_public_baseline_then_forward_migrations(self):
         adapter = Adapter({"SELECT COUNT(*) FROM `user`": "0"})
@@ -193,14 +197,14 @@ class ManagedDatabaseTest(unittest.TestCase):
     def test_admin_spec_requires_namespace_and_explicit_admin_role(self):
         path = self.folder / "admin.json"
         spec = {
-            "namespace": "tianji-prod",
-            "username": "tianji_prod_admin",
+            "namespace": "zhixuetang-prod",
+            "username": "zhixuetang_prod_admin",
             "phone": "13900000000",
             "name": "Synthetic administrator",
             "role": "admin",
         }
         database.new_json(path, spec)
-        self.assertEqual(spec, database.admin_spec(path, "tianji-prod"))
+        self.assertEqual(spec, database.admin_spec(path, "zhixuetang-prod"))
         for field, value in [
             ("role", "teacher"),
             ("username", "unscoped_admin"),
@@ -210,7 +214,7 @@ class ManagedDatabaseTest(unittest.TestCase):
             bad[field] = value
             database.overwrite_private_json(path, bad)
             with self.assertRaises(database.DatabaseError):
-                database.admin_spec(path, "tianji-prod")
+                database.admin_spec(path, "zhixuetang-prod")
 
     def test_existing_admin_is_never_reset_and_no_receipt_is_written(self):
         adapter = Adapter({"FROM role": "1", "u.status=1": "1"})
@@ -233,8 +237,8 @@ class ManagedDatabaseTest(unittest.TestCase):
             }
         )
         spec = {
-            "namespace": "tianji-prod",
-            "username": "tianji_prod_admin",
+            "namespace": "zhixuetang-prod",
+            "username": "zhixuetang_prod_admin",
             "phone": "13900000000",
             "name": "Synthetic administrator",
             "role": "admin",
@@ -253,7 +257,7 @@ class ManagedDatabaseTest(unittest.TestCase):
         self.assertNotIn("student", sql)
 
     def test_mysql_session_framing_uses_stdin_and_refuses_unowned_database(self):
-        session = database.MysqlSession(["mysql"], "ddl_tianji")
+        session = database.MysqlSession(["mysql"], "ddl_zhixuetang")
 
         class Process:
             stdin = io.BytesIO()
@@ -264,7 +268,7 @@ class ManagedDatabaseTest(unittest.TestCase):
         session.process = Process()
         with patch.object(database.secrets, "token_hex", return_value="fixed"):
             session.lines.put("a\tb")
-            session.lines.put("__TIANJI_RESULT_fixed__")
+            session.lines.put("__ZHIXUETANG_RESULT_fixed__")
             self.assertEqual("a\tb", session.mysql("SELECT 1", "tj_auth"))
         self.assertIn(b"USE `tj_auth`", session.process.stdin.getvalue())
         with self.assertRaises(database.DatabaseError):

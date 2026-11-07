@@ -1,5 +1,5 @@
 {
-  "namespace": "tianji-production",
+  "namespace": "zhixuetang-production",
   "operator_id": 1,
   "alipay": { "name": "支付宝", "priority": 1, "icon": "/assets/alipay.svg" },
   "sms": {

@@ -1,0 +1,11 @@
+com.zhixuetang.common.autoconfigure.mq.MqConfig
+com.zhixuetang.common.autoconfigure.mvc.JsonConfig
+com.zhixuetang.common.autoconfigure.mvc.MvcConfig
+com.zhixuetang.common.autoconfigure.mvc.ParamCheckerConfig
+com.zhixuetang.common.autoconfigure.mybatis.MybatisConfig
+com.zhixuetang.common.autoconfigure.redisson.RedissonConfig
+com.zhixuetang.common.autoconfigure.swagger.Knife4jConfiguration
+com.zhixuetang.common.autoconfigure.xxljob.XxlJobConfig
+com.zhixuetang.common.autoconfigure.reliability.ReliabilityConfiguration
+com.zhixuetang.common.autoconfigure.production.ProductionSafetyConfiguration
+com.zhixuetang.common.autoconfigure.privacy.PrivacyConfiguration

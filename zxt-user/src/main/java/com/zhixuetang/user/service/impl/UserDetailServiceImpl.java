@@ -1,0 +1,63 @@
+package com.zhixuetang.user.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import com.zhixuetang.common.enums.UserType;
+import com.zhixuetang.common.utils.StringUtils;
+import com.zhixuetang.user.domain.po.UserDetail;
+import com.zhixuetang.user.domain.query.UserPageQuery;
+import com.zhixuetang.user.mapper.UserDetailMapper;
+import com.zhixuetang.user.service.IUserDetailService;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * <p>
+ * 教师详情表 服务实现类
+ * </p>
+ *
+ * @author 虎哥
+ * @since 2022-08-15
+ */
+@Service
+public class UserDetailServiceImpl extends ServiceImpl<UserDetailMapper, UserDetail>
+        implements IUserDetailService {
+
+    @Override
+    public UserDetail queryById(Long userId) {
+        return getBaseMapper().queryById(userId);
+    }
+
+    @Override
+    public List<UserDetail> queryByIds(List<Long> ids) {
+        return getBaseMapper().queryByIds(ids);
+    }
+
+    @Override
+    public Page<UserDetail> queryUserDetailByPage(UserPageQuery query, UserType... types) {
+        // 1.分页条件
+        Page<UserDetail> p = query.toMpPageDefaultSortByCreateTimeDesc();
+        // 2.搜索条件
+        Integer status = query.getStatus();
+        String name = query.getName();
+        String phone = query.getPhone();
+        var values =
+                types == null
+                        ? List.<Integer>of()
+                        : java.util.Arrays.stream(types)
+                                .filter(java.util.Objects::nonNull)
+                                .map(UserType::getValue)
+                                .toList();
+        QueryWrapper<UserDetail> wrapper = new QueryWrapper<>();
+        wrapper.in(!values.isEmpty(), "u.type", values)
+                .eq(status != null, "u.status", status)
+                .eq(StringUtils.isNotBlank(phone), "u.cell_phone", phone)
+                .like(StringUtils.isNotBlank(name), "ud.name", name);
+        // 3.查询
+        p = getBaseMapper().queryByPage(p, wrapper);
+        // 4.返回
+        return p;
+    }
+}

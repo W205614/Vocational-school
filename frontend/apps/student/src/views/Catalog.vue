@@ -101,7 +101,7 @@ onMounted(async () => {
     <div class="editorial-lead">
       <p>从课程目录出发，找到下一步要学的内容。</p>
       <a href="#courses" class="hero-cta">浏览课程 →</a>
-      <p class="hero-aside">在天机学堂，学习之后还有笔记、课程考试与错题复习。</p>
+      <p class="hero-aside">在职学堂，学习之后还有笔记、课程考试与错题复习。</p>
     </div>
     <div class="editorial-title">
       <h1><span>把所学</span><span>变成所得。</span></h1>
@@ -236,7 +236,7 @@ onMounted(async () => {
             @error="failedCovers.add(course.id)"
           />
           <div v-else class="course-cover designed-cover" :class="'cover-tone-' + (i % 4)">
-            <small>天机学堂</small
+            <small>职学堂</small
             ><strong>{{ plainTitle(course.name, !!appliedKeyword.trim()) }}</strong
             ><span>查看课程目录 →</span>
           </div></RouterLink

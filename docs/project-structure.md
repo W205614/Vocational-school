@@ -7,12 +7,12 @@
 ```text
 Vocational-school/
 ├── frontend/              双端网页、共享客户端、接口契约与浏览器测试
-├── tj-compact/            四个组合应用与公共装配运行时
-├── tj-gateway/            API 网关
-├── tj-common/             公共组件
-├── tj-api/                跨模块调用契约
-├── tj-auth/               认证服务与 SDK
-├── tj-*/                  用户、课程、交易、学习等业务实现
+├── zxt-compact/            四个组合应用与公共装配运行时
+├── zxt-gateway/            API 网关
+├── zxt-common/             公共组件
+├── zxt-api/                跨模块调用契约
+├── zxt-auth/               认证服务与 SDK
+├── zxt-*/                  用户、课程、交易、学习等业务实现
 ├── deploy/
 │   ├── compact/           默认部署、升级、备份恢复及报告
 │   ├── acceptance/        验收基础设施、迁移、测试与容器模板
@@ -31,14 +31,14 @@ Vocational-school/
 | `frontend/packages/shared/`                                        | 双端共享客户端与组件                 |
 | `frontend/openapi/`                                                | 接口契约                             |
 | `frontend/e2e/`                                                    | 浏览器验收                           |
-| `tj-compact/runtime/`                                              | 组合应用装配与运行隔离               |
-| `tj-compact/identity/`                                             | 组合认证、用户模块                   |
-| `tj-compact/commerce/`                                             | 组合交易、支付、促销模块             |
-| `tj-compact/education/`                                            | 组合课程、学习、考试、互动评价模块   |
-| `tj-compact/support/`                                              | 组合媒资、搜索、消息、数据模块       |
-| `tj-user/`、`tj-course/`、`tj-learning/`、`tj-exam/`               | 用户、课程、学习、考试业务实现       |
-| `tj-trade/`、`tj-pay/`、`tj-promotion/`                            | 订单、支付与退款、优惠券和促销       |
-| `tj-media/`、`tj-search/`、`tj-message/`、`tj-data/`、`tj-remark/` | 媒资、课程搜索、消息、数据与互动评价 |
+| `zxt-compact/runtime/`                                              | 组合应用装配与运行隔离               |
+| `zxt-compact/identity/`                                             | 组合认证、用户模块                   |
+| `zxt-compact/commerce/`                                             | 组合交易、支付、促销模块             |
+| `zxt-compact/education/`                                            | 组合课程、学习、考试、互动评价模块   |
+| `zxt-compact/support/`                                              | 组合媒资、搜索、消息、数据模块       |
+| `zxt-user/`、`zxt-course/`、`zxt-learning/`、`zxt-exam/`               | 用户、课程、学习、考试业务实现       |
+| `zxt-trade/`、`zxt-pay/`、`zxt-promotion/`                            | 订单、支付与退款、优惠券和促销       |
+| `zxt-media/`、`zxt-search/`、`zxt-message/`、`zxt-data/`、`zxt-remark/` | 媒资、课程搜索、消息、数据与互动评价 |
 
 ### 默认部署的调用关系
 
@@ -74,17 +74,17 @@ flowchart LR
 1. [README](../README.md)：先启动并体验学生、教师、管理员入口。
 2. [使用说明](learning-experience.md)：理解选课、购买、学习、考试及退款后的权限变化。
 3. `frontend/apps/student/src/` 或 `frontend/apps/admin/src/`：从目标页面找到路由、请求及共享客户端。
-4. `tj-gateway/`：确认外部接口与认证入口。
-5. 目标业务模块的 `controller` → `service` → `mapper`，结合 `tj-api/` 理解跨模块调用。
-6. `tj-compact/` 的应用入口与配置：理解独立业务模块如何组合运行。
+4. `zxt-gateway/`：确认外部接口与认证入口。
+5. 目标业务模块的 `controller` → `service` → `mapper`，结合 `zxt-api/` 理解跨模块调用。
+6. `zxt-compact/` 的应用入口与配置：理解独立业务模块如何组合运行。
 7. [部署手册](../deploy/compact/README.md)、[可靠性运行手册](reliability-runbook.md)：最后阅读运维和故障恢复。
 
 ## 视频进度如何保存
 
 1. [Course.vue](../frontend/apps/student/src/views/Course.vue) 把播放事件交给 [playbackTiming.ts](../frontend/packages/shared/src/playbackTiming.ts)。页面传入两个请求函数，分别创建会话和发送心跳或结束请求；共享代码维护会话、序号和待发送样本。
-2. [PlaybackTimingController.java](../tj-learning/src/main/java/com/tianji/learning/controller/PlaybackTimingController.java) 接收 `/learning-records/playback-sessions` 下的请求，心跳和结束共用服务方法，通过 `end` 参数区分。
-3. [PlaybackTimingService.java](../tj-learning/src/main/java/com/tianji/learning/service/impl/PlaybackTimingService.java) 的 `heartbeat` 在事务内计算有效时长，更新 `learning_record` 的观看时长、折算时长和续播位置，并更新会话序号。首次达到完成门槛时更新小节状态和课程已学小节数。
-4. 前端请求时序见 [playbackTiming.test.ts](../frontend/packages/shared/src/playbackTiming.test.ts)，计时边界和数据库行为分别见 [PlaybackTimingRuleTest.java](../tj-learning/src/test/java/com/tianji/learning/reliability/PlaybackTimingRuleTest.java)、[PlaybackTimingDatabaseTest.java](../tj-learning/src/test/java/com/tianji/learning/reliability/PlaybackTimingDatabaseTest.java)。
+2. [PlaybackTimingController.java](../zxt-learning/src/main/java/com/zhixuetang/learning/controller/PlaybackTimingController.java) 接收 `/learning-records/playback-sessions` 下的请求，心跳和结束共用服务方法，通过 `end` 参数区分。
+3. [PlaybackTimingService.java](../zxt-learning/src/main/java/com/zhixuetang/learning/service/impl/PlaybackTimingService.java) 的 `heartbeat` 在事务内计算有效时长，更新 `learning_record` 的观看时长、折算时长和续播位置，并更新会话序号。首次达到完成门槛时更新小节状态和课程已学小节数。
+4. 前端请求时序见 [playbackTiming.test.ts](../frontend/packages/shared/src/playbackTiming.test.ts)，计时边界和数据库行为分别见 [PlaybackTimingRuleTest.java](../zxt-learning/src/test/java/com/zhixuetang/learning/reliability/PlaybackTimingRuleTest.java)、[PlaybackTimingDatabaseTest.java](../zxt-learning/src/test/java/com/zhixuetang/learning/reliability/PlaybackTimingDatabaseTest.java)。
 
 ## 本地文件的保留与清理
 

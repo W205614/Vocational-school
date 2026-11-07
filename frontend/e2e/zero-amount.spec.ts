@@ -8,7 +8,7 @@ test('full coupon discount settles without payment and approved withdrawal keeps
   test.skip(info.project.name !== 'student');
   test.setTimeout(150000);
   const context = await browser.newContext({
-      baseURL: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501',
+      baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501',
     }),
     admin = await context.newPage();
   const name = 'Zero ' + crypto.randomUUID().slice(0, 8);

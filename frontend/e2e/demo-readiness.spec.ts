@@ -56,7 +56,7 @@ test('demo admin creates and resets a teacher with one-time credentials and mand
   await expect(receipt.getByRole('alert').filter({ hasText: '临时凭据已复制' })).toBeVisible();
   await receipt.getByRole('button', { name: '已保存并关闭', exact: true }).click();
   const context = await browser.newContext({
-    baseURL: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501',
+    baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501',
   });
   try {
     const teacher = await context.newPage();
@@ -106,7 +106,7 @@ test('demo student reset uses initial password flow and restores the isolated fi
   test.skip(info.project.name !== 'student');
   test.setTimeout(90000);
   const adminContext = await browser.newContext({
-    baseURL: process.env.TJ_ADMIN_URL || 'http://127.0.0.1:23501',
+    baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501',
   });
   const admin = await adminContext.newPage();
   let fixtureReset = false,

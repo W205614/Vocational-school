@@ -12,7 +12,7 @@ from test_suites import TRANSPORT_TESTS
 
 def main():
     values, _ = secrets_config()
-    env = {**os.environ, 'TJ_INTERNAL_TOKEN': values['ACCEPTANCE_INTERNAL_TOKEN']}
+    env = {**os.environ, 'ZXT_INTERNAL_TOKEN': values['ACCEPTANCE_INTERNAL_TOKEN']}
     env.setdefault('JAVA_HOME', 'E:/Program Files/jdk')
     tests = TRANSPORT_TESTS
     folder = LOCAL / 'transport-tests' / uuid.uuid4().hex
@@ -22,7 +22,7 @@ def main():
         '-B',
         '-Pcompact',
         '-pl',
-        'tj-compact/runtime',
+        'zxt-compact/runtime',
         '-am',
         '-Dtest=' + ','.join(tests),
         '-Dsurefire.failIfNoSpecifiedTests=false',

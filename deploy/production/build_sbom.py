@@ -35,12 +35,12 @@ def bind_resolved_bom(path, commit, started, completed=None):
     metadata["timestamp"] = completed.isoformat()
     properties = metadata.setdefault("properties", [])
     properties[:] = [
-        value for value in properties if value.get("name") != "tianji:source:revision"
+        value for value in properties if value.get("name") != "zhixuetang:source:revision"
     ]
-    properties.append({"name": "tianji:source:revision", "value": commit})
+    properties.append({"name": "zhixuetang:source:revision", "value": commit})
     path.write_text(json.dumps(bom, indent=2) + "\n", encoding="utf8")
     binding = {
-        "schema": "tianji-security-sbom-v1",
+        "schema": "zhixuetang-security-sbom-v1",
         "commit": commit,
         "started_at": started.isoformat(),
         "completed_at": completed.isoformat(),

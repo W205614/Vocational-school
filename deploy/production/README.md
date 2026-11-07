@@ -16,19 +16,19 @@
 
 COS 桶与对象默认私有，API 和 worker 使用不同 IAM 身份。API 仅允许所需隔离上传、元数据读取和已处理对象读取，以及 `covers/<sha256>.png|jpg` 的私有写入、读取和元数据查询；worker 仅允许隔离输入读取、已处理输出写入、受控清理，不授予 covers 权限。两者需要读取桶 ACL/policy 供启动检查；配置桶 CORS 仅允许两个门户的 HTTPS origin、必要的 PUT/HEAD 及已签名头。封面通过既有站内 course-covers 路径代理，视频 `CLOUD_COS` 每次媒体请求复核权益，不直接返回公开 COS/VOD URL。云 VOD CDN/PSIGN 无法保证即时撤权，因此本轮不启用 VOD 分发。
 
-worker 使用 `tj-media/docker/Dockerfile.worker`，挂载维护中的 ClamAV signatures PVC 为只读；该卷必须能跨可用区读取，文件及祖先目录必须实际允许 UID/GID10001 读取／遍历（不能仅依赖 CSI 是否实现 fsGroup）。病毒库由独立服务更新并配置过期告警；没有签名或扫描失败不得进入 READY。工作盘为有界 `emptyDir`，不挂载本机媒资目录。IAM 的 HEAD／GET／PUT／DELETE 需限制隔离与 READY 前缀，若私有 ACL 请求需要 PutObjectACL 权限应按最小范围单独授权，不能为解决403开放公有 ACL。
+worker 使用 `zxt-media/docker/Dockerfile.worker`，挂载维护中的 ClamAV signatures PVC 为只读；该卷必须能跨可用区读取，文件及祖先目录必须实际允许 UID/GID10001 读取／遍历（不能仅依赖 CSI 是否实现 fsGroup）。病毒库由独立服务更新并配置过期告警；没有签名或扫描失败不得进入 READY。工作盘为有界 `emptyDir`，不挂载本机媒资目录。IAM 的 HEAD／GET／PUT／DELETE 需限制隔离与 READY 前缀，若私有 ACL 请求需要 PutObjectACL 权限应按最小范围单独授权，不能为解决403开放公有 ACL。
 
 ## 渲染和发布
 
 ### 托管 MySQL 初始化、升级与首个管理员
 
-数据库操作使用独立迁移账号，不能使用应用 DML 账号、`root` 或通用 `admin`。该账号需具备十二个 `tj_*` 库的建库、DDL、触发器及迁移所需 DML 权限；启动检查要求每个库都有直接 CREATE／ALTER／TRIGGER 授权，不凭角色名称推断权限。发布后不得把迁移凭据挂载给应用。准备可信 MySQL 8 客户端和仅当前操作员／SYSTEM／Administrators 可读的配置文件；Linux 权限为 `0600`。Windows 可用 `database.protect()` 为新建的专用文件收紧 ACL。先运行 `python -m pip install -r deploy/production/requirements.txt` 安装声明的依赖，其中 `bcrypt` 用于首个管理员密码哈希，Windows 的 `pywin32` 用于权限检查；安装依赖不接触云环境。配置示意如下，所有值由生产环境提供，密码仅存于该受保护文件：
+数据库操作使用独立迁移账号，不能使用应用 DML 账号、`root` 或通用 `admin`。该账号需具备十二个 `zxt_*` 库的建库、DDL、触发器及迁移所需 DML 权限；启动检查要求每个库都有直接 CREATE／ALTER／TRIGGER 授权，不凭角色名称推断权限。发布后不得把迁移凭据挂载给应用。准备可信 MySQL 8 客户端和仅当前操作员／SYSTEM／Administrators 可读的配置文件；Linux 权限为 `0600`。Windows 可用 `database.protect()` 为新建的专用文件收紧 ACL。先运行 `python -m pip install -r deploy/production/requirements.txt` 安装声明的依赖，其中 `bcrypt` 用于首个管理员密码哈希，Windows 的 `pywin32` 用于权限检查；安装依赖不接触云环境。配置示意如下，所有值由生产环境提供，密码仅存于该受保护文件：
 
 ```ini
 [client]
 host=<实际托管MySQL的DNS主机名>
 port=3306
-user=ddl_tianji
+user=ddl_zhixuetang
 password=<独立迁移凭据>
 ssl-ca=E:/secure/mysql-provider-ca.pem
 ssl-mode=VERIFY_IDENTITY
@@ -37,11 +37,11 @@ ssl-mode=VERIFY_IDENTITY
 `database.py` 要求 `--expected-host` 与文件中的 DNS 完全一致，并在命令行强制 TCP、可信 CA 和 `VERIFY_IDENTITY`；不把密码放入参数或环境变量。它检查实际连接身份、DDL 权限和加密状态，在同一连接持有迁移锁，断线后停止，禁止自动重连重放。
 
 ```powershell
-# 仅新环境：任何 tj_ 库存在都会拒绝；不会覆盖或删除已有库。
-python deploy/production/database.py init --defaults-extra-file E:/secure/tianji-migration.cnf --expected-host <实际托管MySQL的DNS主机名> --namespace <部署namespace> --result E:/secure/init-result.json
+# 仅新环境：任何 zxt_ 库存在都会拒绝；不会覆盖或删除已有库。
+python deploy/production/database.py init --defaults-extra-file E:/secure/zhixuetang-migration.cnf --expected-host <实际托管MySQL的DNS主机名> --namespace <部署namespace> --result E:/secure/init-result.json
 
 # 现有环境：先取得可恢复备份，再执行向前迁移。
-python deploy/production/database.py migrate --defaults-extra-file E:/secure/tianji-migration.cnf --expected-host <实际托管MySQL的DNS主机名> --namespace <部署namespace> --result E:/secure/migrate-result.json
+python deploy/production/database.py migrate --defaults-extra-file E:/secure/zhixuetang-migration.cnf --expected-host <实际托管MySQL的DNS主机名> --namespace <部署namespace> --result E:/secure/migrate-result.json
 ```
 
 初始化只复用公开 `schema.sql` 与经过白名单检查的 `catalog.sql`，去掉 dump 中的 DROP 和表锁；保留角色、菜单、权限和历史迁移校验记录，不导入学生、教师、演示订单、模拟资金或课程素材。随后调用原有迁移器的重复数据预检与校验和迁移。已有库只能走 `migrate`；发现重复数据、历史文件校验和变化或部分 DDL 失败时停下检查，保留失败状态与诊断材料，核对后继续向前修复。托管服务静态加密、备份与跨区能力仍需单独配置及验收。
@@ -49,7 +49,7 @@ python deploy/production/database.py migrate --defaults-extra-file E:/secure/tia
 首个管理员另外显式创建。准备同样受保护的 JSON 文件，字段为 `namespace`、`username`、`phone`、`name`、`role`；`role` 必须为 `admin`，用户名须以 namespace 将连字符改为下划线后的前缀加 `_` 开头，且总长不超过 32 字符。管理员手机号需符合现有 11 位手机号字段。使用真实操作员资料，不使用演示账号。
 
 ```powershell
-python deploy/production/database.py bootstrap-admin --defaults-extra-file E:/secure/tianji-migration.cnf --expected-host <实际托管MySQL的DNS主机名> --namespace <部署namespace> --admin-spec E:/secure/administrator.json --receipt E:/secure/initial-admin-receipt.json --result E:/secure/bootstrap-result.json
+python deploy/production/database.py bootstrap-admin --defaults-extra-file E:/secure/zhixuetang-migration.cnf --expected-host <实际托管MySQL的DNS主机名> --namespace <部署namespace> --admin-spec E:/secure/administrator.json --receipt E:/secure/initial-admin-receipt.json --result E:/secure/bootstrap-result.json
 ```
 
 工具只创建一个随机临时密码的员工管理员，24 小时有效，强制首次改密。一次性回执先受保护地持久化，再提交用户与角色关联；有活跃管理员、重名账号或已有回执时拒绝执行，不重置已有密码。先通过管理员端完成初始改密，再用自设密码登记／确认 MFA，然后登录业务工作台；此流程不生成绕过 MFA 的业务会话。回执如停留 `PREPARED_NOT_APPLIED`，先核对数据库状态，禁止当作失败后重新重置账号。结果只记录源码指纹、迁移身份边界和查询计数，不记录 SQL 或凭据；所有结果文件要求新路径，不覆盖旧证据。
@@ -85,7 +85,7 @@ kubectl --context <候选集群> apply --dry-run=server -f <输出目录>/resour
 
 调用方向分别分配密钥；同组模块的 loopback 调用使用自己的 self edge。接收方只持有所需 inbound，发送方只持有所需 outbound，不创建全局令牌。worker 没有内部调用时使用空对象。监控调用身份为 `observability`，每个目标应用持有对应 inbound edge；Prometheus 只持有自己的 outbound edge。认证签名 JKS 只挂载到 identity。MFA 加密键是独立的 base64 32 字节密钥，不与服务令牌或媒资签名键复用。
 
-服务边令牌按接收方先行的新旧密钥窗口切换。JWT 已支持 kid、周期刷新的 JWK Set 与 JKS 证书白名单；渲染输入的 `signing.active_alias` 默认 `tianji`，`signing.verification_aliases` 默认空，接收方预先加载下一代证书后才能切换签名别名。MFA 旧解密键只在显式 `mfa_rotation: true` 时向 identity 增加 `TJ_AUTH_MFA_DECRYPTION_KEYS` 与 `TJ_AUTH_MFA_LEGACY_KEY_ID` 两个必需 Secret 键，默认部署不要求它们。密文批量重加密属于受控维护，不能直接覆盖 Secret 代替迁移。完整步骤见[认证密钥维护](../../docs/key-maintenance.md)，目标环境演练时核对维护与会话影响。
+服务边令牌按接收方先行的新旧密钥窗口切换。JWT 已支持 kid、周期刷新的 JWK Set 与 JKS 证书白名单；渲染输入的 `signing.active_alias` 默认 `zhixuetang`，`signing.verification_aliases` 默认空，接收方预先加载下一代证书后才能切换签名别名。MFA 旧解密键只在显式 `mfa_rotation: true` 时向 identity 增加 `ZXT_AUTH_MFA_DECRYPTION_KEYS` 与 `ZXT_AUTH_MFA_LEGACY_KEY_ID` 两个必需 Secret 键，默认部署不要求它们。密文批量重加密属于受控维护，不能直接覆盖 Secret 代替迁移。完整步骤见[认证密钥维护](../../docs/key-maintenance.md)，目标环境演练时核对维护与会话影响。
 
 生产启用真实账户流程、MFA 与 provider 短信模式。支付宝商户、seller-id、签名公钥、通知域名、回调幂等及金额校验分别验收。短信配置生产模板和供应商凭据后，分别核对受理结果与送达回执。隐私页面需在配置的 URL 实际发布。
 

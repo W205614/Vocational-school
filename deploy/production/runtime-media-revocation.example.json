@@ -1,7 +1,7 @@
 {
-  "schema": "tianji-runtime-checks-v1",
+  "schema": "zhixuetang-runtime-checks-v1",
   "suite": "media_revocation",
-  "namespace": "tianji-production",
+  "namespace": "zhixuetang-production",
   "environment": "isolated-production-candidate",
   "test_identity": "REPLACE_WITH_SYNTHETIC_REFUNDABLE_MEDIA_PURCHASER",
   "base_url": "https://REPLACE_WITH_STUDENT_HOST",

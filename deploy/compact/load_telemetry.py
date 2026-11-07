@@ -89,9 +89,9 @@ class Telemetry:
                     for name in (
                         'hikaricp_connections_pending',
                         'executor_queued_tasks',
-                        'tj_events_pending',
-                        'tj_events_oldest_seconds',
-                        'tj_operations_pending',
+                        'zxt_events_pending',
+                        'zxt_events_oldest_seconds',
+                        'zxt_operations_pending',
                         'jvm_gc_pause_seconds',
                     )
                 )

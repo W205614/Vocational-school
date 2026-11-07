@@ -1,0 +1,116 @@
+package com.zhixuetang.common.autoconfigure.mvc.advice;
+
+import com.zhixuetang.common.constants.Constant;
+import com.zhixuetang.common.domain.R;
+import com.zhixuetang.common.exceptions.CommonException;
+import com.zhixuetang.common.exceptions.DbException;
+import com.zhixuetang.common.utils.WebUtils;
+import feign.FeignException;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindException;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+@Slf4j
+public class CommonExceptionAdvice {
+
+    @ExceptionHandler(DbException.class)
+    public Object handleDbException(DbException e) {
+        log.error("mysql数据库操作异常 -> ", e);
+        return processResponse(e.getStatus(), e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(CommonException.class)
+    public Object handleBadRequestException(CommonException e) {
+        log.error(
+                "自定义异常 -> {} , 状态码：{}, 异常原因：{}  ",
+                e.getClass().getName(),
+                e.getStatus(),
+                e.getMessage());
+        log.debug("", e);
+        return processResponse(e.getStatus(), e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(FeignException.class)
+    public Object handleFeignException(FeignException e) {
+        log.error("feign远程调用异常 -> ", e);
+        int status = e.status() < 400 ? 503 : e.status();
+        return processResponse(status, status, "远程服务暂不可用，请稍后重试");
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Object handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        String msg =
+                e.getBindingResult().getAllErrors().stream()
+                        .map(ObjectError::getDefaultMessage)
+                        .collect(Collectors.joining("|"));
+        // Binding exception text/stack traces include rejected field values, including passwords.
+        log.error("请求参数校验异常 -> {}", msg);
+        return processResponse(400, 400, msg);
+    }
+
+    @ExceptionHandler(BindException.class)
+    public Object handleBindException(BindException e) {
+        log.error(
+                "请求参数绑定异常，字段：{}",
+                e.getBindingResult().getFieldErrors().stream()
+                        .map(org.springframework.validation.FieldError::getField)
+                        .distinct()
+                        .collect(Collectors.joining(",")));
+        return processResponse(400, 400, "请求参数格式错误");
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public Object handViolationException(ConstraintViolationException e) {
+        log.error("请求参数异常 -> ConstraintViolationException, {}", e.getMessage());
+
+        return processResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.value(),
+                e.getConstraintViolations().stream()
+                        .map(ConstraintViolation::getMessage)
+                        .distinct()
+                        .collect(Collectors.joining("|")));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public Object handleRuntimeException(Exception e) {
+        log.error("其他异常 uri : {} -> ", WebUtils.getRequest().getRequestURI(), e);
+        return processResponse(500, 500, "服务器内部异常");
+    }
+
+    @ExceptionHandler({
+        org.springframework.http.converter.HttpMessageNotReadableException.class,
+        org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+        org.springframework.web.bind.MissingServletRequestParameterException.class,
+        org.springframework.web.bind.MissingRequestHeaderException.class
+    })
+    public Object handleRequestFormatException(Exception error) {
+        return processResponse(400, 400, "请求参数缺失或格式错误");
+    }
+
+    private Object processResponse(int status, int code, String msg) {
+        if (status == 429) WebUtils.setResponseHeader("Retry-After", "30");
+        // 1.标记响应异常已处理（避免重复处理）
+        WebUtils.setResponseHeader(Constant.BODY_PROCESSED_MARK_HEADER, "true");
+        // 2.如果是网关请求，http状态码修改为200返回，前端基于业务状态码code来判断状态
+        // 如果是微服务请求，http状态码基于异常原样返回，微服务自己做fallback处理
+        if (WebUtils.isGatewayRequest()
+                || WebUtils.getRequest().getRequestURI().startsWith("/api/v2/"))
+            return ResponseEntity.status(status)
+                    .body(R.error(code, msg).requestId(MDC.get(Constant.REQUEST_ID_HEADER)));
+        return WebUtils.isGatewayRequest()
+                ? R.error(code, msg).requestId(MDC.get(Constant.REQUEST_ID_HEADER))
+                : ResponseEntity.status(status).body(msg);
+    }
+}

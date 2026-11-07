@@ -28,7 +28,7 @@ class RecoveryUpgradeTest(unittest.TestCase):
         local.mkdir(parents=True)
         images = {
             alias: {
-                'image': 'tianji-compact/' + alias + ':local',
+                'image': 'zhixuetang-compact/' + alias + ':local',
                 'imageId': 'sha256:' + hashlib.sha256(alias.encode()).hexdigest(),
                 **(
                     {'jarSha256': 'a' * 64} if alias not in {'student', 'admin'} else {}
@@ -139,7 +139,7 @@ class RecoveryUpgradeTest(unittest.TestCase):
             'volumes': ['compact_rabbit:/var/lib/rabbitmq'],
         }
         return {
-            'name': 'tianji-recovery-test',
+            'name': 'zhixuetang-recovery-test',
             'services': services,
             'volumes': {'compact_rabbit': {}},
         }

@@ -25,21 +25,21 @@ jobs:
         with: { version: v0.76.1, cache: true }
       - name: Verify standalone Nacos runtime packaging
         run: |
-          python deploy/production/check_nacos_runtime.py --compact tj-gateway/target/tj-gateway.jar tj-compact/*/target/*-app.jar
-          mvn -B -pl tj-gateway -am -Dtest=NacosSdkRuntimeTest -Dsurefire.failIfNoSpecifiedTests=false package
-          python deploy/production/check_nacos_runtime.py tj-gateway/target/tj-gateway.jar
+          python deploy/production/check_nacos_runtime.py --compact zxt-gateway/target/zxt-gateway.jar zxt-compact/*/target/*-app.jar
+          mvn -B -pl zxt-gateway -am -Dtest=NacosSdkRuntimeTest -Dsurefire.failIfNoSpecifiedTests=false package
+          python deploy/production/check_nacos_runtime.py zxt-gateway/target/zxt-gateway.jar
       - name: Gate dependency vulnerabilities and repository secrets
-        run: python deploy/production/security_scan.py source --commit '${{ github.sha }}' --standalone-jar tj-gateway/target/tj-gateway.jar --output .local/security-source.json
+        run: python deploy/production/security_scan.py source --commit '${{ github.sha }}' --standalone-jar zxt-gateway/target/zxt-gateway.jar --output .local/security-source.json
       - name: Build isolated media worker artifact
-        run: mvn -B -pl tj-media -am -Pcompact,media-worker -DskipTests package
+        run: mvn -B -pl zxt-media -am -Pcompact,media-worker -DskipTests package
       - name: Build and scan worker container
         shell: bash
         run: |
           mkdir -p .local/security-worker
-          cp tj-media/target/tj-media-worker.jar .local/security-worker/tj-media-worker.jar
-          cp tj-media/docker/Dockerfile.worker .local/security-worker/Dockerfile
-          docker build --build-arg VCS_REF=${{ github.sha }} -t tianji-security/media-worker:${{ github.sha }} .local/security-worker
-          python -c 'import json,subprocess; from pathlib import Path; image="tianji-security/media-worker:${{ github.sha }}"; identity=subprocess.check_output(["docker","image","inspect",image,"--format","{{.Id}}"],text=True).strip(); Path(".local/security-worker/images.json").write_text(json.dumps({"media-worker":{"imageId":identity}}))'
+          cp zxt-media/target/zxt-media-worker.jar .local/security-worker/zxt-media-worker.jar
+          cp zxt-media/docker/Dockerfile.worker .local/security-worker/Dockerfile
+          docker build --build-arg VCS_REF=${{ github.sha }} -t zhixuetang-security/media-worker:${{ github.sha }} .local/security-worker
+          python -c 'import json,subprocess; from pathlib import Path; image="zhixuetang-security/media-worker:${{ github.sha }}"; identity=subprocess.check_output(["docker","image","inspect",image,"--format","{{.Id}}"],text=True).strip(); Path(".local/security-worker/images.json").write_text(json.dumps({"media-worker":{"imageId":identity}}))'
           python deploy/production/security_scan.py images --commit '${{ github.sha }}' --required-images media-worker --images-file .local/security-worker/images.json --output .local/security-worker.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()

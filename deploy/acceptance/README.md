@@ -1,6 +1,6 @@
 # 独立验收环境
 
-此目录使用 Compose 项目 `vocational-acceptance`，所有发布端口绑定 127.0.0.1。现有 `tianji-desktop` 容器、数据卷和配置不由这里的脚本修改。数据库克隆和故障注入只用于验收，不可直接对生产执行。
+此目录使用 Compose 项目 `vocational-acceptance`，所有发布端口绑定 127.0.0.1。历史 `tianji-desktop` 容器、数据卷和配置不由这里的脚本修改。数据库克隆和故障注入只用于验收，不可直接对生产执行。
 
 ## 准备和启动
 
@@ -20,7 +20,7 @@ python deploy/acceptance/rebuild_search.py
 python deploy/acceptance/prepare_observability.py
 ```
 
-`--clone` 只读取现有 tianji-desktop MySQL 的 12 个数据库，拒绝覆盖已有验收库。没有该部署时，CI 使用 `initialize_test_schemas.py` 初始化四个专用测试库，仅验证后端集成测试，不等同完整业务环境。迁移发现历史重复记录会停止，必须先人工核对；不得删除记录来绕过唯一约束。
+`--clone` 只读取历史 `tianji-desktop` MySQL 的 12 个数据库，克隆源沿用现有资源身份 `tianji-desktop-mysql-1`，拒绝覆盖已有验收库。新建默认部署使用 `zhixuetang-compact`，品牌更名不会重命名历史资源。没有该历史部署时，CI 使用 `initialize_test_schemas.py` 初始化四个专用测试库，仅验证后端集成测试，不等同完整业务环境。迁移发现历史重复记录会停止，必须先人工核对；不得删除记录来绕过唯一约束。
 
 本地随机凭据、克隆备份、对象、运行配置、PID 和报告保存在被忽略的 `.env`/`.local`。不要提交、展示或分享这些文件。启动器从完成构建的可执行 JAR 创建 SHA-256 校验的固定副本，运行中的 JVM 不读取 Maven target/classes；先完成构建再启动。当前 Windows Java 路径见 `start_service.py`，迁移到其他电脑前调整路径。
 
@@ -37,7 +37,7 @@ npm --prefix frontend run dev --workspace @school/admin
 按顺序执行，浏览器、重启、状态投影修改、压测不能互相重叠：
 
 ```powershell
-python deploy/acceptance/run_tests.py --modules tj-remark,tj-user,tj-promotion,tj-learning,tj-exam,tj-pay/tj-pay-service,tj-auth/tj-auth-service,tj-search,tj-gateway,tj-trade --tests PageQueryTest,ReliabilityDatabaseTest,ResponseConverterTest,CookieBuilderTest,AcceptanceFaultsTest,LearningReliabilityTest,DelayTaskTest,ExamReliabilityTest,ObjectiveScoringTest,DiscountServiceTest,ProviderSettlementTest,CourseRepositoryBulkTest,FeignBulkheadTest,ReliabilityMetricsTest,AsyncSmsClientReliabilityTest,VerificationCodeReliabilityTest,LikeConcurrencyReliabilityTest
+python deploy/acceptance/run_tests.py --modules zxt-remark,zxt-user,zxt-promotion,zxt-learning,zxt-exam,zxt-pay/zxt-pay-service,zxt-auth/zxt-auth-service,zxt-search,zxt-gateway,zxt-trade --tests PageQueryTest,ReliabilityDatabaseTest,ResponseConverterTest,CookieBuilderTest,AcceptanceFaultsTest,LearningReliabilityTest,DelayTaskTest,ExamReliabilityTest,ObjectiveScoringTest,DiscountServiceTest,ProviderSettlementTest,CourseRepositoryBulkTest,FeignBulkheadTest,ReliabilityMetricsTest,AsyncSmsClientReliabilityTest,VerificationCodeReliabilityTest,LikeConcurrencyReliabilityTest
 python deploy/acceptance/api_smoke.py
 python deploy/acceptance/coupon_concurrency.py
 python deploy/acceptance/financial_smoke.py
@@ -102,4 +102,4 @@ python deploy/acceptance/container_browser.py
 python deploy/acceptance/stop_acceptance.py
 ```
 
-只停止命令行与 PID 身份匹配的验收进程，以及 Compose 项目标签和服务名匹配的验收容器；不删除任何数据卷，不停止原 `tianji-desktop` 或其他项目。只有进程身份发生变化时跳过；启动工具还会检查端口占用。若后续只想停止验收 JVM、继续保留基础服务，使用 `--keep-infra`。不要结束 VmmemWSL 或执行全局 WSL 关闭来保留原容器访问。
+只停止命令行与 PID 身份匹配的验收进程，以及 Compose 项目标签和服务名匹配的验收容器；不删除任何数据卷，不停止历史 `tianji-desktop` 或其他项目。只有进程身份发生变化时跳过；启动工具还会检查端口占用。若后续只想停止验收 JVM、继续保留基础服务，使用 `--keep-infra`。不要结束 VmmemWSL 或执行全局 WSL 关闭来保留原容器访问。

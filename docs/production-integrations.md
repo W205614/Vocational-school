@@ -23,7 +23,7 @@
 
 ```powershell
 python deploy/production/integrations.py check --spec E:/secure/integrations.json --result E:/secure/mappings-check.json
-python deploy/production/integrations.py apply --spec E:/secure/integrations.json --defaults-extra-file E:/secure/tianji-migration.cnf --expected-host <托管MySQL主机名> --result E:/secure/mappings-apply.json
+python deploy/production/integrations.py apply --spec E:/secure/integrations.json --defaults-extra-file E:/secure/zhixuetang-migration.cnf --expected-host <托管MySQL主机名> --result E:/secure/mappings-apply.json
 ```
 
 该命令在同一事务内初始化支付宝渠道、阿里云平台、`VERIFY_CODE` 站内模板及供应商模板关联，使用现有数据库部署锁。内容完全相同则返回 `UNCHANGED`；业务编码重复或已有配置冲突时停止且不覆盖。修改现有映射应先按实际供应商配置核对，再由有权限的管理员调整；不要通过删除真实业务表重新初始化。
@@ -98,19 +98,19 @@ python deploy/production/acceptance.py --package E:/secure/rendered --evidence E
 
 生产应用启用 `http.server.requests` 延迟直方图，显式桶为100ms、500ms、1s、3s、10s。网关 recording rules 按候选 namespace 记录请求速率、P95 和五分钟成功比例，排除健康探针；成功比例分母为2xx、3xx、5xx和429，分子为2xx／3xx，其他明确客户端拒绝不计入该比例。全失败时结果为0，无业务请求时无样本。月度 SLO 另按持续运行数据评估，异步业务完成通过任务与端到端流程观察。
 
-短信监控区分失败、未知结果及采样时间停滞，分别由 `TianjiSmsFailed`、`TianjiSmsOutcomeUnknown`、`TianjiSmsMetricsStale` 告警；修复供应商或采集后须核对实际恢复通知。`monitoring-rule-tests.yml` 用真实 promtool 验证混合状态流量、全失败、无流量、P95、短信告警触发与恢复。测试仅在显式设置 `TJ_PROMTOOL_IMAGE` 为现有本地不可变 Prometheus image ID 时运行，使用无网络临时容器、只读夹具及有界临时工作盘，不启动日常 Prometheus。
+短信监控区分失败、未知结果及采样时间停滞，分别由 `ZhixuetangSmsFailed`、`ZhixuetangSmsOutcomeUnknown`、`ZhixuetangSmsMetricsStale` 告警；修复供应商或采集后须核对实际恢复通知。`monitoring-rule-tests.yml` 用真实 promtool 验证混合状态流量、全失败、无流量、P95、短信告警触发与恢复。测试仅在显式设置 `ZXT_PROMTOOL_IMAGE` 为现有本地不可变 Prometheus image ID 时运行，使用无网络临时容器、只读夹具及有界临时工作盘，不启动日常 Prometheus。
 
-隐私任务使用独立持久队列，因此另采集 `tj_privacy_tasks_pending`、`tj_privacy_tasks_failed`、`tj_privacy_tasks_approval_required`、`tj_privacy_tasks_oldest_seconds` 和 `tj_privacy_metrics_last_success_timestamp_seconds`。`TianjiPrivacyTaskFailed` 提醒管理员处理失败任务；`TianjiPrivacyMetricsStale` 提示采集时间停滞。等待审批是明确的业务状态，仅展示数量，不当作技术故障；修复后在管理台核对影响再继续任务。
+隐私任务使用独立持久队列，因此另采集 `zxt_privacy_tasks_pending`、`zxt_privacy_tasks_failed`、`zxt_privacy_tasks_approval_required`、`zxt_privacy_tasks_oldest_seconds` 和 `zxt_privacy_metrics_last_success_timestamp_seconds`。`ZhixuetangPrivacyTaskFailed` 提醒管理员处理失败任务；`ZhixuetangPrivacyMetricsStale` 提示采集时间停滞。等待审批是明确的业务状态，仅展示数量，不当作技术故障；修复后在管理台核对影响再继续任务。
 
 `backup-policy.yml` 由平台侧配置实施；`backup_proof.py` 接收备份校验记录并发布监控指标。实际备份和恢复由平台执行，本机备份保持停用。
 
-受保护证明 JSON 字段为：`schema:"tianji-managed-backup-proof-v1"`、`status:"VERIFIED"`、准确 `commit`、`manifest_sha256`、`namespace`、带时区 `completed_at`、实际 `provider`／`resource_id`／`backup_id`、`verified_components:["database","objects","recovery_keys"]`，以及相对证明目录的 `artifacts:[{"path":"...","sha256":"..."}]`。附件包含实际供应商导出和校验记录，由操作员复核来源，工具校验字段、哈希及候选绑定。
+受保护证明 JSON 字段为：`schema:"zhixuetang-managed-backup-proof-v1"`、`status:"VERIFIED"`、准确 `commit`、`manifest_sha256`、`namespace`、带时区 `completed_at`、实际 `provider`／`resource_id`／`backup_id`、`verified_components:["database","objects","recovery_keys"]`，以及相对证明目录的 `artifacts:[{"path":"...","sha256":"..."}]`。附件包含实际供应商导出和校验记录，由操作员复核来源，工具校验字段、哈希及候选绑定。
 
 ```powershell
-python deploy/production/backup_proof.py --package E:/secure/rendered --proof E:/secure/evidence/managed-backup.json --textfile E:/secure/textfile/tianji.prom
+python deploy/production/backup_proof.py --package E:/secure/rendered --proof E:/secure/evidence/managed-backup.json --textfile E:/secure/textfile/zhixuetang.prom
 ```
 
-监控环境需安装并采集 Prometheus textfile collector，文件目录由运维创建且只允许指定发布者写入、采集服务读取；将该 exporter 接入现有 Prometheus。工具生成 `tianji_backup_last_verified_timestamp_seconds{namespace="<实际namespace>"}`。仅通过完整校验且在24小时内的证明才更新成功时间；失败保留上次值，既有 missing／expired 告警负责报告缺失或过期。`.pending` 表示上次原子发布未完成，先检查保留文件与目标权限，不用清空证明目录解决。
+监控环境需安装并采集 Prometheus textfile collector，文件目录由运维创建且只允许指定发布者写入、采集服务读取；将该 exporter 接入现有 Prometheus。工具生成 `zhixuetang_backup_last_verified_timestamp_seconds{namespace="<实际namespace>"}`。仅通过完整校验且在24小时内的证明才更新成功时间；失败保留上次值，既有 missing／expired 告警负责报告缺失或过期。`.pending` 表示上次原子发布未完成，先检查保留文件与目标权限，不用清空证明目录解决。
 
 把渲染出的 Alertmanager 配置合入真实安装，并配置实际支持 Alertmanager Webhook 格式的通知接收器和受保护的 `receiver-token`；需要钉钉、企业微信等格式转换时，使用通知平台已有的 Alertmanager 接入能力。必须实际发送故障通知和恢复通知，并在外部接收端留存回执。验收以外部接收器及值班人员收到故障和恢复通知的回执为准。
 
@@ -120,7 +120,7 @@ python deploy/production/backup_proof.py --package E:/secure/rendered --proof E:
 
 安装生产工具依赖后运行 `python -m unittest discover -s deploy/production -p 'test_*.py' -v`。普通用例覆盖配置与协议，以下两项集成验证需要显式选择隔离资源：
 
-- MySQL：准备仅含合成数据的可丢弃容器，名称为 `tianji-readiness-test-<标识>`；设置 `TJ_READINESS_MYSQL_CONTAINER` 和 `TJ_READINESS_MYSQL_PASSWORD`。测试写入 `acceptance_bootstrap_*` 专用库，验证真实渠道和模板的幂等、冲突及事务回滚。
-- Prometheus：设置 `TJ_PROMTOOL_IMAGE` 为本机已有镜像的不可变 `sha256:<64位ID>`。测试在无网络、只读挂载的临时容器内执行 promtool，核对网关记录规则、短信及隐私告警触发和恢复。
+- MySQL：准备仅含合成数据的可丢弃容器，名称为 `zhixuetang-readiness-test-<标识>`；设置 `ZXT_READINESS_MYSQL_CONTAINER` 和 `ZXT_READINESS_MYSQL_PASSWORD`。测试写入 `acceptance_bootstrap_*` 专用库，验证真实渠道和模板的幂等、冲突及事务回滚。
+- Prometheus：设置 `ZXT_PROMTOOL_IMAGE` 为本机已有镜像的不可变 `sha256:<64位ID>`。测试在无网络、只读挂载的临时容器内执行 promtool，核对网关记录规则、短信及隐私告警触发和恢复。
 
 未配置的集成项显示为跳过，结果中分别记录通过、失败和跳过数量。测试结束后恢复原进程环境变量，隔离资源按项目归属清单处理。

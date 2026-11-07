@@ -6,40 +6,40 @@ from prepare import BASE, LOCAL, local_secrets
 
 REPO = BASE.parents[1]
 MODULES = {
-    'data': ('tj-data', 'com.tianji.data.DataCenterApplication', 23895, 'tj_data'),
-    'pay': ('tj-pay/tj-pay-service', 'com.tianji.pay.PayApplication', 23883, 'tj_pay'),
+    'data': ('zxt-data', 'com.zhixuetang.data.DataCenterApplication', 23895, 'tj_data'),
+    'pay': ('zxt-pay/zxt-pay-service', 'com.zhixuetang.pay.PayApplication', 23883, 'tj_pay'),
     'promotion': (
-        'tj-promotion',
-        'com.tianji.promotion.PromotionApplication',
+        'zxt-promotion',
+        'com.zhixuetang.promotion.PromotionApplication',
         23892,
         'tj_promotion',
     ),
     'learning': (
-        'tj-learning',
-        'com.tianji.learning.LearningApplication',
+        'zxt-learning',
+        'com.zhixuetang.learning.LearningApplication',
         23890,
         'tj_learning',
     ),
-    'trade': ('tj-trade', 'com.tianji.trade.TradeApplication', 23888, 'tj_trade'),
-    'exam': ('tj-exam', 'com.tianji.exam.ExamApplication', 23885, 'tj_exam'),
-    'course': ('tj-course', 'com.tianji.course.CourseApplication', 23881, 'tj_course'),
-    'user': ('tj-user', 'com.tianji.user.UserApplication', 23882, 'tj_user'),
+    'trade': ('zxt-trade', 'com.zhixuetang.trade.TradeApplication', 23888, 'tj_trade'),
+    'exam': ('zxt-exam', 'com.zhixuetang.exam.ExamApplication', 23885, 'tj_exam'),
+    'course': ('zxt-course', 'com.zhixuetang.course.CourseApplication', 23881, 'tj_course'),
+    'user': ('zxt-user', 'com.zhixuetang.user.UserApplication', 23882, 'tj_user'),
     'auth': (
-        'tj-auth/tj-auth-service',
-        'com.tianji.auth.AuthApplication',
+        'zxt-auth/zxt-auth-service',
+        'com.zhixuetang.auth.AuthApplication',
         23884,
         'tj_auth',
     ),
-    'media': ('tj-media', 'com.tianji.media.MediaApplication', 23886, 'tj_media'),
-    'remark': ('tj-remark', 'com.tianji.remark.RemarkApplication', 23891, 'tj_remark'),
-    'search': ('tj-search', 'com.tianji.search.SearchApplication', 23889, 'tj_search'),
+    'media': ('zxt-media', 'com.zhixuetang.media.MediaApplication', 23886, 'tj_media'),
+    'remark': ('zxt-remark', 'com.zhixuetang.remark.RemarkApplication', 23891, 'tj_remark'),
+    'search': ('zxt-search', 'com.zhixuetang.search.SearchApplication', 23889, 'tj_search'),
     'message': (
-        'tj-message/tj-message-service',
-        'com.tianji.message.MessageApplication',
+        'zxt-message/zxt-message-service',
+        'com.zhixuetang.message.MessageApplication',
         23887,
         'tj_message',
     ),
-    'gateway': ('tj-gateway', 'com.tianji.gateway.GatewayApplication', 23310, None),
+    'gateway': ('zxt-gateway', 'com.zhixuetang.gateway.GatewayApplication', 23310, None),
 }
 
 
@@ -144,18 +144,18 @@ def main():
             }
         }
     }
-    config.setdefault('tj', {})['xxljob'] = {'enabled': False}
+    config.setdefault('zxt', {})['xxljob'] = {'enabled': False}
     if args.service == 'learning':
-        config['tj'].setdefault('learning', {})[
+        config['zxt'].setdefault('learning', {})[
             'progress-interval-ms'
         ] = args.progress_interval_ms
     if args.fault:
-        config['tj']['acceptance'] = {
+        config['zxt']['acceptance'] = {
             'fault': {'point': args.fault, 'business-key': args.fault_key}
         }
     if args.service == 'media':
-        config['tj']['platform'] = {'file': 'LOCAL', 'media': 'LOCAL'}
-        config['tj']['local-storage'] = {
+        config['zxt']['platform'] = {'file': 'LOCAL', 'media': 'LOCAL'}
+        config['zxt']['local-storage'] = {
             'enabled': True,
             'directory': str(LOCAL / 'objects'),
         }
@@ -169,19 +169,19 @@ def main():
                 'org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration'
             ]
         }
-        config['tj']['reliability'] = {'enabled': False}
+        config['zxt']['reliability'] = {'enabled': False}
         config['management']['endpoint']['health']['group']['readiness'][
             'include'
         ] = 'readinessState,redis'
     if args.service == 'search':
         spring['elasticsearch'] = {'uris': 'http://127.0.0.1:23920'}
-        config['tj']['interests'] = {'top-number': 10}
+        config['zxt']['interests'] = {'top-number': 10}
     if args.service == 'message':
-        config['tj']['sms']['simulated'] = True
+        config['zxt']['sms']['simulated'] = True
     if args.service == 'pay':
-        config['tj']['pay']['simulated'] = True
+        config['zxt']['pay']['simulated'] = True
         resource_excludes = (
-            config['tj']
+            config['zxt']
             .setdefault('auth', {})
             .setdefault('resource', {})
             .setdefault('excludeLoginPaths', [])
@@ -189,12 +189,12 @@ def main():
         resource_excludes.extend(
             ['/pay-orders/**', '/refund-orders/**', '/pay-channels/list', '/notify/**']
         )
-    resource = config['tj'].setdefault('auth', {}).setdefault('resource', {})
+    resource = config['zxt'].setdefault('auth', {}).setdefault('resource', {})
     resource['enable'] = True
     resource.setdefault('excludeLoginPaths', []).append('/actuator/health/**')
     if args.service == 'media':
         resource['excludeLoginPaths'].extend(['/local-content/**', '/course-covers/*'])
-    env['TJ_INTERNAL_TOKEN'] = secrets['ACCEPTANCE_INTERNAL_TOKEN']
+    env['ZXT_INTERNAL_TOKEN'] = secrets['ACCEPTANCE_INTERNAL_TOKEN']
     # All cross-service requests remain inside this acceptance environment.
     clients = (
         spring['cloud']
@@ -251,19 +251,19 @@ def main():
     if args.service == 'gateway':
         spring['main'] = {'web-application-type': 'reactive'}
         spring['cloud']['gateway']['server']['webflux']['routes'] = []
-        config['tj']['routes'] = {
+        config['zxt']['routes'] = {
             alias: f'http://127.0.0.1:{target}'
             for alias, (_, _, target, _) in MODULES.items()
             if alias != 'gateway'
         }
-        config['tj']['reliability'] = {'enabled': False}
+        config['zxt']['reliability'] = {'enabled': False}
     config['mybatis-plus'] = {
         'mapper-locations': 'classpath*:mapper/**/*.xml',
         'configuration': {'map-underscore-to-camel-case': True},
     }
     config['logging'] = {'level': {'root': 'INFO', 'com.alibaba.nacos': 'WARN'}}
     if args.service == 'gateway':
-        config['tj']['simulators'] = {
+        config['zxt']['simulators'] = {
             'enabled': True,
             'url': 'http://127.0.0.1:23883',
             'storage': True,

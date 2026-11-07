@@ -31,7 +31,7 @@ class ConfigurationPromotionTest(unittest.TestCase):
                     'hikari': {'maximum-pool-size': pool},
                 }
             },
-            'tj': {
+            'zxt': {
                 'feign': {'internal-ports': str(25001 + offset)},
                 'routes': {
                     'auth': 'http://app-identity:'

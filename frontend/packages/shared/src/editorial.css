@@ -1,4 +1,4 @@
-/* Tianji: course content as an editorial, workspaces as useful tools. */
+/* Zhixuetang: course content as an editorial, workspaces as useful tools. */
 :root {
   --paper: #fff;
   --ground: #f2f4f6;
@@ -95,19 +95,6 @@ p {
 }
 .section-heading p {
   margin: 10px 0;
-}
-.brand small {
-  letter-spacing: 0 !important;
-  font-size: 13px !important;
-}
-.brand span {
-  font-size: 18px;
-}
-.brand img {
-  width: 145px !important;
-}
-.brand img + span {
-  display: none;
 }
 .student-header {
   background: var(--paper);
@@ -634,7 +621,7 @@ p {
   color: #aebdca;
   letter-spacing: 0;
 }
-.admin-brand span {
+.admin-brand > small {
   font-size: 14px;
   letter-spacing: 0;
   color: #c7d6e4;
@@ -980,8 +967,15 @@ button:focus-visible {
   .course-mosaic span {
     font-size: 13px;
   }
-  .brand img {
-    width: 125px !important;
+  .brand-lockup img {
+    width: 34px;
+    height: 34px;
+  }
+  .brand-wordmark {
+    font-size: 23px;
+  }
+  .brand-wordmark small {
+    font-size: 8px;
   }
   .primary-nav {
     gap: 14px;
@@ -1225,6 +1219,6 @@ a {
   background: #fff;
   padding: 16px;
 }
-.admin-brand span {
+.admin-brand > small {
   color: var(--quiet);
 }

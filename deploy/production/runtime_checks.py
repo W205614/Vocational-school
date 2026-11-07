@@ -109,7 +109,7 @@ def validate(scenario, namespace, hosts, allow_writes=False):
     if not isinstance(scenario, dict):
         raise CheckError("Runtime scenario must be a JSON object")
     suite = scenario.get("suite")
-    if scenario.get("schema") != "tianji-runtime-checks-v1" or suite not in CHECKS:
+    if scenario.get("schema") != "zhixuetang-runtime-checks-v1" or suite not in CHECKS:
         raise CheckError("Unknown runtime scenario schema or functional suite")
     if (
         scenario.get("environment") != "isolated-production-candidate"
@@ -431,7 +431,7 @@ def execute(scenario, credentials, binding, *, caller=None, pause=time.sleep):
         if step["name"] not in executed:
             outcomes[step["check"]] = False
     return {
-        "schema": "tianji-production-measurement-v1",
+        "schema": "zhixuetang-production-measurement-v1",
         "suite": scenario["suite"],
         "commit": binding[0],
         "manifest_sha256": binding[1],

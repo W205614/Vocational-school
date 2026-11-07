@@ -18,7 +18,7 @@
 配置位于 user 模块：
 
 ```yaml
-tj:
+zxt:
   accounts:
     public:
       enabled: false
@@ -33,9 +33,9 @@ tj:
 
 ## 管理员验证器
 
-TOTP 采用 [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238) 的 SHA-1、6 位、30 秒参数，接受相邻一个时间步；数据库行锁保证多副本不能重复使用已消费的时间步。密钥采用 AES-256-GCM 加密，账户ID作为附加认证数据。通过 `TJ_MFA_ENCRYPTION_KEY` 提供 base64 编码的32字节外部密钥，或者显式设置 `tj.auth.mfa.encryption-key`。密钥不能进入Git、普通日志或公开CI附件。
+TOTP 采用 [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238) 的 SHA-1、6 位、30 秒参数，接受相邻一个时间步；数据库行锁保证多副本不能重复使用已消费的时间步。密钥采用 AES-256-GCM 加密，账户ID作为附加认证数据。通过 `ZXT_MFA_ENCRYPTION_KEY` 提供 base64 编码的32字节外部密钥，或者显式设置 `zxt.auth.mfa.encryption-key`。密钥不能进入Git、普通日志或公开CI附件。
 
-`tj.auth.mfa.required=true` 时缺少加密密钥会阻止启动，管理员登录必须已启用验证器并提供 `mfaCode`。默认本机部署未配置密钥且未强制MFA时保持既有登录行为。教师不因管理员MFA策略被锁定。
+`zxt.auth.mfa.required=true` 时缺少加密密钥会阻止启动，管理员登录必须已启用验证器并提供 `mfaCode`。默认本机部署未配置密钥且未强制MFA时保持既有登录行为。教师不因管理员MFA策略被锁定。
 
 管理员登录表单支持首次设置：先填写已有账号密码，调用 `POST /api/v2/auth/accounts/mfa/enroll`，将当次返回密钥添加到验证器，再调用 `/confirm`，请求均使用 `{type:1,username,password,mfaCode?}`。设置过程不发业务令牌；待设置密钥10分钟到期，已启用密钥不能通过密码单因素重发。确认会撤销该账号既有会话，且当前验证码已被消费，登录需要下一枚验证码。
 
@@ -76,7 +76,7 @@ python deploy/production/service_identities.py rotate --previous "$PWD\.local\id
 python deploy/production/service_identities.py retire --previous "$PWD\.local\identity-generation-02" --output "$PWD\.local\identity-generation-03"
 ```
 
-每条已审阅的定向服务边使用独立的32字节安全随机密钥；本组RPC使用单独 self edge。当前只读RPC清单确实需要四个业务组互相连接，但仅允许对应方法／路径，绝不因此开放全部后台接口。每个工作负载只接收自己目录中的 `service-identities.json`，对应渲染包的 `<workload>-service-identity` Secret 键；监控仅接收 `observability/prometheus/` 下五个 `<target>-token` 文件，映射到 `/etc/prometheus/tianji/`。worker 当前没有内部RPC与指标抓取边，输出空 keyring。
+每条已审阅的定向服务边使用独立的32字节安全随机密钥；本组RPC使用单独 self edge。当前只读RPC清单确实需要四个业务组互相连接，但仅允许对应方法／路径，绝不因此开放全部后台接口。每个工作负载只接收自己目录中的 `service-identities.json`，对应渲染包的 `<workload>-service-identity` Secret 键；监控仅接收 `observability/prometheus/` 下五个 `<target>-token` 文件，映射到 `/etc/prometheus/zhixuetang/`。worker 当前没有内部RPC与指标抓取边，输出空 keyring。
 
 轮换严格按以下次序发布；脚本只准备本机工件，**不会调用 kubectl、创建云资源或修改运行中的 Secret**：
 

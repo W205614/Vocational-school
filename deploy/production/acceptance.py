@@ -75,7 +75,7 @@ def number(value):
 
 def measurement_report(value, suite, name, evidence, now):
     if (
-        value.get("schema") != "tianji-production-measurement-v1"
+        value.get("schema") != "zhixuetang-production-measurement-v1"
         or value.get("suite") != name
         or value.get("commit") != evidence.get("commit")
         or value.get("manifest_sha256") != evidence.get("manifest_sha256")
@@ -135,7 +135,7 @@ def validate(evidence, root, commit, manifest_hash, now=None):
     root = Path(root).resolve()
     now = now or dt.datetime.now(dt.timezone.utc)
     if (
-        evidence.get("schema") != "tianji-production-acceptance-v1"
+        evidence.get("schema") != "zhixuetang-production-acceptance-v1"
         or evidence.get("commit") != commit
         or evidence.get("manifest_sha256") != manifest_hash
     ):

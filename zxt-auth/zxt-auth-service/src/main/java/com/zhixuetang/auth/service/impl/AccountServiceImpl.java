@@ -1,0 +1,188 @@
+package com.zhixuetang.auth.service.impl;
+
+import com.zhixuetang.api.client.user.UserClient;
+import com.zhixuetang.api.dto.user.LoginFormDTO;
+import com.zhixuetang.auth.common.constants.JwtConstants;
+import com.zhixuetang.auth.service.IAccountService;
+import com.zhixuetang.auth.service.ILoginRecordService;
+import com.zhixuetang.auth.util.JwtTool;
+import com.zhixuetang.common.domain.dto.LoginUserDTO;
+import com.zhixuetang.common.exceptions.BadRequestException;
+import com.zhixuetang.common.utils.BooleanUtils;
+import com.zhixuetang.common.utils.WebUtils;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+/**
+ * <p>
+ * 账号表，平台内所有用户的账号、密码信息 服务实现类
+ * </p>
+ *
+ * @author 虎哥
+ * @since 2022-06-16
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AccountServiceImpl implements IAccountService {
+    private final LoginProtection protection;
+    private final SessionStore sessions;
+    private final JwtTool jwtTool;
+    private final UserClient userClient;
+    private final ILoginRecordService loginRecordService;
+
+    @org.springframework.beans.factory.annotation.Value("${zxt.auth.cookie.require-secure:false}")
+    private boolean requireSecureCookie;
+
+    private final AdministratorMfaService administratorMfa;
+
+    private com.zhixuetang.common.utils.CookieBuilder refreshCookie() {
+        // The gateway strips client headers and supplies protocol only with its service identity.
+        com.zhixuetang.common.utils.InternalAuth.requireService();
+        return WebUtils.cookieBuilder()
+                .requireSecure(requireSecureCookie)
+                .trustedHttps("https".equals(WebUtils.getHeader("X-Client-Proto")));
+    }
+
+    @Override
+    public String login(LoginFormDTO loginDTO, boolean isStaff) {
+        // 1.查询并校验用户信息
+        String account =
+                (Integer.valueOf(2).equals(loginDTO.getType())
+                                ? java.util.Objects.toString(loginDTO.getCellPhone(), "")
+                                : java.util.Objects.toString(loginDTO.getUsername(), ""))
+                        .trim()
+                        .toLowerCase(java.util.Locale.ROOT);
+        String ip = java.util.Objects.toString(WebUtils.getHeader("X-Client-IP"), "unknown");
+        protection.before(account, ip);
+        LoginUserDTO detail;
+        try {
+            detail = userClient.queryUserDetail(loginDTO, isStaff);
+            if (detail == null) throw new BadRequestException("登录信息有误");
+        } catch (BadRequestException error) {
+            protection.failed(account, ip);
+            throw new BadRequestException("登录信息有误");
+        } catch (feign.FeignException error) {
+            if (error.status() == 400 || error.status() == 401) {
+                protection.failed(account, ip);
+                throw new BadRequestException("登录信息有误");
+            }
+            throw new com.zhixuetang.common.exceptions.ServiceUnavailableException("身份服务暂不可用");
+        }
+        if (Boolean.TRUE.equals(detail.getMustChangePassword())) {
+            protection.success(account);
+            throw new com.zhixuetang.common.exceptions.InitialPasswordRequiredException();
+        }
+        LoginUserDTO current = userClient.sessionIdentity(detail.getUserId());
+        // Never upgrade a previously checked credential to a later account version.
+        if (current == null
+                || detail.getAuthVersion() == null
+                || current.getAuthVersion() == null
+                || !java.util.Objects.equals(detail.getUserId(), current.getUserId())
+                || !java.util.Objects.equals(detail.getAuthVersion(), current.getAuthVersion())
+                || !java.util.Objects.equals(detail.getRoleId(), current.getRoleId()))
+            throw new com.zhixuetang.common.exceptions.UnauthorizedException("账号身份已变化，请重新登录");
+        if (isStaff == Long.valueOf(2).equals(current.getRoleId()))
+            throw new BadRequestException("登录入口与账号身份不匹配");
+        boolean mfaVerified;
+        try {
+            mfaVerified = administratorMfa.verifyLogin(detail, loginDTO.getMfaCode());
+        } catch (com.zhixuetang.common.exceptions.CommonException error) {
+            protection.failed(account, ip);
+            throw error;
+        }
+        protection.success(account);
+
+        // Persist authentication acceptance before issuing any session/token/cookie.
+        // This record confirms credential verification, not delivery of the HTTP response.
+        loginRecordService.loginSuccess(loginDTO.getCellPhone(), detail.getUserId());
+
+        // 2.基于JWT生成登录token
+        // 2.1.设置记住我标记
+        detail.setRememberMe(loginDTO.getRememberMe());
+        // 2.2.生成token
+        String token = generateToken(detail);
+        if (mfaVerified) administratorMfa.markSession(detail);
+
+        // 4.返回结果
+        return token;
+    }
+
+    @Override
+    public void completeInitialPassword(com.zhixuetang.api.dto.user.InitialPasswordDTO form) {
+        String account = form.username().trim().toLowerCase(java.util.Locale.ROOT),
+                ip = java.util.Objects.toString(WebUtils.getHeader("X-Client-IP"), "unknown");
+        protection.before(account, ip);
+        try {
+            userClient.completeInitialPassword(form);
+        } catch (BadRequestException error) {
+            protection.failed(account, ip);
+            throw error;
+        } catch (feign.FeignException error) {
+            if (error.status() >= 400 && error.status() < 500) {
+                protection.failed(account, ip);
+                throw new BadRequestException("临时密码无效或已过期，请联系管理员重置");
+            }
+            throw new com.zhixuetang.common.exceptions.ServiceUnavailableException("身份服务暂不可用");
+        }
+        protection.success(account);
+    }
+
+    private String generateToken(LoginUserDTO detail) {
+        // 2.2.生成access-token
+        String token;
+        // 2.3.生成refresh-token，在数据库轮换独立会话的刷新标识
+        String refreshToken = jwtTool.createRefreshToken(detail);
+        token = jwtTool.createToken(detail);
+        // 2.4.将refresh-token写入用户cookie，并设置HttpOnly为true
+        int maxAge =
+                BooleanUtils.isTrue(detail.getRememberMe())
+                        ? (int) JwtConstants.JWT_REMEMBER_ME_TTL.toSeconds()
+                        : -1;
+        refreshCookie()
+                .name(
+                        detail.getRoleId() == 2
+                                ? JwtConstants.REFRESH_HEADER
+                                : JwtConstants.ADMIN_REFRESH_HEADER)
+                .value(refreshToken)
+                .maxAge(maxAge)
+                .httpOnly(true)
+                .build();
+        return token;
+    }
+
+    @Override
+    public void logout() {
+        // 删除jti
+        jwtTool.cleanJtiCache();
+        // 删除cookie
+        refreshCookie()
+                .name(JwtConstants.REFRESH_HEADER)
+                .value("")
+                .maxAge(0)
+                .httpOnly(true)
+                .build();
+        refreshCookie()
+                .name(JwtConstants.ADMIN_REFRESH_HEADER)
+                .value("")
+                .maxAge(0)
+                .httpOnly(true)
+                .build();
+    }
+
+    @Override
+    public String refreshToken(String refreshToken) {
+        // 1.校验refresh-token,校验JTI
+        LoginUserDTO userDTO = jwtTool.parseRefreshToken(refreshToken);
+        // 2.生成新的access-token、refresh-token
+        LoginUserDTO current = userClient.sessionIdentity(userDTO.getUserId());
+        if (current == null
+                || !java.util.Objects.equals(current.getAuthVersion(), userDTO.getAuthVersion())
+                || !java.util.Objects.equals(current.getRoleId(), userDTO.getRoleId())) {
+            sessions.revoke(userDTO.getSessionId(), userDTO.getUserId());
+            throw new com.zhixuetang.common.exceptions.UnauthorizedException("账号身份已变化，请重新登录");
+        }
+        return generateToken(userDTO);
+    }
+}

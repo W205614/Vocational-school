@@ -206,9 +206,9 @@ def resources():
                                 'executor_queued_tasks',
                                 'reliability_operation_queue',
                                 'reliability_outbox_queue',
-                                'tj_events_pending',
-                                'tj_events_oldest_seconds',
-                                'tj_operations_pending',
+                                'zxt_events_pending',
+                                'zxt_events_oldest_seconds',
+                                'zxt_operations_pending',
                             ]
                         )
                     ]

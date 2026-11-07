@@ -30,7 +30,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 if args.browser_grep:
-    os.environ['TJ_BROWSER_GREP'] = args.browser_grep
+    os.environ['ZXT_BROWSER_GREP'] = args.browser_grep
 home = args.home.resolve()
 backup = args.backup.resolve()
 if home.is_relative_to(backup):
@@ -44,7 +44,7 @@ if upgrade_home and (
     )
 if home.exists() and any(home.iterdir()):
     raise RuntimeError('Recovery home must be new and empty')
-if not re.fullmatch('tianji-recovery-[a-z0-9-]+', args.project):
+if not re.fullmatch('zhixuetang-recovery-[a-z0-9-]+', args.project):
     raise RuntimeError('Recovery project must be separately named')
 for resource in ['container', 'volume']:
     if subprocess.check_output(
@@ -66,9 +66,9 @@ upgrade = (
     else None
 )
 os.environ.update(
-    TJ_COMPACT_HOME=str(home),
-    TJ_COMPACT_PROJECT=args.project,
-    TJ_COMPACT_PORT_OFFSET=str(args.offset),
+    ZXT_COMPACT_HOME=str(home),
+    ZXT_COMPACT_PROJECT=args.project,
+    ZXT_COMPACT_PORT_OFFSET=str(args.offset),
 )
 from setup import (
     prepare,

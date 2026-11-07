@@ -1,24 +1,24 @@
 // Dedicated real-backend acceptance. Register only with a completed isolated
-// three-file TJ_IMPORTED_COURSE_MANIFEST; ordinary CI has no skipped placeholder.
+// three-file ZXT_IMPORTED_COURSE_MANIFEST; ordinary CI has no skipped placeholder.
 import { test, expect, type Page } from '@playwright/test';
 import { accounts, home, login, api } from './helpers';
 import fs from 'node:fs';
 import path from 'node:path';
 
-if (process.env.TJ_IMPORTED_COURSE_MANIFEST)
+if (process.env.ZXT_IMPORTED_COURSE_MANIFEST)
   test('real imported course is discoverable and preserves learning across roles', async ({
     page,
     browser,
   }, info) => {
     test.setTimeout(180000);
-    const manifest = JSON.parse(fs.readFileSync(process.env.TJ_IMPORTED_COURSE_MANIFEST!, 'utf8'));
+    const manifest = JSON.parse(fs.readFileSync(process.env.ZXT_IMPORTED_COURSE_MANIFEST!, 'utf8'));
     expect(info.project.name).toBe('student');
     expect(manifest.owner).toBe('tianji-offline-course-import-v1');
     expect(manifest.status).toBe('VERIFIED');
     expect(manifest.inventory.sample).toBe(true);
-    expect(manifest.deployment.project).toMatch(/^tianji-recovery-/);
-    expect(manifest.deployment.project).toBe(process.env.TJ_COMPACT_PROJECT);
-    for (const origin of [process.env.TJ_STUDENT_URL, process.env.TJ_ADMIN_URL]) {
+    expect(manifest.deployment.project).toMatch(/^zhixuetang-recovery-/);
+    expect(manifest.deployment.project).toBe(process.env.ZXT_COMPACT_PROJECT);
+    for (const origin of [process.env.ZXT_STUDENT_URL, process.env.ZXT_ADMIN_URL]) {
       expect(origin).toBeTruthy();
       const url = new URL(origin!);
       expect(['127.0.0.1', 'localhost']).toContain(url.hostname);
@@ -37,8 +37,8 @@ if (process.env.TJ_IMPORTED_COURSE_MANIFEST)
       expect(manifest.state.media[entry.relativePath].fileId).toMatch(/\.mp4$/);
       expect(manifest.state.media[entry.relativePath].duration).toBeGreaterThan(10);
     }
-    const teacherContext = await browser.newContext({ baseURL: process.env.TJ_ADMIN_URL }),
-      adminContext = await browser.newContext({ baseURL: process.env.TJ_ADMIN_URL });
+    const teacherContext = await browser.newContext({ baseURL: process.env.ZXT_ADMIN_URL }),
+      adminContext = await browser.newContext({ baseURL: process.env.ZXT_ADMIN_URL });
     const teacher = await teacherContext.newPage(),
       admin = await adminContext.newPage();
     const rawStatus = async (target: Page, path: string) => {

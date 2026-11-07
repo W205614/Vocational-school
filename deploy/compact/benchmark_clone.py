@@ -29,7 +29,7 @@ def main():
     allowed = (ROOT / 'deploy/compact/.local/optimization').resolve()
     source = args.from_home.resolve()
     if (
-        not PROJECT.startswith('tianji-opt-')
+        not PROJECT.startswith('zhixuetang-opt-')
         or allowed not in source.parents
         or allowed not in BASE.resolve().parents
         or source == BASE.resolve()

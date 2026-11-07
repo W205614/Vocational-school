@@ -1,0 +1,14 @@
+package com.zhixuetang.promotion.domain.query;
+
+import com.zhixuetang.common.domain.query.PageQuery;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@EqualsAndHashCode(callSuper = true)
+@Data
+@Schema(description = "用户优惠券查询参数")
+public class UserCouponQuery extends PageQuery {
+    @Schema(description = "优惠券状态，1：未使用，2：已使用，3：已过期；省略时查询本人全部状态")
+    private Integer status;
+}

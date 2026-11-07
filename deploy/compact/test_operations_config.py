@@ -1,4 +1,5 @@
 import copy
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -12,28 +13,28 @@ class OperationsConfigurationTest(unittest.TestCase):
         user = module_defaults('user', {})
         self.assertEqual(
             {'provider': 'LOCAL', 'directory': '/run/privacy-exports/private'},
-            user['tj']['privacy']['archive'],
+            user['zxt']['privacy']['archive'],
         )
         self.assertEqual(user, module_defaults('user', user))
         custom = {
-            'tj': {
+            'zxt': {
                 'privacy': {
                     'archive': {'provider': 'COS', 'directory': '/custom-private'}
                 }
             }
         }
-        self.assertEqual(custom['tj'], module_defaults('user', custom)['tj'])
+        self.assertEqual(custom['zxt'], module_defaults('user', custom)['zxt'])
         media = {
-            'tj': {'auth': {'resource': {'excludeLoginPaths': ['/local-content/**']}}}
+            'zxt': {'auth': {'resource': {'excludeLoginPaths': ['/local-content/**']}}}
         }
         upgraded = module_defaults('media', media)
         self.assertEqual(
             ['/local-content/**', '/trial-content/**'],
-            upgraded['tj']['auth']['resource']['excludeLoginPaths'],
+            upgraded['zxt']['auth']['resource']['excludeLoginPaths'],
         )
         self.assertEqual(upgraded, module_defaults('media', upgraded))
         self.assertEqual(
-            ['/local-content/**'], media['tj']['auth']['resource']['excludeLoginPaths']
+            ['/local-content/**'], media['zxt']['auth']['resource']['excludeLoginPaths']
         )
 
     def test_static_discovery_probe_is_disabled_for_fresh_and_upgraded_module_defaults(
@@ -136,7 +137,9 @@ class OperationsConfigurationTest(unittest.TestCase):
             (home / 'compose.yaml').write_text(yaml.safe_dump(original))
             gateway = {
                 'server': {'port': 24310},
-                'tj': {'gateway': {'proxy': {'trusted-addresses': ['existing-proxy']}}},
+                'zxt': {
+                    'gateway': {'proxy': {'trusted-addresses': ['existing-proxy']}}
+                },
             }
             (configs / 'gateway.yml').write_text(yaml.safe_dump(gateway))
             backup = upgrade(home, 'private-token', rabbit_hostname='original-node')
@@ -153,7 +156,7 @@ class OperationsConfigurationTest(unittest.TestCase):
             )
             self.assertEqual(
                 ['existing-proxy'],
-                current['tj']['gateway']['proxy']['trusted-addresses'],
+                current['zxt']['gateway']['proxy']['trusted-addresses'],
             )
             self.assertEqual('none', current['server']['forward-headers-strategy'])
             self.assertEqual(
@@ -161,6 +164,13 @@ class OperationsConfigurationTest(unittest.TestCase):
                 (home / '.local/observability/internal-token').read_text(),
             )
             self.assertNotIn('private-token', (home / 'compose.yaml').read_text())
+            dashboard = json.loads(
+                (home / '.local/observability/dashboards/reliability.json').read_text(
+                    encoding='utf8'
+                )
+            )
+            self.assertEqual('tianji-reliability', dashboard['uid'])
+            self.assertEqual('Zhixuetang Reliability', dashboard['title'])
             self.assertEqual(
                 original, yaml.safe_load((home / 'compose.yaml').read_text())
             )

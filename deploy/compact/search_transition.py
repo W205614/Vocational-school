@@ -5,6 +5,8 @@ and their build-source manifest. Failure leaves application writes paused and re
 an independent report; the operator can rerun with the recorded rollback images.
 """
 
+from runtime_compose import PRIMARY_PROJECTS
+
 from runtime_compose import active_compose, compose_command
 import argparse
 import hashlib
@@ -38,8 +40,8 @@ def checked_owner():
     )
     if (
         not allowed
-        or PROJECT != 'tianji-compact'
-        and not PROJECT.startswith('tianji-opt-')
+        or PROJECT not in PRIMARY_PROJECTS
+        and not PROJECT.startswith('zhixuetang-opt-')
     ):
         raise RuntimeError(
             'Search transition is restricted to this project and its audit clones'

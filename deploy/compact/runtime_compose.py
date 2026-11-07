@@ -2,8 +2,60 @@
 
 from pathlib import Path
 import json
+import re
 import shutil
 import subprocess
+import yaml
+
+DEFAULT_PROJECT = 'zhixuetang-compact'
+PRIMARY_PROJECTS = frozenset({DEFAULT_PROJECT, 'tianji-compact'})
+
+
+def resolve_project(home, explicit=None, default=DEFAULT_PROJECT):
+    """Keep an existing deployment attached to its original Compose resources."""
+    runtime = Path(home).resolve() / '.local/compose.runtime.yaml'
+    recorded = None
+    if runtime.is_file():
+        recorded = yaml.safe_load(runtime.read_text(encoding='utf8')).get('name')
+        if not isinstance(recorded, str) or not re.fullmatch(
+            r'[a-z][a-z0-9-]{2,40}', recorded
+        ):
+            raise ValueError('Existing runtime must record its Compose project name')
+    if explicit and recorded and explicit != recorded:
+        raise ValueError('Explicit project conflicts with existing runtime identity')
+    project = explicit or recorded or default
+    if not re.fullmatch(r'[a-z][a-z0-9-]{2,40}', project):
+        raise ValueError('Invalid deployment project name')
+    return project
+
+
+def rabbit_username(home):
+    config = Path(home) / '.local/configs/auth.yml'
+    if config.is_file():
+        value = yaml.safe_load(config.read_text(encoding='utf8'))['spring'][
+            'rabbitmq'
+        ].get('username')
+        if not isinstance(value, str) or not value or '${' in value:
+            raise ValueError('Existing RabbitMQ username must be explicit')
+        return value
+    compose = active_compose(home)
+    if compose.is_file():
+        broker = (
+            yaml.safe_load(compose.read_text(encoding='utf8'))
+            .get('services', {})
+            .get('rabbitmq')
+        )
+        if broker is not None:
+            environment = broker.get('environment', {})
+            if isinstance(environment, list):
+                environment = dict(
+                    item.split('=', 1) for item in environment if '=' in item
+                )
+            value = environment.get('RABBITMQ_DEFAULT_USER')
+            if not isinstance(value, str) or not value or '${' in value:
+                raise ValueError('Existing RabbitMQ username must be explicit')
+            return value
+    return 'zhixuetang'
 
 
 def active_compose(home):

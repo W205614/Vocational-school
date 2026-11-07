@@ -1,0 +1,47 @@
+server:
+  port: 8087 #端口
+  tomcat:
+    uri-encoding: UTF-8 #服务编码
+  error:
+    include-message: always #返回的响应体带上message
+spring:
+  profiles:
+    active: dev
+  application:
+    name: pay-service
+  cloud:
+    nacos:
+      config:
+        file-extension: yaml
+        shared-configs: # 共享配置
+          - dataId: shared-spring.yaml # 共享spring配置
+          - dataId: shared-redis.yaml # 共享redis配置
+          - dataId: shared-mybatis.yaml # 共享mybatis配置
+          - dataId: shared-logs.yaml # 共享日志配置
+          - dataId: shared-feign.yaml # 共享feign配置
+          - dataId: shared-mq.yaml # 共享mq配置
+          - dataId: shared-xxljob.yaml # 共享mq配置
+zxt:
+  swagger:
+    enable: true
+    enableResponseWrap: true
+    package-path: com.zhixuetang.pay.controller
+    title: 职学堂 - 支付中心接口文档
+    description: 该服务提供微信、支付宝等各种平台的支付、退款等功能
+    contact-name: 职学堂维护者
+    contact-url: https://github.com/W205614/Vocational-school
+    version: v1.0
+  jdbc:
+    database: tj_pay
+  pay:
+    notifyHost: https://6b9f16dd.r2.cpolar.top/ps
+    ali:
+      appId: '2021002173680104'
+      merchantPrivateKey: ${ZXT_PAY_ZXT_PAY_ALI_MERCHANTPRIVATEKEY:}
+      publicKey: ${ZXT_PAY_ZXT_PAY_ALI_PUBLICKEY:}
+    wx:
+      appId: 'wx0ca99a203b1e9943'
+      mchId: '1561414331'
+      mchSerialNo: '4B3B3DC35414AD50B1B755BAF8DE9CC7CF407606'
+      privateKey: ${ZXT_PAY_ZXT_PAY_WX_PRIVATEKEY:}
+      apiV3Key: ${ZXT_PAY_ZXT_PAY_WX_APIV3KEY:}

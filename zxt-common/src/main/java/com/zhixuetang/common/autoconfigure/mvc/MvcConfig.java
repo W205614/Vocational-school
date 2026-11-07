@@ -1,0 +1,44 @@
+package com.zhixuetang.common.autoconfigure.mvc;
+
+import com.zhixuetang.common.autoconfigure.mvc.advice.CommonExceptionAdvice;
+import com.zhixuetang.common.autoconfigure.mvc.advice.WrapperResponseBodyAdvice;
+import com.zhixuetang.common.autoconfigure.mvc.converter.WrapperResponseMessageConverter;
+import com.zhixuetang.common.filters.RequestIdFilter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import jakarta.servlet.Filter;
+
+@ConditionalOnClass({CommonExceptionAdvice.class, Filter.class})
+@Configuration
+public class MvcConfig implements WebMvcConfigurer {
+
+    /**
+     * <h1>通用的ControllerAdvice异常处理器</h1>
+     */
+    @Bean
+    public CommonExceptionAdvice commonExceptionAdvice() {
+        return new CommonExceptionAdvice();
+    }
+
+    @Bean
+    public RequestIdFilter requestIdFilter() {
+        return new RequestIdFilter();
+    }
+
+    @Bean
+    @ConditionalOnMissingClass("org.springframework.cloud.gateway.filter.GlobalFilter")
+    public WrapperResponseMessageConverter wrapperResponseMessageConverter(
+            tools.jackson.databind.json.JsonMapper mapper) {
+        return new WrapperResponseMessageConverter(new JacksonJsonHttpMessageConverter(mapper));
+    }
+
+    @Bean
+    public WrapperResponseBodyAdvice wrapperResponseBodyAdvice() {
+        return new WrapperResponseBodyAdvice();
+    }
+}

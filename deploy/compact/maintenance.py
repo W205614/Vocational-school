@@ -93,7 +93,7 @@ def backup_due(previous, now=None):
 
 
 def logger(local):
-    result = logging.getLogger('tianji-maintenance')
+    result = logging.getLogger('zhixuetang-maintenance')
     if not result.handlers:
         Path(local).mkdir(parents=True, exist_ok=True)
         handler = RotatingFileHandler(
@@ -268,7 +268,7 @@ def perform_backup(online=False, automated=False):
             destination = (setup.LOCAL / 'backup').resolve()
             if not destination.is_relative_to(setup.ROOT.resolve()):
                 raise RuntimeError('Compact backups must remain inside this project')
-            os.environ['TJ_BACKUP_HOME'] = str(destination)
+            os.environ['ZXT_BACKUP_HOME'] = str(destination)
 
             def record(running, temporary):
                 atomic_json(

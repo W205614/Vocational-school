@@ -20,7 +20,7 @@ import sys
 import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
-POLICIES = ROOT / "tj-common/src/main/resources/META-INF/tianji"
+POLICIES = ROOT / "zxt-common/src/main/resources/META-INF/zhixuetang"
 GROUPS = ("identity", "commerce", "education", "support")
 APPLICATIONS = GROUPS + ("gateway",)
 WORKLOADS = APPLICATIONS + ("observability", "media-worker")
@@ -269,7 +269,7 @@ No command here applies Kubernetes resources or changes a running workload.
 
 Initial generation: create each <workload>-service-identity Secret with its own
 <workload>/service-identities.json only. Prometheus gets only the five files under
-observability/prometheus/, mapped to /etc/prometheus/tianji/<target>-token.
+observability/prometheus/, mapped to /etc/prometheus/zhixuetang/<target>-token.
 The media-worker keyring is empty because it has no current internal RPC/scrape edge.
 
 Rotation MUST be receiver first:

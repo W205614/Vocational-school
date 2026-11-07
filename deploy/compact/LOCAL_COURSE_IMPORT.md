@@ -8,7 +8,7 @@
 
 1. 先取得现有完整备份，并在隔离副本完成迁移、功能与恢复检查。
 2. 媒资服务安装 `ffprobe`，本地存储及 `local-simulator` profile 已启用。公开视频上传仍为 200 MiB；离线导入专用上限为 512 MiB，不允许通过公网路径绕过普通上传限制。
-3. 只给 `app-support` 增加源根目录的临时**只读**挂载，例如 `/run/offline-import:ro`，并在 media 配置中显式启用 `tj.local-import.enabled=true`、设置 `tj.local-import.directory=/run/offline-import`。默认不启用；只在本次导入窗口启用。
+3. 只给 `app-support` 增加源根目录的临时**只读**挂载，例如 `/run/offline-import:ro`，并在 media 配置中显式启用 `zxt.local-import.enabled=true`、设置 `zxt.local-import.directory=/run/offline-import`。默认不启用；只在本次导入窗口启用。
 4. 内部 `POST /internal/v2/media/local-import` 必须保持网关不可达。工具通过现有 loopback support 端口调用，使用本机服务凭证和经正常管理员登录核实的身份；不在命令参数、清单或日志中保存凭证。
 5. 目标必须存在可用的三级 Java 分类和教师。工具默认选择已启用 Java 分类的首个三级叶子及本机 accounts.json 的 teacher；也可用 `--category-id`、`--teacher-id` 明确指定。没有匹配项会停止，不临时造分类或角色。
 6. 存储空间应覆盖新增对象字节、升级后的完整备份和当前镜像包。所有 URL 必须来自目标部署的 IPv4 loopback 映射，工具不读取 HTTP 代理环境。
@@ -26,7 +26,7 @@ python deploy/compact/import_local_course.py --home <isolated-home> --source-roo
 python deploy/compact/import_local_course.py --home <isolated-home> --source-root "<source>" --course-name "Java微服务实战-隔离验证" --include "day01/<file1>.mp4" --include "day02/<file2>.mp4" --include "day03/<large-file>.mp4" --apply
 ```
 
-`--limit 1` 至 `--limit 3` 也可用于取自然顺序最前几个文件；与 `--include` 互斥。任何部分选择都拒绝指向日常 `tianji-compact` 项目，不能把三文件结果当作全量交付。
+`--limit 1` 至 `--limit 3` 也可用于取自然顺序最前几个文件；与 `--include` 互斥。任何部分选择都拒绝指向日常 `zhixuetang-compact` 项目，不能把三文件结果当作全量交付。
 
 重复运行完全相同的三文件命令，应复用同一课程、目录和媒资，不重复发布。随后实际体验游客发现课程、学生免费报名／播放／计时，以及教师学情。大文件应确认真实 Range 字节可读。
 

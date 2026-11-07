@@ -96,11 +96,11 @@ jobs:
       - run: sleep 32 && python deploy/compact/run_browser.py
       - name: Firefox core workflows against the isolated backend
         env:
-          TJ_BROWSER_ENGINE: firefox
+          ZXT_BROWSER_ENGINE: firefox
         run: python deploy/compact/run_browser.py
       - name: WebKit core workflows against the isolated backend
         env:
-          TJ_BROWSER_ENGINE: webkit
+          ZXT_BROWSER_ENGINE: webkit
         run: python deploy/compact/run_browser.py
       - run: python deploy/compact/audit_smoke.py
       - run: python deploy/compact/redis_roundtrip.py

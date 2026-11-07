@@ -1,12 +1,16 @@
-# 参与贡献
+# 职学堂贡献指南
 
 项目按需维护，日常改动合入 `dev`。欢迎修复可复现的问题、完善现有业务及文档；较大的功能或依赖调整请先通过 Issue 说明问题、范围和方案。
 
 ## 开发准备
 
-准备 JDK 21、Maven、Node.js 22、Python 3.12+ 和 Docker Compose，按[项目 README](README.md)安装依赖。先阅读[目录职责](docs/project-structure.md)和[工具索引](deploy/compact/TOOLS.md)，在业务模块中修改功能，在 `tj-compact` 中维护应用装配。
+准备 JDK 21、Maven、Node.js 22、Python 3.12+ 和 Docker Compose，按[项目 README](README.md)安装依赖。先阅读[目录职责](docs/project-structure.md)和[工具索引](deploy/compact/TOOLS.md)，在业务模块中修改功能，在 `zxt-compact` 中维护应用装配。
 
 从最新 `dev` 创建工作分支。已有本机部署按[升级说明](docs/stability-operations.md#升级已有部署)处理，保留私有配置、数据卷和媒资；测试使用独立资源及合成账号。
+
+产品名称使用“职学堂 / Zhixuetang”，业务模块、Java 包分别使用 `zxt-` 和 `com.zhixuetang`。原作者署名、第三方许可及教学素材来源按真实归属保留。历史报告与截图保持原日期和内容；新截图另建日期目录，注明实际运行版本及验证范围。
+
+品牌图标源文件为 `frontend/packages/shared/assets/brand-logo.svg`，页面字标在共享 `BrandLogo.vue` 中维护。修改图标后运行 `npm --prefix frontend run generate:brand`，使用现有 Playwright Chromium 生成两个门户的 SVG 与透明 PNG。Windows 默认使用已安装的 Edge，可用 `PLAYWRIGHT_CHANNEL` 指定浏览器渠道。`public/brand-logo.svg`、`public/brand-logo.png` 是生成产物，不直接编辑；PNG 地址继续供既有课程封面使用，不需要改课程数据。
 
 ## 修改与验证
 

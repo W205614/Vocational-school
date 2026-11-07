@@ -1,0 +1,2 @@
+com.zhixuetang.authsdk.resource.config.ResourceInterceptorConfiguration
+com.zhixuetang.authsdk.resource.config.FeignRelayUserAutoConfiguration

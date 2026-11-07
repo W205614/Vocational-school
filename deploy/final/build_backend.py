@@ -54,7 +54,7 @@ def main():
                 stdout=log,
                 stderr=subprocess.STDOUT,
             )
-            tag = 'tianji-final/' + name + ':' + args.tag
+            tag = 'zhixuetang-final/' + name + ':' + args.tag
             subprocess.run(
                 ['docker', 'build', '--pull=false', '-t', tag, str(context)],
                 check=True,

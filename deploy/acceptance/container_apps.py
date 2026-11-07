@@ -41,7 +41,7 @@ def prepare():
     DIR.mkdir(parents=True, exist_ok=True)
     secret = local_secrets()
     (DIR / 'env').write_text(
-        'TJ_INTERNAL_TOKEN=' + secret['ACCEPTANCE_INTERNAL_TOKEN'] + '\n',
+        'ZXT_INTERNAL_TOKEN=' + secret['ACCEPTANCE_INTERNAL_TOKEN'] + '\n',
         encoding='utf8',
     )
     shutil.copyfile(LOCAL / 'acceptance-signing.jks', DIR / 'signing.jks')
@@ -102,7 +102,7 @@ def prepare():
                     'location'
                 ] = 'file:/run/acceptance/signing.jks'
             if name == 'media':
-                config['tj']['local-storage']['directory'] = '/run/objects'
+                config['zxt']['local-storage']['directory'] = '/run/objects'
             (target / (name + '.yml')).write_text(
                 yaml.safe_dump(config, sort_keys=False, allow_unicode=True),
                 encoding='utf8',
