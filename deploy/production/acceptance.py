@@ -26,6 +26,24 @@ REQUIRED = {
     "external_alert",
     "telemetry_redaction",
     "capacity",
+    "payments",
+    "privacy",
+}
+FUNCTIONAL_CHECKS = {
+    "payments": {
+        "order_created",
+        "payment_confirmed",
+        "refund_confirmed",
+        "amount_consistent",
+        "entitlement_revoked",
+    },
+    "privacy": {
+        "export_completed",
+        "download_authorized",
+        "cleanup_approved",
+        "retention_preserved",
+    },
+    "notifications": {"supplier_delivered"},
 }
 OBSERVATIONS = {
     name: {"fault_event", "business_query"}
@@ -41,6 +59,8 @@ OBSERVATIONS.update(
         "external_alert": {"provider_receipt"},
         "telemetry_redaction": {"telemetry_search"},
         "capacity": {"load_sample"},
+        "payments": {"http", "business_query", "provider_receipt"},
+        "privacy": {"http", "business_query"},
     }
 )
 
@@ -233,6 +253,11 @@ def validate(evidence, root, commit, manifest_hash, now=None):
                 errors.append(name + ": required business workflows were not measured")
         if name == "restore" and suite.get("objects_verified") is not True:
             errors.append(name + ": object data not verified")
+        if name in FUNCTIONAL_CHECKS and (
+            set(suite.get("checks", {})) != FUNCTIONAL_CHECKS[name]
+            or any(value is not True for value in suite.get("checks", {}).values())
+        ):
+            errors.append(name + ": required runtime business checks did not all pass")
         if (
             name == "external_alert"
             and suite.get("delivered_to_external_receiver") is not True

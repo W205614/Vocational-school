@@ -19,7 +19,7 @@ public class SmsController {
     private final ISmsService smsService;
     private final com.tianji.common.autoconfigure.reliability.OperationStore operations;
 
-    @Operation(summary = "同步发送短信")
+    @Operation(summary = "持久受理短信任务；202不代表供应商受理或送达")
     @PostMapping("message")
     public org.springframework.http.ResponseEntity<?> sendMessage(
             @RequestBody SmsInfoDTO smsInfoDTO,

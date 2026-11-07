@@ -1,0 +1,22 @@
+{
+  "schema": "tianji-runtime-checks-v1",
+  "suite": "notifications",
+  "namespace": "tianji-production",
+  "environment": "isolated-production-candidate",
+  "test_identity": "REPLACE_WITH_PROVISIONED_SYNTHETIC_ACCOUNT",
+  "test_recipient": "REPLACE_WITH_EXPLICIT_TEST_PHONE",
+  "base_url": "https://REPLACE_WITH_STUDENT_HOST",
+  "steps": [
+    {
+      "name": "supplier_receipt",
+      "check": "supplier_delivered",
+      "method": "GET",
+      "path": "/api/v2/admin/deliveries/sms?taskId=REPLACE_WITH_DELIVERY_ID",
+      "auth": "admin",
+      "expected_status": 200,
+      "attempts": 120,
+      "observation": "provider_receipt",
+      "assertions": [{ "path": "/data/0/recipients/0/state", "equals": "DELIVERED" }]
+    }
+  ]
+}

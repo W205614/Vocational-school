@@ -43,6 +43,9 @@ provider_hosts:
 privacy:
   policy_version: REQUIRED_PUBLISHED_VERSION
   policy_url: https://REQUIRED_STUDENT_DNS/privacy
+  retention:
+    version: UNCONFIGURED
+    rules: {} # Default retains all data. Configure reviewed domain.dataset + days + ANONYMIZE, then approve each cleanup task.
 media_worker:
   signatures_claim: maintained-clamav-signatures
 observability:

@@ -138,6 +138,9 @@ def prepare():
     configs = LOCAL / 'configs'
     configs.mkdir(exist_ok=True)
     (LOCAL / 'objects').mkdir(exist_ok=True)
+    from operations_config import private_export_directory
+
+    private_export_directory(BASE)
     (LOCAL / 'app.env').write_text(
         'TJ_INTERNAL_TOKEN=' + env['ACCEPTANCE_INTERNAL_TOKEN'] + '\n', encoding='utf8'
     )
@@ -384,13 +387,17 @@ def prepare():
                 '/accounts/logout',
                 '/accounts/sessions/**',
             ]
+        if alias == 'user':
+            tj['privacy'] = {
+                'archive': {'provider': 'LOCAL', 'directory': '/run/privacy-exports'}
+            }
         if alias == 'media':
             tj['platform'] = {'file': 'LOCAL', 'media': 'LOCAL'}
             tj['local-storage'] = {'enabled': True, 'directory': '/run/objects'}
             tj['tencent']['vod']['enable'] = False
             tj['tencent']['cos']['enable'] = False
             resource['excludeLoginPaths'].extend(
-                ['/local-content/**', '/course-covers/*']
+                ['/local-content/**', '/trial-content/**', '/course-covers/*']
             )
             s['servlet'] = {
                 'multipart': {'max-file-size': '200MB', 'max-request-size': '201MB'}

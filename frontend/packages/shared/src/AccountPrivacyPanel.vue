@@ -4,6 +4,8 @@ import { write } from './client';
 import { useSession } from './session';
 import { useTask } from './ui';
 import Status from './Status.vue';
+import PrivacyTasksPanel from './PrivacyTasksPanel.vue';
+const completeRequest = ref<string>();
 const task = useTask(),
   session = useSession(),
   password = ref(''),
@@ -11,9 +13,14 @@ const task = useTask(),
 onBeforeUnmount(() => (password.value = ''));
 async function download() {
   await task.run(async () => {
-    const data = await write<unknown>('/services/user/account-privacy/export', 'POST', {
-      password: password.value,
-    });
+    const data = await write<{ request: { id: string } }>(
+      '/services/user/account-privacy/export',
+      'POST',
+      {
+        password: password.value,
+      },
+    );
+    completeRequest.value = data.request.id;
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
     );
@@ -82,4 +89,5 @@ async function deactivate() {
       ></template
     >
   </section>
+  <PrivacyTasksPanel :request-id="completeRequest" />
 </template>

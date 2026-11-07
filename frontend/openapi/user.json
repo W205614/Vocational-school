@@ -84,6 +84,12 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
                   "properties": {
                     "code": {
                       "type": "integer"
@@ -97,13 +103,7 @@
                     "data": {
                       "$ref": "#/components/schemas/TemporaryCredentialDTO"
                     }
-                  },
-                  "required": [
-                    "code",
-                    "msg",
-                    "requestId",
-                    "data"
-                  ]
+                  }
                 }
               }
             }
@@ -316,6 +316,12 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
                   "properties": {
                     "code": {
                       "type": "integer"
@@ -329,13 +335,67 @@
                     "data": {
                       "$ref": "#/components/schemas/TemporaryCredentialDTO"
                     }
-                  },
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/user/account-privacy/requests/{id}": {
+      "put": {
+        "tags": [
+          "account-privacy-controller"
+        ],
+        "operationId": "resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Resolution"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
                   "required": [
                     "code",
                     "msg",
-                    "requestId",
-                    "data"
-                  ]
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
                 }
               }
             }
@@ -355,6 +415,156 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/StudentFormDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/public/accounts/verification-codes": {
+      "post": {
+        "tags": [
+          "public-account-controller"
+        ],
+        "operationId": "code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/public/accounts/registration": {
+      "post": {
+        "tags": [
+          "public-account-controller"
+        ],
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Registration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/public/accounts/password-recovery": {
+      "post": {
+        "tags": [
+          "public-account-controller"
+        ],
+        "operationId": "recover",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Recovery"
               }
             }
           },
@@ -528,6 +738,439 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/account-privacy/tasks": {
+      "get": {
+        "tags": [
+          "privacy-task-controller"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "privacy-task-controller"
+        ],
+        "operationId": "create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Create"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/account-privacy/tasks/{id}/retry": {
+      "post": {
+        "tags": [
+          "privacy-task-controller"
+        ],
+        "operationId": "retry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Decision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/account-privacy/tasks/{id}/download": {
+      "post": {
+        "tags": [
+          "privacy-task-controller"
+        ],
+        "operationId": "download",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Password"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/account-privacy/tasks/{id}/approve": {
+      "post": {
+        "tags": [
+          "privacy-task-controller"
+        ],
+        "operationId": "approve",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Decision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/account-privacy/export": {
+      "post": {
+        "tags": [
+          "account-privacy-controller"
+        ],
+        "operationId": "export",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/account-privacy/deletion": {
+      "post": {
+        "tags": [
+          "account-privacy-controller"
+        ],
+        "operationId": "deletion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/user/account-privacy/consent": {
+      "post": {
+        "tags": [
+          "account-privacy-controller"
+        ],
+        "operationId": "consent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Consent"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -761,7 +1404,7 @@
         "tags": [
           "用户管理接口"
         ],
-        "summary": "分页查询员工信息",
+        "summary": "分页查询教师与员工信息",
         "operationId": "queryStaffPage",
         "parameters": [
           {
@@ -798,6 +1441,47 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/PageDTOStaffVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/public/accounts/privacy": {
+      "get": {
+        "tags": [
+          "public-account-controller"
+        ],
+        "operationId": "policy",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
                     }
                   }
                 }
@@ -862,7 +1546,7 @@
         "tags": [
           "operation-failure-controller"
         ],
-        "operationId": "list",
+        "operationId": "list_1",
         "responses": {
           "200": {
             "description": "OK",
@@ -888,6 +1572,154 @@
                     },
                     "data": {
                       "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/operation-failures/user/page": {
+      "get": {
+        "tags": [
+          "operation-failure-controller"
+        ],
+        "operationId": "page",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "errorCode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FailurePage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/events/user/page": {
+      "get": {
+        "tags": [
+          "event-admin-controller"
+        ],
+        "operationId": "page_1",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FailurePage"
                     }
                   }
                 }
@@ -958,7 +1790,7 @@
         "tags": [
           "consumer-failure-controller"
         ],
-        "operationId": "list_1",
+        "operationId": "list_2",
         "parameters": [
           {
             "name": "limit",
@@ -1009,242 +1841,126 @@
         }
       }
     },
-    "/api/v2/admin/operation-failures/user/page": {
-      "get": {
-        "tags": [
-          "operation-failure-controller"
-        ],
-        "operationId": "page_operation_failures",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "list",
-                        "total",
-                        "pageNo",
-                        "pageSize"
-                      ],
-                      "properties": {
-                        "list": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "total": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "pageNo": {
-                          "type": "integer"
-                        },
-                        "pageSize": {
-                          "type": "integer"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "分页查询持久失败记录",
-        "parameters": [
-          {
-            "name": "pageNo",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            }
-          },
-          {
-            "name": "identifier",
-            "in": "query",
-            "description": "Exact failure, event, operation or business identifier",
-            "schema": {
-              "type": "string",
-              "maxLength": 200
-            }
-          },
-          {
-            "name": "errorCode",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "BUSINESS_FAILED",
-                "RETRY_EXHAUSTED"
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "/api/v2/admin/events/user/page": {
-      "get": {
-        "tags": [
-          "event-admin-controller"
-        ],
-        "operationId": "page_events",
-        "parameters": [
-          {
-            "name": "pageNo",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            }
-          },
-          {
-            "name": "identifier",
-            "in": "query",
-            "description": "Exact failure, event, operation or business identifier",
-            "schema": {
-              "type": "string",
-              "maxLength": 200
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "list",
-                        "total",
-                        "pageNo",
-                        "pageSize"
-                      ],
-                      "properties": {
-                        "list": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "total": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "pageNo": {
-                          "type": "integer"
-                        },
-                        "pageSize": {
-                          "type": "integer"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "分页查询持久失败记录"
-      }
-    },
     "/api/v2/admin/consumer-failures/user/page": {
       "get": {
         "tags": [
           "consumer-failure-controller"
         ],
-        "operationId": "page_consumer_failures",
+        "operationId": "page_2",
         "parameters": [
           {
             "name": "pageNo",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
-              "minimum": 1,
+              "format": "int32",
               "default": 1
             }
           },
           {
             "name": "pageSize",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
+              "format": "int32",
               "default": 20
             }
           },
           {
             "name": "identifier",
             "in": "query",
-            "description": "Exact failure, event, operation or business identifier",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FailurePage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/audit/user": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "operationId": "page_3",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
-              "maxLength": 200
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "result",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1273,39 +1989,105 @@
                     },
                     "data": {
                       "type": "object",
-                      "required": [
-                        "list",
-                        "total",
-                        "pageNo",
-                        "pageSize"
-                      ],
-                      "properties": {
-                        "list": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "total": {
-                          "type": "integer",
-                          "format": "int64"
-                        },
-                        "pageNo": {
-                          "type": "integer"
-                        },
-                        "pageSize": {
-                          "type": "integer"
-                        }
-                      }
+                      "additionalProperties": {}
                     }
                   }
                 }
               }
             }
           }
-        },
-        "summary": "分页查询持久失败记录"
+        }
+      }
+    },
+    "/api/v2/services/user/account-privacy/tasks/{id}": {
+      "get": {
+        "tags": [
+          "privacy-task-controller"
+        ],
+        "operationId": "view",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/user/account-privacy/requests": {
+      "get": {
+        "tags": [
+          "account-privacy-controller"
+        ],
+        "operationId": "pending",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -1537,6 +2319,42 @@
           "type"
         ]
       },
+      "TemporaryCredentialDTO": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "temporaryPassword": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Resolution": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "status": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "evidenceReference": {
+            "type": "string"
+          }
+        }
+      },
       "StudentFormDTO": {
         "type": "object",
         "default": null,
@@ -1559,6 +2377,150 @@
             "default": "",
             "description": "验证码",
             "example": "645632"
+          }
+        }
+      },
+      "InitialPasswordDTO": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "oldPassword": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 0
+          },
+          "newPassword": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 8
+          },
+          "audience": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "student|admin"
+          }
+        },
+        "required": [
+          "audience",
+          "newPassword",
+          "oldPassword",
+          "username"
+        ]
+      },
+      "Cleanup": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "cutoffs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CodeRequest": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          }
+        }
+      },
+      "Registration": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "consent": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Recovery": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        }
+      },
+      "Create": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "Decision": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "planHash": {
+            "type": "string"
+          }
+        }
+      },
+      "Password": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "Credential": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string"
+          },
+          "confirmation": {
+            "type": "string"
+          }
+        }
+      },
+      "Consent": {
+        "type": "object",
+        "properties": {
+          "policyVersion": {
+            "type": "string"
           }
         }
       },
@@ -1968,6 +2930,95 @@
           }
         }
       },
+      "LoginUserDTO": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "roleId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "userType": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rememberMe": {
+            "type": "boolean"
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "authVersion": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "mustChangePassword": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Dataset": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "select": {
+            "type": "string"
+          },
+          "count": {
+            "type": "string"
+          },
+          "eligible": {
+            "type": "string"
+          },
+          "cleanup": {
+            "type": "string"
+          }
+        }
+      },
+      "Definition": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "datasets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Dataset"
+            }
+          }
+        }
+      },
+      "Page": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "dataset": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "nextOffset": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "View": {
         "type": "object",
         "properties": {
@@ -1986,30 +3037,29 @@
           }
         }
       },
-      "TemporaryCredentialDTO": {
+      "FailurePage": {
         "type": "object",
         "properties": {
-          "userId": {
-            "type": "string"
+          "list": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
           },
-          "username": {
-            "type": "string"
-          },
-          "temporaryPassword": {
+          "total": {
             "type": "string",
-            "readOnly": true
+            "pattern": "^-?[0-9]+$"
           },
-          "expiresAt": {
-            "type": "string",
-            "format": "date-time"
+          "pageNo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32"
           }
-        },
-        "required": [
-          "userId",
-          "username",
-          "temporaryPassword",
-          "expiresAt"
-        ]
+        }
       }
     }
   }

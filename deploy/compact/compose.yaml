@@ -121,6 +121,7 @@ services:
       - ./.local/configs/auth.yml:/run/compact/configs/auth.yml:ro
       - ./.local/configs/user.yml:/run/compact/configs/user.yml:ro
       - ./.local/signing.jks:/run/compact/signing.jks:ro
+      - ./.local/privacy-exports:/run/privacy-exports
     mem_limit: 1536m
     environment:
       APP_PORT: '24001'

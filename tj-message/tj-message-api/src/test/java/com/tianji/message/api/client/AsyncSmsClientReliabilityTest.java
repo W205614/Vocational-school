@@ -37,6 +37,7 @@ class AsyncSmsClientReliabilityTest {
     private SmsInfoDTO message() {
         var form = new SmsInfoDTO();
         form.setTemplateCode("VERIFY_CODE");
+        form.setExpiresAt(System.currentTimeMillis() + 300_000);
         form.setPhones(List.of("acceptance-only"));
         form.setTemplateParams(Map.of("code", "0000"));
         return form;

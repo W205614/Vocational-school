@@ -1,4 +1,4 @@
-# Source-Manifest-SHA256: e24cb2a1509d5211af8a27041213b23486893da4898e0b5b727b7ea1fbf08fed
+# Source-Manifest-SHA256: 8ac67c0d26753c3ff95d0af82a7dd2142ff03b3e55892b1abf8f7bfc8b0eeb39
 # Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
 # Reviewed static module targets for the gateway API inventory, 2026-10-26.
 # Derived once from the reviewed v2 route mappings; no runtime Feign/policy auto-grant.
@@ -156,6 +156,9 @@ gateway|GET|/_modules/learning/questions/{id}
 gateway|GET|/_modules/learning/replies/page
 gateway|GET|/_modules/learning/sign-records
 gateway|GET|/_modules/media/api/v2/admin/audit
+gateway|GET|/_modules/media/api/v2/admin/consumer-failures
+gateway|GET|/_modules/media/api/v2/admin/consumer-failures/page
+gateway|POST|/_modules/media/api/v2/admin/consumer-failures/{id}/replay
 gateway|GET|/_modules/media/api/v2/admin/events/failures
 gateway|GET|/_modules/media/api/v2/admin/events/page
 gateway|GET|/_modules/media/api/v2/admin/media-upload-tasks/{id}
@@ -395,6 +398,15 @@ gateway|POST|/_modules/trade/refund-apply
 gateway|POST|/_modules/user/account-privacy/consent
 gateway|POST|/_modules/user/account-privacy/deletion
 gateway|POST|/_modules/user/account-privacy/export
+gateway|GET|/_modules/user/account-privacy/tasks
+gateway|GET|/_modules/user/account-privacy/tasks/{id}
+gateway|POST|/_modules/user/account-privacy/tasks
+gateway|POST|/_modules/user/account-privacy/tasks/{id}/approve
+gateway|POST|/_modules/user/account-privacy/tasks/{id}/retry
+gateway|POST|/_modules/user/account-privacy/tasks/{id}/download
+gateway|GET|/_modules/media/trial-content/{id}
+gateway|GET|/_modules/media/media-trials
+gateway|POST|/_modules/media/media-trials/{id}/retry
 gateway|POST|/_modules/user/api/v2/admin/consumer-failures/{id}/replay
 gateway|POST|/_modules/user/api/v2/admin/events/{id}/replay
 gateway|POST|/_modules/user/api/v2/admin/operation-failures/{id}/replay

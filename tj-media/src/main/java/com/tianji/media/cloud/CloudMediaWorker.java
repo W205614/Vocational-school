@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @ConditionalOnProperty(name = "tj.cloud-media.enabled", havingValue = "true")
 @ConditionalOnProperty(name = "tj.cloud-media.role", havingValue = "worker")
 public class CloudMediaWorker implements ApplicationRunner {
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.beans.factory.ObjectProvider<TrialMediaJobs> trials;
+
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final CloudObjectStore objects;
@@ -28,6 +31,7 @@ public class CloudMediaWorker implements ApplicationRunner {
     private final Path signatures;
     private final long signatureAge;
     private volatile boolean started;
+    private boolean trialTurn;
     private final java.security.SecureRandom identifiers = new java.security.SecureRandom();
 
     public CloudMediaWorker(
@@ -61,12 +65,19 @@ public class CloudMediaWorker implements ApplicationRunner {
     @Scheduled(fixedDelayString = "${tj.cloud-media.poll-interval-ms:1000}")
     public void poll() {
         if (!started || !CloudWorkerHealth.fresh(signatures, signatureAge)) return;
+        trialTurn = !trialTurn;
+        if (trialTurn
+                && trials != null
+                && trials.getIfAvailable() != null
+                && trials.getObject().processNext()) return;
         jdbc.update(
                 "UPDATE cloud_media_upload SET state='FAILED',error_code='UPLOAD_EXPIRED' WHERE state='UPLOADING' AND expires_at<NOW(3)");
         var candidates =
                 jdbc.queryForList(
                         "SELECT id FROM cloud_media_upload WHERE (state='PENDING' AND next_attempt_at<=NOW(3)) OR (state='PROCESSING' AND lease_until<NOW(3)) ORDER BY created_at LIMIT 1");
         if (!candidates.isEmpty()) process(candidates.getFirst().get("id").toString());
+        else if (trials != null && trials.getIfAvailable() != null)
+            trials.getObject().processNext();
     }
 
     void process(String id) {

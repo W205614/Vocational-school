@@ -17,6 +17,23 @@ IMAGES = {
 LOGGING = {'driver': 'local', 'options': {'max-size': '10m', 'max-file': '3'}}
 
 
+def private_export_directory(home):
+    import importlib.util
+
+    directory = Path(home) / '.local/privacy-exports'
+    if directory.is_symlink():
+        raise RuntimeError('Private export directory must not be a link')
+    directory.mkdir(parents=True, exist_ok=True)
+    specification = importlib.util.spec_from_file_location(
+        'tianji_privacy_permissions',
+        Path(__file__).resolve().parents[1] / 'production/database.py',
+    )
+    private_files = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(private_files)
+    private_files.protect(directory)
+    return directory
+
+
 def harden(compose, offset=0):
     from application_layout import isolate_applications
 
@@ -151,6 +168,23 @@ def module_defaults(alias, config):
             'trusted-addresses', ['web-student', 'web-admin']
         )
         tj.setdefault('backup', {})['status-file'] = '/run/ops-status/backup.properties'
+    if alias == 'user':
+        archive = (
+            config.setdefault('tj', {})
+            .setdefault('privacy', {})
+            .setdefault('archive', {})
+        )
+        archive.setdefault('provider', 'LOCAL')
+        archive.setdefault('directory', '/run/privacy-exports')
+    if alias == 'media':
+        paths = (
+            config.setdefault('tj', {})
+            .setdefault('auth', {})
+            .setdefault('resource', {})
+            .setdefault('excludeLoginPaths', [])
+        )
+        if '/trial-content/**' not in paths:
+            paths.append('/trial-content/**')
     return config
 
 
@@ -267,6 +301,7 @@ def upgrade(home, token, offset=0, rabbit_hostname=None):
                 updated, allow_unicode=True, sort_keys=False
             )
     candidate = observability(compose, offset)
+    private_export_directory(home)
     if not candidate['services']['rabbitmq'].get('hostname'):
         if not rabbit_hostname or not __import__('re').fullmatch(
             r'[a-zA-Z0-9][a-zA-Z0-9_.-]{0,62}', rabbit_hostname

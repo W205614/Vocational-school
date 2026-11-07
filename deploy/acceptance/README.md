@@ -53,9 +53,9 @@ python deploy/acceptance/migration_audit.py
 python deploy/acceptance/verify_observability.py
 ```
 
-故障测试会停止本验收 RabbitMQ 或学习/交易 JVM，必须在专用验收窗口执行。测试中的业务 fixture 使用新 ID，不能证明所有管理页面的 CRUD 都已通过浏览器验收。支付成功模拟器调用本项目支付服务，真实支付宝/微信渠道需独立凭据和环境验证。
+故障测试会停止本验收 RabbitMQ 或学习/交易 JVM，必须在专用验收窗口执行。测试使用新 ID 的业务夹具，管理页面按实际覆盖的浏览器路径记录结果。支付成功模拟器调用本项目支付服务，真实支付宝渠道需独立凭据和环境验证。
 
-空闲窗口运行 `load_claims.py`、`sustained_claims.py --seconds 60`。五档并发依次为 1、10、50、100、200；指标包含客户端轮询耗时，因此不能当作纯接口 QPS，也不能由一分钟窗口推断长期生产容量。压测会写入验收优惠券与合成用户 ID，不会创建真实用户或访问原部署。
+空闲窗口运行 `load_claims.py`、`sustained_claims.py --seconds 60`。五档并发依次为 1、10、50、100、200；指标包含客户端轮询耗时，按短时工作流吞吐记录；生产容量另按持续负载测量。压测会写入验收优惠券与合成用户 ID，不会创建真实用户或访问原部署。
 
 ```powershell
 python deploy/acceptance/export_openapi.py learning exam promotion trade course user auth media remark search message pay data
@@ -80,7 +80,7 @@ python deploy/acceptance/container_apps.py build
 python deploy/acceptance/container_smoke.py
 ```
 
-容器检查按服务逐个启动，非 root 用户、384 MiB 堆、768 MiB 容器上限，校验 Sentinel 日志目录可写、无 OOM、优雅停机，并访问真实 readiness 和 OpenAPI/网关接口；跨服务依赖使用同一验收库和宿主机验收服务。它验证 Linux 镜像启动，不能替代完整容器栈同时运行或高可用验收。
+容器检查按服务逐个启动，非 root 用户、384 MiB 堆、768 MiB 容器上限，校验 Sentinel 日志目录可写、无 OOM、优雅停机，并访问真实 readiness 和 OpenAPI/网关接口；跨服务依赖使用同一验收库和宿主机验收服务。该检查覆盖各 Linux 镜像启动；完整容器栈及高可用场景分别验收。
 
 `compose.apps.yaml` 提供 14 个应用和两个 Nginx 的完整容器配置，依赖 search profile；全栈启动前先停止占用相同端口的验收 JVM，检查 WSL 可用内存，避免与旧部署同时启动造成内存不足。该同时运行模式仍需专用资源窗口验证：
 

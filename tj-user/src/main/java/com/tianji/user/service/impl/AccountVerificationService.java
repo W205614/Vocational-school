@@ -74,6 +74,7 @@ public class AccountVerificationService {
         info.setPhones(List.of(phone));
         info.setTemplateCode(SmsTemplate.VERIFY_CODE.toString());
         info.setTemplateParams(Map.of("code", code));
+        info.setExpiresAt(System.currentTimeMillis() + 300_000);
         // If durable acceptance fails, keep the short cooldown, but don't leave a usable
         // undelivered proof.
         try {

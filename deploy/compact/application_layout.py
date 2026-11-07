@@ -20,6 +20,7 @@ def application_mounts(group):
     ]
     if group == 'identity':
         mounts.append('./.local/signing.jks:/run/compact/signing.jks:ro')
+        mounts.append('./.local/privacy-exports:/run/privacy-exports')
     if group == 'support':
         mounts.append('./.local/objects:/run/objects')
     return mounts
@@ -76,4 +77,15 @@ def isolate_applications(compose):
                 if key not in {'mysql', 'redis', 'rabbitmq', 'elasticsearch'}
             }
             service['depends_on'].update(application_dependencies(group))
+        if group == 'identity' and not any(
+            (isinstance(value, str) and ':/run/privacy-exports' in value)
+            or (
+                isinstance(value, dict)
+                and value.get('target') == '/run/privacy-exports'
+            )
+            for value in service.get('volumes', [])
+        ):
+            service.setdefault('volumes', []).append(
+                './.local/privacy-exports:/run/privacy-exports'
+            )
     return result

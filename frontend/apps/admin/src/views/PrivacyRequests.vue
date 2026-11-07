@@ -3,9 +3,11 @@ import { ref, onMounted } from 'vue';
 import { get, write } from '../../../../packages/shared/src/client';
 import { useTask, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
+import PrivacyTasksPanel from '../../../../packages/shared/src/PrivacyTasksPanel.vue';
 const task = useTask(),
   rows = ref<Row[]>([]),
   selected = ref<Row>(),
+  taskRequestId = ref<string>(),
   status = ref('IN_PROGRESS'),
   reason = ref(''),
   evidence = ref('');
@@ -16,6 +18,7 @@ async function load() {
 }
 function open(row: Row) {
   selected.value = row;
+  taskRequestId.value = String(row.id);
   status.value = 'IN_PROGRESS';
   reason.value = '';
   evidence.value = '';
@@ -57,7 +60,10 @@ onMounted(load);
       /><el-table-column prop="retained_domains" label="需核对的业务范围" /><el-table-column
         label="操作"
         ><template #default="scope"
-          ><el-button @click="open(scope.row)">核对并处理</el-button></template
+          ><el-button @click="open(scope.row)">核对并处理</el-button>
+          <el-button @click="taskRequestId = String(scope.row.id)"
+            >完整处理任务</el-button
+          ></template
         ></el-table-column
       ></el-table
     ><el-dialog
@@ -93,4 +99,6 @@ onMounted(load);
       ></el-dialog
     >
   </section>
+  <p v-if="taskRequestId" role="status">当前完整处理关联申请：{{ taskRequestId }}</p>
+  <PrivacyTasksPanel :request-id="taskRequestId" />
 </template>

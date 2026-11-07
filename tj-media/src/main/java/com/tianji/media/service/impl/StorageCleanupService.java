@@ -14,6 +14,9 @@ import java.util.*;
 
 @Service
 public class StorageCleanupService implements OperationHandler {
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.tianji.media.cloud.TrialMediaJobs trials;
+
     private final JdbcTemplate jdbc;
     private final JsonMapper json;
     private final IFileStorage files;
@@ -96,9 +99,10 @@ public class StorageCleanupService implements OperationHandler {
                         id)
                 != 1) return;
         try {
-            if ("MEDIA".equals(row.get("kind")))
+            if ("MEDIA".equals(row.get("kind"))) {
+                if (trials != null) trials.removeDerived(row.get("object_key").toString());
                 medias.deleteFile(row.get("object_key").toString());
-            else files.deleteFile(row.get("object_key").toString());
+            } else files.deleteFile(row.get("object_key").toString());
             jdbc.update(
                     "UPDATE storage_cleanup_task SET status='DONE',lease_token=NULL WHERE id=? AND lease_token=?",
                     id,

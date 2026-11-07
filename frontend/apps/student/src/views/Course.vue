@@ -524,6 +524,10 @@ async function select(item: Row) {
   try {
     const result = await get<Row>('/services/media/medias/signature/play?sectionId=' + item.id);
     if (revision !== playRevision || id() !== courseId || who !== identity.value) return;
+    if (result.trial && result.state !== 'READY') {
+      play.value = result;
+      return;
+    }
     if (owned.value)
       await timing.start({
         owner: owner.value,
@@ -992,7 +996,17 @@ onBeforeUnmount(() => {
                   record(true);
                   playback('PAUSED');
                 "
-              /><el-alert
+              />
+              <div v-else-if="play?.trial" aria-live="polite">
+                <p v-if="play.state === 'FAILED'" role="alert">
+                  试看片段处理失败（{{ play.errorCode }}），请联系管理员处理后重新查询。
+                </p>
+                <p v-else role="status">
+                  试看片段正在后台生成，完成后即可播放。此处不会提供完整视频。
+                </p>
+                <el-button :disabled="busy" @click="select(section)">查询试看进度</el-button>
+              </div>
+              <el-alert
                 v-else-if="!canPlay"
                 :title="playbackUnavailable"
                 type="warning"
@@ -1003,6 +1017,9 @@ onBeforeUnmount(() => {
                 type="warning"
                 :closable="false"
               />
+              <p v-if="play?.trial && play.playUrl" class="muted">
+                当前播放独立试看片段，报名后可学习完整版。
+              </p>
               <p v-if="tickets.busy.value || mediaReloading" role="status">
                 正在更新播放地址，将保留播放位置和状态…
               </p>

@@ -18,9 +18,7 @@ import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
- * <p>
  * 第三方云通讯平台 服务实现类
- * </p>
  *
  * @author 虎哥
  * @since 2022-08-19
@@ -43,12 +41,14 @@ public class SmsThirdPlatformServiceImpl
         SmsThirdPlatform thirdPlatform =
                 BeanUtils.copyBean(thirdPlatformDTO, SmsThirdPlatform.class);
         save(thirdPlatform);
+        platformCache.invalidate("PLATFORM");
         return thirdPlatform.getId();
     }
 
     @Override
     public void updateSmsThirdPlatform(SmsThirdPlatformFormDTO thirdPlatformDTO) {
         updateById(BeanUtils.copyBean(thirdPlatformDTO, SmsThirdPlatform.class));
+        platformCache.invalidate("PLATFORM");
     }
 
     @Override

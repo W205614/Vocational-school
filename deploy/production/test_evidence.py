@@ -54,6 +54,10 @@ class EvidenceGateTest(unittest.TestCase):
                     ]
                 },
             }
+            if name in acceptance.FUNCTIONAL_CHECKS:
+                self.evidence["suites"][name]["checks"] = {
+                    key: True for key in acceptance.FUNCTIONAL_CHECKS[name]
+                }
             measurements = {
                 key: value
                 for key, value in self.evidence["suites"][name].items()

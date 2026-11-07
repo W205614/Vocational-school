@@ -16,4 +16,14 @@ public class SmsInfoDTO {
 
     @Schema(description = "模板参数")
     private Map<String, String> templateParams;
+
+    @Schema(description = "最晚发送时间，Unix毫秒；验证码必须提供")
+    private Long expiresAt;
+
+    @Override
+    public String toString() {
+        return "SmsInfoDTO[templateCode="
+                + templateCode
+                + ", recipients=REDACTED, parameters=REDACTED]";
+    }
 }

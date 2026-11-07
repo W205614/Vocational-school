@@ -1,0 +1,68 @@
+{
+  "schema": "tianji-runtime-checks-v1",
+  "suite": "identity_mfa",
+  "namespace": "tianji-production",
+  "environment": "isolated-production-candidate",
+  "test_identity": "REPLACE_WITH_ENROLLED_SYNTHETIC_ADMIN",
+  "base_url": "https://REPLACE_WITH_ADMIN_HOST",
+  "steps": [
+    {
+      "name": "missing_totp_denied",
+      "check": "mfa_rejected",
+      "method": "POST",
+      "path": "/api/v2/auth/accounts/admin/login",
+      "expected_status": 401,
+      "body": {
+        "type": 1,
+        "username": "${credentials.admin_username}",
+        "password": "${credentials.admin_password}"
+      }
+    },
+    {
+      "name": "valid_totp_login",
+      "check": "mfa_accepted",
+      "method": "POST",
+      "path": "/api/v2/auth/accounts/admin/login",
+      "expected_status": 200,
+      "body": {
+        "type": 1,
+        "username": "${credentials.admin_username}",
+        "password": "${credentials.admin_password}",
+        "mfaCode": "${credentials.current_totp}"
+      },
+      "assertions": [{ "path": "/code", "equals": 200 }],
+      "save": { "auth.token": "/data" }
+    },
+    {
+      "name": "used_totp_denied",
+      "check": "mfa_rejected",
+      "method": "POST",
+      "path": "/api/v2/auth/accounts/admin/login",
+      "expected_status": 401,
+      "body": {
+        "type": 1,
+        "username": "${credentials.admin_username}",
+        "password": "${credentials.admin_password}",
+        "mfaCode": "${credentials.current_totp}"
+      }
+    },
+    {
+      "name": "revoke_current_session",
+      "check": "session_revoked",
+      "method": "POST",
+      "path": "/api/v2/auth/accounts/logout",
+      "auth": "${auth.token}",
+      "expected_status": 200,
+      "assertions": [{ "path": "/code", "equals": 200 }]
+    },
+    {
+      "name": "revoked_session_denied",
+      "check": "session_revoked",
+      "method": "GET",
+      "attempts": 30,
+      "path": "/api/v2/auth/accounts/sessions",
+      "auth": "${auth.token}",
+      "expected_status": 401
+    }
+  ]
+}

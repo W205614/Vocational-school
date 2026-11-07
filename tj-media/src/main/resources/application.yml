@@ -44,6 +44,7 @@ tj:
       enable: true
       excludeLoginPaths:
         - /medias/signature/play
+        - /trial-content/**
   jdbc:
     database: tj_media
   platform:

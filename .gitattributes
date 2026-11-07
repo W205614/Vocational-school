@@ -1,4 +1,6 @@
 # Keep maintained text consistent across Windows and CI checkouts.
+.gitattributes text eol=lf
+.editorconfig text eol=lf
 *.java text eol=lf
 *.py text eol=lf
 *.ts text eol=lf
@@ -15,3 +17,5 @@
 *.yaml text eol=lf
 *.json text eol=lf
 *.md text eol=lf
+*.txt text eol=lf
+*.imports text eol=lf

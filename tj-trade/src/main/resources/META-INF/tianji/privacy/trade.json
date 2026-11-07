@@ -1,0 +1,41 @@
+{
+  "domain": "trade",
+  "note": "仅导出归属本人的已审阅字段；运行队列、凭据及其他用户资料不纳入导出。",
+  "datasets": [
+    {
+      "name": "orders",
+      "select": "SELECT id,status,total_amount,real_amount,discount_amount,pay_channel,create_time,pay_time,refund_time FROM `order` WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM `order` WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "items",
+      "select": "SELECT id,order_id,course_id,name,price,real_pay_amount,status,refund_status,create_time FROM order_detail WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM order_detail WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "refunds",
+      "select": "SELECT id,order_id,order_detail_id,refund_amount,status,refund_reason,question_desc,create_time,finish_time FROM refund_apply WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM refund_apply WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "cart",
+      "select": "SELECT id,course_id,course_name,price,create_time FROM cart WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM cart WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "operations",
+      "select": "SELECT operation_id,kind,status,error_code,created_at,updated_at FROM reliability_operation WHERE user_id=? ORDER BY created_at,operation_id",
+      "count": "SELECT COUNT(*) FROM reliability_operation WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    }
+  ]
+}

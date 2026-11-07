@@ -1,15 +1,27 @@
 package com.tianji.message.thirdparty;
 
-import com.tianji.api.dto.sms.SmsInfoDTO;
-import com.tianji.message.domain.po.MessageTemplate;
+import java.time.LocalDate;
+import java.util.Map;
 
-/**
- * 第三方接口对接平台
- */
 public interface ISmsHandler {
+    /** A response is provider acceptance, never a handset delivery acknowledgement. */
+    Submission send(
+            String phone,
+            String template,
+            String signName,
+            Map<String, String> parameters,
+            String outId);
 
-    /**
-     * 发送短信
-     */
-    void send(SmsInfoDTO platformSmsInfoDTO, MessageTemplate template);
+    Receipt query(String phone, LocalDate sendDate, String bizId, String outId, String template);
+
+    record Submission(String bizId, String requestId) {}
+
+    enum State {
+        PENDING,
+        DELIVERED,
+        FAILED,
+        UNKNOWN
+    }
+
+    record Receipt(State state, String code) {}
 }

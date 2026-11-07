@@ -11,7 +11,7 @@ const lesson = { id: lessonId, status: 1, courseId, records: [], learnedSections
 
 async function contracts(
   page: Page,
-  options: { readyAt?: number; cloud?: boolean; video?: Buffer } = {},
+  options: { readyAt?: number; cloud?: boolean; video?: Buffer; trialStates?: string[] } = {},
 ) {
   const state = {
     enrollments: 0,
@@ -55,7 +55,14 @@ async function contracts(
             id: '703',
             name: 'Contract chapter',
             sections: [
-              { id: sectionId, index: 1, name: 'Contract video', type: 2, mediaDuration: 120 },
+              {
+                id: sectionId,
+                index: 1,
+                name: 'Contract video',
+                type: 2,
+                mediaDuration: 120,
+                trailer: !!options.trialStates,
+              },
             ],
           },
         ],
@@ -71,12 +78,31 @@ async function contracts(
       data = { operationId: 'fixture-enrollment', status: 'SUCCEEDED', result: { orderId: '704' } };
     else if (path === '/api/v2/services/media/medias/signature/play') {
       state.signatures++;
+      const trialState =
+        options.trialStates?.[Math.min(state.signatures - 1, options.trialStates.length - 1)];
       data = {
+        ...(trialState
+          ? {
+              trial: true,
+              state: trialState,
+              taskId: 'a'.repeat(64),
+              errorCode: trialState === 'FAILED' ? 'TRIAL_PROCESSING_FAILED' : undefined,
+            }
+          : {}),
         playUrl:
-          '/api/v2/services/media/cloud-content/' + cloudId + '?ticket=fixture-' + state.signatures,
+          trialState && trialState !== 'READY'
+            ? undefined
+            : '/api/v2/services/media/' +
+              (trialState ? 'trial-content/' : 'cloud-content/') +
+              cloudId +
+              '?ticket=fixture-' +
+              state.signatures,
         expiresAt: String(Date.now() + (state.signatures === 1 ? 6000 : 600000)),
       };
-    } else if (path === '/api/v2/services/media/cloud-content/' + cloudId) {
+    } else if (
+      path === '/api/v2/services/media/cloud-content/' + cloudId ||
+      path === '/api/v2/services/media/trial-content/' + cloudId
+    ) {
       const bytes = options.video ?? Buffer.alloc(0),
         range = request.headers().range?.match(/^bytes=(\d+)-(\d*)$/);
       if (range) {
@@ -146,6 +172,26 @@ async function contracts(
   });
   return state;
 }
+
+test('contract: trial processing and failures never install a full-video player', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'student');
+  const state = await contracts(page, {
+    readyAt: Number.MAX_SAFE_INTEGER,
+    trialStates: ['PROCESSING', 'FAILED'],
+  });
+  await page.goto('/courses/' + courseId);
+  await page.getByRole('button', { name: /Contract video/ }).click();
+  await expect(page.getByRole('status').filter({ hasText: '试看片段正在后台生成' })).toBeVisible();
+  await expect(page.locator('video.course-player')).toHaveCount(0);
+  await page.getByRole('button', { name: '查询试看进度' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: '试看片段处理失败' })).toBeVisible();
+  await expect(page.locator('video.course-player')).toHaveCount(0);
+  expect(state.signatures).toBe(2);
+  expect(state.starts).toBe(0);
+  expect(state.unexpected).toEqual([]);
+});
 
 test('contract: free enrollment reconciles late entitlement without refreshing or submitting another order', async ({
   page,

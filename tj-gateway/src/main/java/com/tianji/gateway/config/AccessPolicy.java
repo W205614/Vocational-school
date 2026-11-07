@@ -43,6 +43,10 @@ public final class AccessPolicy {
     }
 
     private boolean valid(String pattern, String name, String value) {
+        if (name.equals("id")
+                && (pattern.contains("/media/trial-content/{id}")
+                        || pattern.contains("/media/media-trials/{id}/retry")))
+            return value.matches("[0-9a-f]{64}");
         if (name.equals("key")) return value.matches("[a-zA-Z0-9_.-]{1,100}");
         if (name.equals("reason")
                 && pattern.equals(
@@ -62,7 +66,8 @@ public final class AccessPolicy {
         if (name.equals("hidden")) return value.matches("true|false");
         if (pattern.contains("/cloud-content/")
                 || pattern.contains("/media-upload-tasks/")
-                || pattern.contains("/account-privacy/requests/"))
+                || pattern.contains("/account-privacy/requests/")
+                || pattern.contains("/account-privacy/tasks/{id}"))
             return value.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
         boolean workflow =
                 pattern.contains("/learning-hub/admin/rewards/")

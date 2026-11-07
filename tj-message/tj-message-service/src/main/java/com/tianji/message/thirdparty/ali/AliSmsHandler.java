@@ -1,57 +1,119 @@
 package com.tianji.message.thirdparty.ali;
 
 import com.aliyun.sdk.service.dysmsapi20170525.AsyncClient;
-import com.aliyun.sdk.service.dysmsapi20170525.models.SendSmsRequest;
-import com.aliyun.sdk.service.dysmsapi20170525.models.SendSmsResponse;
-import com.aliyun.sdk.service.dysmsapi20170525.models.SendSmsResponseBody;
-import com.tianji.api.dto.sms.SmsInfoDTO;
+import com.aliyun.sdk.service.dysmsapi20170525.models.*;
 import com.tianji.common.utils.JsonUtils;
-import com.tianji.common.utils.StringUtils;
-import com.tianji.message.domain.po.MessageTemplate;
 import com.tianji.message.thirdparty.ISmsHandler;
+import com.tianji.message.thirdparty.SmsProviderFailure;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.CompletableFuture;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.*;
 
 @Service("aliYun")
-@Slf4j
 @RequiredArgsConstructor
 public class AliSmsHandler implements ISmsHandler {
-
     private final AsyncClient asyncClient;
 
     @Override
-    public void send(SmsInfoDTO platformSmsInfoDTO, MessageTemplate template) {
-        log.info("aliYun平台，准备发送短信：{}", platformSmsInfoDTO);
-        // 1.准备请求参数
-        String phones = StringUtils.join(",", platformSmsInfoDTO.getPhones());
-        SendSmsRequest request =
+    public Submission send(
+            String phone,
+            String template,
+            String signName,
+            Map<String, String> parameters,
+            String outId) {
+        var request =
                 SendSmsRequest.builder()
-                        .phoneNumbers(phones)
-                        .templateCode(template.getThirdTemplateCode())
-                        .signName(template.getSignName())
-                        .templateParam(JsonUtils.toJsonStr(platformSmsInfoDTO.getTemplateParams()))
+                        .phoneNumbers(phone)
+                        .templateCode(template)
+                        .signName(signName)
+                        .templateParam(JsonUtils.toJsonStr(parameters))
+                        .outId(outId)
                         .build();
-        // 2.发送短信验证码
-        CompletableFuture<SendSmsResponse> responseFuture = asyncClient.sendSms(request);
-        log.info("aliYun平台，短信发送请求发出 ...");
-        // 3.结果处理
-        responseFuture.thenAccept(
-                response -> {
-                    SendSmsResponseBody body = response.getBody();
-                    String code = body.getCode();
-                    if ("OK".equals(code)) {
-                        log.debug("aliYun短信发送成功，手机号:{}", phones);
-                    } else {
-                        log.error("aliYun短信发送失败，code：{}， 原因：{}", code, body.getMessage());
-                    }
-                });
-        responseFuture.exceptionally(
-                e -> {
-                    log.error("aliYun短信发送异常", e);
-                    return null;
-                });
+        var response = await(asyncClient.sendSms(request));
+        var body = response.getBody();
+        if (body == null) throw new SmsProviderFailure("SMS_EMPTY_RESPONSE", true);
+        if (!"OK".equals(body.getCode())) throw new SmsProviderFailure(body.getCode(), false);
+        if (body.getBizId() == null || body.getBizId().isBlank())
+            throw new SmsProviderFailure("SMS_ACCEPTANCE_ID_MISSING", true);
+        return new Submission(body.getBizId(), body.getRequestId());
+    }
+
+    @Override
+    public Receipt query(
+            String phone, LocalDate sendDate, String bizId, String outId, String template) {
+        // OutId is correlation, not provider idempotency. After a lost response we query by
+        // phone/date and require the exact OutId; absence never authorizes a second send.
+        Receipt found = null;
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        boolean exhausted = false;
+        for (long page = 1; page <= 20; page++) {
+            if (System.nanoTime() >= deadline)
+                throw new SmsProviderFailure("SMS_RECEIPT_QUERY_TIMEOUT", true);
+            var response =
+                    await(
+                            asyncClient.querySendDetails(
+                                    QuerySendDetailsRequest.builder()
+                                            .phoneNumber(phone)
+                                            .sendDate(
+                                                    sendDate.format(
+                                                            DateTimeFormatter.BASIC_ISO_DATE))
+                                            .bizId(bizId)
+                                            .pageSize(50L)
+                                            .currentPage(page)
+                                            .build()),
+                            deadline);
+            var body = response.getBody();
+            if (body == null || !"OK".equals(body.getCode()))
+                throw new SmsProviderFailure(
+                        body == null ? "SMS_EMPTY_RESPONSE" : body.getCode(), true);
+            var container = body.getSmsSendDetailDTOs();
+            var details = container == null ? null : container.getSmsSendDetailDTO();
+            if (details == null || details.isEmpty()) {
+                exhausted = true;
+                break;
+            }
+            for (var detail : details) {
+                if (!outId.equals(detail.getOutId())
+                        || !phone.equals(detail.getPhoneNum())
+                        || (detail.getTemplateCode() != null
+                                && !template.equals(detail.getTemplateCode()))) continue;
+                State state =
+                        Objects.equals(detail.getSendStatus(), 3L)
+                                ? State.DELIVERED
+                                : Objects.equals(detail.getSendStatus(), 2L)
+                                        ? State.FAILED
+                                        : State.PENDING;
+                var receipt = new Receipt(state, SmsProviderFailure.safeCode(detail.getErrCode()));
+                if (found != null && found.state() != receipt.state())
+                    return new Receipt(State.UNKNOWN, "SMS_CONFLICTING_RECEIPTS");
+                found = receipt;
+            }
+            if (details.size() < 50) {
+                exhausted = true;
+                break;
+            }
+        }
+        if (!exhausted) return new Receipt(State.UNKNOWN, "SMS_RECEIPT_SCAN_LIMIT");
+        return found == null ? new Receipt(State.UNKNOWN, "SMS_RECEIPT_NOT_FOUND") : found;
+    }
+
+    private static <T> T await(CompletableFuture<T> future) {
+        return await(future, System.nanoTime() + TimeUnit.SECONDS.toNanos(10));
+    }
+
+    private static <T> T await(CompletableFuture<T> future, long deadline) {
+        try {
+            return future.get(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            throw new SmsProviderFailure("SMS_REQUEST_INTERRUPTED", true);
+        } catch (ExecutionException | TimeoutException error) {
+            future.cancel(true);
+            // The SDK or network exception may contain request data. Never persist its text.
+            throw new SmsProviderFailure("SMS_REQUEST_RESULT_UNKNOWN", true);
+        }
     }
 }

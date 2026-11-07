@@ -14,6 +14,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.tianji.api.constants.SmsConstants.VERIFY_CODE_PARAM_NAME;
@@ -24,6 +25,21 @@ import static com.tianji.user.constants.UserConstants.USER_VERIFY_CODE_TTL;
 @Slf4j
 @Service
 public class CodeServiceImpl implements ICodeService {
+
+    private static final org.springframework.data.redis.core.script.DefaultRedisScript<List> ISSUE =
+            new org.springframework.data.redis.core.script.DefaultRedisScript<>(
+                    """
+                local value=redis.call('GET',KEYS[1])
+                if not value then
+                  redis.call('SET',KEYS[1],ARGV[1],'EX',ARGV[2]); value=ARGV[1]
+                end
+                local clock=redis.call('TIME')
+                local ttl=redis.call('PTTL',KEYS[1])
+                if ttl<=0 then return redis.error_reply('VERIFICATION_EXPIRY_MISSING') end
+                local expiry=tonumber(clock[1])*1000+math.floor(tonumber(clock[2])/1000)+ttl
+                return {string.match(value,'^(%d%d%d%d):%d+$') or value,expiry}
+                """,
+                    List.class);
 
     // One Redis key keeps comparison, attempt counting and consumption atomic,
     // including on clustered Redis. The code's original expiry is never extended.
@@ -51,22 +67,24 @@ public class CodeServiceImpl implements ICodeService {
     @Override
     public void sendVerifyCode(String phone) {
         String key = USER_VERIFY_CODE_KEY + phone;
-        // Redis selects one code atomically; every concurrently accepted SMS carries that value.
+        // Redis selects the code and its remaining lifetime atomically. Reusing a proof
+        // never gives its queued SMS a fresh five-minute sending window.
         String candidate = RandomUtils.randomNumbers(4);
-        String code =
+        List<?> issued =
                 stringRedisTemplate.execute(
-                        new org.springframework.data.redis.core.script.DefaultRedisScript<String>(
-                                "local v=redis.call('GET',KEYS[1]); if v then return string.match(v,'^(%d%d%d%d):%d+$') or v end; redis.call('SET',KEYS[1],ARGV[1],'EX',ARGV[2]); return ARGV[1]",
-                                String.class),
+                        ISSUE,
                         java.util.List.of(key),
                         candidate,
                         String.valueOf(USER_VERIFY_CODE_TTL.toSeconds()));
+        java.util.Objects.requireNonNull(issued, "Redis verification issue result missing");
+        String code = (String) issued.get(0);
         SmsInfoDTO info = new SmsInfoDTO();
         info.setPhones(CollUtils.singletonList(phone));
         info.setTemplateCode(SmsTemplate.VERIFY_CODE.toString());
         Map<String, String> params = new HashMap<>(1);
         params.put(VERIFY_CODE_PARAM_NAME, code);
         info.setTemplateParams(params);
+        info.setExpiresAt((Long) issued.get(1));
         asyncSmsClient.sendMessage(info);
     }
 

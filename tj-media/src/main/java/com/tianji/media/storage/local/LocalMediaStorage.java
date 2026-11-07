@@ -28,7 +28,7 @@ public final class LocalMediaStorage implements IMediaStorage {
     @Override
     public String getPlaySignature(String id, Long user, Integer preview) {
         if (preview != null)
-            throw new com.tianji.common.exceptions.BadRequestException("本地模拟器不支持限时试看，请先报名课程");
+            throw new com.tianji.common.exceptions.BadRequestException("请通过小节播放接口获取受控试看片段");
         return store.signedUrl(id);
     }
 

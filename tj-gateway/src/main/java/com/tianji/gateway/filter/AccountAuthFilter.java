@@ -67,7 +67,7 @@ public class AccountAuthFilter implements GlobalFilter, Ordered {
                         .getPath()
                         .value()
                         .matches(
-                                "/api/v2/(services|admin)/media/(local-content|cloud-content)/[^/]+");
+                                "/api/v2/(services|admin)/media/(local-content|cloud-content|trial-content)/[^/]+");
         return Mono.using(
                         () ->
                                 limits.acquire(
@@ -122,7 +122,8 @@ public class AccountAuthFilter implements GlobalFilter, Ordered {
                 && !policy.declares(sanitized.getRequest().getMethod().name(), path))
             throw new ForbiddenException("该接口没有授权声明");
         if (ant.startsWith("GET:/api/v2/services/media/local-content/")
-                || ant.startsWith("GET:/api/v2/services/media/cloud-content/"))
+                || ant.startsWith("GET:/api/v2/services/media/cloud-content/")
+                || ant.startsWith("GET:/api/v2/services/media/trial-content/"))
             return chain.filter(sanitized);
         if (java.util.Set.of(
                         "GET:/api/v2/public/accounts/privacy",
@@ -206,6 +207,11 @@ public class AccountAuthFilter implements GlobalFilter, Ordered {
                             "POST:/api/v2/services/user/account-privacy/export",
                             "POST:/api/v2/services/user/account-privacy/deletion",
                             "POST:/api/v2/services/user/account-privacy/consent",
+                            "GET:/api/v2/services/user/account-privacy/tasks",
+                            "POST:/api/v2/services/user/account-privacy/tasks",
+                            "GET:/api/v2/services/user/account-privacy/tasks/*",
+                            "POST:/api/v2/services/user/account-privacy/tasks/*/retry",
+                            "POST:/api/v2/services/user/account-privacy/tasks/*/download",
                             "GET:/api/v2/services/user/users/me",
                             "PUT:/api/v2/services/user/users",
                             "GET:/api/v2/services/message/inboxes",

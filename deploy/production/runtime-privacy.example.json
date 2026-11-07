@@ -1,0 +1,129 @@
+{
+  "schema": "tianji-runtime-checks-v1",
+  "suite": "privacy",
+  "namespace": "tianji-production",
+  "environment": "isolated-production-candidate",
+  "test_identity": "REPLACE_WITH_SYNTHETIC_PRIVACY_USERS",
+  "base_url": "https://REPLACE_WITH_STUDENT_HOST",
+  "steps": [
+    {
+      "name": "request_export",
+      "check": "export_completed",
+      "method": "POST",
+      "path": "/api/v2/services/user/account-privacy/export",
+      "auth": "student",
+      "expected_status": 200,
+      "body": { "password": "${credentials.student_password}" },
+      "assertions": [{ "path": "/data/scope", "equals": "ACCOUNT_PROFILE_AND_CONSENT" }],
+      "save": { "export.request": "/data/request/id" }
+    },
+    {
+      "name": "start_export",
+      "check": "export_completed",
+      "method": "POST",
+      "path": "/api/v2/services/user/account-privacy/tasks",
+      "auth": "student",
+      "expected_status": 200,
+      "body": { "requestId": "${export.request}" },
+      "idempotency_key": "${credentials.export_idempotency_key}",
+      "assertions": [{ "path": "/data/kind", "equals": "EXPORT" }],
+      "save": { "export.task": "/data/id" }
+    },
+    {
+      "name": "all_domains_exported",
+      "check": "export_completed",
+      "method": "GET",
+      "attempts": 120,
+      "path": "/api/v2/services/user/account-privacy/tasks/${export.task}",
+      "auth": "student",
+      "expected_status": 200,
+      "observation": "business_query",
+      "assertions": [{ "path": "/data/status", "equals": "READY" }],
+      "save": { "export.sha": "/data/artifact_sha256" }
+    },
+    {
+      "name": "download_owned_archive",
+      "check": "download_authorized",
+      "method": "POST",
+      "path": "/api/v2/services/user/account-privacy/tasks/${export.task}/download",
+      "auth": "student",
+      "expected_status": 200,
+      "body": { "password": "${credentials.student_password}" },
+      "expected_sha256": "${export.sha}"
+    },
+    {
+      "name": "other_owner_download_denied",
+      "check": "download_authorized",
+      "method": "POST",
+      "path": "/api/v2/services/user/account-privacy/tasks/${export.task}/download",
+      "auth": "other_student",
+      "expected_status": 403,
+      "body": { "password": "${credentials.other_student_password}" }
+    },
+    {
+      "name": "deactivate_cleanup_fixture",
+      "check": "cleanup_approved",
+      "method": "POST",
+      "path": "/api/v2/services/user/account-privacy/deletion",
+      "auth": "cleanup_student",
+      "expected_status": 202,
+      "body": { "password": "${credentials.cleanup_student_password}", "confirmation": "注销账户" },
+      "assertions": [{ "path": "/data/request/kind", "equals": "DELETE" }],
+      "save": { "cleanup.request": "/data/request/id" }
+    },
+    {
+      "name": "plan_cleanup",
+      "check": "cleanup_approved",
+      "method": "POST",
+      "path": "/api/v2/services/user/account-privacy/tasks",
+      "auth": "admin",
+      "expected_status": 200,
+      "body": { "requestId": "${cleanup.request}" },
+      "idempotency_key": "${credentials.cleanup_idempotency_key}",
+      "assertions": [{ "path": "/data/kind", "equals": "CLEANUP" }],
+      "save": { "cleanup.task": "/data/id" }
+    },
+    {
+      "name": "review_cleanup_plan",
+      "check": "cleanup_approved",
+      "method": "GET",
+      "attempts": 120,
+      "path": "/api/v2/services/user/account-privacy/tasks/${cleanup.task}",
+      "auth": "admin",
+      "expected_status": 200,
+      "observation": "business_query",
+      "assertions": [
+        { "path": "/data/status", "equals": "APPROVAL_REQUIRED" },
+        { "path": "/data/policy_version", "equals": "${credentials.retention_policy_version}" },
+        { "path": "/data/domains/12/domain", "equals": "user" },
+        { "path": "/data/domains/12/result/consents/action", "equals": "RETAIN" }
+      ],
+      "save": { "cleanup.version": "/data/version", "cleanup.plan_hash": "/data/plan_hash" }
+    },
+    {
+      "name": "approve_reviewed_cleanup",
+      "check": "cleanup_approved",
+      "method": "POST",
+      "path": "/api/v2/services/user/account-privacy/tasks/${cleanup.task}/approve",
+      "auth": "admin",
+      "expected_status": 200,
+      "body": { "version": "${cleanup.version}", "planHash": "${cleanup.plan_hash}" },
+      "assertions": [{ "path": "/code", "equals": 200 }]
+    },
+    {
+      "name": "verify_retained_business_data",
+      "check": "retention_preserved",
+      "method": "GET",
+      "attempts": 120,
+      "path": "/api/v2/services/user/account-privacy/tasks/${cleanup.task}",
+      "auth": "admin",
+      "expected_status": 200,
+      "observation": "business_query",
+      "assertions": [
+        { "path": "/data/status", "equals": "COMPLETED" },
+        { "path": "/data/domains/12/domain", "equals": "user" },
+        { "path": "/data/domains/12/result/consents/retained", "equals": true }
+      ]
+    }
+  ]
+}

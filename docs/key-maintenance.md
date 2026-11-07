@@ -1,6 +1,6 @@
 # 认证密钥维护
 
-本文描述已有认证机制的密钥更换与验证，不创建云资源，不改动日常配置或自动备份。本机备份继续停用；源码中的轮换支持不代表已经对本机或云环境执行密钥切换。
+本文提供 JWT、MFA 密钥更换与验证步骤，操作员在指定维护窗口执行。本机备份保持停用，实际密钥切换按维护记录核对。
 
 ## JWT：先分发验签公钥，再切换签名键
 
@@ -24,7 +24,7 @@ signing:
   verification_aliases: [next]
 ```
 
-这里仅填写证书别名。私钥和 JKS 密码仍由原有受保护 Secret 提供。渲染不会修改 Secret 或发布集群。实际多副本维护的可用性与缓存更新时延仍需在目标环境观察；本地公钥和 HTTP 回归不能替代该演练。
+这里仅填写证书别名。私钥和 JKS 密码仍由原有受保护 Secret 提供。渲染不会修改 Secret 或发布集群。目标环境演练时记录多副本可用性和缓存更新时延。
 
 ## MFA：保留解密窗口并重加密存量
 
@@ -61,4 +61,4 @@ MFA 的当前写入键仍为 `tj.auth.mfa.encryption-key` / `TJ_MFA_ENCRYPTION_K
 python deploy/production/mfa_reencrypt.py --settings E:/secure/mfa-candidate.json --jar tj-auth/tj-auth-service/target/tj-auth-service.jar --expected-host <候选DNS> --expected-database tj_auth --receipt E:/secure/mfa-receipt-new.json
 ```
 
-回执要求新路径，只记录目标、JAR哈希、键ID和处理计数；`PREPARED_NOT_APPLIED` 或 `FAILED_OR_UNCONFIRMED` 均须人工核对数据库后再决定下一步，不能当作已经回滚或已经完成。只有 `APPLIED` 表示该次工具观察到事务成功；它不证明生产切换、旧键销毁或备份存在。此工具不会启用备份，也不能恢复已经丢失的旧解密键。
+回执使用新路径，只记录目标、JAR 哈希、键 ID 和处理计数。`PREPARED_NOT_APPLIED` 或 `FAILED_OR_UNCONFIRMED` 需人工核对数据库；`APPLIED` 表示工具观察到事务成功。随后核对实例配置、登录及会话行为，再退役旧键。备份按既定策略维护，旧解密键丢失时只能依靠已有有效恢复材料处理。

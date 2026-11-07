@@ -9,7 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import java.util.*;
 
-/** Account-data export and retention-aware deactivation. Never erases financial/exam history implicitly. */
+/**
+ * Account-data export and retention-aware deactivation. Never erases financial/exam history
+ * implicitly.
+ */
 @Service
 public class AccountPrivacyService {
     private final JdbcTemplate jdbc;
@@ -143,14 +146,18 @@ public class AccountPrivacyService {
         if (form.evidenceReference() != null && form.evidenceReference().length() > 255)
             throw new BadRequestException("证据引用过长");
         if (jdbc.update(
-                        "UPDATE user_privacy_request SET status=?,resolution=?,evidence_reference=?,reviewed_by=?,reviewed_at=NOW(3),version=version+1 WHERE id=? AND version=? AND status IN('PENDING_REVIEW','IN_PROGRESS')",
+                        "UPDATE user_privacy_request r SET status=?,resolution=?,evidence_reference=?,reviewed_by=?,reviewed_at=NOW(3),version=version+1 WHERE id=? AND version=? AND status IN('PENDING_REVIEW','IN_PROGRESS')"
+                                + " AND (?='IN_PROGRESS' OR NOT EXISTS(SELECT 1 FROM privacy_task t WHERE t.request_id=r.id AND t.status IN('PENDING','APPROVAL_REQUIRED')))"
+                                + " AND (?<>'COMPLETED' OR NOT EXISTS(SELECT 1 FROM privacy_task t WHERE t.request_id=r.id) OR EXISTS(SELECT 1 FROM privacy_task t WHERE t.request_id=r.id AND t.status IN('READY','COMPLETED')))",
                         form.status(),
                         form.reason(),
                         form.evidenceReference(),
                         admin,
                         id,
-                        form.version())
-                != 1) throw new ConflictException("申请已变化，请重新核对");
+                        form.version(),
+                        form.status(),
+                        form.status())
+                != 1) throw new ConflictException("申请版本已变化、仍有活动任务或完整处理尚未成功，请重新核对");
     }
 
     private void authenticate(long user, String password, boolean lock) {
@@ -168,5 +175,9 @@ public class AccountPrivacyService {
             throw new ForbiddenException("教师与管理账号请由管理员处理注销交接");
         if (((Number) rows.getFirst().get("status")).intValue() != 1)
             throw new UnauthorizedException("账户已禁用");
+    }
+
+    public void verify(String password) {
+        authenticate(UserContext.requireUser(), password, false);
     }
 }

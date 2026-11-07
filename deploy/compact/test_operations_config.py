@@ -8,6 +8,34 @@ from runtime_compose import active_compose
 
 
 class OperationsConfigurationTest(unittest.TestCase):
+    def test_existing_privacy_and_trial_configuration_is_upgraded_idempotently(self):
+        user = module_defaults('user', {})
+        self.assertEqual(
+            {'provider': 'LOCAL', 'directory': '/run/privacy-exports'},
+            user['tj']['privacy']['archive'],
+        )
+        self.assertEqual(user, module_defaults('user', user))
+        custom = {
+            'tj': {
+                'privacy': {
+                    'archive': {'provider': 'COS', 'directory': '/custom-private'}
+                }
+            }
+        }
+        self.assertEqual(custom['tj'], module_defaults('user', custom)['tj'])
+        media = {
+            'tj': {'auth': {'resource': {'excludeLoginPaths': ['/local-content/**']}}}
+        }
+        upgraded = module_defaults('media', media)
+        self.assertEqual(
+            ['/local-content/**', '/trial-content/**'],
+            upgraded['tj']['auth']['resource']['excludeLoginPaths'],
+        )
+        self.assertEqual(upgraded, module_defaults('media', upgraded))
+        self.assertEqual(
+            ['/local-content/**'], media['tj']['auth']['resource']['excludeLoginPaths']
+        )
+
     def test_static_discovery_probe_is_disabled_for_fresh_and_upgraded_module_defaults(
         self,
     ):
@@ -116,6 +144,13 @@ class OperationsConfigurationTest(unittest.TestCase):
                 original, yaml.safe_load((backup / 'compose.yaml').read_text())
             )
             current = yaml.safe_load((configs / 'gateway.yml').read_text())
+            self.assertTrue((home / '.local/privacy-exports').is_dir())
+            self.assertIn(
+                './.local/privacy-exports:/run/privacy-exports',
+                yaml.safe_load(active_compose(home).read_text())['services'][
+                    'app-identity'
+                ]['volumes'],
+            )
             self.assertEqual(
                 ['existing-proxy'],
                 current['tj']['gateway']['proxy']['trusted-addresses'],

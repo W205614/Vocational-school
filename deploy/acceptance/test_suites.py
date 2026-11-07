@@ -1,6 +1,19 @@
 """Named regression suites shared by local runners and CI."""
 
 REGRESSION_TESTS = [
+    'PrivacyDomainDatabaseTest',
+    'PrivacyTaskDatabaseTest',
+    'PrivacyFeignRegistrationTest',
+    'PrivacyDownloadControllerTest',
+    'ProductionReadinessAccessPolicyTest',
+    'ProductionReadinessGatewayFilterTest',
+    'AliSmsHandlerTest',
+    'SmsDeliveryDatabaseTest',
+    'TrialPlaybackServiceTest',
+    'TrialPlaybackControllerTest',
+    'TrialMediaNativeTest',
+    'TrialMediaDatabaseTest',
+    'CoursePropertiesTest',
     'AliCredentialBoundaryTest',
     'AliSmsTransportTest',
     'TencentCredentialBoundaryTest',

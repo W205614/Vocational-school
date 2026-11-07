@@ -96,7 +96,9 @@ public final class LocalObjectStore {
         }
     }
 
-    /** Compatibility parameter is ignored; only the file's actual presentation duration is trusted. */
+    /**
+     * Compatibility parameter is ignored; only the file's actual presentation duration is trusted.
+     */
     public Media uploadMedia(
             String filename,
             InputStream input,
@@ -110,7 +112,10 @@ public final class LocalObjectStore {
         return saveMedia(filename, input, length, uploadKey, MAX_UPLOAD_BYTES, null);
     }
 
-    /** Caller must establish a configured, read-only source root and trusted administrative identity. */
+    /**
+     * Caller must establish a configured, read-only source root and trusted administrative
+     * identity.
+     */
     public Media importMedia(Path source, long length, String expectedSha256, String uploadKey) {
         if (expectedSha256 == null || !expectedSha256.matches("[0-9a-f]{64}"))
             throw new com.tianji.common.exceptions.BadRequestException("需要有效的 SHA-256");
@@ -315,6 +320,19 @@ public final class LocalObjectStore {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    /** Trial outputs are separate objects; this path never accepts an original media identifier. */
+    public Path trialPath(String task) {
+        if (task == null || !task.matches("[0-9a-f]{64}"))
+            throw new IllegalArgumentException("Invalid trial task");
+        return path("trial-" + task + ".mp4");
+    }
+
+    public void saveTrial(String task, Path output) throws IOException {
+        Path target = trialPath(task);
+        // A lost lease may leave an orphan, but cannot replace a published clip.
+        if (!Files.exists(target)) Files.copy(output, target);
     }
 
     public void delete(String key) {

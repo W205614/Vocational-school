@@ -96,7 +96,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 同步发送短信 */
+        /** 持久受理短信任务；202不代表供应商受理或送达 */
         post: operations["sendMessage"];
         delete?: never;
         options?: never;
@@ -290,6 +290,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/operation-failures/message/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/events/message/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/admin/events/message/failures": {
         parameters: {
             query?: never;
@@ -338,40 +370,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/admin/operation-failures/message/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_operation_failures"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/events/message/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_events"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/admin/consumer-failures/message/page": {
         parameters: {
             query?: never;
@@ -379,8 +377,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询持久失败记录 */
-        get: operations["page_consumer_failures"];
+        get: operations["page_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/audit/message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -584,6 +597,19 @@ export interface components {
             templateCode?: string;
             phones?: unknown;
             templateParams?: {
+                [key: string]: string;
+            };
+            /**
+             * @description 最晚发送时间，Unix毫秒；验证码必须提供
+             * @default
+             */
+            expiresAt: string;
+        };
+        Cleanup: {
+            requestId?: string;
+            userId?: string;
+            policyVersion?: string;
+            cutoffs?: {
                 [key: string]: string;
             };
         };
@@ -934,6 +960,27 @@ export interface components {
              */
             list: components["schemas"]["MessageTemplateDTO"][];
         };
+        Dataset: {
+            name?: string;
+            select?: string;
+            count?: string;
+            eligible?: string;
+            cleanup?: string;
+        };
+        Definition: {
+            domain?: string;
+            note?: string;
+            datasets?: components["schemas"]["Dataset"][];
+        };
+        Page: {
+            domain?: string;
+            dataset?: string;
+            rows?: {
+                [key: string]: unknown;
+            }[];
+            /** Format: int32 */
+            nextOffset?: number;
+        };
         /**
          * @description 通知模板查询对象
          * @default null
@@ -1019,6 +1066,16 @@ export interface components {
             result?: unknown;
             errorCode?: string;
             errorMessage?: string;
+        };
+        FailurePage: {
+            list?: {
+                [key: string]: unknown;
+            }[];
+            total?: string;
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
         };
     };
     responses: never;
@@ -1800,6 +1857,65 @@ export interface operations {
             };
         };
     };
+    page: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+                errorCode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
+    page_1: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
     failures: {
         parameters: {
             query?: {
@@ -1831,7 +1947,9 @@ export interface operations {
     };
     list_1: {
         parameters: {
-            query?: never;
+            query?: {
+                taskId?: string;
+            };
             header?: never;
             path: {
                 kind: string;
@@ -1885,14 +2003,12 @@ export interface operations {
             };
         };
     };
-    page_operation_failures: {
+    page_2: {
         parameters: {
             query?: {
                 pageNo?: number;
                 pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
                 identifier?: string;
-                errorCode?: "BUSINESS_FAILED" | "RETRY_EXHAUSTED";
             };
             header?: never;
             path?: never;
@@ -1910,27 +2026,20 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
+                        data: components["schemas"]["FailurePage"];
                     };
                 };
             };
         };
     };
-    page_events: {
+    page_3: {
         parameters: {
             query?: {
                 pageNo?: number;
                 pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
+                actor?: string;
+                result?: string;
+                requestId?: string;
             };
             header?: never;
             path?: never;
@@ -1949,51 +2058,7 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
-                    };
-                };
-            };
-        };
-    };
-    page_consumer_failures: {
-        parameters: {
-            query?: {
-                pageNo?: number;
-                pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
+                            [key: string]: unknown;
                         };
                     };
                 };

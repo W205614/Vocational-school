@@ -1,0 +1,34 @@
+{
+  "domain": "media",
+  "note": "仅导出归属本人的已审阅字段；运行队列、凭据及其他用户资料不纳入导出。",
+  "datasets": [
+    {
+      "name": "uploads",
+      "select": "SELECT id,filename,duration,size,status,create_time FROM media WHERE creater=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM media WHERE creater=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "files",
+      "select": "SELECT id,filename,status,platform,create_time FROM file WHERE creater=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM file WHERE creater=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "cloud_uploads",
+      "select": "SELECT id,filename,state,expected_size,duration_seconds,created_at FROM cloud_media_upload WHERE owner_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM cloud_media_upload WHERE owner_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "operations",
+      "select": "SELECT operation_id,kind,status,error_code,created_at,updated_at FROM reliability_operation WHERE user_id=? ORDER BY created_at,operation_id",
+      "count": "SELECT COUNT(*) FROM reliability_operation WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    }
+  ]
+}

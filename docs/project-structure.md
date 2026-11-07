@@ -1,6 +1,6 @@
 # 项目结构与源码阅读路径
 
-当前默认入口是根目录 [README](../README.md) 中的 `deploy/compact/setup.py`。compact 将业务模块装配成四个应用；各业务模块仍是实际源码和事务边界，不能作为重复目录删除。
+当前默认入口是根目录 [README](../README.md) 中的 `deploy/compact/setup.py`。compact 将业务模块装配成四个应用，各业务模块保留独立源码和事务边界。
 
 ## 目录职责
 
@@ -62,7 +62,7 @@ flowchart LR
 ### 部署目录之间的依赖
 
 - `deploy/compact/` 是默认部署。命令用途见[工具索引](../deploy/compact/TOOLS.md)。
-- `deploy/production/` 是独立生产候选部署包，要求外部集群和托管服务；其模板、静态检查或 CI 通过均不构成高可用、供应商或容量验收。四组应用保持独立模块上下文，启动任务执行完成后才就绪；生产 RPC 另受静态调用清单限制。
+- `deploy/production/` 是独立生产候选部署包，要求外部集群和托管服务；高可用、供应商和容量按目标环境分别验收。四组应用保持独立模块上下文，启动任务执行完成后才就绪；生产 RPC 另受静态调用清单限制。
 - `deploy/acceptance/` 仍被当前 CI 使用；compact 也复用其模块清单、迁移、测试入口及容器模板。
 - `deploy/operations/` 提供共享快照与 Redis 工具，compact 显式传入当前运行配置；`deploy/final/` 中对应文件保留为兼容入口，不再作为 compact 的配置来源。
 - `deploy/compact/reports/` 保存当前部署与仍适用的专项交付记录；过时批次报告、旧 `docs/evidence/` 和固定旧提交的探针已按本次清理范围移出工作目录，当前测试与恢复工具继续保留。

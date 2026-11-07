@@ -1,0 +1,104 @@
+{
+  "domain": "learning",
+  "note": "仅导出归属本人的已审阅字段；运行队列、凭据及其他用户资料不纳入导出。",
+  "datasets": [
+    {
+      "name": "lessons",
+      "select": "SELECT id,course_id,status,learned_sections,latest_section_id,latest_learn_time,create_time,expire_time FROM learning_lesson WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM learning_lesson WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "progress",
+      "select": "SELECT id,lesson_id,section_id,moment,finished,create_time,finish_time FROM learning_record WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM learning_record WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "notes",
+      "select": "SELECT id,course_id,section_id,moment,content,deleted,created_at,updated_at FROM course_note WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM course_note WHERE user_id=?",
+      "eligible": "SELECT COUNT(*) FROM course_note WHERE user_id=? AND updated_at<?",
+      "cleanup": "UPDATE course_note SET content='[已清理]',deleted=1 WHERE user_id=? AND updated_at<?"
+    },
+    {
+      "name": "questions",
+      "select": "SELECT id,title,description,course_id,section_id,status,create_time FROM interaction_question WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM interaction_question WHERE user_id=?",
+      "eligible": "SELECT COUNT(*) FROM interaction_question WHERE user_id=? AND update_time<?",
+      "cleanup": "UPDATE interaction_question SET title='已注销学员的提问',description='[已清理]',hidden=1,anonymity=1 WHERE user_id=? AND update_time<?"
+    },
+    {
+      "name": "replies",
+      "select": "SELECT id,question_id,content,create_time FROM interaction_reply WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM interaction_reply WHERE user_id=?",
+      "eligible": "SELECT COUNT(*) FROM interaction_reply WHERE user_id=? AND update_time<?",
+      "cleanup": "UPDATE interaction_reply SET content='[已清理]',hidden=1,anonymity=1 WHERE user_id=? AND update_time<?"
+    },
+    {
+      "name": "favorites",
+      "select": "SELECT course_id,created_at FROM course_favorite WHERE user_id=? ORDER BY course_id",
+      "count": "SELECT COUNT(*) FROM course_favorite WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "points",
+      "select": "SELECT id,type,points,create_time FROM points_record WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM points_record WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "signs",
+      "select": "SELECT sign_day,sign_days,reward_points FROM sign_record WHERE user_id=? ORDER BY sign_day",
+      "count": "SELECT COUNT(*) FROM sign_record WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "entitlements",
+      "select": "SELECT order_detail_id,course_id,active,expires_at,created_at FROM learning_entitlement WHERE user_id=? ORDER BY order_detail_id",
+      "count": "SELECT COUNT(*) FROM learning_entitlement WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "milestones",
+      "select": "SELECT course_id,section_id,kind,completed_at FROM learning_milestone WHERE user_id=? ORDER BY course_id,section_id",
+      "count": "SELECT COUNT(*) FROM learning_milestone WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "achievements",
+      "select": "SELECT code,season_month,name,awarded_at FROM learning_achievement WHERE user_id=? ORDER BY code,season_month",
+      "count": "SELECT COUNT(*) FROM learning_achievement WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "ranks",
+      "select": "SELECT board_month,rank_no,points,display_name FROM learning_season_rank WHERE user_id=? ORDER BY board_month",
+      "count": "SELECT COUNT(*) FROM learning_season_rank WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "rewards",
+      "select": "SELECT request_id,board_month,rank_no,coupon_id,status,user_coupon_id,created_at FROM learning_reward_request WHERE user_id=? ORDER BY request_id",
+      "count": "SELECT COUNT(*) FROM learning_reward_request WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "operations",
+      "select": "SELECT operation_id,kind,status,error_code,created_at,updated_at FROM reliability_operation WHERE user_id=? ORDER BY created_at,operation_id",
+      "count": "SELECT COUNT(*) FROM reliability_operation WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    }
+  ]
+}

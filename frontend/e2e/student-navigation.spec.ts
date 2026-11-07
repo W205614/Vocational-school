@@ -23,7 +23,9 @@ async function mockStudent(page: Page) {
         ? { name: '导航测试同学' }
         : path.endsWith('/lessons/page')
           ? { list: [], total: 0 }
-          : {},
+          : path.endsWith('/account-privacy/tasks')
+            ? { items: [], total: 0 }
+            : {},
     );
   });
 }

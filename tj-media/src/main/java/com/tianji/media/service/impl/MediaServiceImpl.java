@@ -34,9 +34,7 @@ import java.util.stream.Collectors;
 import static com.tianji.media.constants.FileErrorInfo.MEDIA_NOT_EXISTS;
 
 /**
- * <p>
  * 媒资表，主要是视频文件 服务实现类
- * </p>
  *
  * @author 虎哥
  * @since 2022-06-30
@@ -44,6 +42,9 @@ import static com.tianji.media.constants.FileErrorInfo.MEDIA_NOT_EXISTS;
 @Service
 @RequiredArgsConstructor
 public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements IMediaService {
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.tianji.media.trial.TrialPlaybackService trials;
+
     private void requireMediaEditor() {
         UserContext.requireUser();
         if (!Long.valueOf(1).equals(UserContext.getRole())
@@ -115,6 +116,8 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
             // 2.3.不免费，抛出异常
             throw new ForbiddenException(FileErrorInfo.MEDIA_NOT_FREE);
         }
+
+        if (trials != null) return trials.request(sectionId);
 
         // 3.免费，获取课程信息
         Media media = getById(sectionInfo.getMediaId());

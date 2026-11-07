@@ -6,6 +6,7 @@ import { useTask, type Row } from '../../../../packages/shared/src/ui';
 import type { Operation } from '../../../../packages/shared/src/types';
 import Status from '../../../../packages/shared/src/Status.vue';
 import CloudMediaUpload from '../components/CloudMediaUpload.vue';
+import TrialMediaTasks from '../components/TrialMediaTasks.vue';
 const emit = defineEmits<{ saved: [] }>(),
   task = useTask(),
   ops = useOperations(),
@@ -77,5 +78,6 @@ async function upload() {
       type="info"
       :closable="false"
     />
+    <TrialMediaTasks v-if="localUpload || cloudUpload" />
   </article>
 </template>

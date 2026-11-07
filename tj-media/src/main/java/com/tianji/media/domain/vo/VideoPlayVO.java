@@ -6,6 +6,12 @@ import lombok.Data;
 @Data
 @Schema(description = "视频播放的签名信息")
 public class VideoPlayVO {
+    @Schema(description = "试看任务状态：PROCESSING、FAILED、READY；完整版为空")
+    private String state;
+
+    private String errorCode;
+    private Boolean trial;
+    private String taskId;
     private String provider;
     private String playUrl;
 

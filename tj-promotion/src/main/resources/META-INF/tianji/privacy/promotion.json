@@ -1,0 +1,41 @@
+{
+  "domain": "promotion",
+  "note": "仅导出归属本人的已审阅字段；运行队列、凭据及其他用户资料不纳入导出。",
+  "datasets": [
+    {
+      "name": "coupons",
+      "select": "SELECT id,coupon_id,status,term_begin_time,term_end_time,used_time,create_time FROM user_coupon WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM user_coupon WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "reservations",
+      "select": "SELECT order_id,status,created_at,expires_at FROM coupon_reservation WHERE user_id=? ORDER BY order_id",
+      "count": "SELECT COUNT(*) FROM coupon_reservation WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "season_rewards",
+      "select": "SELECT request_id,season_month,coupon_id,status,user_coupon_id,updated_at FROM season_reward_delivery WHERE user_id=? ORDER BY request_id",
+      "count": "SELECT COUNT(*) FROM season_reward_delivery WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "exchanges",
+      "select": "SELECT id,status,type,exchange_target_id,create_time,expired_time FROM exchange_code WHERE user_id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM exchange_code WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "operations",
+      "select": "SELECT operation_id,kind,status,error_code,created_at,updated_at FROM reliability_operation WHERE user_id=? ORDER BY created_at,operation_id",
+      "count": "SELECT COUNT(*) FROM reliability_operation WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    }
+  ]
+}

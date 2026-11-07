@@ -100,6 +100,16 @@ const deliveryKind = ref('notice'),
   metadata = ref<Row[]>([]),
   storageTask = useTask(),
   projectionTask = useTask();
+const smsStateLabels: Record<string, string> = {
+  PENDING: '等待发送',
+  SUBMITTING: '提交结果确认中',
+  ACCEPTED: '供应商已受理',
+  DELIVERED: '已送达',
+  FAILED: '发送失败',
+  UNKNOWN: '结果未知',
+  EXPIRED: '已过期',
+  SIMULATED: '本地模拟',
+};
 const providerAnomalies = ref<Row[]>([]),
   providerReconciliations = ref<Row[]>([]),
   anomalyStatus = ref('OPEN'),
@@ -437,6 +447,9 @@ async function resolve() {
     </section>
     <section aria-label="通知发送任务">
       <h3>通知发送任务</h3>
+      <p>
+        短信“供应商已受理”不代表已送达。结果未知的短信仅查询回执，不会自动再次发送；模拟记录不代表真实发送。
+      </p>
       <div class="toolbar">
         <el-select v-model="deliveryKind" :disabled="deliveryTask.busy.value"
           ><el-option value="notice" label="站内通知" /><el-option
@@ -451,7 +464,18 @@ async function resolve() {
         ><el-table-column prop="id" label="任务 ID" /><el-table-column
           prop="status"
           label="状态"
-        /><el-table-column prop="last_error" label="失败原因" /><el-table-column label="操作"
+        /><el-table-column prop="last_error" label="失败原因" />
+        <el-table-column v-if="deliveryKind === 'sms'" label="接收人与供应商回执">
+          <template #default="{ row }">
+            <div v-for="recipient in row.recipients || []" :key="recipient.id">
+              {{ recipient.masked_phone }} ·
+              {{ smsStateLabels[recipient.state] || recipient.state }} ·
+              {{ recipient.provider_code || '未提交' }}
+              <span v-if="recipient.biz_id"> · 流水号 {{ recipient.biz_id }}</span>
+              <span v-if="recipient.last_error"> · {{ recipient.last_error }}</span>
+            </div>
+          </template> </el-table-column
+        ><el-table-column label="操作"
           ><template #default="{ row }"
             ><el-button
               v-if="row.status === 'DEAD'"

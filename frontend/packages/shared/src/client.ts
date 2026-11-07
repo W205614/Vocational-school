@@ -99,6 +99,33 @@ export function write<T>(path: string, method: string, body?: unknown, key?: str
 export function newKey() {
   return crypto.randomUUID();
 }
+export async function downloadFile(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+  retried = false,
+): Promise<Blob> {
+  const token = tokenProvider();
+  const response = await fetch('/api/v2' + path, {
+    method: 'POST',
+    credentials: 'include',
+    redirect: 'error',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (response.status === 401 && token && !retried) {
+    await refreshIdentity();
+    return downloadFile(path, body, signal, true);
+  }
+  if (!response.ok) {
+    const value = await response.json();
+    throw new ApiError(value.msg || '文件下载失败', response.status, value.requestId);
+  }
+  if (!response.headers.get('Content-Type')?.startsWith('application/zip'))
+    throw new ApiError('导出响应格式错误', 502);
+  return response.blob();
+}
 export async function waitOperation<T>(
   service: string,
   operation: Operation<T>,

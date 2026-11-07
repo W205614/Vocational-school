@@ -117,7 +117,7 @@ public final class CloudCosMediaStorage implements IMediaStorage {
         if (!Long.valueOf(1L).equals(UserContext.getRole())
                 && !Long.valueOf(3L).equals(UserContext.getRole()))
             throw new ForbiddenException("需要教师或管理员权限");
-        if (preview != null) throw new BadRequestException("受控云媒资暂不提供限时试看");
+        if (preview != null) throw new BadRequestException("请通过小节播放接口获取受控试看片段");
         var row = ready(task(file));
         if (!Long.valueOf(1L).equals(UserContext.getRole())
                 && ((Number) row.get("owner_id")).longValue() != viewer)

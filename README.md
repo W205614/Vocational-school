@@ -2,7 +2,11 @@
 
 天机学堂是基于 Java 21 / Spring Boot 4 和 Vue 3 的在线学习平台，提供学生门户、教师与管理工作台，串联 **选课 → 购买 → 学习 → 考试 → 错题复习 → 积分激励**。
 
-适合本地体验在线教育业务、学习 Java 多模块架构与前后端协作。默认部署使用合成演示数据，支付与短信为本地模拟，不会真实扣款或发送短信。
+适合本地体验在线教育业务、学习 Java 多模块架构与前后端协作。默认部署使用合成演示数据，支付与短信为本地模拟。
+
+生产接入提供支付宝、阿里云短信、腾讯 COS 适配，以及安全试看、跨域隐私任务、首次配置和验收工具。真实供应商、云环境、容量与容灾仍待验收；软件交付状态、本地验证范围及接入顺序见[生产就绪说明](docs/production-readiness.md)。
+
+项目按需维护，日常改动合入 `dev`。参与开发见[贡献指南](CONTRIBUTING.md)，安全问题报告见[安全政策](SECURITY.md)。
 
 [首次部署](#全新环境准备) · [已有环境启动](#已有环境启动) · [源码导航](#源码导航)
 
@@ -102,6 +106,8 @@ Get-Content deploy/compact/.local/accounts.json
 ## 深入文档
 
 - [文档导航](docs/README.md) · [目录职责与阅读顺序](docs/project-structure.md)
+- [贡献指南](CONTRIBUTING.md) · [安全政策与报告渠道](SECURITY.md)
+- [生产就绪状态与接入步骤](docs/production-readiness.md) · [供应商配置与验证命令](docs/production-integrations.md)
 - [学习与教学使用说明](docs/learning-experience.md) · [账户安全](docs/account-security.md)
 - [消息、支付与补偿排障](docs/reliability-runbook.md) · [稳定性与运维](docs/stability-operations.md)
 - [商业部署包及目标环境验收要求](deploy/production/README.md) · [历次部署与专项验证范围](deploy/compact/reports/README.md)

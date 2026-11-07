@@ -1,0 +1,10 @@
+{
+  "namespace": "tianji-production",
+  "operator_id": 1,
+  "alipay": { "name": "支付宝", "priority": 1, "icon": "/assets/alipay.svg" },
+  "sms": {
+    "sign_name": "REPLACE_WITH_APPROVED_SIGN",
+    "template_code": "SMS_REPLACE",
+    "content": "您的验证码为${code}，5分钟内有效，请勿泄露。"
+  }
+}

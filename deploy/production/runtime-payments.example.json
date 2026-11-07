@@ -1,0 +1,107 @@
+{
+  "schema": "tianji-runtime-checks-v1",
+  "suite": "payments",
+  "namespace": "tianji-production",
+  "environment": "isolated-production-candidate",
+  "test_identity": "REPLACE_WITH_SYNTHETIC_PURCHASER",
+  "base_url": "https://REPLACE_WITH_STUDENT_HOST",
+  "steps": [
+    {
+      "name": "prepare_new_order",
+      "check": "order_created",
+      "method": "GET",
+      "path": "/api/v2/services/trade/orders/prePlaceOrder?courseIds=${credentials.create_course_id}",
+      "auth": "student",
+      "expected_status": 200,
+      "assertions": [{ "path": "/code", "equals": 200 }],
+      "save": { "create.order": "/data/orderId" }
+    },
+    {
+      "name": "place_new_order",
+      "check": "order_created",
+      "method": "POST",
+      "path": "/api/v2/services/trade/orders/placeOrder",
+      "auth": "student",
+      "expected_status": 202,
+      "idempotency_key": "${credentials.order_idempotency_key}",
+      "body": {
+        "courseIds": ["${credentials.create_course_id}"],
+        "couponIds": [],
+        "orderId": "${create.order}"
+      },
+      "assertions": [{ "path": "/code", "equals": 200 }],
+      "save": { "create.operation": "/data/operationId" }
+    },
+    {
+      "name": "confirm_order_created",
+      "check": "order_created",
+      "method": "GET",
+      "attempts": 30,
+      "path": "/api/v2/operations/trade/${create.operation}",
+      "auth": "student",
+      "expected_status": 200,
+      "observation": "business_query",
+      "assertions": [{ "path": "/data/status", "equals": "SUCCEEDED" }]
+    },
+    {
+      "name": "confirmed_real_payment",
+      "check": "payment_confirmed",
+      "method": "GET",
+      "path": "/api/v2/services/trade/orders/${credentials.paid_order_id}",
+      "auth": "student",
+      "expected_status": 200,
+      "observation": "provider_receipt",
+      "assertions": [
+        { "path": "/data/payChannel", "equals": "aliPay" },
+        { "path": "/data/payOrderNo", "equals": "${credentials.paid_pay_order_no}" },
+        { "path": "/data/status", "equals": 2 },
+        { "path": "/data/realAmount", "equals": "${credentials.paid_amount}" }
+      ]
+    },
+    {
+      "name": "read_refunded_business_amount",
+      "check": "amount_consistent",
+      "method": "GET",
+      "path": "/api/v2/services/trade/orders/${credentials.refunded_order_id}",
+      "auth": "student",
+      "expected_status": 200,
+      "observation": "business_query",
+      "assertions": [{ "path": "/data/payChannel", "equals": "aliPay" }],
+      "save": { "refund.item_amount": "/data/details/0/realPayAmount" }
+    },
+    {
+      "name": "confirmed_real_refund",
+      "check": "refund_confirmed",
+      "method": "GET",
+      "attempts": 120,
+      "path": "/api/v2/services/trade/refund-apply/${credentials.refund_id}",
+      "auth": "student",
+      "expected_status": 200,
+      "observation": "provider_receipt",
+      "assertions": [
+        { "path": "/data/status", "equals": 5 },
+        { "path": "/data/payChannel", "equals": "aliPay" },
+        { "path": "/data/refundOrderNo", "equals": "${credentials.refund_order_no}" },
+        { "path": "/data/realPayAmount", "equals": "${refund.item_amount}" }
+      ]
+    },
+    {
+      "name": "refund_matches_item_amount",
+      "check": "amount_consistent",
+      "method": "GET",
+      "path": "/api/v2/services/trade/refund-apply/${credentials.refund_id}",
+      "auth": "student",
+      "expected_status": 200,
+      "observation": "business_query",
+      "assertions": [{ "path": "/data/realPayAmount", "equals": "${refund.item_amount}" }]
+    },
+    {
+      "name": "refunded_entitlement_rejected",
+      "check": "entitlement_revoked",
+      "method": "GET",
+      "path": "/api/v2/services/media/medias/signature/play?sectionId=${credentials.refunded_section_id}",
+      "auth": "student",
+      "expected_status": 403
+    }
+  ]
+}

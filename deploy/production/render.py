@@ -184,6 +184,43 @@ def validate(settings):
     if not re.fullmatch(r"[A-Za-z0-9._-]{1,64}", s["privacy"]["policy_version"]):
         raise ConfigurationError("A published privacy policy version is required")
     policy = urlsplit(s["privacy"]["policy_url"])
+    retention = s["privacy"].setdefault(
+        "retention", {"version": "UNCONFIGURED", "rules": {}}
+    )
+    if (
+        not isinstance(retention, dict)
+        or not re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", retention.get("version", ""))
+        or not isinstance(retention.get("rules"), dict)
+    ):
+        raise ConfigurationError(
+            "Privacy retention requires a version and explicit rules"
+        )
+    for name, rule in retention["rules"].items():
+        parts = name.split(".")
+        if len(parts) != 2 or parts[0] not in MODULES:
+            raise ConfigurationError("Unknown privacy retention dataset")
+        source = (
+            ROOT
+            / MODULES[parts[0]]
+            / "src/main/resources/META-INF/tianji/privacy"
+            / (parts[0] + ".json")
+        )
+        definitions = (
+            json.loads(source.read_text(encoding="utf8"))["datasets"]
+            if source.is_file()
+            else []
+        )
+        if not any(d["name"] == parts[1] and d.get("cleanup") for d in definitions):
+            raise ConfigurationError("This privacy dataset only supports retention")
+        if (
+            not isinstance(rule, dict)
+            or type(rule.get("days")) is not int
+            or not 0 <= rule["days"] <= 36500
+            or rule.get("action") != "ANONYMIZE"
+        ):
+            raise ConfigurationError(
+                "Privacy cleanup requires explicit days and ANONYMIZE"
+            )
     if policy.scheme != "https" or policy.hostname != s["public"]["student_host"]:
         raise ConfigurationError(
             "Privacy policy must be published on the student HTTPS origin"
@@ -422,6 +459,16 @@ def module_config(alias, s):
             "/accounts/sessions/**",
         ]
     if alias == "user":
+        tj["privacy"] = {
+            "retention-policy-file": "/run/compact/configs/privacy-retention.json",
+            "archive": {
+                "provider": "COS",
+                "bucket": s["providers"]["cos_bucket"],
+                "region": s["providers"]["region"],
+                "secret-id": env("PRIVACY_COS_SECRET_ID"),
+                "secret-key": env("PRIVACY_COS_SECRET_KEY"),
+            },
+        }
         tj["accounts"] = {
             "public": {"enabled": True, "sms-delivery-mode": "provider"},
             "privacy": {
@@ -441,7 +488,9 @@ def module_config(alias, s):
     if alias == "message":
         tj.setdefault("sms", {})["simulated"] = False
     if alias == "media":
-        resource["excludeLoginPaths"].extend(["/cloud-content/**", "/course-covers/*"])
+        resource["excludeLoginPaths"].extend(
+            ["/cloud-content/**", "/trial-content/**", "/course-covers/*"]
+        )
         tj["platform"] = {"file": "TENCENT", "media": "CLOUD_COS"}
         tj["local-storage"] = {"enabled": False}
         tj["tencent"]["vod"] = {"enable": False}
@@ -522,6 +571,12 @@ def module_config(alias, s):
     c["springdoc"] = {"api-docs": {"enabled": False}, "swagger-ui": {"enabled": False}}
     c["logging"] = {"level": {"root": "INFO", "feign": "WARN"}}
     c["management"] = {
+        "metrics": {
+            "distribution": {
+                "percentiles-histogram": {"http.server.requests": True},
+                "slo": {"http.server.requests": "100ms,500ms,1s,3s,10s"},
+            }
+        },
         "endpoints": {"web": {"exposure": {"include": "health,info,prometheus"}}},
         "endpoint": {
             "health": {
@@ -624,6 +679,8 @@ def secret_keys(group, mfa_rotation=False):
             "SIGNING_STORE_PASSWORD",
             "SIGNING_KEY_PASSWORD",
             "TJ_MFA_ENCRYPTION_KEY",
+            "PRIVACY_COS_SECRET_ID",
+            "PRIVACY_COS_SECRET_KEY",
         ]
         if mfa_rotation:
             keys += ["TJ_AUTH_MFA_DECRYPTION_KEYS", "TJ_AUTH_MFA_LEGACY_KEY_ID"]
@@ -870,6 +927,10 @@ def render(settings):
             if group in GROUPS:
                 config[group + ".yml"] = yaml.safe_dump(
                     host_config(group), sort_keys=False
+                )
+            if group == "identity":
+                config["privacy-retention.json"] = json.dumps(
+                    s["privacy"]["retention"], ensure_ascii=False
                 )
             config_name = (
                 group
@@ -1582,8 +1643,8 @@ def render(settings):
                     "hosts": [s["public"][portal + "_host"]],
                     "gateways": [gateway],
                     # A media response can transfer much longer than an ordinary API
-                    # call. Exempt only the existing signed GET endpoint, still through
-                    # gateway authorization and owner stream admission. Envoy's bounded
+                    # call. Exempt only precise signed-media GET and private-export POST
+                    # endpoints through gateway authorization and admission. Envoy's bounded
                     # stream_idle_timeout remains an ingress deployment requirement;
                     # idleTimeout is not a valid VirtualService HTTPRoute field.
                     "http": [
@@ -1594,6 +1655,46 @@ def render(settings):
                                     "method": {"exact": "GET"},
                                     "uri": {
                                         "regex": r"^/api/v2/services/media/cloud-content/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+                                    },
+                                }
+                            ],
+                            "route": [
+                                {
+                                    "destination": {
+                                        "host": "app-gateway",
+                                        "port": {"number": 24310},
+                                    }
+                                }
+                            ],
+                            "timeout": "0s",
+                        },
+                        {
+                            "name": "trial-media-stream",
+                            "match": [
+                                {
+                                    "method": {"exact": "GET"},
+                                    "uri": {
+                                        "regex": r"^/api/v2/services/media/trial-content/[0-9a-f]{64}$"
+                                    },
+                                }
+                            ],
+                            "route": [
+                                {
+                                    "destination": {
+                                        "host": "app-gateway",
+                                        "port": {"number": 24310},
+                                    }
+                                }
+                            ],
+                            "timeout": "0s",
+                        },
+                        {
+                            "name": "private-export-stream",
+                            "match": [
+                                {
+                                    "method": {"exact": "POST"},
+                                    "uri": {
+                                        "regex": r"^/api/v2/(services|admin)/user/account-privacy/tasks/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/download$"
                                     },
                                 }
                             ],
@@ -1722,6 +1823,69 @@ def observability_config(settings):
                 "name": "tianji-production",
                 "rules": [
                     {
+                        "record": "tianji:gateway_http_requests:rate5m",
+                        "expr": 'sum by (namespace,method,status) (rate(http_server_requests_seconds_count{namespace="'
+                        + ns
+                        + '",job="gateway",uri!~"/actuator.*|/readyz"}[5m]))',
+                    },
+                    {
+                        "record": "tianji:gateway_http_latency_p95:seconds",
+                        "expr": 'histogram_quantile(0.95,sum by (namespace,method,le) (rate(http_server_requests_seconds_bucket{namespace="'
+                        + ns
+                        + '",job="gateway",uri!~"/actuator.*|/readyz"}[5m])))',
+                    },
+                    {
+                        "record": "tianji:gateway_http_success:ratio5m",
+                        "expr": '(sum by (namespace) (tianji:gateway_http_requests:rate5m{status=~"2..|3.."}) or on(namespace) (0 * sum by (namespace) (tianji:gateway_http_requests:rate5m))) / sum by (namespace) (tianji:gateway_http_requests:rate5m{status=~"2..|3..|5..|429"})',
+                    },
+                    {
+                        "alert": "TianjiPrivacyTaskFailed",
+                        "expr": 'tj_privacy_tasks_failed{namespace="' + ns + '"} > 0',
+                        "for": "5m",
+                        "labels": {"severity": "warning"},
+                        "annotations": {
+                            "summary": "Durable privacy tasks require operator intervention"
+                        },
+                    },
+                    {
+                        "alert": "TianjiPrivacyMetricsStale",
+                        "expr": 'time() - tj_privacy_metrics_last_success_timestamp_seconds{namespace="'
+                        + ns
+                        + '"} > 120',
+                        "for": "2m",
+                        "labels": {"severity": "critical"},
+                        "annotations": {
+                            "summary": "Privacy task state metrics are not fresh"
+                        },
+                    },
+                    {
+                        "alert": "TianjiSmsOutcomeUnknown",
+                        "expr": 'tj_sms_unknown{namespace="' + ns + '"} > 0',
+                        "for": "5m",
+                        "labels": {"severity": "warning"},
+                        "annotations": {
+                            "summary": "SMS submission or delivery requires supplier reconciliation"
+                        },
+                    },
+                    {
+                        "alert": "TianjiSmsFailed",
+                        "expr": 'tj_sms_failed{namespace="' + ns + '"} > 0',
+                        "for": "5m",
+                        "labels": {"severity": "warning"},
+                        "annotations": {
+                            "summary": "SMS recipients have confirmed failures"
+                        },
+                    },
+                    {
+                        "alert": "TianjiSmsMetricsStale",
+                        "expr": 'time() - tj_sms_metrics_last_success_timestamp_seconds{namespace="'
+                        + ns
+                        + '"} > 120',
+                        "for": "2m",
+                        "labels": {"severity": "critical"},
+                        "annotations": {"summary": "SMS state metrics are not fresh"},
+                    },
+                    {
                         "alert": "TianjiMetricsTargetDown",
                         "expr": 'up{namespace="' + ns + '"} == 0',
                         "for": "2m",
@@ -1750,7 +1914,9 @@ def observability_config(settings):
                     },
                     {
                         "alert": "TianjiBackupProofMissing",
-                        "expr": "absent(tianji_backup_last_verified_timestamp_seconds)",
+                        "expr": 'absent(tianji_backup_last_verified_timestamp_seconds{namespace="'
+                        + s["namespace"]
+                        + '"})',
                         "for": "30m",
                         "labels": {"severity": "critical"},
                         "annotations": {
@@ -1759,7 +1925,9 @@ def observability_config(settings):
                     },
                     {
                         "alert": "TianjiBackupProofExpired",
-                        "expr": "time() - tianji_backup_last_verified_timestamp_seconds > 86400",
+                        "expr": 'time() - tianji_backup_last_verified_timestamp_seconds{namespace="'
+                        + s["namespace"]
+                        + '"} > 86400',
                         "for": "5m",
                         "labels": {"severity": "critical"},
                         "annotations": {

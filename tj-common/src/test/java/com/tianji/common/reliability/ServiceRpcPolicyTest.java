@@ -8,6 +8,44 @@ class ServiceRpcPolicyTest {
     private final ServiceRpcPolicy policy = new ServiceRpcPolicy();
 
     @Test
+    void onlyIdentityCoordinatesPrivatePrivacyDomains() {
+        for (String domain :
+                java.util.List.of(
+                        "auth",
+                        "user",
+                        "trade",
+                        "pay",
+                        "promotion",
+                        "course",
+                        "learning",
+                        "exam",
+                        "remark",
+                        "media",
+                        "search",
+                        "message",
+                        "data")) {
+            assertTrue(
+                    policy.allows(
+                            "identity",
+                            "POST",
+                            "/_modules/" + domain + "/internal/privacy/cleanup"));
+            assertTrue(
+                    policy.allows(
+                            "identity",
+                            "GET",
+                            "/_modules/" + domain + "/internal/privacy/inventory"));
+            for (String caller : java.util.List.of("gateway", "commerce", "education", "support"))
+                assertFalse(
+                        policy.allows(
+                                caller,
+                                "POST",
+                                "/_modules/" + domain + "/internal/privacy/cleanup"));
+        }
+        assertTrue(policy.allows("gateway", "GET", "/_modules/media/trial-content/fixture"));
+        assertFalse(policy.allows("support", "GET", "/_modules/user/account-privacy/tasks"));
+    }
+
+    @Test
     void noServiceIdentityCanReopenTheRetiredPhonePasswordRoute() {
         for (String caller :
                 java.util.List.of("gateway", "identity", "commerce", "education", "support"))

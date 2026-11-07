@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.tianji.user.constants.UserConstants.USER_VERIFY_CODE_KEY;
+import static com.tianji.user.constants.UserConstants.USER_VERIFY_CODE_TTL;
 import static com.tianji.api.constants.SmsConstants.VERIFY_CODE_PARAM_NAME;
 
 @EnabledIfEnvironmentVariable(named = "ACCEPTANCE_DB_PASSWORD", matches = ".+")
@@ -91,6 +92,7 @@ class VerificationCodeReliabilityTest {
     void fiveWrongAttemptsInvalidateTheCodeWithoutExtendingItsExpiryOrChangingResentSms() {
         try (var f = proof()) {
             f.redis().opsForValue().set(f.key(), "1234", java.time.Duration.ofSeconds(30));
+            long expiry = expiry(f.redis(), f.key());
             Long ttl = f.redis().getExpire(f.key());
             assertThrows(
                     com.tianji.common.exceptions.BadRequestException.class,
@@ -103,6 +105,8 @@ class VerificationCodeReliabilityTest {
                             com.tianji.message.domain.dto.SmsInfoDTO.class);
             org.mockito.Mockito.verify(f.sms()).sendMessage(sent.capture());
             assertEquals("1234", sent.getValue().getTemplateParams().get(VERIFY_CODE_PARAM_NAME));
+            assertTrue(Math.abs(expiry - sent.getValue().getExpiresAt()) <= 1);
+            assertEquals(expiry, expiry(f.redis(), f.key()));
             for (int n = 1; n < 5; n++)
                 assertThrows(
                         com.tianji.common.exceptions.BadRequestException.class,
@@ -179,6 +183,7 @@ class VerificationCodeReliabilityTest {
             ReflectionTestUtils.setField(service, "asyncSmsClient", sms);
             var start = new CountDownLatch(1);
             var futures = new ArrayList<Future<?>>();
+            long startedAt = System.currentTimeMillis();
             for (int i = 0; i < 100; i++)
                 futures.add(
                         pool.submit(
@@ -192,26 +197,61 @@ class VerificationCodeReliabilityTest {
             String code = redis.opsForValue().get(key);
             assertNotNull(code);
             assertTrue(redis.getExpire(key) > 0);
+            long expiresAt = expiry(redis, key);
+            assertTrue(expiresAt > startedAt);
+            assertTrue(expiresAt <= System.currentTimeMillis() + USER_VERIFY_CODE_TTL.toMillis());
             var codes = new HashSet<String>();
+            var expiries = new HashSet<Long>();
             jdbc.queryForList("SELECT payload FROM reliability_outbox", String.class)
                     .forEach(
-                            payload ->
-                                    codes.add(
-                                            mapper.readTree(payload)
-                                                    .get("payload")
-                                                    .get("templateParams")
-                                                    .get(VERIFY_CODE_PARAM_NAME)
-                                                    .asString()));
+                            payload -> {
+                                var message = mapper.readTree(payload).get("payload");
+                                codes.add(
+                                        message.get("templateParams")
+                                                .get(VERIFY_CODE_PARAM_NAME)
+                                                .asString());
+                                expiries.add(message.get("expiresAt").asLong());
+                            });
             assertEquals(Set.of(code), codes);
+            assertTrue(expiries.stream().allMatch(value -> Math.abs(expiresAt - value) <= 1));
             assertEquals(
                     100,
                     jdbc.queryForObject(
                             "SELECT COUNT(*) FROM reliability_outbox WHERE status='PENDING'",
                             Integer.class));
+            // Reusing a short-lived proof must carry its original expiry, rather than a
+            // fresh five-minute sending window. All one hundred durable payloads agree.
+            jdbc.update("DELETE FROM reliability_outbox");
+            redis.opsForValue().set(key, code + ":1", java.time.Duration.ofSeconds(30));
+            long originalExpiry = expiry(redis, key);
+            var repeated = new ArrayList<Future<?>>();
+            for (int i = 0; i < 100; i++)
+                repeated.add(pool.submit(() -> service.sendVerifyCode(phone)));
+            for (var future : repeated) future.get(30, TimeUnit.SECONDS);
+            assertEquals(originalExpiry, expiry(redis, key));
+            assertEquals(code + ":1", redis.opsForValue().get(key));
+            var resent = jdbc.queryForList("SELECT payload FROM reliability_outbox", String.class);
+            assertEquals(100, resent.size());
+            for (String payload : resent) {
+                var message = mapper.readTree(payload).get("payload");
+                assertEquals(
+                        code, message.get("templateParams").get(VERIFY_CODE_PARAM_NAME).asString());
+                assertTrue(Math.abs(originalExpiry - message.get("expiresAt").asLong()) <= 1);
+            }
         } finally {
             pool.shutdownNow();
             redis.delete(key);
             factory.destroy();
         }
+    }
+
+    private static long expiry(StringRedisTemplate redis, String key) {
+        // The repository's Redis 7.4 test fixture exposes an independent exact expiry
+        // observation. Runtime issuance only uses TIME/PTTL, preserving older managed APIs.
+        return java.util.Objects.requireNonNull(
+                redis.execute(
+                        new org.springframework.data.redis.core.script.DefaultRedisScript<>(
+                                "return redis.call('PEXPIRETIME',KEYS[1])", Long.class),
+                        List.of(key)));
     }
 }

@@ -1,0 +1,20 @@
+{
+  "domain": "search",
+  "note": "仅导出归属本人的已审阅字段；运行队列、凭据及其他用户资料不纳入导出。",
+  "datasets": [
+    {
+      "name": "interests",
+      "select": "SELECT id,interests,create_time,update_time FROM interests WHERE id=? ORDER BY id",
+      "count": "SELECT COUNT(*) FROM interests WHERE id=?",
+      "eligible": null,
+      "cleanup": null
+    },
+    {
+      "name": "operations",
+      "select": "SELECT operation_id,kind,status,error_code,created_at,updated_at FROM reliability_operation WHERE user_id=? ORDER BY created_at,operation_id",
+      "count": "SELECT COUNT(*) FROM reliability_operation WHERE user_id=?",
+      "eligible": null,
+      "cleanup": null
+    }
+  ]
+}

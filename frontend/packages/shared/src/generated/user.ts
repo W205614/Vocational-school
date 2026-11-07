@@ -69,6 +69,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/user/account-privacy/requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["resolve"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/user/students/register": {
         parameters: {
             query?: never;
@@ -80,6 +96,54 @@ export interface paths {
         put?: never;
         /** 学员注册 */
         post: operations["registerStudent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/public/accounts/verification-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["code"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/public/accounts/registration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/public/accounts/password-recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recover"];
         delete?: never;
         options?: never;
         head?: never;
@@ -128,6 +192,118 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["replay_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/user/account-privacy/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/user/account-privacy/tasks/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/user/account-privacy/tasks/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["download"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/user/account-privacy/tasks/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/user/account-privacy/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["export"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/user/account-privacy/deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["deletion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/user/account-privacy/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["consent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -209,8 +385,24 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询员工信息 */
+        /** 分页查询教师与员工信息 */
         get: operations["queryStaffPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/public/accounts/privacy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["policy"];
         put?: never;
         post?: never;
         delete?: never;
@@ -242,7 +434,39 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list"];
+        get: operations["list_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/operation-failures/user/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/events/user/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -274,41 +498,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/operation-failures/user/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_operation_failures"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/events/user/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 分页查询持久失败记录 */
-        get: operations["page_events"];
+        get: operations["list_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -324,8 +514,55 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询持久失败记录 */
-        get: operations["page_consumer_failures"];
+        get: operations["page_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/audit/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["page_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/user/account-privacy/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/user/account-privacy/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pending"];
         put?: never;
         post?: never;
         delete?: never;
@@ -550,6 +787,19 @@ export interface components {
              */
             gender: number;
         };
+        TemporaryCredentialDTO: {
+            userId?: string;
+            username?: string;
+            temporaryPassword?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+        };
+        Resolution: {
+            version?: string;
+            status?: string;
+            reason?: string;
+            evidenceReference?: string;
+        };
         /**
          * @description 学生注册和修改密码的表单实体
          * @default null
@@ -573,6 +823,53 @@ export interface components {
              * @example 645632
              */
             code: string;
+        };
+        InitialPasswordDTO: {
+            username: string;
+            oldPassword: string;
+            newPassword: string;
+            audience: string;
+        };
+        Cleanup: {
+            requestId?: string;
+            userId?: string;
+            policyVersion?: string;
+            cutoffs?: {
+                [key: string]: string;
+            };
+        };
+        CodeRequest: {
+            phone?: string;
+            purpose?: string;
+        };
+        Registration: {
+            phone?: string;
+            code?: string;
+            password?: string;
+            policyVersion?: string;
+            consent?: boolean;
+        };
+        Recovery: {
+            phone?: string;
+            code?: string;
+            newPassword?: string;
+        };
+        Create: {
+            requestId?: string;
+        };
+        Decision: {
+            version?: string;
+            planHash?: string;
+        };
+        Password: {
+            password?: string;
+        };
+        Credential: {
+            password?: string;
+            confirmation?: string;
+        };
+        Consent: {
+            policyVersion?: string;
         };
         /**
          * @description 用户详情
@@ -941,6 +1238,37 @@ export interface components {
              */
             status: number;
         };
+        LoginUserDTO: {
+            userId?: string;
+            roleId?: string;
+            /** Format: int32 */
+            userType?: number;
+            rememberMe?: boolean;
+            sessionId?: string;
+            authVersion?: string;
+            mustChangePassword?: boolean;
+        };
+        Dataset: {
+            name?: string;
+            select?: string;
+            count?: string;
+            eligible?: string;
+            cleanup?: string;
+        };
+        Definition: {
+            domain?: string;
+            note?: string;
+            datasets?: components["schemas"]["Dataset"][];
+        };
+        Page: {
+            domain?: string;
+            dataset?: string;
+            rows?: {
+                [key: string]: unknown;
+            }[];
+            /** Format: int32 */
+            nextOffset?: number;
+        };
         View: {
             operationId?: string;
             status?: string;
@@ -948,12 +1276,15 @@ export interface components {
             errorCode?: string;
             errorMessage?: string;
         };
-        TemporaryCredentialDTO: {
-            userId: string;
-            username: string;
-            readonly temporaryPassword: string;
-            /** Format: date-time */
-            expiresAt: string;
+        FailurePage: {
+            list?: {
+                [key: string]: unknown;
+            }[];
+            total?: string;
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
         };
     };
     responses: never;
@@ -1148,6 +1479,37 @@ export interface operations {
             };
         };
     };
+    resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Resolution"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
     registerStudent: {
         parameters: {
             query?: never;
@@ -1158,6 +1520,93 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["StudentFormDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    code: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Registration"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    recover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Recovery"];
             };
         };
         responses: {
@@ -1245,6 +1694,244 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Create"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    retry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Decision"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Password"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+        };
+    };
+    approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Decision"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Credential"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    deletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Credential"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    consent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Consent"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -1395,6 +2082,33 @@ export interface operations {
             };
         };
     };
+    policy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+    };
     get: {
         parameters: {
             query?: never;
@@ -1422,7 +2136,7 @@ export interface operations {
             };
         };
     };
-    list: {
+    list_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1442,6 +2156,65 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    page: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+                errorCode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
+    page_1: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                identifier?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
                     };
                 };
             };
@@ -1476,7 +2249,7 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_2: {
         parameters: {
             query?: {
                 limit?: number;
@@ -1505,14 +2278,43 @@ export interface operations {
             };
         };
     };
-    page_operation_failures: {
+    page_2: {
         parameters: {
             query?: {
                 pageNo?: number;
                 pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
                 identifier?: string;
-                errorCode?: "BUSINESS_FAILED" | "RETRY_EXHAUSTED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["FailurePage"];
+                    };
+                };
+            };
+        };
+    };
+    page_3: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                actor?: string;
+                result?: string;
+                requestId?: string;
             };
             header?: never;
             path?: never;
@@ -1531,29 +2333,20 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
+                            [key: string]: unknown;
                         };
                     };
                 };
             };
         };
     };
-    page_events: {
+    view: {
         parameters: {
-            query?: {
-                pageNo?: number;
-                pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
-            };
+            query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1569,27 +2362,16 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
+                            [key: string]: unknown;
                         };
                     };
                 };
             };
         };
     };
-    page_consumer_failures: {
+    pending: {
         parameters: {
-            query?: {
-                pageNo?: number;
-                pageSize?: number;
-                /** @description Exact failure, event, operation or business identifier */
-                identifier?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -1606,15 +2388,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: {
-                            list: {
-                                [key: string]: unknown;
-                            }[];
-                            /** Format: int64 */
-                            total: number;
-                            pageNo: number;
-                            pageSize: number;
-                        };
+                        data: Record<string, never>;
                     };
                 };
             };

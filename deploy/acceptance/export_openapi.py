@@ -40,6 +40,8 @@ for name in args.services:
                 + ('auth' if path.startswith('/accounts') else 'admin/auth')
                 + path
             )
+        elif name == 'user' and path.startswith('/account-privacy/requests'):
+            external = '/api/v2/admin/user' + path
         else:
             external = (
                 path
@@ -51,6 +53,7 @@ for name in args.services:
             '/api/v2/admin/events',
             '/api/v2/admin/consumer-failures',
             '/api/v2/admin/operation-failures',
+            '/api/v2/admin/audit',
         ]:
             if external == root or external.startswith(root + '/'):
                 external = root + '/' + name + external[len(root) :]
@@ -58,6 +61,30 @@ for name in args.services:
             if method not in {'get', 'post', 'put', 'delete', 'patch'}:
                 continue
             for status, response in operation.get('responses', {}).items():
+                binary_types = (
+                    ['video/mp4', 'video/webm']
+                    if path.startswith('/local-content/')
+                    else (
+                        ['video/mp4']
+                        if path.startswith(('/cloud-content/', '/trial-content/'))
+                        else (
+                            ['image/png', 'image/jpeg']
+                            if path.startswith('/course-covers/')
+                            else (
+                                ['application/zip']
+                                if path.startswith('/account-privacy/tasks/')
+                                and path.endswith('/download')
+                                else []
+                            )
+                        )
+                    )
+                )
+                if status.startswith('2') and binary_types:
+                    response['content'] = {
+                        kind: {'schema': {'type': 'string', 'format': 'binary'}}
+                        for kind in binary_types
+                    }
+                    continue
                 if (
                     status.startswith('2')
                     and not response.get('content')
@@ -116,6 +143,8 @@ for name in args.services:
 
     wire_long(spec)
     (destination / (name + '.json')).write_text(
-        json.dumps(spec, ensure_ascii=False, indent=2) + '\n', encoding='utf8'
+        json.dumps(spec, ensure_ascii=False, indent=2) + '\n',
+        encoding='utf8',
+        newline='\n',
     )
     print('Exported ' + name)

@@ -1,0 +1,80 @@
+{
+  "schema": "tianji-runtime-checks-v1",
+  "suite": "media_revocation",
+  "namespace": "tianji-production",
+  "environment": "isolated-production-candidate",
+  "test_identity": "REPLACE_WITH_SYNTHETIC_REFUNDABLE_MEDIA_PURCHASER",
+  "base_url": "https://REPLACE_WITH_STUDENT_HOST",
+  "steps": [
+    {
+      "name": "issue_entitled_ticket",
+      "check": "revoked",
+      "method": "GET",
+      "path": "/api/v2/services/media/medias/signature/play?sectionId=${credentials.section_id}",
+      "auth": "student",
+      "expected_status": 200,
+      "assertions": [{ "path": "/data/provider", "equals": "CLOUD_COS" }],
+      "save": { "media.path": "/data/playUrl", "media.expires": "/data/expiresAt" }
+    },
+    {
+      "name": "read_original_ticket_bytes",
+      "check": "revoked",
+      "method": "GET",
+      "path": "${media.path}",
+      "expected_status": 206,
+      "headers": { "Range": "bytes=0-1023" },
+      "require_unexpired": "${media.expires}",
+      "expected_sha256": "${credentials.media_range_sha256}"
+    },
+    {
+      "name": "refund_test_order_item",
+      "check": "revoked",
+      "method": "POST",
+      "path": "/api/v2/services/trade/refund-apply",
+      "auth": "admin",
+      "expected_status": 202,
+      "idempotency_key": "${credentials.refund_idempotency_key}",
+      "body": {
+        "orderDetailId": "${credentials.order_detail_id}",
+        "refundReason": "候选环境退款撤权验收",
+        "questionDesc": "独立合成测试订单，按已确认验收场景退款"
+      },
+      "assertions": [{ "path": "/code", "equals": 200 }],
+      "save": { "refund.operation": "/data/operationId" }
+    },
+    {
+      "name": "refund_command_applied",
+      "check": "revoked",
+      "method": "GET",
+      "attempts": 120,
+      "path": "/api/v2/operations/trade/${refund.operation}",
+      "auth": "admin",
+      "expected_status": 200,
+      "assertions": [{ "path": "/data/status", "equals": "SUCCEEDED" }]
+    },
+    {
+      "name": "supplier_refund_completed",
+      "check": "revoked",
+      "method": "GET",
+      "attempts": 120,
+      "path": "/api/v2/services/trade/refund-apply/detail/${credentials.order_detail_id}",
+      "auth": "student",
+      "expected_status": 200,
+      "observation": "provider_receipt",
+      "assertions": [
+        { "path": "/data/status", "equals": 5 },
+        { "path": "/data/payChannel", "equals": "aliPay" }
+      ]
+    },
+    {
+      "name": "same_unexpired_ticket_rejected",
+      "check": "revoked",
+      "method": "GET",
+      "attempts": 30,
+      "path": "${media.path}",
+      "expected_status": 403,
+      "headers": { "Range": "bytes=0-1023" },
+      "require_unexpired": "${media.expires}"
+    }
+  ]
+}

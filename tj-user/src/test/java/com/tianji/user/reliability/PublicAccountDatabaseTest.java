@@ -75,6 +75,17 @@ class PublicAccountDatabaseTest {
                         .split(";"))
             if (!statement.isBlank())
                 jdbc.execute(statement.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS"));
+        if (jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='privacy_task'",
+                        Integer.class)
+                == 0)
+            try (var connection = source.getConnection()) {
+                org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(
+                        connection,
+                        new org.springframework.core.io.FileSystemResource(
+                                root.resolve(
+                                        "deploy/acceptance/migrations/tj_user/V005__privacy_tasks.sql")));
+            }
         var proof = mock(AccountVerificationService.class);
         var env =
                 new MockEnvironment()

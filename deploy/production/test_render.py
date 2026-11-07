@@ -1,4 +1,5 @@
 import copy
+import json
 from pathlib import Path
 import re
 import tempfile
@@ -225,8 +226,8 @@ class ProductionRenderTest(unittest.TestCase):
         self.assertEqual({"student", "admin"}, {v["metadata"]["name"] for v in portals})
         for portal in portals:
             with self.subTest(portal=portal["metadata"]["name"]):
-                self.assertEqual(3, len(portal["spec"]["http"]))
-                stream, api, web = portal["spec"]["http"]
+                self.assertEqual(5, len(portal["spec"]["http"]))
+                stream, trial, export, api, web = portal["spec"]["http"]
                 self.assertEqual("cloud-media-stream", stream["name"])
                 self.assertEqual("0s", stream["timeout"])
                 self.assertEqual(
@@ -244,6 +245,12 @@ class ProductionRenderTest(unittest.TestCase):
                     {"destination": {"host": "app-gateway", "port": {"number": 24310}}}
                 ]
                 self.assertEqual(expected, stream["route"])
+                self.assertEqual("trial-media-stream", trial["name"])
+                self.assertEqual("private-export-stream", export["name"])
+                for precise in (trial, export):
+                    self.assertEqual("0s", precise["timeout"])
+                    self.assertEqual(expected, precise["route"])
+                    self.assertNotIn("idleTimeout", precise)
                 self.assertEqual(expected, api["route"])
                 self.assertEqual("30s", api["timeout"])
                 self.assertEqual([{"uri": {"prefix": "/api/"}}], api["match"])
@@ -261,7 +268,7 @@ class ProductionRenderTest(unittest.TestCase):
             64, policy["connectionPool"]["http"]["http1MaxPendingRequests"]
         )
 
-    def test_only_exact_cloud_media_gets_receive_the_timeout_exception(self):
+    def test_only_precise_stream_endpoints_receive_the_timeout_exception(self):
         media = (
             "/api/v2/services/media/cloud-content/01234567-89ab-cdef-0123-456789abcdef"
         )
@@ -312,6 +319,81 @@ class ProductionRenderTest(unittest.TestCase):
                     portal=portal["metadata"]["name"], method=method, target=target
                 ):
                     self.assertEqual("30s", select(routes, method, target)["timeout"])
+            trial = "/api/v2/services/media/trial-content/" + "b" * 64
+            export_id = "01234567-89ab-cdef-0123-456789abcdef"
+            for method, target, route_name in [
+                ("GET", trial, "trial-media-stream"),
+                (
+                    "GET",
+                    trial + "?section=7&expires=123&signature=synthetic",
+                    "trial-media-stream",
+                ),
+                (
+                    "POST",
+                    "/api/v2/services/user/account-privacy/tasks/"
+                    + export_id
+                    + "/download",
+                    "private-export-stream",
+                ),
+                (
+                    "POST",
+                    "/api/v2/admin/user/account-privacy/tasks/"
+                    + export_id
+                    + "/download",
+                    "private-export-stream",
+                ),
+            ]:
+                with self.subTest(
+                    portal=portal["metadata"]["name"], method=method, target=target
+                ):
+                    selected = select(routes, method, target)
+                    self.assertEqual(route_name, selected["name"])
+                    self.assertEqual("0s", selected["timeout"])
+            for method, target in [
+                ("POST", trial),
+                ("HEAD", trial),
+                ("PUT", trial),
+                ("GET", trial + "/extra"),
+                ("GET", trial + ".mp4"),
+                ("GET", "/api/v2/services/media/trial-content/" + "b" * 63),
+                ("GET", "/api/v2/services/media/trial-content/" + "B" * 64),
+                ("GET", "/api/v2/services/media/trial-content/"),
+                (
+                    "GET",
+                    "/api/v2/services/user/account-privacy/tasks/"
+                    + export_id
+                    + "/download",
+                ),
+                (
+                    "PUT",
+                    "/api/v2/services/user/account-privacy/tasks/"
+                    + export_id
+                    + "/download",
+                ),
+                (
+                    "POST",
+                    "/api/v2/services/user/account-privacy/tasks/"
+                    + "a" * 36
+                    + "/download",
+                ),
+                (
+                    "POST",
+                    "/api/v2/services/user/account-privacy/tasks/"
+                    + export_id
+                    + "/download/extra",
+                ),
+                (
+                    "POST",
+                    "/api/v2/services/user/account-privacy/tasks/"
+                    + export_id
+                    + "/approve",
+                ),
+                ("POST", "/api/v2/services/user/account-privacy/tasks"),
+            ]:
+                with self.subTest(
+                    portal=portal["metadata"]["name"], method=method, target=target
+                ):
+                    self.assertEqual("30s", select(routes, method, target)["timeout"])
 
     def test_unconfigured_deployments_fail_closed(self):
         mutations = [
@@ -339,6 +421,117 @@ class ProductionRenderTest(unittest.TestCase):
         self.assertEqual(8, len(self.resources_of("AuthorizationPolicy")))
         self.assertEqual(1, len(self.resources_of("Instrumentation")))
         self.assertEqual(8, len(self.resources_of("PodDisruptionBudget")))
+
+    def test_privacy_defaults_retain_data_and_mount_private_identity_configuration(
+        self,
+    ):
+        configmap = next(
+            value
+            for value in self.resources_of("ConfigMap")
+            if "user.yml" in value.get("data", {})
+        )
+        retention = json.loads(configmap["data"]["privacy-retention.json"])
+        self.assertEqual({"version": "UNCONFIGURED", "rules": {}}, retention)
+        privacy = self.config("user")["tj"]["privacy"]
+        self.assertEqual("COS", privacy["archive"]["provider"])
+        self.assertEqual(
+            fixture()["providers"]["cos_bucket"], privacy["archive"]["bucket"]
+        )
+        self.assertEqual("${PRIVACY_COS_SECRET_ID}", privacy["archive"]["secret-id"])
+        self.assertEqual("${PRIVACY_COS_SECRET_KEY}", privacy["archive"]["secret-key"])
+        self.assertEqual(
+            "/run/compact/configs/privacy-retention.json",
+            privacy["retention-policy-file"],
+        )
+        self.assertTrue(
+            {"PRIVACY_COS_SECRET_ID", "PRIVACY_COS_SECRET_KEY"}
+            <= set(self.secrets["identity-credentials"])
+        )
+        for group in ("commerce", "education", "support", "gateway"):
+            self.assertNotIn(
+                "PRIVACY_COS_SECRET_KEY", self.secrets[group + "-credentials"]
+            )
+        identity = next(
+            value
+            for value in self.resources_of("Deployment")
+            if value["metadata"]["name"] == "app-identity"
+        )
+        pod = identity["spec"]["template"]["spec"]
+        mounts = pod["containers"][0]["volumeMounts"]
+        self.assertTrue(
+            any(
+                value["name"] == "config"
+                and value["readOnly"]
+                and value["mountPath"] == "/run/compact/configs"
+                for value in mounts
+            )
+        )
+        self.assertTrue(
+            any(
+                value.get("configMap", {}).get("name") == configmap["metadata"]["name"]
+                for value in pod["volumes"]
+            )
+        )
+        self.assertTrue(
+            any(
+                value["name"] == "tmp" and value["emptyDir"].get("sizeLimit")
+                for value in pod["volumes"]
+            )
+        )
+
+    def test_privacy_cleanup_requires_an_executable_dataset_explicit_days_and_version(
+        self,
+    ):
+        settings = fixture()
+        settings["privacy"]["retention"] = {
+            "version": "reviewed-v1",
+            "rules": {"user.details": {"days": 30, "action": "ANONYMIZE"}},
+        }
+        resources, _ = render.render(settings)
+        configmap = next(
+            value
+            for value in resources
+            if value["kind"] == "ConfigMap"
+            and "privacy-retention.json" in value.get("data", {})
+        )
+        self.assertEqual(
+            settings["privacy"]["retention"],
+            json.loads(configmap["data"]["privacy-retention.json"]),
+        )
+        for name, rule in (
+            ("learnng.notes", {"days": 30, "action": "ANONYMIZE"}),
+            ("course.teaching", {"days": 30, "action": "ANONYMIZE"}),
+            ("learning.entitlements", {"days": 30, "action": "ANONYMIZE"}),
+            ("data.aggregate", {"days": 30, "action": "ANONYMIZE"}),
+            ("user.details", {"days": True, "action": "ANONYMIZE"}),
+            ("user.details", {"days": -1, "action": "ANONYMIZE"}),
+            ("user.details", {"days": 30, "action": "DELETE"}),
+        ):
+            value = fixture()
+            value["privacy"]["retention"] = {
+                "version": "reviewed-v1",
+                "rules": {name: rule},
+            }
+            with self.subTest(dataset=name, rule=rule), self.assertRaises(
+                render.ConfigurationError
+            ):
+                render.render(value)
+
+    def test_backup_proof_alerts_are_scoped_to_this_namespace(self):
+        settings = fixture()
+        settings["namespace"] = "tianji-candidate-two"
+        rules = render.observability_config(settings)["alerts.yml"]["groups"][0][
+            "rules"
+        ]
+        by_name = {rule["alert"]: rule for rule in rules if "alert" in rule}
+        selector = 'tianji_backup_last_verified_timestamp_seconds{namespace="tianji-candidate-two"}'
+        self.assertEqual(
+            "absent(" + selector + ")", by_name["TianjiBackupProofMissing"]["expr"]
+        )
+        self.assertEqual(
+            "time() - " + selector + " > 86400",
+            by_name["TianjiBackupProofExpired"]["expr"],
+        )
 
 
 if __name__ == "__main__":

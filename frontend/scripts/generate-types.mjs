@@ -5,7 +5,14 @@ import openapiTS, { astToString } from 'openapi-typescript';
 const root = fileURLToPath(new URL('../openapi', import.meta.url)),
   target = fileURLToPath(new URL('../packages/shared/src/generated', import.meta.url));
 fs.mkdirSync(target, { recursive: true });
-for (const file of fs.readdirSync(root).filter((f) => f.endsWith('.json'))) {
+const selected = new Set(process.argv.slice(2));
+const available = fs.readdirSync(root).filter((f) => f.endsWith('.json'));
+for (const name of selected) {
+  if (!available.includes(name + '.json')) throw new Error('Unknown OpenAPI service: ' + name);
+}
+for (const file of available.filter(
+  (f) => !selected.size || selected.has(f.replace('.json', '')),
+)) {
   const ast = await openapiTS(pathToFileURL(path.join(root, file)));
   fs.writeFileSync(path.join(target, file.replace('.json', '.ts')), astToString(ast));
   console.log('Generated ' + file);

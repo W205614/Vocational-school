@@ -22,6 +22,7 @@ DIRECT_AUTH_SOURCES = (
 )
 GATEWAY_SOURCES = (
     "tj-gateway/src/main/resources/access-policy.txt",
+    "tj-gateway/src/main/java/com/tianji/gateway/config/AccessPolicy.java",
     "tj-gateway/src/main/java/com/tianji/gateway/config/V2Routes.java",
     "tj-gateway/src/main/java/com/tianji/gateway/config/SimulatorRoutes.java",
     "tj-gateway/src/main/java/com/tianji/gateway/filter/AccountAuthFilter.java",
@@ -59,7 +60,14 @@ def rpc_sources():
         raise AssertionError(
             "No Feign declarations found; review the source discovery roots"
         )
-    return sources + [ROOT / relative for relative in DIRECT_AUTH_SOURCES]
+    return (
+        sources
+        + [ROOT / relative for relative in DIRECT_AUTH_SOURCES]
+        + [
+            ROOT
+            / "tj-api/src/main/java/com/tianji/api/client/privacy/PrivacyDomainClient.java"
+        ]
+    )
 
 
 class ReviewedRpcInventorySourceTest(unittest.TestCase):
