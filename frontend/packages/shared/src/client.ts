@@ -70,6 +70,7 @@ export async function request<T>(
     const body = (await response.json().catch(() => {
       throw new ApiError('服务暂时无法连接，请稍后重试', response.status);
     })) as Envelope<T>;
+    options.signal?.throwIfAborted();
     if (response.status === 401 && token && !retried && !path.startsWith('/auth/accounts/')) {
       await refreshIdentity();
       return request<T>(path, options, key, true);
@@ -79,6 +80,7 @@ export async function request<T>(
       throw new ApiError(body.msg || '请求失败', response.status, body.requestId);
     return body.data;
   } catch (error) {
+    options.signal?.throwIfAborted();
     if (error instanceof DOMException && error.name === 'AbortError')
       throw new ApiError('请求超时，请使用原请求重试', 408);
     throw error;
@@ -86,13 +88,19 @@ export async function request<T>(
     clearTimeout(timer);
   }
 }
-export function get<T>(path: string) {
-  return request<T>(path);
+export function get<T>(path: string, signal?: AbortSignal) {
+  return request<T>(path, { signal });
 }
-export function write<T>(path: string, method: string, body?: unknown, key?: string) {
+export function write<T>(
+  path: string,
+  method: string,
+  body?: unknown,
+  key?: string,
+  signal?: AbortSignal,
+) {
   return request<T>(
     path,
-    { method, body: body === undefined ? undefined : JSON.stringify(body) },
+    { method, body: body === undefined ? undefined : JSON.stringify(body), signal },
     key,
   );
 }
@@ -151,7 +159,7 @@ export async function waitOperation<T>(
       signal?.addEventListener('abort', aborted, { once: true });
     });
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-    current = await get<Operation<T>>('/operations/' + service + '/' + current.operationId);
+    current = await get<Operation<T>>('/operations/' + service + '/' + current.operationId, signal);
     delay = Math.min(5000, Math.round(delay * 1.5));
   }
   return current;

@@ -27,22 +27,26 @@ export const useOperations = defineStore('operations', () => {
     sessionStorage.setItem('school-operations', JSON.stringify(items.value));
   }
   async function perform(item: Tracked) {
+    const signal = abort.signal;
     item.error = undefined;
     save();
     try {
       if (!item.operation)
-        item.operation = await write<Operation>(item.path, item.method, item.payload, item.key);
+        item.operation = await write<Operation>(item.path, item.method, item.payload, item.key, signal);
       if (item.operation.status !== 'PENDING')
         item.operation = await get<Operation>(
           '/operations/' + item.service + '/' + item.operation.operationId,
+          signal,
         );
       save();
-      item.operation = await waitOperation(item.service, item.operation, abort.signal);
+      item.operation = await waitOperation(item.service, item.operation, signal);
       save();
       if (item.operation.status === 'FAILED')
         throw new Error(item.operation.errorMessage || '操作失败');
       return item.operation;
     } catch (error) {
+      // Logout owns cancellation; its late requests must not restore the cleared history.
+      signal.throwIfAborted();
       item.error = error instanceof Error ? error.message : '网络请求失败';
       save();
       throw error;
