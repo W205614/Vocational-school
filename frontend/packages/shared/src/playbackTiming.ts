@@ -160,11 +160,17 @@ export function playbackTiming(
   }
   async function retry() {
     if (inflight) return inflight;
-    if (replaced.value) return false;
-    error.value = '';
-    if (pending) return transmit();
-    if (context && !current.value) return start(context);
-    return true;
+    const own = generation;
+    // Retries share the heartbeat queue so new samples use the acknowledged sequence.
+    const work = tail.then(() => {
+      if (own !== generation || replaced.value) return false;
+      error.value = '';
+      if (pending) return transmit();
+      if (context && !current.value) return start(context);
+      return true;
+    });
+    tail = work.catch(() => false);
+    return work;
   }
   return { current, error, errorStatus, busy, replaced, start, heartbeat, retry, reset };
 }

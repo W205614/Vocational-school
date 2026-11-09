@@ -78,6 +78,55 @@ test('replaced sessions stop retrying automatically', async () => {
   expect(await timing.retry()).toBe(false);
   expect(send).toHaveBeenCalledTimes(1);
 });
+
+test('heartbeats wait for a pending retry before allocating the next sequence', async () => {
+  const gate = deferred<PlaybackView>();
+  const send = vi
+    .fn()
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockImplementationOnce(() => gate.promise)
+    .mockResolvedValue(view(2));
+  const timing = playbackTiming(() => context.owner, async () => view(), send);
+  await timing.start(context);
+  expect(await timing.heartbeat(sample)).toBe(false);
+  const retry = timing.retry();
+  const next = timing.heartbeat({ ...sample, positionMillis: 500 });
+  await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+  gate.resolve(view(1));
+  expect(await Promise.all([retry, next])).toEqual([true, true]);
+  expect(send.mock.calls.map((call) => call[0].sequence)).toEqual([1, 1, 2]);
+  expect(send.mock.calls[0]![0]).toEqual(send.mock.calls[1]![0]);
+  expect(timing.current.value?.lastSequence).toBe(2);
+});
+
+test('a failed retry keeps its original sample and blocks queued heartbeats', async () => {
+  const send = vi.fn().mockRejectedValue(new Error('offline'));
+  const timing = playbackTiming(() => context.owner, async () => view(), send);
+  await timing.start(context);
+  await timing.heartbeat(sample);
+  expect(
+    await Promise.all([timing.retry(), timing.heartbeat({ ...sample, positionMillis: 500 })]),
+  ).toEqual([false, false]);
+  expect(send).toHaveBeenCalledTimes(2);
+  send.mockResolvedValueOnce(view(1));
+  expect(await timing.retry()).toBe(true);
+  expect(send.mock.calls.map((call) => call[0])).toEqual(
+    [sample, sample, sample].map((value) => ({ ...value, sessionId: 'session', sequence: 1 })),
+  );
+});
+
+test('reset discards a queued retry before it can send the previous sections sample', async () => {
+  const send = vi.fn().mockRejectedValue(new Error('offline'));
+  const timing = playbackTiming(() => context.owner, async () => view(), send);
+  await timing.start(context);
+  await timing.heartbeat(sample);
+  const retry = timing.retry();
+  timing.reset();
+  expect(await retry).toBe(false);
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(timing.current.value).toBeUndefined();
+  expect(timing.error.value).toBe('');
+});
 test('identity changes abort stale writes and cannot publish another users response', async () => {
   const gate = deferred<PlaybackView>();
   let owner = 'student';
