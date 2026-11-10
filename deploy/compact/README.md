@@ -4,6 +4,8 @@
 
 功能与架构概览见 [项目 README](../../README.md)；当前部署、真实课程专项和商业化代码的证据范围集中在 [交付索引](reports/README.md)。
 
+截至 2026-11-10，预构建 GHCR 应用镜像尚未发布，本手册的 `build` 是从源码构建本地镜像，不是从 Registry 获取已发布版本。计划目标、原作者与许可状态、安全门禁缺口见[项目获取方式](../../README.md#获取方式与发布状态)及[复核记录](../../docs/security-review-20261110.md)。本机已有环境的实际镜像来源以运行绑定为准，不能仅凭当前 Git HEAD 或旧宿主 JAR 清单判定已升级。
+
 本机真实教学视频的清单、三文件隔离演练、可重入全量导入及导入窗口关闭方法见[受控本地课程视频导入](LOCAL_COURSE_IMPORT.md)。视频字节与私有清单保存在 `.local`，不提交 Git；全新初始化不会自动获得本机素材。服务端使用 `ffprobe` 读取真实时长，`support` 构建时安装 FFmpeg 包，首次构建需要访问发行版软件仓库。脱离容器运行媒资模块时，需安装 `ffprobe` 并配置 PATH 或 `zxt.local-storage.ffprobe-command`。
 
 媒资复制与探测默认分别最多 2 路（`zxt.local-storage.upload-concurrency`、`probe-concurrency`，范围 1～4），单次探测默认 30 秒（`probe-timeout-seconds`，范围 1～60）；饱和返回 429，异常释放许可。签名默认 600 秒（`signature-ttl-seconds`，范围 1～600），缩短仅用于隔离过期验证。学生页面续签保留播放状态并重新检查权益，新的计时会话直接使用媒资毫秒时长，目录的整数秒仅用于展示。这些限制用于本机资源保护，容量按实际负载测量。

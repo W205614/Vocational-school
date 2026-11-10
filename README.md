@@ -10,9 +10,21 @@
 
 项目按需维护，日常改动合入 `dev`。参与开发见[贡献指南](CONTRIBUTING.md)，安全问题报告见[安全政策](SECURITY.md)。
 
-源码预览版本 `v0.1.0-preview.2` 的改动、验证和使用边界见[版本说明](docs/releases/v0.1.0-preview.2.md)。该版本采用源码构建方式，不附带预构建应用或镜像；`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
+最新已发布的源码预览为 [v0.1.0-preview.2](https://github.com/W205614/Vocational-school/releases/tag/v0.1.0-preview.2)，改动与历史验证范围见[版本说明](docs/releases/v0.1.0-preview.2.md)。`dev` 另含后续工程修正；它们尚未组成新 Release。`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
 
-[首次部署](#全新环境准备) · [已有环境启动](#已有环境启动) · [源码导航](#源码导航)
+[获取方式](#获取方式与发布状态) · [首次部署](#全新环境准备) · [已有环境启动](#已有环境启动) · [源码导航](#源码导航)
+
+## 获取方式与发布状态
+
+| 方式 | 当前状态与用途 |
+| --- | --- |
+| 源码构建 + Docker Compose | 当前可用的部署入口，按下文从 Git 克隆 `dev`，生成本地配置并构建镜像；需要完整工具链和依赖下载网络 |
+| 预构建 Docker/OCI 镜像 | 已确定使用公开 GHCR，**尚未发布、未验证匿名拉取**；目前不能省略源码构建步骤 |
+| 历史源码预览 | `preview.1`、`preview.2` 保留原提交和历史说明，均没有附带应用镜像；不代表当前安全告警已清零 |
+
+计划的 GHCR 位置为 `ghcr.io/w205614/zhixuetang-{identity,commerce,education,support,gateway,student,admin}`，平台为 `linux/amd64`。计划版本 `v0.1.0-preview.3` 尚无 Tag、Release 或镜像摘要；许可材料和安全门禁未完成前，不将这些地址作为可用下载入口。最新调查见[安全与发布复核](docs/security-review-20261110.md)。应用交付采用 OCI 镜像，不提供 Maven 应用包安装或发布方式。
+
+源码 ZIP 不含 Git 元数据，而构建工具需要核对提交和源码绑定，请使用下文的 Git 克隆方式。新源码不会自动替换已有日常容器；已有环境先按[升级说明](docs/stability-operations.md#升级已有部署)核对完整构建绑定和恢复前提，不用初始化空库代替升级。
 
 ## 快速部署
 
@@ -68,6 +80,10 @@ python deploy/compact/rebuild_search.py
 
 不需要私有历史 JAR、旧数据库备份或真实支付密钥。构建脚本要求生产源码已提交；首次体验直接使用克隆后的代码即可。默认 Compose 项目名为 `zhixuetang-compact`，包含 11 个业务／基础设施容器和 3 个本机监控容器。
 
+`prepare` 生成的 `.env`、`accounts.json`、签名材料和运行配置仅留本机；`objects/` 与 Docker 命名卷存放媒资和业务数据。关闭页面或停止容器不会生成备份。备份、恢复与保留策略见[稳定性与运维](docs/stability-operations.md)，不要将运行卷视为恢复集。
+
+源码调试使用同样的 JDK／Node 工具链；组合应用依赖完整配置、数据库、Redis、RabbitMQ 和搜索服务，不提供一条绕过初始化的 `java -jar` 命令。测试和热更新使用独立环境，入口见[贡献指南](CONTRIBUTING.md)及[隔离验收说明](deploy/acceptance/README.md)，避免写入已有日常库。
+
 ## 首次登录与体验
 
 | 入口             | 地址                                                             | 登录角色                                                                                 |
@@ -106,6 +122,18 @@ Get-Content deploy/compact/.local/accounts.json
 | 部署或排障                   | [本机部署手册](deploy/compact/README.md)、[运维工具索引](deploy/compact/TOOLS.md)                                     |
 
 首次读代码可跟着[视频进度保存路径](docs/project-structure.md#视频进度如何保存)，从学生页面走到数据库和测试。
+
+默认调用关系为双端网页 → API 网关 → 四组组合应用；MySQL 存储业务状态，Redis 提供缓存和任务协调，RabbitMQ 承载可靠消息，Elasticsearch 提供课程搜索。模块装配、Outbox／Inbox 与事务边界见[架构图和源码阅读路径](docs/project-structure.md#默认部署的调用关系)。
+
+## 验证与已知边界
+
+前端类型、单元测试与构建入口，以及后端和真实依赖测试要求见[贡献指南](CONTRIBUTING.md#修改与验证)。本轮本机实际执行了相关 Java 构建与日志回归、compact／生产工具测试和部分扫描；隔离业务 CI、候选镜像扫描及日常环境验收必须分别查看，不能由一个绿灯代替。
+
+2026-11-10 已启用 CodeQL 与 Dependabot，并将漏洞门禁扩展至全部严重级别；安全告警和 JVM 镜像扫描仍有未完成项。默认支付、短信是模拟，真实外部服务、生产容量及备份恢复没有因此得到认证。完整问题与版本边界见[复核记录](docs/security-review-20261110.md)。
+
+## 来源与许可
+
+后端历史包含虎哥、`tjxt` 等原有提交与教学代码署名；当前“职学堂”品牌及后续工程改动不改变这些代码的作者归属。原始资料的完整来源与再分发授权尚未核清，本仓库也没有统一 LICENSE。能够浏览源码不等于已获得任意使用、再许可或镜像再分发的授权；不以 MIT 或唯一作者方式描述项目。课程媒资和私有数据不随源码提供。
 
 ## 深入文档
 
