@@ -27,6 +27,9 @@ export default defineConfig({
   use: {
     ...devices[desktop],
     browserName,
+    ...(browserName === 'firefox'
+      ? { launchOptions: { firefoxUserPrefs: { 'security.enterprise_roots.enabled': true } } }
+      : {}),
     ...(browserName === 'chromium'
       ? {
           channel:

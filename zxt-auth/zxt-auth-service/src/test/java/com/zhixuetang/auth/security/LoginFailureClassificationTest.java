@@ -30,7 +30,7 @@ class LoginFailureClassificationTest {
                         mock(JwtTool.class),
                         users,
                         mock(ILoginRecordService.class),
-                        mock(AdministratorMfaService.class));
+                        mock(AdministratorMfaService.class), new com.zhixuetang.auth.service.impl.RefreshCookieCipher("synthetic-private-seed-01234567890123456789"));
         form = new LoginFormDTO();
         form.setType(1);
         form.setUsername("fixture");

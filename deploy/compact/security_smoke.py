@@ -1,9 +1,10 @@
 """Exercise actual gateway/identity/DB invalidation. Touch only generated fixture identities."""
 
-import json, time, requests
-from setup import LOCAL, PORTS, mysql, configure_acceptance, secrets_config
+import json, time, requests, os
+from setup import LOCAL, PORTS, OFFSET, mysql, configure_acceptance, secrets_config
 
-BASE = 'http://127.0.0.1:' + str(PORTS['gateway'])
+from web_transport import web_origin
+BASE = web_origin(LOCAL, 24500 + OFFSET)
 accounts = json.loads((LOCAL / 'accounts.json').read_text(encoding='utf8'))
 checks = []
 
@@ -156,12 +157,12 @@ for label, statement, restore in [
             r.status_code in (401, 403) and time.monotonic() - start <= 10,
             label + ' invalidates old access <=10s',
         )
-        r = s.get(BASE + '/api/v2/auth/accounts/refresh?audience=student', timeout=10)
+        r = s.post(BASE + '/api/v2/auth/accounts/refresh?audience=student', timeout=10)
         check(r.status_code in (401, 403), label + ' invalidates old refresh')
     finally:
         mysql(restore or f"UPDATE tj_user.user SET password='{old}' WHERE id={uid}")
 s = login()
-r = s.get(BASE + '/api/v2/auth/accounts/refresh?audience=student', timeout=10)
+r = s.post(BASE + '/api/v2/auth/accounts/refresh?audience=student', timeout=10)
 check(r.status_code == 200, 'refresh rotates live session')
 s.headers['Authorization'] = 'Bearer ' + r.json()['data']
 r = s.get(BASE + '/api/v2/auth/accounts/sessions', timeout=10)

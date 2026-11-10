@@ -291,7 +291,7 @@ if (process.env.ZXT_MEDIA_RENEWAL_TEST === '1')
         .poll(
           async () =>
             (
-              await page.request.get(
+              await page.request.post(
                 '/api/v2/services/media/medias/signature/play?sectionId=' + fixture.video,
                 { headers: { Authorization: 'Bearer ' + access } },
               )

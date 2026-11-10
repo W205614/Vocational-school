@@ -172,7 +172,7 @@ const tickets = playbackTicket(
   (signal) =>
     request<PlaybackTicket>(
       '/services/media/medias/signature/play?sectionId=' + section.value!.id,
-      { signal },
+      { method: 'POST', signal },
     ),
   installTicket,
   (status) => {
@@ -522,7 +522,7 @@ async function select(item: Row) {
     return;
   }
   try {
-    const result = await get<Row>('/services/media/medias/signature/play?sectionId=' + item.id);
+    const result = await write<Row>('/services/media/medias/signature/play?sectionId=' + item.id, 'POST');
     if (revision !== playRevision || id() !== courseId || who !== identity.value) return;
     if (result.trial && result.state !== 'READY') {
       play.value = result;

@@ -18,6 +18,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/services/media/medias/signature/play": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 获取播放视频的授权签名 */
+        post: operations["getPlaySignature"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/media/media-trials/{id}/retry": {
         parameters: {
             query?: never;
@@ -189,23 +206,6 @@ export interface paths {
         };
         /** 管理端获取预览视频的授权签名 */
         get: operations["getPreviewSignature"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/services/media/medias/signature/play": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 获取播放视频的授权签名 */
-        get: operations["getPlaySignature"];
         put?: never;
         post?: never;
         delete?: never;
@@ -488,6 +488,39 @@ export interface components {
              */
             size: string;
         };
+        /**
+         * @description 视频播放的签名信息
+         * @default null
+         */
+        VideoPlayVO: {
+            /**
+             * @description 试看任务状态：PROCESSING、FAILED、READY；完整版为空
+             * @default
+             */
+            state: string;
+            errorCode?: string;
+            trial?: boolean;
+            taskId?: string;
+            provider?: string;
+            playUrl?: string;
+            /**
+             * @description 受控播放地址到期时间，Unix epoch 毫秒
+             * @default
+             */
+            expiresAt: string;
+            /**
+             * @description 视频唯一标示
+             * @default
+             * @example 12412534535143242
+             */
+            fileId: string;
+            /**
+             * @description 视频封面
+             * @default
+             * @example xxx.xxx.xxx
+             */
+            signature: string;
+        };
         Retry: {
             version?: string;
         };
@@ -625,39 +658,6 @@ export interface components {
              */
             list: components["schemas"]["MediaVO"][];
         };
-        /**
-         * @description 视频播放的签名信息
-         * @default null
-         */
-        VideoPlayVO: {
-            /**
-             * @description 试看任务状态：PROCESSING、FAILED、READY；完整版为空
-             * @default
-             */
-            state: string;
-            errorCode?: string;
-            trial?: boolean;
-            taskId?: string;
-            provider?: string;
-            playUrl?: string;
-            /**
-             * @description 受控播放地址到期时间，Unix epoch 毫秒
-             * @default
-             */
-            expiresAt: string;
-            /**
-             * @description 视频唯一标示
-             * @default
-             * @example 12412534535143242
-             */
-            fileId: string;
-            /**
-             * @description 视频封面
-             * @default
-             * @example xxx.xxx.xxx
-             */
-            signature: string;
-        };
         Dataset: {
             name?: string;
             select?: string;
@@ -786,6 +786,37 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    getPlaySignature: {
+        parameters: {
+            query: {
+                /**
+                 * @description 小节id
+                 * @example 1
+                 */
+                sectionId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["VideoPlayVO"];
                     };
                 };
             };
@@ -1097,37 +1128,6 @@ export interface operations {
                  * @example 1
                  */
                 mediaId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: components["schemas"]["VideoPlayVO"];
-                    };
-                };
-            };
-        };
-    };
-    getPlaySignature: {
-        parameters: {
-            query: {
-                /**
-                 * @description 小节id
-                 * @example 1
-                 */
-                sectionId: string;
             };
             header?: never;
             path?: never;

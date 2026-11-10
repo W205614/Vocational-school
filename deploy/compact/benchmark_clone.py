@@ -41,6 +41,9 @@ def main():
     shutil.copyfile(source / '.env', BASE / '.env')
     for name in (
         'database-accounts.json',
+        'database-accounts.enc',
+        'environment.enc',
+        'secrets.key.dpapi',
         'signing.jks',
         'accounts.json',
         'browser-fixture.json',
@@ -50,7 +53,8 @@ def main():
         'images.json',
         'infrastructure-images.json',
     ):
-        shutil.copyfile(source / '.local' / name, LOCAL / name)
+        if (source / '.local' / name).exists():
+            shutil.copyfile(source / '.local' / name, LOCAL / name)
     shutil.copytree(source / '.local/objects', LOCAL / 'objects', dirs_exist_ok=True)
     prepare()
     import yaml

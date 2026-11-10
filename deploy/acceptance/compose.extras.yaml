@@ -22,10 +22,18 @@ services:
     image: prom/prometheus:v3.10.0
     profiles: [observability]
     ports: ['127.0.0.1:23909:9090']
+    environment:
+      ZXT_METRICS_TOKEN: ${ACCEPTANCE_INTERNAL_TOKEN:?Decrypt credentials first}
+    tmpfs: ['/run/collector:rw,noexec,nosuid,size=1m,uid=65534,gid=65534,mode=0700']
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - 'umask 077; printf "%s" "$$ZXT_METRICS_TOKEN" > /run/collector/internal-token; unset ZXT_METRICS_TOKEN; exec /bin/prometheus "$$@"'
+      - '--'
+    command: ['--config.file=/etc/prometheus/prometheus.yml', '--storage.tsdb.path=/prometheus']
     volumes:
       - ./.local/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
-      - ./.local/observability/internal-token:/etc/prometheus/internal-token:ro
       - acceptance_prometheus:/prometheus
   grafana:
     image: grafana/grafana:11.5.2

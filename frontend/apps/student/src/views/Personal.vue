@@ -97,17 +97,16 @@ async function load() {
         ? '/favorites'
         : mode === 'notes'
           ? '/notes'
-          : '/services/message/inboxes';
-    const result = await get<Row>(
-      path +
+          : '/services/message/inboxes/query';
+    const endpoint = path +
         '?' +
         query({
           pageNo: page.value,
           pageSize: 20,
           courseId: courseId.value,
           keyword: keyword.value,
-        }),
-    );
+        });
+    const result = mode === 'messages' ? await write<Row>(endpoint, 'POST') : await get<Row>(endpoint);
     if (revision !== loadRevision) return;
     rows.value = result.list || [];
     total.value = Number(result.total || 0);

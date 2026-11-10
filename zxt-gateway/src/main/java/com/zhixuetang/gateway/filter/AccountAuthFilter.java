@@ -118,6 +118,14 @@ public class AccountAuthFilter implements GlobalFilter, Ordered {
                 || path.contains("/user-coupons/use")
                 || path.contains("/user-coupons/refund")) throw new ForbiddenException("内部接口不对外开放");
         String ant = sanitized.getRequest().getMethod().name() + ":" + path;
+        if (ant.equals("POST:/api/v2/auth/accounts/refresh")) {
+            var headers = exchange.getRequest().getHeaders();
+            String origin = headers.getOrigin();
+            String expected = client.protocol() + "://" + exchange.getRequest().getURI().getRawAuthority();
+            if ("cross-site".equals(headers.getFirst("Sec-Fetch-Site"))
+                    || (origin != null && !origin.equals(expected)))
+                throw new ForbiddenException("刷新凭据不接受跨来源请求");
+        }
         if (path.startsWith("/api/v2/")
                 && !policy.declares(sanitized.getRequest().getMethod().name(), path))
             throw new ForbiddenException("该接口没有授权声明");
@@ -151,7 +159,7 @@ public class AccountAuthFilter implements GlobalFilter, Ordered {
                 || ant.equals("POST:/api/v2/auth/accounts/password/initial")
                 || ant.equals("POST:/api/v2/auth/accounts/login")
                 || ant.equals("POST:/api/v2/auth/accounts/admin/login")
-                || ant.equals("GET:/api/v2/auth/accounts/refresh")) return chain.filter(sanitized);
+                || ant.equals("POST:/api/v2/auth/accounts/refresh")) return chain.filter(sanitized);
         if (properties.getExcludePath().stream().anyMatch(p -> matcher.match(p, ant)))
             return chain.filter(sanitized);
         String token = sanitized.getRequest().getHeaders().getFirst(AUTHORIZATION_HEADER);
@@ -201,7 +209,7 @@ public class AccountAuthFilter implements GlobalFilter, Ordered {
                             "GET:/api/v2/services/promotion/user-coupons/**",
                             "POST:/api/v2/services/promotion/user-coupons/available",
                             "POST:/api/v2/services/promotion/user-coupons/discount",
-                            "GET:/api/v2/services/media/medias/signature/play",
+                            "POST:/api/v2/services/media/medias/signature/play",
                             "POST:/api/v2/services/remark/likes",
                             "GET:/api/v2/services/remark/likes/list",
                             "POST:/api/v2/services/user/account-privacy/export",
@@ -214,7 +222,7 @@ public class AccountAuthFilter implements GlobalFilter, Ordered {
                             "POST:/api/v2/services/user/account-privacy/tasks/*/download",
                             "GET:/api/v2/services/user/users/me",
                             "PUT:/api/v2/services/user/users",
-                            "GET:/api/v2/services/message/inboxes",
+                            "POST:/api/v2/services/message/inboxes/query",
                             "PUT:/api/v2/services/message/inboxes/*/read");
             if (studentPaths.stream().noneMatch(pattern -> matcher.match(pattern, ant)))
                 throw new ForbiddenException("该接口不向学生开放");

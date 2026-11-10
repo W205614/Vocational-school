@@ -101,6 +101,9 @@ with zipfile.ZipFile(backup / 'private-config.zip') as archive:
     for name in [
         'signing.jks',
         'database-accounts.json',
+        'database-accounts.enc',
+        'environment.enc',
+        'secrets.key.dpapi',
         'accounts.json',
         'browser-fixture.json',
         'load-accounts.json',
@@ -181,15 +184,9 @@ compose = recorded_configuration(
 # scrape targets from the restored ports rather than copying original endpoints.
 from operations_config import generate
 
-generate(
-    home,
-    compose,
-    dict(
-        line.split('=', 1)
-        for line in (home / '.env').read_text(encoding='utf8').splitlines()
-        if '=' in line
-    )['ACCEPTANCE_INTERNAL_TOKEN'],
-)
+from secret_store import environment
+generate(home, compose, environment(home)['ACCEPTANCE_INTERNAL_TOKEN'])
+
 # Do not import the source process's RUNNING flag or unfinished maintenance journal.
 from maintenance import status
 

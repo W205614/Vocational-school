@@ -6,7 +6,8 @@ import subprocess, secrets, argparse, json, time, os, sys
 BASE = Path(__file__).resolve().parent
 sys.path.append(str(BASE.parent / 'compact'))
 from runtime_compose import rabbit_username
-from operations_config import private_directory, private_file
+from operations_config import private_directory, private_file, private_text
+from secret_store import environment, write_values, load_existing
 
 RUNTIME = Path(os.environ.get('ZXT_RUNTIME_HOME', str(BASE))).resolve()
 LOCAL = RUNTIME / '.local'
@@ -20,6 +21,7 @@ COMPOSE = [
     '--env-file',
     str(RUNTIME / '.env'),
 ]
+load_existing(RUNTIME)
 DATABASES = [
     'tj_auth',
     'tj_user',
@@ -72,24 +74,15 @@ def mysql(sql, db=None):
 def local_secrets():
     private_directory(LOCAL)
     path = RUNTIME / '.env'
-    fresh = not path.exists()
-    if fresh:
-        path.touch(mode=0o600)
-    private_file(path)
-    if fresh:
-        path.write_text(
-            'ACCEPTANCE_DB_PASSWORD='
-            + secrets.token_hex(24)
-            + '\nACCEPTANCE_MQ_PASSWORD='
-            + secrets.token_hex(24)
-            + '\n',
-            encoding='utf8',
-        )
-    values = dict(
-        line.split('=', 1)
-        for line in path.read_text(encoding='utf8').splitlines()
-        if '=' in line
-    )
+    if not path.exists() and not (LOCAL / 'environment.enc').exists():
+        write_values(RUNTIME, 'environment', {
+            'ACCEPTANCE_DB_PASSWORD': secrets.token_hex(24),
+            'ACCEPTANCE_MQ_PASSWORD': secrets.token_hex(24),
+            'ACCEPTANCE_INTERNAL_TOKEN': secrets.token_hex(32),
+            'ACCEPTANCE_GRAFANA_PASSWORD': secrets.token_hex(24),
+        })
+        private_text(path, '# Credentials are encrypted in .local/environment.enc\n')
+    values = environment(RUNTIME)
     if 'FINAL_DB_PASSWORD' in values:
         return dict(
             ACCEPTANCE_MQ_USERNAME=rabbit_username(RUNTIME),
@@ -98,22 +91,8 @@ def local_secrets():
             ACCEPTANCE_INTERNAL_TOKEN=values['FINAL_INTERNAL_TOKEN'],
             ACCEPTANCE_GRAFANA_PASSWORD=values['FINAL_GRAFANA_PASSWORD'],
         )
-    if 'ACCEPTANCE_INTERNAL_TOKEN' not in values:
-        values['ACCEPTANCE_INTERNAL_TOKEN'] = secrets.token_hex(32)
-        with path.open('a', encoding='utf8') as output:
-            output.write(
-                '\nACCEPTANCE_INTERNAL_TOKEN='
-                + values['ACCEPTANCE_INTERNAL_TOKEN']
-                + '\n'
-            )
-    if 'ACCEPTANCE_GRAFANA_PASSWORD' not in values:
-        values['ACCEPTANCE_GRAFANA_PASSWORD'] = secrets.token_hex(24)
-        with path.open('a', encoding='utf8') as output:
-            output.write(
-                'ACCEPTANCE_GRAFANA_PASSWORD='
-                + values['ACCEPTANCE_GRAFANA_PASSWORD']
-                + '\n'
-            )
+    if not all(k in values for k in ('ACCEPTANCE_INTERNAL_TOKEN', 'ACCEPTANCE_GRAFANA_PASSWORD')):
+        raise RuntimeError('Existing credentials are incomplete; explicit credential migration required')
     values.setdefault('ACCEPTANCE_MQ_USERNAME', rabbit_username(RUNTIME))
     return values
 

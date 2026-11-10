@@ -163,10 +163,10 @@ GET:/api/v2/admin/media/course-covers/{key}
 GET:/api/v2/admin/media/files/{id}
 GET:/api/v2/admin/media/local-content/{key}
 GET:/api/v2/admin/media/medias
-GET:/api/v2/admin/media/medias/signature/play
+POST:/api/v2/admin/media/medias/signature/play
 GET:/api/v2/admin/media/medias/signature/preview
 GET:/api/v2/admin/media/medias/signature/upload
-GET:/api/v2/admin/message/inboxes
+POST:/api/v2/admin/message/inboxes/query
 GET:/api/v2/admin/message/message-templates
 GET:/api/v2/admin/message/message-templates/{id}
 GET:/api/v2/admin/message/notice-tasks
@@ -240,7 +240,7 @@ GET:/api/v2/admin/user/teachers/page
 GET:/api/v2/admin/user/users/checkCellphone
 GET:/api/v2/admin/user/users/me
 GET:/api/v2/admin/user/users/{id}
-GET:/api/v2/auth/accounts/refresh
+POST:/api/v2/auth/accounts/refresh
 GET:/api/v2/auth/accounts/sessions
 GET:/api/v2/environment
 GET:/api/v2/exam-attempts/page
@@ -342,10 +342,10 @@ GET:/api/v2/services/media/course-covers/{key}
 GET:/api/v2/services/media/files/{id}
 GET:/api/v2/services/media/local-content/{key}
 GET:/api/v2/services/media/medias
-GET:/api/v2/services/media/medias/signature/play
+POST:/api/v2/services/media/medias/signature/play
 GET:/api/v2/services/media/medias/signature/preview
 GET:/api/v2/services/media/medias/signature/upload
-GET:/api/v2/services/message/inboxes
+POST:/api/v2/services/message/inboxes/query
 GET:/api/v2/services/message/message-templates
 GET:/api/v2/services/message/message-templates/{id}
 GET:/api/v2/services/message/notice-tasks

@@ -66,7 +66,7 @@ def main():
     )
     assert before == '1'
     for _ in range(3):
-        call(student, 'GET', '/services/message/inboxes?pageNo=1&pageSize=100')
+        call(student, 'POST', '/services/message/inboxes/query?pageNo=1&pageSize=100')
     assert (
         mysql(
             "SELECT COUNT(*) FROM user_inbox WHERE title='"

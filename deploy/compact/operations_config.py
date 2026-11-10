@@ -17,6 +17,17 @@ IMAGES = {
 LOGGING = {'driver': 'local', 'options': {'max-size': '10m', 'max-file': '3'}}
 
 
+def collector_credentials(service):
+    service.setdefault('environment', {})['ZXT_METRICS_TOKEN'] = '${ACCEPTANCE_INTERNAL_TOKEN:?Decrypt credentials first}'
+    service['tmpfs'] = ['/run/collector:rw,noexec,nosuid,size=1m,uid=65534,gid=65534,mode=0700']
+    service['entrypoint'] = [
+        '/bin/sh', '-ec',
+        'umask 077; printf "%s" "$$ZXT_METRICS_TOKEN" > /run/collector/internal-token; '
+        'unset ZXT_METRICS_TOKEN; exec /bin/prometheus "$$@"', '--',
+    ]
+    return service
+
+
 def _protect_path(path):
     import importlib.util
 
@@ -168,6 +179,7 @@ def observability(compose, offset=0):
     for name, definition in definitions.items():
         if name not in result['services']:
             result['services'][name] = definition
+    collector_credentials(result['services']['prometheus'])
     for name in MONITORS:
         result.setdefault('volumes', {}).setdefault('compact_' + name, {})
     gateway = result['services']['app-gateway']
@@ -220,8 +232,6 @@ def generate(home, compose, token):
     directory = local / 'observability'
     directory.mkdir(parents=True, exist_ok=True)
     (local / 'ops-status').mkdir(exist_ok=True)
-    credentials = directory / 'internal-token'
-    credentials.write_text(token, encoding='utf8')
     jobs = []
     for group, aliases in {
         'identity': ['auth', 'user'],
@@ -237,7 +247,7 @@ def generate(home, compose, token):
                     'metrics_path': '/_modules/' + alias + '/actuator/prometheus',
                     'http_headers': {
                         'X-Internal-Token': {
-                            'files': ['/etc/prometheus/internal-token']
+                            'files': ['/run/collector/internal-token']
                         }
                     },
                     'static_configs': [{'targets': ['app-' + group + ':' + str(port)]}],
@@ -248,7 +258,7 @@ def generate(home, compose, token):
             'job_name': 'gateway',
             'metrics_path': '/actuator/prometheus',
             'http_headers': {
-                'X-Internal-Token': {'files': ['/etc/prometheus/internal-token']}
+                'X-Internal-Token': {'files': ['/run/collector/internal-token']}
             },
             'static_configs': [
                 {

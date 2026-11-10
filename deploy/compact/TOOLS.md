@@ -6,6 +6,7 @@
 
 | 工具                                                               | 用途                                                                               |
 | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `enable_tls.py` | 配置操作者提供的网页 TLS 证书，见[凭据与 HTTPS](../../docs/runtime-credential-security.md) |
 | `setup.py prepare/init/build/up`                                   | 生成本机配置、初始化全新环境、源码构建、启动                                       |
 | `prepare_search.py`、`rebuild_search.py`                           | 搜索索引准备与数据重建                                                             |
 | `upgrade_existing.py`                                              | 已有部署的受控增量升级                                                             |

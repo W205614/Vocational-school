@@ -183,11 +183,27 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 分页查询收件箱 */
-        get: operations["queryUserInBoxesPage"];
+        get?: never;
         put?: never;
         /** 发送私信 */
         post: operations["sentMessageToUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/services/message/inboxes/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 分页查询收件箱 */
+        post: operations["queryUserInBoxesPage"];
         delete?: never;
         options?: never;
         head?: never;
@@ -633,6 +649,85 @@ export interface components {
          * @description 通知模板查询对象
          * @default null
          */
+        UserInboxQuery: {
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            isAsc?: boolean;
+            sortBy?: string;
+            isRead?: boolean;
+            /** Format: int32 */
+            type?: number;
+        };
+        /**
+         * @description 分页结果
+         * @default null
+         */
+        PageDTOUserInboxDTO: {
+            /**
+             * @description 总条数
+             * @default
+             */
+            total: string;
+            /**
+             * @description 总页码数
+             * @default
+             */
+            pages: string;
+            /**
+             * @description 当前页数据
+             * @default
+             */
+            list: components["schemas"]["UserInboxDTO"][];
+        };
+        /**
+         * @description 用户收件箱消息
+         * @default null
+         */
+        UserInboxDTO: {
+            /**
+             * @description 收件箱消息id
+             * @default
+             */
+            id: string;
+            /**
+             * Format: int32
+             * @description 通知类型：0-系统通知，1-笔记通知，2-问答通知，3-其它通知，4-私信
+             * @default
+             */
+            type: number;
+            /**
+             * @description 通知标题
+             * @default
+             */
+            title: string;
+            /**
+             * @description 通知或私信内容
+             * @default
+             */
+            content: string;
+            /**
+             * @description 是否已读
+             * @default false
+             */
+            isRead: boolean;
+            /**
+             * @description 消息发送者id
+             * @default
+             */
+            publisher: string;
+            /**
+             * Format: date-time
+             * @description 收件箱消息id
+             * @default
+             */
+            pushTime: string;
+        };
+        /**
+         * @description 通知模板查询对象
+         * @default null
+         */
         SmsThirdPlatformPageQuery: {
             /** Format: int32 */
             pageNo?: number;
@@ -980,85 +1075,6 @@ export interface components {
             }[];
             /** Format: int32 */
             nextOffset?: number;
-        };
-        /**
-         * @description 通知模板查询对象
-         * @default null
-         */
-        UserInboxQuery: {
-            /** Format: int32 */
-            pageNo?: number;
-            /** Format: int32 */
-            pageSize?: number;
-            isAsc?: boolean;
-            sortBy?: string;
-            isRead?: boolean;
-            /** Format: int32 */
-            type?: number;
-        };
-        /**
-         * @description 分页结果
-         * @default null
-         */
-        PageDTOUserInboxDTO: {
-            /**
-             * @description 总条数
-             * @default
-             */
-            total: string;
-            /**
-             * @description 总页码数
-             * @default
-             */
-            pages: string;
-            /**
-             * @description 当前页数据
-             * @default
-             */
-            list: components["schemas"]["UserInboxDTO"][];
-        };
-        /**
-         * @description 用户收件箱消息
-         * @default null
-         */
-        UserInboxDTO: {
-            /**
-             * @description 收件箱消息id
-             * @default
-             */
-            id: string;
-            /**
-             * Format: int32
-             * @description 通知类型：0-系统通知，1-笔记通知，2-问答通知，3-其它通知，4-私信
-             * @default
-             */
-            type: number;
-            /**
-             * @description 通知标题
-             * @default
-             */
-            title: string;
-            /**
-             * @description 通知或私信内容
-             * @default
-             */
-            content: string;
-            /**
-             * @description 是否已读
-             * @default false
-             */
-            isRead: boolean;
-            /**
-             * @description 消息发送者id
-             * @default
-             */
-            publisher: string;
-            /**
-             * Format: date-time
-             * @description 收件箱消息id
-             * @default
-             */
-            pushTime: string;
         };
         View: {
             operationId?: string;
@@ -1634,33 +1650,6 @@ export interface operations {
             };
         };
     };
-    queryUserInBoxesPage: {
-        parameters: {
-            query: {
-                query: components["schemas"]["UserInboxQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: components["schemas"]["PageDTOUserInboxDTO"];
-                    };
-                };
-            };
-        };
-    };
     sentMessageToUser: {
         parameters: {
             query?: never;
@@ -1685,6 +1674,33 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: string;
+                    };
+                };
+            };
+        };
+    };
+    queryUserInBoxesPage: {
+        parameters: {
+            query: {
+                query: components["schemas"]["UserInboxQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["PageDTOUserInboxDTO"];
                     };
                 };
             };

@@ -25,6 +25,7 @@ function refreshIdentity(): Promise<void> {
   refreshing = (async () => {
     const audience = sessionStorage.getItem('school-admin') === 'true' ? 'admin' : 'student';
     const response = await fetch('/api/v2/auth/accounts/refresh?audience=' + audience, {
+      method: 'POST',
       credentials: 'include',
       signal: AbortSignal.timeout(10000),
     });

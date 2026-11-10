@@ -1,5 +1,6 @@
 import os, sys, subprocess, shutil, json, re
 from setup import ROOT, LOCAL, OFFSET, SOURCE, configure_acceptance, ACC
+from web_transport import web_origin
 
 engine = os.environ.get('ZXT_BROWSER_ENGINE', 'chromium')
 if engine not in ('chromium', 'firefox', 'webkit'):
@@ -21,8 +22,8 @@ subprocess.run([sys.executable, str(SOURCE / 'rebuild_search.py')], check=True)
 os.environ.update(
     ACCEPTANCE_CONTAINER_UI='1',
     ZXT_UI_RUNTIME_HOME=str(LOCAL),
-    ZXT_STUDENT_URL='http://127.0.0.1:' + str(24500 + OFFSET),
-    ZXT_ADMIN_URL='http://127.0.0.1:' + str(24501 + OFFSET),
+    ZXT_STUDENT_URL=web_origin(LOCAL, 24500 + OFFSET),
+    ZXT_ADMIN_URL=web_origin(LOCAL, 24501 + OFFSET),
     ZXT_PYTHON=sys.executable,
     ZXT_MEDIA_FIXTURE_SCRIPT=str(SOURCE / 'attach_browser_media.py'),
 )

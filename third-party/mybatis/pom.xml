@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.zhixuetang</groupId><artifactId>zhixuetang</artifactId><version>1.0.0</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <groupId>org.mybatis</groupId><artifactId>mybatis</artifactId><version>3.5.19-zxt.1</version>
+  <name>MyBatis 3.5 API compatibility build with OGNL 3.4.16</name>
+  <description>Local source security build, not an upstream release. See SOURCE.md.</description>
+  <properties><maven.compiler.proc>none</maven.compiler.proc></properties>
+  <dependencies>
+    <dependency><groupId>cglib</groupId><artifactId>cglib</artifactId><version>3.3.0</version><scope>provided</scope><optional>true</optional></dependency>
+    <dependency><groupId>commons-logging</groupId><artifactId>commons-logging</artifactId><version>1.3.5</version><scope>provided</scope><optional>true</optional></dependency>
+    <dependency><groupId>org.apache.logging.log4j</groupId><artifactId>log4j-api</artifactId><scope>provided</scope><optional>true</optional></dependency>
+    <dependency><groupId>org.apache.logging.log4j</groupId><artifactId>log4j-1.2-api</artifactId><scope>provided</scope><optional>true</optional></dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.9.0</version>
+        <executions><execution><id>upstream-security-sources</id><phase>generate-sources</phase><goals><goal>copy</goal></goals>
+          <configuration><artifactItems>
+            <artifactItem><groupId>org.mybatis</groupId><artifactId>mybatis</artifactId><version>3.5.19</version><classifier>sources</classifier><type>jar</type><outputDirectory>${project.build.directory}/upstream</outputDirectory><destFileName>mybatis-sources.jar</destFileName></artifactItem>
+            <artifactItem><groupId>ognl</groupId><artifactId>ognl</artifactId><version>3.4.16</version><classifier>sources</classifier><type>jar</type><outputDirectory>${project.build.directory}/upstream</outputDirectory><destFileName>ognl-sources.jar</destFileName></artifactItem>
+          </artifactItems></configuration>
+        </execution></executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-antrun-plugin</artifactId><version>3.2.0</version>
+        <executions><execution><id>replace-embedded-ognl</id><phase>generate-sources</phase><goals><goal>run</goal></goals><configuration><target>
+          <checksum file="${project.build.directory}/upstream/mybatis-sources.jar" algorithm="SHA-256" property="mybatis.source.sha"/>
+          <checksum file="${project.build.directory}/upstream/ognl-sources.jar" algorithm="SHA-256" property="ognl.source.sha"/>
+          <fail message="Upstream source digest mismatch"><condition><not><and>
+            <equals arg1="${mybatis.source.sha}" arg2="6fc1152ab0e390adaca8c2b6aab1930d4127beb29e071568514a293d7ab3d7da"/>
+            <equals arg1="${ognl.source.sha}" arg2="d3d83f6cb1c0fa861f7b6547db460cfc3d33e53d1d9f26ffe29f107ddb486f63"/>
+          </and></not></condition></fail>
+          <unzip src="${project.build.directory}/upstream/mybatis-sources.jar" dest="${project.build.directory}/generated-sources/upstream"><patternset><include name="org/apache/ibatis/**"/><exclude name="org/apache/ibatis/ognl/**"/></patternset></unzip>
+          <unzip src="${project.build.directory}/upstream/ognl-sources.jar" dest="${project.build.directory}/generated-sources/upstream/org/apache/ibatis"><patternset><include name="ognl/**/*.java"/></patternset></unzip>
+          <replace dir="${project.build.directory}/generated-sources/upstream/org/apache/ibatis/ognl" includes="**/*.java" token="ognl." value="org.apache.ibatis.ognl."/>
+          <replace dir="${project.build.directory}/generated-sources/upstream/org/apache/ibatis/ognl" includes="**/*.java" token="package ognl;" value="package org.apache.ibatis.ognl;"/>
+          <replace dir="${project.build.directory}/generated-sources/upstream/org/apache/ibatis/ognl" includes="**/*.java" token="javassist." value="org.apache.ibatis.javassist."/>
+          <replaceregexp match="(?&lt;![\w.])javassist\." replace="org.apache.ibatis.javassist." flags="g"><fileset dir="${project.build.directory}/generated-sources/upstream" includes="**/*.java"/></replaceregexp>
+          <unzip src="${project.build.directory}/upstream/mybatis-sources.jar" dest="${project.build.outputDirectory}"><patternset><include name="META-INF/LICENSE"/><include name="META-INF/NOTICE"/><include name="META-INF/maven/org.javassist/**"/><include name="org/**/*.dtd"/><include name="org/**/*.xsd"/><include name="org/**/*.xml"/><exclude name="org/apache/ibatis/ognl/**"/></patternset></unzip>
+          <unzip src="${project.build.directory}/upstream/ognl-sources.jar" dest="${project.build.outputDirectory}"><patternset><include name="META-INF/maven/ognl/**"/></patternset></unzip>
+        </target></configuration></execution></executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId><artifactId>build-helper-maven-plugin</artifactId><version>3.6.1</version>
+        <executions><execution><id>patched-upstream-sources</id><phase>generate-sources</phase><goals><goal>add-source</goal></goals><configuration><sources><source>${project.build.directory}/generated-sources/upstream</source></sources></configuration></execution></executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

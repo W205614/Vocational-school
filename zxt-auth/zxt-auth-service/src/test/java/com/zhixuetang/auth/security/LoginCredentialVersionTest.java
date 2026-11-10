@@ -34,7 +34,7 @@ class LoginCredentialVersionTest {
         mfa = mock(AdministratorMfaService.class);
         service =
                 new AccountServiceImpl(
-                        mock(LoginProtection.class), sessions, tokens, users, records, mfa);
+                        mock(LoginProtection.class), sessions, tokens, users, records, mfa, new RefreshCookieCipher("synthetic-private-seed-01234567890123456789"));
         form = new LoginFormDTO();
         form.setType(1);
         form.setUsername("credential-version-fixture");

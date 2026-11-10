@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { write, get, setIdentityEvents, ApiError } from './client';
+import { write, setIdentityEvents, ApiError } from './client';
 import { useOperations } from './operations';
 export const useSession = defineStore('session', () => {
   function clearDrafts() {
@@ -104,8 +104,9 @@ export const useSession = defineStore('session', () => {
     }
   }
   async function refresh() {
-    token.value = await get<string>(
+    token.value = await write<string>(
       '/auth/accounts/refresh?audience=' + (admin.value ? 'admin' : 'student'),
+      'POST',
     );
     sessionStorage.setItem('school-token', token.value);
   }

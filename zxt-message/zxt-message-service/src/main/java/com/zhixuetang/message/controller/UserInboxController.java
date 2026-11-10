@@ -46,7 +46,7 @@ public class UserInboxController {
     }
 
     @Operation(summary = "分页查询收件箱")
-    @GetMapping
+    @PostMapping("/query")
     public PageDTO<UserInboxDTO> queryUserInBoxesPage(UserInboxQuery query) {
         return inboxService.queryUserInBoxesPage(query);
     }

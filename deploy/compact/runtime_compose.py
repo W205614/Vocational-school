@@ -85,6 +85,8 @@ def runtime_compose(home):
 
 def compose_command(home, project):
     home = Path(home).resolve()
+    from secret_store import load_existing
+    load_existing(home)
     return [
         'docker',
         'compose',

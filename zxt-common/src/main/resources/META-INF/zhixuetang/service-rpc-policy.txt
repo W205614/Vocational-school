@@ -1,4 +1,4 @@
-# Source-Manifest-SHA256: 3b4cd8f757dbdaba0fd75fe132e4fbe9940bf69c073e65dfc74cd6478e8060f9
+# Source-Manifest-SHA256: e74dee160a73d0f0624127af488929ffa8973e625c3a0d1523135f0520fc4b84
 # Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
 # Explicit RPC contract snapshot, reviewed 2026-10-31. caller groups | HTTP method | module servlet path.
 # Authentication bootstrap and session checks are the gateway's only private RPC exceptions.
@@ -41,7 +41,7 @@ commerce|GET|/_modules/pay/pay-channels/list
 commerce|POST|/_modules/pay/pay-orders
 commerce|GET|/_modules/pay/pay-orders/{bizOrderId}/status
 commerce|POST|/_modules/pay/refund-orders
-commerce|GET|/_modules/pay/refund-orders/{bizRefundOrderId}/status
+commerce|POST|/_modules/pay/refund-orders/{bizRefundOrderId}/status
 commerce|POST|/_modules/promotion/user-coupons/quote
 commerce|POST|/_modules/promotion/user-coupons/available
 commerce|POST|/_modules/promotion/user-coupons/discount

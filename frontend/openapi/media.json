@@ -169,6 +169,60 @@
         }
       }
     },
+    "/api/v2/services/media/medias/signature/play": {
+      "post": {
+        "tags": [
+          "媒资管理相关接口"
+        ],
+        "summary": "获取播放视频的授权签名",
+        "operationId": "getPlaySignature",
+        "parameters": [
+          {
+            "name": "sectionId",
+            "in": "query",
+            "description": "小节id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "default": ""
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/VideoPlayVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/services/media/media-trials/{id}/retry": {
       "post": {
         "tags": [
@@ -773,60 +827,6 @@
             "name": "mediaId",
             "in": "query",
             "description": "媒资id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": ""
-            },
-            "example": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/VideoPlayVO"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/services/media/medias/signature/play": {
-      "get": {
-        "tags": [
-          "媒资管理相关接口"
-        ],
-        "summary": "获取播放视频的授权签名",
-        "operationId": "getPlaySignature",
-        "parameters": [
-          {
-            "name": "sectionId",
-            "in": "query",
-            "description": "小节id",
             "required": true,
             "schema": {
               "type": "string",
@@ -1814,6 +1814,51 @@
           }
         }
       },
+      "VideoPlayVO": {
+        "type": "object",
+        "default": null,
+        "description": "视频播放的签名信息",
+        "properties": {
+          "state": {
+            "type": "string",
+            "default": "",
+            "description": "试看任务状态：PROCESSING、FAILED、READY；完整版为空"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "trial": {
+            "type": "boolean"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "playUrl": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "default": "",
+            "description": "受控播放地址到期时间，Unix epoch 毫秒",
+            "pattern": "^-?[0-9]+$"
+          },
+          "fileId": {
+            "type": "string",
+            "default": "",
+            "description": "视频唯一标示",
+            "example": "12412534535143242"
+          },
+          "signature": {
+            "type": "string",
+            "default": "",
+            "description": "视频封面",
+            "example": "xxx.xxx.xxx"
+          }
+        }
+      },
       "Retry": {
         "type": "object",
         "properties": {
@@ -1990,51 +2035,6 @@
             "items": {
               "$ref": "#/components/schemas/MediaVO"
             }
-          }
-        }
-      },
-      "VideoPlayVO": {
-        "type": "object",
-        "default": null,
-        "description": "视频播放的签名信息",
-        "properties": {
-          "state": {
-            "type": "string",
-            "default": "",
-            "description": "试看任务状态：PROCESSING、FAILED、READY；完整版为空"
-          },
-          "errorCode": {
-            "type": "string"
-          },
-          "trial": {
-            "type": "boolean"
-          },
-          "taskId": {
-            "type": "string"
-          },
-          "provider": {
-            "type": "string"
-          },
-          "playUrl": {
-            "type": "string"
-          },
-          "expiresAt": {
-            "type": "string",
-            "default": "",
-            "description": "受控播放地址到期时间，Unix epoch 毫秒",
-            "pattern": "^-?[0-9]+$"
-          },
-          "fileId": {
-            "type": "string",
-            "default": "",
-            "description": "视频唯一标示",
-            "example": "12412534535143242"
-          },
-          "signature": {
-            "type": "string",
-            "default": "",
-            "description": "视频封面",
-            "example": "xxx.xxx.xxx"
           }
         }
       },

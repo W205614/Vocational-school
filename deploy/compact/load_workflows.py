@@ -52,7 +52,7 @@ class Actor:
     def request(self, method, path, body=None, role='student', key=None, query=None):
         client = self.clients[role]
         if time.monotonic() >= self.refresh_at[role]:
-            response = client.get(
+            response = client.post(
                 self.base + '/auth/accounts/refresh',
                 params={'audience': 'student' if role == 'student' else 'admin'},
                 timeout=10,

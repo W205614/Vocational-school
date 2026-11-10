@@ -2,6 +2,8 @@
 
 此目录使用 Compose 项目 `vocational-acceptance`，所有发布端口绑定 127.0.0.1。历史 `tianji-desktop` 容器、数据卷和配置不由这里的脚本修改。数据库克隆和故障注入只用于验收，不可直接对生产执行。
 
+新建凭据的加密存储、Linux 外部密钥注入与 HTTPS 刷新契约见[运行凭据与 HTTPS](../../docs/runtime-credential-security.md)。下列开发 HTTP 地址不提供 WebKit 的 Secure Cookie 刷新；API 冒烟需把 `ZXT_ACCEPTANCE_ORIGIN` 指向已配置 HTTPS 的入口。
+
 ## 准备和启动
 
 需要 Docker Desktop、Java 21、Maven、Python（requirements.txt，账户种子另外需要 bcrypt）、Node 22。服务启动工具目前适用于 Windows；CI 的数据库/消息/算法测试适用于 Linux。第一次执行：
@@ -12,7 +14,7 @@ python -m pip install bcrypt
 python deploy/acceptance/prepare.py --clone
 python deploy/acceptance/migrate.py
 mvn -B -DskipTests install
-docker compose -p vocational-acceptance -f deploy/acceptance/compose.yaml -f deploy/acceptance/compose.extras.yaml --env-file deploy/acceptance/.env --profile search up -d --wait elasticsearch
+python deploy/acceptance/compose.py -f deploy/acceptance/compose.extras.yaml --profile search up -d --wait elasticsearch
 python deploy/acceptance/prepare_search.py
 python deploy/acceptance/seed_accounts.py
 python deploy/acceptance/restart_all.py

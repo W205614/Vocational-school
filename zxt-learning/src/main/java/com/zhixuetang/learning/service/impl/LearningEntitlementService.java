@@ -134,15 +134,23 @@ public class LearningEntitlementService {
                 course);
     }
 
+    @Transactional(readOnly = true)
+    public Long findAvailableReadOnly(long user, long course) {
+        var rows =
+                jdbc.queryForList(
+                        "SELECT l.id FROM learning_lesson l WHERE l.user_id=? AND l.course_id=? AND EXISTS(SELECT 1 FROM learning_entitlement e WHERE e.user_id=l.user_id AND e.course_id=l.course_id AND e.active=1 AND (e.expires_at IS NULL OR e.expires_at>CURRENT_TIMESTAMP(3)))",
+                        user,
+                        course);
+        return rows.isEmpty() ? null : ((Number) rows.getFirst().get("id")).longValue();
+    }
+
     @Transactional
     public Long available(long user, long course) {
         lock(user, course);
         if (current(user, course).isEmpty()) return null;
-        var rows =
-                jdbc.queryForList(
-                        "SELECT id FROM learning_lesson WHERE user_id=? AND course_id=? FOR UPDATE",
-                        user,
-                        course);
+        var rows = jdbc.queryForList(
+                "SELECT id FROM learning_lesson WHERE user_id=? AND course_id=? FOR UPDATE",
+                user, course);
         return rows.isEmpty() ? null : ((Number) rows.getFirst().get("id")).longValue();
     }
 

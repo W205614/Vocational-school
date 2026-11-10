@@ -1,4 +1,4 @@
-# Source-Manifest-SHA256: 6dba88137e6c76e4f06853bc20e763f73d60b95db1d3ecc2c2d8a82fbbfde9c9
+# Source-Manifest-SHA256: 8400b8ba7bbdb5c806ea14bea8efc66bc3f94bdd3546e8ecb2a4df4e1bc1faa8
 # Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
 # Reviewed static module targets for the gateway API inventory, 2026-10-26.
 # Derived once from the reviewed v2 route mappings; no runtime Feign/policy auto-grant.
@@ -23,7 +23,7 @@ gateway|DELETE|/_modules/promotion/coupons/{id}
 gateway|DELETE|/_modules/trade/carts
 gateway|DELETE|/_modules/trade/carts/{id}
 gateway|DELETE|/_modules/trade/orders/{id}
-gateway|GET|/_modules/auth/accounts/refresh
+gateway|POST|/_modules/auth/accounts/refresh
 gateway|GET|/_modules/auth/accounts/sessions
 gateway|GET|/_modules/auth/api/v2/admin/audit
 gateway|GET|/_modules/auth/api/v2/admin/consumer-failures
@@ -171,7 +171,7 @@ gateway|GET|/_modules/media/course-covers/{key}
 gateway|GET|/_modules/media/files/{id}
 gateway|GET|/_modules/media/local-content/{key}
 gateway|GET|/_modules/media/medias
-gateway|GET|/_modules/media/medias/signature/play
+gateway|POST|/_modules/media/medias/signature/play
 gateway|GET|/_modules/media/medias/signature/preview
 gateway|GET|/_modules/media/medias/signature/upload
 gateway|GET|/_modules/message/api/v2/admin/audit
@@ -183,7 +183,7 @@ gateway|GET|/_modules/message/api/v2/admin/events/page
 gateway|GET|/_modules/message/api/v2/admin/operation-failures
 gateway|GET|/_modules/message/api/v2/admin/operation-failures/page
 gateway|GET|/_modules/message/api/v2/operations/{id}
-gateway|GET|/_modules/message/inboxes
+gateway|POST|/_modules/message/inboxes/query
 gateway|GET|/_modules/message/message-templates
 gateway|GET|/_modules/message/message-templates/{id}
 gateway|GET|/_modules/message/notice-tasks

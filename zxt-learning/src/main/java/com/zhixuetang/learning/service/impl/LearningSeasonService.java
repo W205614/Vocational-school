@@ -23,7 +23,7 @@ import java.util.*;
 /** Awards share a month fence; freezing owns it exclusively. Frozen rankings are immutable. */
 @Slf4j
 @Service
-public class LearningSeasonService {
+public class LearningSeasonService implements org.springframework.boot.ApplicationRunner {
     public static final DateTimeFormatter MONTH = DateTimeFormatter.ofPattern("yyyyMM");
     private final JdbcTemplate jdbc;
     private final Clock clock;
@@ -93,9 +93,13 @@ public class LearningSeasonService {
                 month.plusMonths(1).atDay(2).atStartOfDay());
     }
 
-    public List<Map<String, Object>> seasons() {
+    @Override
+    public void run(org.springframework.boot.ApplicationArguments arguments) {
         ensureSeason(jdbc, YearMonth.now(clock));
         ensureSeason(jdbc, YearMonth.now(clock).plusMonths(1));
+    }
+
+    public List<Map<String, Object>> seasons() {
         return jdbc.queryForList(
                 "SELECT board_month AS month,name,state AS status,freeze_at AS freezeAt,settled_at AS settledAt,blocked_reason AS blockedReason FROM learning_season ORDER BY board_month DESC");
     }
@@ -104,9 +108,6 @@ public class LearningSeasonService {
         page.validate();
         if (month == null) month = currentMonth();
         parseMonth(month);
-        if (month.equals(currentMonth())
-                || month.equals(YearMonth.now(clock).plusMonths(1).format(MONTH)))
-            ensureSeason(jdbc, parseMonth(month));
         var seasons =
                 jdbc.queryForList(
                         "SELECT state,settled_at FROM learning_season WHERE board_month=?", month);

@@ -1,20 +1,40 @@
 from pathlib import Path
-import argparse, json, requests
+import argparse, json, requests, os
+from urllib.parse import urlsplit
 from start_service import MODULES
 from prepare import LOCAL, BASE
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--endpoint', action='append', default=[], metavar='MODULE=URL',
+                    help='Actual loopback OpenAPI endpoint, including a compact module prefix')
+parser.add_argument('--internal-token-env', help='Environment variable for authenticated compact documentation export')
 parser.add_argument(
     'services',
     nargs='*',
     default=['learning', 'exam', 'promotion', 'trade', 'course', 'user', 'auth'],
 )
 args = parser.parse_args()
+headers = {}
+if args.internal_token_env:
+    token = os.environ[args.internal_token_env]
+    if len(token) < 32:
+        parser.error('An existing service credential is required')
+    headers['X-Internal-Token'] = token
+endpoints = {}
+for entry in args.endpoint:
+    name, url = entry.split('=', 1)
+    parsed = urlsplit(url)
+    if (name not in args.services or parsed.scheme not in {'http', 'https'}
+            or parsed.hostname not in {'localhost', '127.0.0.1'}
+            or parsed.username or parsed.password or parsed.query or parsed.fragment):
+        parser.error('OpenAPI endpoints must belong to selected loopback modules')
+    endpoints[name] = url
 destination = BASE.parents[1] / 'frontend/openapi'
 destination.mkdir(exist_ok=True)
 for name in args.services:
     response = requests.get(
-        f'http://127.0.0.1:{MODULES[name][2]}/v3/api-docs', timeout=60
+        endpoints.get(name, f'http://127.0.0.1:{MODULES[name][2]}/v3/api-docs'),
+        **({'headers': headers} if headers else {}), timeout=60
     )
     response.raise_for_status()
     spec = response.json()

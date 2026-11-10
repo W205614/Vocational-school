@@ -565,7 +565,7 @@ test('browser purchase, real local video, discussions, exam grading and targeted
         async () => {
           const token = await page.evaluate(() => sessionStorage.getItem('school-token'));
           return (
-            await page.request.get(
+            await page.request.post(
               '/api/v2/services/media/medias/signature/play?sectionId=' + fixture.video,
               { headers: { Authorization: 'Bearer ' + token } },
             )

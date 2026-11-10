@@ -84,7 +84,7 @@ public class AccountController {
     }
 
     @Operation(summary = "刷新token")
-    @GetMapping(value = "/refresh")
+    @PostMapping(value = "/refresh")
     public String refreshToken(
             @CookieValue(value = JwtConstants.REFRESH_HEADER, required = false) String studentToken,
             @CookieValue(value = JwtConstants.ADMIN_REFRESH_HEADER, required = false)

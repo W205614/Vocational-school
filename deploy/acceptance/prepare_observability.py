@@ -9,9 +9,6 @@ def main():
     secret = local_secrets()
     directory = LOCAL / 'observability'
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / 'internal-token').write_text(
-        secret['ACCEPTANCE_INTERNAL_TOKEN'], encoding='utf8'
-    )
     config = {
         'global': {'scrape_interval': '5s'},
         'rule_files': ['/etc/prometheus/alerts.yml'],
@@ -25,7 +22,7 @@ def main():
                 'job_name': name,
                 'metrics_path': '/actuator/prometheus',
                 'http_headers': {
-                    'X-Internal-Token': {'files': ['/etc/prometheus/internal-token']}
+                    'X-Internal-Token': {'files': ['/run/collector/internal-token']}
                 },
                 'static_configs': [{'targets': ['host.docker.internal:' + str(port)]}],
             }

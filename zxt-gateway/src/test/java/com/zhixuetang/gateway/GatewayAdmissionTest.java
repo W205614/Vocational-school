@@ -42,6 +42,31 @@ class GatewayAdmissionTest {
     }
 
     @Test
+    void refreshRejectsCrossOriginPostsAndRetiredGetWhileAcceptingSameOrigin() {
+        for (String origin : new String[] {"https://attacker.example", "null", "http://localhost:24501"}) {
+            var request = MockServerHttpRequest.post("http://localhost:24500/api/v2/auth/accounts/refresh")
+                    .header("Origin", origin).build();
+            assertThrows(com.zhixuetang.common.exceptions.ForbiddenException.class,
+                    () -> filter.filter(MockServerWebExchange.from(request), exchange -> {
+                        fail("Cross-origin refresh reached identity service");
+                        return reactor.core.publisher.Mono.empty();
+                    }).block(Duration.ofSeconds(2)));
+        }
+        var valid = MockServerHttpRequest.post("http://localhost:24500/api/v2/auth/accounts/refresh")
+                .header("Origin", "http://localhost:24500").build();
+        var reached = new java.util.concurrent.atomic.AtomicBoolean();
+        filter.filter(MockServerWebExchange.from(valid), exchange -> {
+            reached.set(true);
+            return reactor.core.publisher.Mono.empty();
+        }).block(Duration.ofSeconds(2));
+        assertTrue(reached.get());
+        assertThrows(com.zhixuetang.common.exceptions.ForbiddenException.class,
+                () -> filter.filter(MockServerWebExchange.from(MockServerHttpRequest
+                                .get("http://localhost:24500/api/v2/auth/accounts/refresh").build()),
+                        exchange -> reactor.core.publisher.Mono.empty()).block(Duration.ofSeconds(2)));
+    }
+
+    @Test
     void retiredPasswordAliasesAreRejectedBeforeAnyIdentityCanReachTheService() {
         for (String audience : new String[] {"services", "admin"}) {
             var request =

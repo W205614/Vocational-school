@@ -88,6 +88,35 @@ class LearningMotivationReliabilityTest {
     }
 
     @Test
+    void seasonReadsWorkOnAReadOnlyConnectionAfterStartupPreparation() throws Exception {
+        var unused = YearMonth.of(9000, 1);
+        while (jdbc.queryForObject("SELECT COUNT(*) FROM learning_season WHERE board_month IN (?,?)",
+                Integer.class, unused.format(LearningSeasonService.MONTH),
+                unused.plusMonths(1).format(LearningSeasonService.MONTH)) > 0)
+            unused = unused.plusMonths(2);
+        var readClock = Clock.fixed(unused.atDay(1).atStartOfDay(ZoneId.of("Asia/Shanghai")).toInstant(),
+                ZoneId.of("Asia/Shanghai"));
+        var writer = new LearningSeasonService(jdbc, readClock, examClient,
+                new OutboxStore(jdbc, JsonMapper.builder().findAndAddModules().build()), userClient, manager);
+        var connection = jdbc.getDataSource().getConnection();
+        try {
+            connection.setReadOnly(true);
+            var readJdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+            var reader = new LearningSeasonService(readJdbc, readClock, examClient,
+                    new OutboxStore(readJdbc, JsonMapper.builder().findAndAddModules().build()),
+                    userClient, new DataSourceTransactionManager(readJdbc.getDataSource()));
+            assertFalse(reader.seasons().stream().anyMatch(row ->
+                    reader.currentMonth().equals(row.get("month"))));
+            writer.run(new org.springframework.boot.DefaultApplicationArguments());
+            assertTrue(reader.seasons().stream().anyMatch(row ->
+                    reader.currentMonth().equals(row.get("month"))));
+            assertNotNull(reader.board(null, new PageQuery()));
+        } finally {
+            connection.close();
+        }
+    }
+
+    @Test
     void frozenRankingAndNameStayStableWhileLateAwardIsRetainedForReconciliation() {
         String value = month.format(LearningSeasonService.MONTH);
         LocalDateTime time = month.atDay(3).atTime(10, 0);

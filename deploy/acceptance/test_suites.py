@@ -1,6 +1,8 @@
 """Named regression suites shared by local runners and CI."""
 
 REGRESSION_TESTS = [
+    'MybatisSecurityCompatibilityTest',
+    'RefreshCookieCipherTest',
     'PrivacyDomainDatabaseTest',
     'PrivacyTaskDatabaseTest',
     'PrivacyFeignRegistrationTest',

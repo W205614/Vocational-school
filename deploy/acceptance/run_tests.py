@@ -1,6 +1,6 @@
 from pathlib import Path
 import os, subprocess, json, argparse, re, shutil
-from prepare import BASE, LOCAL, mysql
+from prepare import BASE, LOCAL, RUNTIME, mysql
 
 REPO = BASE.parents[1]
 
@@ -31,14 +31,9 @@ def main():
     args = parse_arguments()
     LOCAL.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
-    for line in (
-        (Path(os.environ.get('ZXT_ENV_FILE', str(BASE / '.env'))))
-        .read_text()
-        .splitlines()
-    ):
-        if '=' in line:
-            key, value = line.split('=', 1)
-            env[key] = value
+    from secret_store import environment
+    credential_home = Path(os.environ.get('ZXT_ENV_FILE', str(RUNTIME / '.env'))).parent
+    env.update(environment(credential_home))
     if 'JAVA_HOME' not in env:
         env['JAVA_HOME'] = 'E:/Program Files/jdk'
     env['ZXT_INTERNAL_TOKEN'] = env['ACCEPTANCE_INTERNAL_TOKEN']

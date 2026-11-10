@@ -74,48 +74,25 @@ def mysql(sql):
 
 def secrets_config():
     private_directory(LOCAL)
-    path = BASE / '.env'
-    fresh = not path.exists()
-    if fresh:
-        path.touch(mode=0o600)
-    private_file(path)
-    if fresh:
-        path.write_text(
-            '\n'.join(
-                k + '=' + secrets.token_hex(32)
-                for k in [
-                    'ACCEPTANCE_DB_PASSWORD',
-                    'ACCEPTANCE_MQ_PASSWORD',
-                    'ACCEPTANCE_INTERNAL_TOKEN',
-                    'ACCEPTANCE_GRAFANA_PASSWORD',
-                ]
-            )
-            + '\n',
-            encoding='utf8',
-        )
-    env = dict(
-        line.split('=', 1)
-        for line in path.read_text(encoding='utf8').splitlines()
-        if '=' in line
-    )
-    accounts = LOCAL / 'database-accounts.json'
-    if not accounts.exists():
-        accounts.write_text(
-            json.dumps(
-                {
-                    a: secrets.token_hex(24)
-                    for a in MODULES
-                    if MODULES[a][3] and a != 'data'
-                },
-                indent=2,
-            ),
-            encoding='utf8',
-        )
-    return env, {
-        a: pw
-        for a, pw in json.loads(accounts.read_text(encoding='utf8')).items()
-        if a != 'data'
-    }
+    from secret_store import environment, write_values, read_values
+    if not (BASE / '.env').exists() and not (LOCAL / 'environment.enc').exists():
+        write_values(BASE, 'environment', {
+            k: secrets.token_hex(32) for k in (
+                'ACCEPTANCE_DB_PASSWORD', 'ACCEPTANCE_MQ_PASSWORD',
+                'ACCEPTANCE_INTERNAL_TOKEN', 'ACCEPTANCE_GRAFANA_PASSWORD')})
+        private_text(BASE / '.env', '# Credentials are encrypted in .local/environment.enc\n')
+    env = environment(BASE)
+    legacy = LOCAL / 'database-accounts.json'
+    if legacy.exists():
+        accounts = json.loads(legacy.read_text(encoding='utf8'))
+    elif (LOCAL / 'database-accounts.enc').exists():
+        accounts = read_values(BASE, 'database-accounts')
+    else:
+        accounts = {a: secrets.token_hex(24) for a in MODULES
+                    if MODULES[a][3] and a != 'data'}
+        write_values(BASE, 'database-accounts', accounts)
+    os.environ.update({'ZXT_DB_' + a: value for a, value in accounts.items()})
+    return env, {a: pw for a, pw in accounts.items() if a != 'data'}
 
 
 def prepare():
@@ -149,7 +126,7 @@ def prepare():
     from operations_config import private_export_directory
 
     private_export_directory(BASE)
-    private_text(LOCAL / 'app.env', 'ZXT_INTERNAL_TOKEN=' + env['ACCEPTANCE_INTERNAL_TOKEN'] + '\n')
+    private_text(LOCAL / 'app.env', 'ZXT_INTERNAL_TOKEN=${ACCEPTANCE_INTERNAL_TOKEN:?Decrypt credentials first}\n')
     key = LOCAL / 'signing.jks'
     if not key.exists():
         run(
@@ -309,7 +286,7 @@ def prepare():
             'host': 'rabbitmq',
             'port': 5672,
             'username': 'zhixuetang',
-            'password': env['ACCEPTANCE_MQ_PASSWORD'],
+            'password': '${ACCEPTANCE_MQ_PASSWORD}',
             'publisher-confirm-type': 'correlated',
             'publisher-returns': True,
             'listener': {
@@ -332,7 +309,7 @@ def prepare():
                 + database
                 + '?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true',
                 'username': 'app_' + alias,
-                'password': dbkeys[alias],
+                'password': '${ZXT_DB_' + alias + '}',
                 'driver-class-name': 'com.mysql.cj.jdbc.Driver',
                 'hikari': {
                     'maximum-pool-size': tuning['pool'],
@@ -384,8 +361,8 @@ def prepare():
                 'key-store': {
                     'alias': 'compact',
                     'location': 'file:/run/compact/signing.jks',
-                    'password': env['ACCEPTANCE_INTERNAL_TOKEN'],
-                    'secret': env['ACCEPTANCE_INTERNAL_TOKEN'],
+                    'password': '${ZXT_INTERNAL_TOKEN}',
+                    'secret': '${ZXT_INTERNAL_TOKEN}',
                 }
             }
             resource['includeLoginPaths'] = [
@@ -621,7 +598,12 @@ def prepare():
             'ports': ['127.0.0.1:' + str(PORTS[group]) + ':' + str(PORTS[group])],
             'volumes': application_mounts(group),
             'mem_limit': '1536m' if group != 'gateway' else '768m',
-            'environment': {'APP_PORT': str(PORTS[group])},
+            'environment': {
+                'APP_PORT': str(PORTS[group]),
+                'ACCEPTANCE_MQ_PASSWORD': '${ACCEPTANCE_MQ_PASSWORD:?Decrypt credentials first}',
+                **{'ZXT_DB_' + a: '${ZXT_DB_' + a + ':?Decrypt credentials first}'
+                   for a in GROUPS.get(group, []) if a in dbkeys},
+            },
             'command': [
                 '--spring.config.location=file:/run/compact/configs/' + group + '.yml'
             ],
@@ -856,31 +838,16 @@ def build(package=True, group=None):
             'health-compile',
         )
         heap = '384m' if group == 'gateway' else '768m'
-        # Refresh vulnerable base packages; only support needs ffmpeg.
-        packages = 'apt libapt-pkg6.0t64 libbrotli1 libpcre2-8-0 zlib1g' + (
-            ' ffmpeg' if group == 'support' else ''
-        )
-        apt = (
-            'apt-get -o Acquire::Retries=3 '
-            '-o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
-        )
-        media_probe = (
-            'RUN '
-            + apt
-            + ' update && '
-            + apt
-            + ' install -y --no-install-recommends '
-            + packages
-            + ' && rm -rf /var/lib/apt/lists/*\n'
-        )
+        packages = 'tzdata' + (' ffmpeg' if group == 'support' else '')
+        media_probe = 'RUN apk add --no-cache --upgrade ' + packages + '\n'
         (folder / 'Dockerfile').write_text(
-            'FROM eclipse-temurin:21-jre-noble@sha256:35501d3f93173b420ac9001658eb68157e813316b865087e345c187fca422c4c\nENV TZ=Asia/Shanghai\nWORKDIR /app\n'
+            'FROM eclipse-temurin:21-jre-alpine@sha256:b6ea71e690a72ba240b3d1b5c477410014862f9ea2cc73ab40e41ff21b03ba1c\nENV TZ=Asia/Shanghai\nWORKDIR /app\n'
             + media_probe
-            + 'RUN groupadd --non-unique --gid '
+            + 'RUN addgroup -g '
             + str(app_gid)
-            + ' app && useradd --non-unique --uid '
+            + ' app && adduser -D -H -u '
             + str(app_uid)
-            + ' --gid app --home /app app && mkdir -p /app/logs/csp && chown -R app:app /app/logs\nCOPY app.jar /app/app.jar\nCOPY HealthProbe.class /app/health/HealthProbe.class\nUSER app\nENTRYPOINT ["java","-Xms96m","-Xmx'
+            + ' -G app app && mkdir -p /app/logs/csp && chown -R app:app /app/logs\nCOPY app.jar /app/app.jar\nCOPY HealthProbe.class /app/health/HealthProbe.class\nUSER app\nENTRYPOINT ["java","-Xms96m","-Xmx'
             + heap
             + '","-XX:MaxDirectMemorySize=96m","-XX:ActiveProcessorCount=2","-jar","/app/app.jar"]\n',
             encoding='utf8',

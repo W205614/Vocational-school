@@ -41,7 +41,7 @@ def rewrite(value, mode):
 def prepare():
     DIR.mkdir(parents=True, exist_ok=True)
     secret = local_secrets()
-    private_text(DIR / 'env', 'ZXT_INTERNAL_TOKEN=' + secret['ACCEPTANCE_INTERNAL_TOKEN'] + '\n')
+    private_text(DIR / 'env', 'ZXT_INTERNAL_TOKEN=${ACCEPTANCE_INTERNAL_TOKEN:?Decrypt credentials first}\nACCEPTANCE_DB_PASSWORD=${ACCEPTANCE_DB_PASSWORD:?Decrypt credentials first}\nACCEPTANCE_MQ_PASSWORD=${ACCEPTANCE_MQ_PASSWORD:?Decrypt credentials first}\n')
     shutil.copyfile(LOCAL / 'acceptance-signing.jks', DIR / 'signing.jks')
     probe = DIR / 'probe'
     probe.mkdir(exist_ok=True)
@@ -72,7 +72,7 @@ def prepare():
             dockerfile.write_text(
                 dockerfile.read_text(encoding='utf8').replace(
                     'WORKDIR /app\n',
-                    'WORKDIR /app\nRUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*\n',
+                    'WORKDIR /app\nRUN apk add --no-cache --upgrade ffmpeg\n',
                 ),
                 encoding='utf8',
             )

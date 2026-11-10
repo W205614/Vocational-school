@@ -1,7 +1,7 @@
-import requests, json, uuid, time, concurrent.futures
+import requests, json, uuid, time, concurrent.futures, os
 from prepare import LOCAL, mysql
 
-BASE = 'http://127.0.0.1:23310/api/v2'
+BASE = os.environ.get('ZXT_ACCEPTANCE_ORIGIN', 'http://127.0.0.1:23310').rstrip('/') + '/api/v2'
 accounts = json.loads((LOCAL / 'accounts.json').read_text())
 
 
@@ -204,7 +204,7 @@ if __name__ == '__main__':
             'DELETE FROM points_record WHERE id IN(' + ','.join(point_ids) + ')',
             'tj_learning',
         )
-    refreshed = call(student, 'GET', '/auth/accounts/refresh?audience=student')
+    refreshed = call(student, 'POST', '/auth/accounts/refresh?audience=student')
     assert isinstance(refreshed, str)
     (LOCAL / 'api-smoke.json').write_text(
         json.dumps(

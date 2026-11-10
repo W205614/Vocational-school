@@ -32,7 +32,7 @@ class RefreshCookieSecurityTest {
                         mock(JwtTool.class),
                         mock(UserClient.class),
                         mock(ILoginRecordService.class),
-                        mock(AdministratorMfaService.class));
+                        mock(AdministratorMfaService.class), new com.zhixuetang.auth.service.impl.RefreshCookieCipher("synthetic-private-seed-01234567890123456789"));
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request, response));
@@ -56,12 +56,11 @@ class RefreshCookieSecurityTest {
     }
 
     @Test
-    void productionCookiePolicySurvivesHttpUpstreamAndLocalHttpStaysUsable() {
+    void cookiesRemainSecureBehindHttpUpstream() {
         request.addHeader("X-Internal-Token", System.getenv("ZXT_INTERNAL_TOKEN"));
         request.addHeader("X-Client-Proto", "http");
         cookie().name("local").value("test").build();
-        assertFalse(response.getCookie("local").getSecure());
-        ReflectionTestUtils.setField(service, "requireSecureCookie", true);
+        assertTrue(response.getCookie("local").getSecure());
         cookie().name("production").value("test").build();
         assertTrue(response.getCookie("production").getSecure());
     }

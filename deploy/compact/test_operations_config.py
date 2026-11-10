@@ -178,10 +178,10 @@ class OperationsConfigurationTest(unittest.TestCase):
                 current['zxt']['gateway']['proxy']['trusted-addresses'],
             )
             self.assertEqual('none', current['server']['forward-headers-strategy'])
-            self.assertEqual(
-                'private-token',
-                (home / '.local/observability/internal-token').read_text(),
-            )
+            self.assertFalse((home / '.local/observability/internal-token').exists())
+            collector = yaml.safe_load(active_compose(home).read_text())['services']['prometheus']
+            self.assertIn('/run/collector:', collector['tmpfs'][0])
+            self.assertIn('ZXT_METRICS_TOKEN', collector['environment'])
             self.assertNotIn('private-token', (home / 'compose.yaml').read_text())
             dashboard = json.loads(
                 (home / '.local/observability/dashboards/reliability.json').read_text(

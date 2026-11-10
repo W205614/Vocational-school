@@ -35,7 +35,7 @@ class InitialPasswordAuthTest {
                         tokens,
                         users,
                         records,
-                        mock(AdministratorMfaService.class));
+                        mock(AdministratorMfaService.class), new com.zhixuetang.auth.service.impl.RefreshCookieCipher("synthetic-private-seed-01234567890123456789"));
         var request = new MockHttpServletRequest();
         request.addHeader("X-Client-IP", "127.0.0.1");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));

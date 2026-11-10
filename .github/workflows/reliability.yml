@@ -30,9 +30,14 @@ jobs:
           fi
           ffprobe -version
           ffmpeg -version
+      - name: Initialize ephemeral runner encryption key
+        run: |
+          key=$(openssl rand -base64 32)
+          echo "::add-mask::$key"
+          echo "ZXT_SECRET_KEY=$key" >> "$GITHUB_ENV"
       - run: python deploy/acceptance/prepare.py
       - name: Start isolated Elasticsearch
-        run: docker compose -p vocational-acceptance -f deploy/acceptance/compose.yaml -f deploy/acceptance/compose.extras.yaml --env-file deploy/acceptance/.env --profile search up -d --wait elasticsearch
+        run: python deploy/acceptance/compose.py -f deploy/acceptance/compose.extras.yaml --profile search up -d --wait elasticsearch
       - run: python deploy/acceptance/initialize_test_schemas.py
       - run: python deploy/acceptance/prepare_search.py --schema-only
       - name: Real database and broker regressions
@@ -81,10 +86,17 @@ jobs:
       - run: pip install -r deploy/compact/requirements.txt
       - run: npm --prefix frontend ci
       - run: cd frontend && npx playwright install --with-deps chromium firefox webkit
+      - name: Initialize ephemeral runner encryption key
+        run: |
+          key=$(openssl rand -base64 32)
+          echo "::add-mask::$key"
+          echo "ZXT_SECRET_KEY=$key" >> "$GITHUB_ENV"
       - run: python deploy/compact/setup.py prepare
       - run: python deploy/compact/setup.py init
       - run: python deploy/compact/run_transport_tests.py
       - run: python deploy/compact/setup.py build
+      - name: Enable certificate-verified HTTPS for all browser engines
+        run: python deploy/compact/ci_tls.py
       - uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
         with: { version: v0.76.1, cache: true }
       - run: python deploy/compact/setup.py up

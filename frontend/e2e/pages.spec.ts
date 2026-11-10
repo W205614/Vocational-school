@@ -30,7 +30,7 @@ test('student account pages load persistent data without server errors', async (
     ['favorites', '/favorites'],
     ['notes', '/notes'],
     ['points', '/learning-hub/board'],
-    ['messages', '/services/message/inboxes'],
+    ['messages', '/services/message/inboxes/query'],
     ['settings', '/services/user/users/me'],
     ['cart', '/services/trade/carts'],
     ['coupons', '/services/promotion/coupons/list'],

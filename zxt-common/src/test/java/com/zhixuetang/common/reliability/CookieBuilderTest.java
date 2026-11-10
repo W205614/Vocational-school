@@ -40,7 +40,6 @@ class CookieBuilderTest {
         new CookieBuilder(new MockHttpServletRequest(), response)
                 .name("refresh")
                 .value("token")
-                .requireSecure(true)
                 .build();
         assertTrue(response.getCookie("refresh").getSecure());
     }
@@ -51,18 +50,17 @@ class CookieBuilderTest {
         new CookieBuilder(new MockHttpServletRequest(), response)
                 .name("refresh")
                 .value("token")
-                .trustedHttps(true)
                 .build();
         assertTrue(response.getCookie("refresh").getSecure());
     }
 
     @Test
-    void untrustedForwardedHeaderCannotMarkLocalCookieSecure() {
+    void cookiesRemainSecureRegardlessOfUntrustedForwardedHeaders() {
         var request = new MockHttpServletRequest();
         request.addHeader("X-Forwarded-Proto", "https");
         request.addHeader("X-Client-Proto", "https");
         var response = new MockHttpServletResponse();
         new CookieBuilder(request, response).name("refresh").value("token").build();
-        assertFalse(response.getCookie("refresh").getSecure());
+        assertTrue(response.getCookie("refresh").getSecure());
     }
 }

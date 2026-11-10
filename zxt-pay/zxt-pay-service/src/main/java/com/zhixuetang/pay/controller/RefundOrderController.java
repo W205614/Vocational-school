@@ -33,7 +33,7 @@ public class RefundOrderController {
         return refundOrderService.applyRefund(refundApplyDTO);
     }
 
-    @GetMapping("{bizRefundOrderId}/status")
+    @PostMapping("{bizRefundOrderId}/status")
     @Operation(summary = "查询退款结果")
     public RefundResultDTO queryRefundResult(
             @Parameter(description = "业务端退款的子订单id") @PathVariable("bizRefundOrderId")

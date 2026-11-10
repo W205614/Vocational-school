@@ -32,17 +32,13 @@ public class AccountServiceImpl implements IAccountService {
     private final UserClient userClient;
     private final ILoginRecordService loginRecordService;
 
-    @org.springframework.beans.factory.annotation.Value("${zxt.auth.cookie.require-secure:false}")
-    private boolean requireSecureCookie;
-
     private final AdministratorMfaService administratorMfa;
+    private final RefreshCookieCipher refreshCookies;
 
     private com.zhixuetang.common.utils.CookieBuilder refreshCookie() {
         // The gateway strips client headers and supplies protocol only with its service identity.
         com.zhixuetang.common.utils.InternalAuth.requireService();
-        return WebUtils.cookieBuilder()
-                .requireSecure(requireSecureCookie)
-                .trustedHttps("https".equals(WebUtils.getHeader("X-Client-Proto")));
+        return WebUtils.cookieBuilder();
     }
 
     @Override
@@ -145,7 +141,7 @@ public class AccountServiceImpl implements IAccountService {
                         detail.getRoleId() == 2
                                 ? JwtConstants.REFRESH_HEADER
                                 : JwtConstants.ADMIN_REFRESH_HEADER)
-                .value(refreshToken)
+                .value(refreshCookies.encrypt(refreshToken))
                 .maxAge(maxAge)
                 .httpOnly(true)
                 .build();
@@ -174,7 +170,7 @@ public class AccountServiceImpl implements IAccountService {
     @Override
     public String refreshToken(String refreshToken) {
         // 1.校验refresh-token,校验JTI
-        LoginUserDTO userDTO = jwtTool.parseRefreshToken(refreshToken);
+        LoginUserDTO userDTO = jwtTool.parseRefreshToken(refreshCookies.decrypt(refreshToken));
         // 2.生成新的access-token、refresh-token
         LoginUserDTO current = userClient.sessionIdentity(userDTO.getUserId());
         if (current == null

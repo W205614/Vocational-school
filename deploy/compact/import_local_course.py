@@ -6,6 +6,7 @@ uses business SQL, broad cleanup, or publishes credentials/playback signatures.
 
 from __future__ import annotations
 from runtime_compose import PRIMARY_PROJECTS
+import os
 import argparse
 import hashlib
 import json
@@ -197,6 +198,12 @@ class Runtime:
             raise ImportFailure('An explicitly owned Zhixuetang deployment is required')
         services = self.compose['services']
         self.gateway = self.origin(services['app-gateway'])
+        if (self.local / 'web-tls.json').is_file():
+            ports = services['web-admin']['ports']
+            if len(ports) != 1 or not ports[0].startswith('127.0.0.1:') or not ports[0].endswith(':8443'):
+                raise ImportFailure('TLS import requires a single verified loopback web binding')
+            from web_transport import web_origin
+            self.gateway = web_origin(self.local, int(ports[0].split(':')[1]))
         self.media = self.origin(services['app-support']) + '/_modules/media'
         self.objects = None
         for item in services['app-support'].get('volumes', []):
@@ -241,13 +248,14 @@ class Api:
         self.runtime = runtime
         self.http = requests.Session()
         self.http.trust_env = False
+        self.http.verify = os.environ.get('REQUESTS_CA_BUNDLE', True)
         self.actor = None
         self.internal_token = None
 
     def request(self, method, path, body=None, params=None, key=None, internal=False):
         origin = self.runtime.media if internal else self.runtime.gateway + '/api/v2'
         parsed = urlsplit(origin)
-        if parsed.scheme != 'http' or parsed.hostname != '127.0.0.1':
+        if parsed.scheme not in {'http', 'https'} or parsed.hostname not in {'127.0.0.1', 'localhost'}:
             raise ImportFailure(
                 'Import requests must stay on the verified local deployment'
             )
@@ -282,7 +290,7 @@ class Api:
                 and attempt == 0
             ):
                 token = self.request(
-                    'GET', '/auth/accounts/refresh', params={'audience': 'admin'}
+                    'POST', '/auth/accounts/refresh', params={'audience': 'admin'}
                 )
                 self.http.headers['Authorization'] = 'Bearer ' + token
                 continue
@@ -338,14 +346,9 @@ class Api:
         )
         profile = self.request('GET', '/services/user/users/me')
         self.actor = str(profile['id'])
-        env = dict(
-            line.split('=', 1)
-            for line in (self.runtime.local / 'app.env')
-            .read_text(encoding='utf8')
-            .splitlines()
-            if '=' in line
-        )
-        self.internal_token = env.get('ZXT_INTERNAL_TOKEN', '')
+        from secret_store import environment
+        env = environment(self.runtime.local.parent)
+        self.internal_token = env.get('ACCEPTANCE_INTERNAL_TOKEN', env.get('FINAL_INTERNAL_TOKEN', ''))
         if not self.actor.isdigit() or len(self.internal_token) < 32:
             raise ImportFailure('Local service identity is incomplete')
         environment = self.request('GET', '/environment')

@@ -10,7 +10,7 @@ if '--protocol' in sys.argv:
 
     raise SystemExit(main())
 import argparse, concurrent.futures, collections, json, math, random, threading, time, uuid, requests, subprocess, datetime
-from setup import LOCAL, PORTS, COMPOSE, secrets_config, GROUPS, mysql
+from setup import LOCAL, PORTS, OFFSET, COMPOSE, secrets_config, GROUPS, mysql
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--formal', action='store_true')
@@ -21,7 +21,8 @@ parser.add_argument('--base-url')
 args = parser.parse_args()
 if not 1 <= args.users <= 200 or args.seconds < 1 or args.repeat < 1:
     raise ValueError('Invalid workload')
-base = args.base_url or 'http://127.0.0.1:' + str(PORTS['gateway'])
+from web_transport import web_origin
+base = args.base_url or web_origin(LOCAL, 24500 + OFFSET)
 accounts = json.loads((LOCAL / 'load-accounts.json').read_text(encoding='utf8'))
 fixture = json.loads((LOCAL / 'browser-fixture.json').read_text(encoding='utf8'))
 fixture['notesCourse'] = mysql(
@@ -109,7 +110,7 @@ def worker(index, s, end, stats, warm=False):
         start = time.monotonic()
         try:
             if start >= next_refresh:
-                r = s.get(
+                r = s.post(
                     base + '/api/v2/auth/accounts/refresh?audience=student', timeout=10
                 )
                 if not r.ok:
@@ -253,7 +254,7 @@ try:
                 sessions.append(session(a))
                 time.sleep(1.1)
             for s in sessions:
-                r = s.get(
+                r = s.post(
                     base + '/api/v2/auth/accounts/refresh?audience=student', timeout=10
                 )
                 r.raise_for_status()

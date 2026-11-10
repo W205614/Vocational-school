@@ -69,6 +69,25 @@ class LearningEntitlementRegressionTest {
     }
 
     @Test
+    void availabilityQueryDoesNotAcquireOrCreateWriteGuards() throws Exception {
+        grant(user + 10, 1);
+        var expected = service.findAvailableReadOnly(user, course);
+        assertNotNull(expected);
+        var connection = jdbc.getDataSource().getConnection();
+        try {
+            connection.setReadOnly(true);
+            var reader = new LearningEntitlementService(
+                    new JdbcTemplate(new SingleConnectionDataSource(connection, true)));
+            assertEquals(expected, reader.findAvailableReadOnly(user, course));
+            assertNull(reader.findAvailableReadOnly(user, course + 999));
+        } finally {
+            connection.close();
+        }
+        revoke(user + 10);
+        assertNull(service.findAvailableReadOnly(user, course));
+    }
+
+    @Test
     void refundOfLongerEntitlementShrinksLessonToRemainingExpiry() {
         grant(user + 10, 1);
         grant(user + 20, 2);

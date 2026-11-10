@@ -51,6 +51,6 @@ public interface PayClient {
      * @param bizRefundOrderId 要退款的订单id
      * @return 退款结果
      */
-    @GetMapping("/refund-orders/{bizRefundOrderId}/status")
+    @PostMapping("/refund-orders/{bizRefundOrderId}/status")
     RefundResultDTO queryRefundResult(@PathVariable("bizRefundOrderId") Long bizRefundOrderId);
 }

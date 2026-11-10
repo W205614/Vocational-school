@@ -45,6 +45,7 @@ python deploy/compact/setup.py up
 - Git、JDK 21（含 `javac` 和 `keytool`）、Maven。
 - Node.js 22 / npm、Python 3.12+。
 - Docker Engine 与 Compose v2；Windows 可使用 Docker Desktop 的 Linux 容器模式。
+- HTTPS 入口另需 OpenSSL、覆盖 `localhost` 的证书和客户端信任配置，见[运行凭据与 HTTPS](docs/runtime-credential-security.md)。Linux 新环境还需从外部凭据管理系统注入稳定的 `ZXT_SECRET_KEY`。
 - 能下载 Maven/npm 依赖及 Docker 镜像的网络。Docker 内存预算建议预留 12 GB（按当前容器内存上限估算，并非实测最低配置）。
 
 以下命令以 **Windows PowerShell** 为例，后续均在仓库根目录执行：
@@ -70,6 +71,9 @@ python deploy/compact/setup.py init
 # 从源码构建后端、前端及应用镜像；首次执行需下载依赖
 python deploy/compact/setup.py build
 
+# 如需三种浏览器的完整刷新流程，先按 HTTPS 文档配置证书
+# python deploy/compact/enable_tls.py --home deploy/compact --certificate C:/private/localhost.crt --private-key C:/private/localhost.key
+
 # 启动应用与网页，等待健康检查
 python deploy/compact/setup.py up
 
@@ -80,18 +84,20 @@ python deploy/compact/rebuild_search.py
 
 不需要私有历史 JAR、旧数据库备份或真实支付密钥。构建脚本要求生产源码已提交；首次体验直接使用克隆后的代码即可。默认 Compose 项目名为 `zhixuetang-compact`，包含 11 个业务／基础设施容器和 3 个本机监控容器。
 
-`prepare` 生成的 `.env`、`accounts.json`、签名材料和运行配置仅留本机；`objects/` 与 Docker 命名卷存放媒资和业务数据。关闭页面或停止容器不会生成备份。备份、恢复与保留策略见[稳定性与运维](docs/stability-operations.md)，不要将运行卷视为恢复集。
+`prepare` 新生成的宿主凭据加密保存于 `.local/*.enc`，`.env` 只保留说明；已有明文部署不会自动迁移。`accounts.json`、签名材料和运行配置仅留本机；`objects/` 与 Docker 命名卷存放媒资和业务数据。关闭页面或停止容器不会生成备份。备份、恢复与保留策略见[稳定性与运维](docs/stability-operations.md)，不要将运行卷视为恢复集。
 
 源码调试使用同样的 JDK／Node 工具链；组合应用依赖完整配置、数据库、Redis、RabbitMQ 和搜索服务，不提供一条绕过初始化的 `java -jar` 命令。测试和热更新使用独立环境，入口见[贡献指南](CONTRIBUTING.md)及[隔离验收说明](deploy/acceptance/README.md)，避免写入已有日常库。
 
 ## 首次登录与体验
+
+下表是未配置 TLS 的回环地址；配置后网页使用 `https://localhost` 和相同端口。新构建使用 Secure Cookie，完整登录刷新建议配置 HTTPS，WebKit 必须配置，见[HTTPS 操作](docs/runtime-credential-security.md#https)。
 
 | 入口             | 地址                                                             | 登录角色                                                                                 |
 | ---------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | 学生门户         | [http://127.0.0.1:24500/](http://127.0.0.1:24500/)               | 游客可浏览；学生登录后购买、学习                                                         |
 | 教师与管理工作台 | [http://127.0.0.1:24501/](http://127.0.0.1:24501/)               | 教师、管理员                                                                             |
 | API 网关         | [http://127.0.0.1:24310/api/v2/](http://127.0.0.1:24310/api/v2/) | 接口入口，非网页首页                                                                     |
-| 监控面板         | [http://127.0.0.1:24592/](http://127.0.0.1:24592/)               | Grafana 用户 `zhixuetang`，密码在本机 `deploy/compact/.env` 的 `ACCEPTANCE_GRAFANA_PASSWORD` |
+| 监控面板         | [http://127.0.0.1:24592/](http://127.0.0.1:24592/)               | Grafana 用户 `zhixuetang`，通过本机 `secret_store.environment(home)` 读取 `ACCEPTANCE_GRAFANA_PASSWORD`，见[凭据说明](docs/runtime-credential-security.md) |
 | 本机告警         | [http://127.0.0.1:24591/](http://127.0.0.1:24591/)               | Alertmanager，无外部通知                                                                 |
 
 初始化后，在本机查看登录信息：

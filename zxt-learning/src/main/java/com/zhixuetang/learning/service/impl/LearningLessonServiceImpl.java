@@ -186,7 +186,7 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
     // 校验当前用户是否可以学习当前课程
     @Override
     public Long isLessonValid(Long courseId) {
-        return entitlements.available(UserContext.requireUser(), courseId);
+        return entitlements.findAvailableReadOnly(UserContext.requireUser(), courseId);
     }
 
     // 查询用户课表中指定课程状态

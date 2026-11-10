@@ -41,10 +41,11 @@ if (process.env.ZXT_IMPORTED_COURSE_MANIFEST)
       adminContext = await browser.newContext({ baseURL: process.env.ZXT_ADMIN_URL });
     const teacher = await teacherContext.newPage(),
       admin = await adminContext.newPage();
-    const rawStatus = async (target: Page, path: string) => {
+    const rawStatus = async (target: Page, path: string, method: 'GET' | 'POST') => {
       const token = await target.evaluate(() => sessionStorage.getItem('school-token'));
       return (
-        await target.request.get('/api/v2' + path, {
+        await target.request.fetch('/api/v2' + path, {
+          method,
           headers: token ? { Authorization: 'Bearer ' + token } : {},
         })
       ).status();
@@ -71,7 +72,7 @@ if (process.env.ZXT_IMPORTED_COURSE_MANIFEST)
           page.locator('.lesson-item').filter({ hasText: entry.sectionTitle }),
         ).toHaveCount(1);
       expect(
-        await rawStatus(page, '/services/media/medias/signature/play?sectionId=' + section),
+        await rawStatus(page, '/services/media/medias/signature/play?sectionId=' + section, 'POST'),
       ).toBe(401);
       await page.getByRole('button', { name: '免费报名', exact: true }).click();
       await expect(page).toHaveURL(new RegExp('/login\\?redirect='));
@@ -169,7 +170,7 @@ if (process.env.ZXT_IMPORTED_COURSE_MANIFEST)
         .toBeLessThan(0.5);
       expect(Number(matchingRecord(await readLearning()).creditedMillis)).toBe(credit);
       expect(
-        await rawStatus(page, '/teacher/learning-hub?courseId=' + course + '&pageNo=1&pageSize=20'),
+        await rawStatus(page, '/teacher/learning-hub?courseId=' + course + '&pageNo=1&pageSize=20', 'GET'),
       ).toBe(403);
       // Teacher selects the newly imported assignment in the real UI and sees the
       // same accumulated server receipt; unrelated courses remain unauthorized.
@@ -240,6 +241,7 @@ if (process.env.ZXT_IMPORTED_COURSE_MANIFEST)
         await rawStatus(
           teacher,
           '/teacher/learning-hub?courseId=' + unrelated.id + '&pageNo=1&pageSize=20',
+          'GET',
         ),
       ).toBe(403);
       await admin.goto('/media');
@@ -280,7 +282,7 @@ if (process.env.ZXT_IMPORTED_COURSE_MANIFEST)
       ).toBeLessThan(1);
       const largeTicket = await api(
           page,
-          'GET',
+          'POST',
           '/services/media/medias/signature/play?sectionId=' + largeSection,
         ),
         range = await page.request.get(new URL(largeTicket.playUrl, page.url()).toString(), {

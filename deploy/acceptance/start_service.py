@@ -89,6 +89,7 @@ def main():
     env = os.environ.copy()
     env['JAVA_HOME'] = 'E:/Program Files/jdk'
     secrets = local_secrets()
+    env.update(secrets)
     config = yaml.safe_load(
         (REPO / module / 'src/main/resources/application.yml').read_text(
             encoding='utf8'
@@ -102,7 +103,7 @@ def main():
     spring['datasource'] = {
         'url': f'jdbc:mysql://127.0.0.1:23316/{database}?connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true',
         'username': 'root',
-        'password': secrets['ACCEPTANCE_DB_PASSWORD'],
+        'password': '${ACCEPTANCE_DB_PASSWORD}',
         'driver-class-name': 'com.mysql.cj.jdbc.Driver',
         'hikari': {
             'maximum-pool-size': 8,
@@ -115,7 +116,7 @@ def main():
         'host': '127.0.0.1',
         'port': 23373,
         'username': 'acceptance',
-        'password': secrets['ACCEPTANCE_MQ_PASSWORD'],
+        'password': '${ACCEPTANCE_MQ_PASSWORD}',
         'publisher-confirm-type': 'correlated',
         'publisher-returns': True,
         'listener': {
@@ -244,8 +245,8 @@ def main():
             'key-store': {
                 'alias': 'acceptance',
                 'location': key.as_uri(),
-                'password': password,
-                'secret': password,
+                'password': '${ZXT_INTERNAL_TOKEN}',
+                'secret': '${ZXT_INTERNAL_TOKEN}',
             }
         }
     if args.service == 'gateway':

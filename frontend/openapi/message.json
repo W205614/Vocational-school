@@ -1000,55 +1000,6 @@
       }
     },
     "/api/v2/services/message/inboxes": {
-      "get": {
-        "tags": [
-          "用户收件箱接口"
-        ],
-        "summary": "分页查询收件箱",
-        "operationId": "queryUserInBoxesPage",
-        "parameters": [
-          {
-            "name": "query",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/UserInboxQuery"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "code",
-                    "msg",
-                    "data",
-                    "requestId"
-                  ],
-                  "properties": {
-                    "code": {
-                      "type": "integer"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/PageDTOUserInboxDTO"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "用户收件箱接口"
@@ -1091,6 +1042,57 @@
                     "data": {
                       "type": "string",
                       "pattern": "^-?[0-9]+$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/services/message/inboxes/query": {
+      "post": {
+        "tags": [
+          "用户收件箱接口"
+        ],
+        "summary": "分页查询收件箱",
+        "operationId": "queryUserInBoxesPage",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UserInboxQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOUserInboxDTO"
                     }
                   }
                 }
@@ -2172,6 +2174,110 @@
           }
         }
       },
+      "UserInboxQuery": {
+        "type": "object",
+        "default": null,
+        "description": "通知模板查询对象",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          },
+          "isRead": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PageDTOUserInboxDTO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/UserInboxDTO"
+            }
+          }
+        }
+      },
+      "UserInboxDTO": {
+        "type": "object",
+        "default": null,
+        "description": "用户收件箱消息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "收件箱消息id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "通知类型：0-系统通知，1-笔记通知，2-问答通知，3-其它通知，4-私信"
+          },
+          "title": {
+            "type": "string",
+            "default": "",
+            "description": "通知标题"
+          },
+          "content": {
+            "type": "string",
+            "default": "",
+            "description": "通知或私信内容"
+          },
+          "isRead": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否已读"
+          },
+          "publisher": {
+            "type": "string",
+            "default": "",
+            "description": "消息发送者id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pushTime": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "收件箱消息id"
+          }
+        }
+      },
       "SmsThirdPlatformPageQuery": {
         "type": "object",
         "default": null,
@@ -2671,110 +2777,6 @@
           "nextOffset": {
             "type": "integer",
             "format": "int32"
-          }
-        }
-      },
-      "UserInboxQuery": {
-        "type": "object",
-        "default": null,
-        "description": "通知模板查询对象",
-        "properties": {
-          "pageNo": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 1
-          },
-          "pageSize": {
-            "type": "integer",
-            "format": "int32",
-            "maximum": 100,
-            "minimum": 1
-          },
-          "isAsc": {
-            "type": "boolean"
-          },
-          "sortBy": {
-            "type": "string"
-          },
-          "isRead": {
-            "type": "boolean"
-          },
-          "type": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "PageDTOUserInboxDTO": {
-        "type": "object",
-        "default": null,
-        "description": "分页结果",
-        "properties": {
-          "total": {
-            "type": "string",
-            "default": "",
-            "description": "总条数",
-            "pattern": "^-?[0-9]+$"
-          },
-          "pages": {
-            "type": "string",
-            "default": "",
-            "description": "总页码数",
-            "pattern": "^-?[0-9]+$"
-          },
-          "list": {
-            "type": "array",
-            "default": "",
-            "description": "当前页数据",
-            "items": {
-              "$ref": "#/components/schemas/UserInboxDTO"
-            }
-          }
-        }
-      },
-      "UserInboxDTO": {
-        "type": "object",
-        "default": null,
-        "description": "用户收件箱消息",
-        "properties": {
-          "id": {
-            "type": "string",
-            "default": "",
-            "description": "收件箱消息id",
-            "pattern": "^-?[0-9]+$"
-          },
-          "type": {
-            "type": "integer",
-            "format": "int32",
-            "default": "",
-            "description": "通知类型：0-系统通知，1-笔记通知，2-问答通知，3-其它通知，4-私信"
-          },
-          "title": {
-            "type": "string",
-            "default": "",
-            "description": "通知标题"
-          },
-          "content": {
-            "type": "string",
-            "default": "",
-            "description": "通知或私信内容"
-          },
-          "isRead": {
-            "type": "boolean",
-            "default": false,
-            "description": "是否已读"
-          },
-          "publisher": {
-            "type": "string",
-            "default": "",
-            "description": "消息发送者id",
-            "pattern": "^-?[0-9]+$"
-          },
-          "pushTime": {
-            "type": "string",
-            "format": "date-time",
-            "default": "",
-            "description": "收件箱消息id"
           }
         }
       },

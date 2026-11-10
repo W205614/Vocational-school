@@ -22,6 +22,7 @@ from setup import LOCAL, ROOT, PORTS, OFFSET, COMPOSE, secrets_config
 from evidence import manifest, bind, utcnow
 from perf_protocol import allocation, schedule, check_configuration
 from load_workflows import Actor
+from web_transport import web_origin
 from load_telemetry import Telemetry
 from tuning_profile import (
     OBSERVER_CONNECTIONS,
@@ -305,7 +306,7 @@ def main():
                         profile,
                         account,
                         fixture,
-                        'http://127.0.0.1:' + str(PORTS['gateway']),
+                        web_origin(LOCAL, 24500 + OFFSET),
                         stats,
                         observer.scalar,
                     )

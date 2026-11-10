@@ -193,6 +193,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/auth/accounts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 刷新token */
+        post: operations["refreshToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/auth/accounts/password/initial": {
         parameters: {
             query?: never;
@@ -514,23 +531,6 @@ export interface paths {
             cookie?: never;
         };
         get: operations["list_2"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/accounts/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 刷新token */
-        get: operations["refreshToken"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1607,6 +1607,36 @@ export interface operations {
             };
         };
     };
+    refreshToken: {
+        parameters: {
+            query?: {
+                audience?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresh?: string;
+                "admin-refresh"?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: string;
+                    };
+                };
+            };
+        };
+    };
     initialPassword: {
         parameters: {
             query?: never;
@@ -2194,36 +2224,6 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: Record<string, never>;
-                    };
-                };
-            };
-        };
-    };
-    refreshToken: {
-        parameters: {
-            query?: {
-                audience?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                refresh?: string;
-                "admin-refresh"?: string;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: number;
-                        msg: string;
-                        requestId: string;
-                        data: string;
                     };
                 };
             };

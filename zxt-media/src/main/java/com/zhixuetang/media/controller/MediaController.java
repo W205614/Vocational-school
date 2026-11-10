@@ -73,7 +73,7 @@ public class MediaController {
     }
 
     @Operation(summary = "获取播放视频的授权签名")
-    @GetMapping("/signature/play")
+    @PostMapping("/signature/play")
     public VideoPlayVO getPlaySignature(
             @Parameter(description = "小节id", example = "1", required = true)
                     @RequestParam("sectionId")
