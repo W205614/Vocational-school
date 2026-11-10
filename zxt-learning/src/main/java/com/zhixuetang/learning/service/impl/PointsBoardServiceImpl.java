@@ -49,7 +49,6 @@ public class PointsBoardServiceImpl extends ServiceImpl<PointsBoardMapper, Point
             end = LocalDate.parse(rows.getFirst().get("end_time").toString()).format(MONTH);
         }
         if (begin.equals(end)) {
-            LearningSeasonService.ensureSeason(jdbc, LearningSeasonService.parseMonth(begin));
             var board = seasons.board(begin, query);
             var result = new PointsBoardVO();
             result.setMonth(begin);

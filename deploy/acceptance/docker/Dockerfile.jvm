@@ -1,5 +1,5 @@
 FROM eclipse-temurin:21-jre-alpine@sha256:b6ea71e690a72ba240b3d1b5c477410014862f9ea2cc73ab40e41ff21b03ba1c
-RUN apk add --no-cache --upgrade tzdata
+RUN apk add --no-cache --upgrade tzdata 'zlib>=1.4-r0'
 ENV TZ=Asia/Shanghai
 WORKDIR /app
 RUN addgroup -g 10001 app && adduser -D -H -u 10001 -G app app && mkdir -p /app/logs/csp && chown app:app /app/logs /app/logs/csp

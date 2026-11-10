@@ -20,7 +20,7 @@ mysql(sql)
 from migrate import apply_migrations
 
 bootstrap = (BASE.parents[1] / 'deploy/compact/schema.sql').read_text(encoding='utf8')
-for table in ('interaction_question', 'interaction_reply'):
+for table in ('interaction_question', 'interaction_reply', 'points_board_season'):
     definition = re.search(
         r'CREATE TABLE `' + table + r'` \(.*?\) ENGINE=.*?;', bootstrap, re.S
     )

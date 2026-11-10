@@ -96,6 +96,15 @@ class LearningMotivationReliabilityTest {
             unused = unused.plusMonths(2);
         var readClock = Clock.fixed(unused.atDay(1).atStartOfDay(ZoneId.of("Asia/Shanghai")).toInstant(),
                 ZoneId.of("Asia/Shanghai"));
+        var historical = YearMonth.of(1900, 1);
+        while (jdbc.queryForObject("SELECT COUNT(*) FROM learning_season WHERE board_month=?",
+                Integer.class, historical.format(LearningSeasonService.MONTH)) > 0)
+            historical = historical.plusMonths(1);
+        jdbc.update("INSERT INTO points_board_season(name,begin_time,end_time) VALUES(?,?,?)",
+                "readonly-" + user, historical.atDay(1), historical.atEndOfMonth());
+        var legacy = new com.zhixuetang.learning.domain.query.PointsBoardQuery();
+        legacy.setSeason(jdbc.queryForObject("SELECT id FROM points_board_season WHERE name=?",
+                Long.class, "readonly-" + user));
         var writer = new LearningSeasonService(jdbc, readClock, examClient,
                 new OutboxStore(jdbc, JsonMapper.builder().findAndAddModules().build()), userClient, manager);
         var connection = jdbc.getDataSource().getConnection();
@@ -105,12 +114,21 @@ class LearningMotivationReliabilityTest {
             var reader = new LearningSeasonService(readJdbc, readClock, examClient,
                     new OutboxStore(readJdbc, JsonMapper.builder().findAndAddModules().build()),
                     userClient, new DataSourceTransactionManager(readJdbc.getDataSource()));
+            var boards = new PointsBoardServiceImpl(readJdbc, userClient, reader);
+            boards.setClock(readClock);
+            var query = new com.zhixuetang.learning.domain.query.PointsBoardQuery();
             assertFalse(reader.seasons().stream().anyMatch(row ->
                     reader.currentMonth().equals(row.get("month"))));
+            assertThrows(com.zhixuetang.common.exceptions.BadRequestException.class,
+                    () -> boards.queryPointsBoardBySeason(query));
+            assertThrows(com.zhixuetang.common.exceptions.BadRequestException.class,
+                    () -> boards.queryPointsBoardBySeason(legacy));
             writer.run(new org.springframework.boot.DefaultApplicationArguments());
             assertTrue(reader.seasons().stream().anyMatch(row ->
                     reader.currentMonth().equals(row.get("month"))));
             assertNotNull(reader.board(null, new PageQuery()));
+            assertEquals(reader.currentMonth(), boards.queryPointsBoardBySeason(query).getMonth());
+            assertEquals("LEGACY_READONLY", boards.queryPointsBoardBySeason(legacy).getStatus());
         } finally {
             connection.close();
         }

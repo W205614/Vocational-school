@@ -19,6 +19,16 @@ class RefreshCookieCipherTest {
     }
 
     @Test
+    void enforcesTheByteBudgetBeforeEncryption() {
+        String maximum = "a".repeat(2048);
+        String encrypted = cipher.encrypt(maximum);
+        assertTrue(encrypted.length() < 4096);
+        assertEquals(maximum, cipher.decrypt(encrypted));
+        assertThrows(IllegalArgumentException.class, () -> cipher.encrypt("a".repeat(2049)));
+        assertThrows(IllegalArgumentException.class, () -> cipher.encrypt("学".repeat(1024)));
+    }
+
+    @Test
     void rejectsTamperingWrongKeysAndOldUnencryptedCookies() {
         String encrypted = cipher.encrypt("signed.jwt.refresh");
         byte[] changed = Base64.getUrlDecoder().decode(encrypted.substring(3));

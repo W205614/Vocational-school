@@ -25,20 +25,20 @@ test('student account pages load persistent data without server errors', async (
   test.skip(info.project.name !== 'student');
   test.setTimeout(120000);
   await login(page, 'student');
-  const pages: [string, string][] = [
-    ['learning', '/services/learning/lessons/page'],
-    ['favorites', '/favorites'],
-    ['notes', '/notes'],
-    ['points', '/learning-hub/board'],
-    ['messages', '/services/message/inboxes/query'],
-    ['settings', '/services/user/users/me'],
-    ['cart', '/services/trade/carts'],
-    ['coupons', '/services/promotion/coupons/list'],
-    ['orders', '/orders'],
+  const pages: [string, string, 'GET' | 'POST'][] = [
+    ['learning', '/services/learning/lessons/page', 'GET'],
+    ['favorites', '/favorites', 'GET'],
+    ['notes', '/notes', 'GET'],
+    ['points', '/learning-hub/board', 'GET'],
+    ['messages', '/services/message/inboxes/query', 'POST'],
+    ['settings', '/services/user/users/me', 'GET'],
+    ['cart', '/services/trade/carts', 'GET'],
+    ['coupons', '/services/promotion/coupons/list', 'GET'],
+    ['orders', '/orders', 'GET'],
   ];
-  for (const [path, api] of pages) {
+  for (const [path, api, method] of pages) {
     const response = page.waitForResponse(
-      (r) => r.url().includes('/api/v2' + api) && r.request().method() === 'GET',
+      (r) => r.url().includes('/api/v2' + api) && r.request().method() === method,
     );
     await page.goto('/' + path);
     const result = await response;

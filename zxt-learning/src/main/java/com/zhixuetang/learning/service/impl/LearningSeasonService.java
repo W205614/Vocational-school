@@ -97,6 +97,10 @@ public class LearningSeasonService implements org.springframework.boot.Applicati
     public void run(org.springframework.boot.ApplicationArguments arguments) {
         ensureSeason(jdbc, YearMonth.now(clock));
         ensureSeason(jdbc, YearMonth.now(clock).plusMonths(1));
+        for (String month : jdbc.queryForList(
+                "SELECT DISTINCT DATE_FORMAT(begin_time,'%Y%m') FROM points_board_season WHERE DATE_FORMAT(begin_time,'%Y%m')=DATE_FORMAT(end_time,'%Y%m')",
+                String.class))
+            ensureSeason(jdbc, parseMonth(month));
     }
 
     public List<Map<String, Object>> seasons() {

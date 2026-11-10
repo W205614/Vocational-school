@@ -41,15 +41,21 @@ public final class RefreshCookieCipher {
     }
 
     public String encrypt(String value) {
+        // Leave room for the AEAD nonce/tag and Base64 within a browser cookie.
+        if (value.length() > 2048)
+            throw new IllegalArgumentException("Refresh token exceeds the encrypted cookie size budget");
+        byte[] plaintext = value.getBytes(StandardCharsets.UTF_8);
+        if (plaintext.length > 2048)
+            throw new IllegalArgumentException("Refresh token exceeds the encrypted cookie size budget");
         try {
             byte[] iv = new byte[12];
             random.nextBytes(iv);
             var cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(128, iv));
             cipher.updateAAD(CONTEXT);
-            byte[] encrypted = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
+            byte[] encrypted = cipher.doFinal(plaintext);
             return "v1." + Base64.getUrlEncoder().withoutPadding().encodeToString(
-                    ByteBuffer.allocate(iv.length + encrypted.length).put(iv).put(encrypted).array());
+                    ByteBuffer.allocate(Math.addExact(iv.length, encrypted.length)).put(iv).put(encrypted).array());
         } catch (GeneralSecurityException error) {
             throw new IllegalStateException("Cannot encrypt refresh cookie", error);
         }
