@@ -188,8 +188,9 @@ async function showDetail(id: string) {
 }
 async function payment(id: string) {
   pay.value = '';
-  paymentOrder.value = id;
   await task.run(async () => {
+    if (!/^[1-9][0-9]{0,18}$/.test(id)) throw new Error('订单编号无效');
+    paymentOrder.value = id;
     const state = await get<Row>('/orders/' + id + '/status');
     if (Number(state.status) !== 1) {
       paymentOpen.value = false;

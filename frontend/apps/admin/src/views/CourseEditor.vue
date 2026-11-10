@@ -41,6 +41,7 @@ async function load(next = id.value) {
     }
   }
   await task.run(async () => {
+    if (!/^[1-9][0-9]{0,18}$/.test(next)) throw new Error('课程编号无效');
     const [detail, catas, staff, subjects] = await Promise.all([
       get<Row>('/admin/course/courses/baseInfo/' + next + '?see=false'),
       get<Row[]>('/admin/course/courses/catas/' + next + '?see=false&withPractice=true'),

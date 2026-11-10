@@ -97,6 +97,8 @@ async function loadCourseChoices() {
 async function load() {
   if (!courseId.value) return;
   await task.run(async () => {
+    const selected = courseId.value;
+    if (!/^[1-9][0-9]{0,18}$/.test(selected)) throw new Error('课程编号无效');
     enrollmentHint.value = '';
     papers.value = [];
     course.value = undefined;
@@ -107,8 +109,8 @@ async function load() {
     }
     try {
       const [list, detail] = await Promise.all([
-        get<Row[]>('/exam-papers?courseId=' + encodeURIComponent(courseId.value)),
-        get<Row>('/services/course/course/' + courseId.value + '?withCatalogue=true'),
+        get<Row[]>('/exam-papers?courseId=' + selected),
+        get<Row>('/services/course/course/' + selected + '?withCatalogue=true'),
       ]);
       papers.value = list;
       course.value = detail;
