@@ -15,7 +15,7 @@
 
 依赖修正另通过 16 模块 Maven 定向构建、10 项离线支付验签／SDK 配置回归；该选定模块集的 302 组件 SBOM 复扫仅剩 XXL-JOB 一项。该本地 SBOM 不包含全部 33 模块，不能替代最终完整源码与镜像 CI。
 
-候选复扫继续发现 compact 的 Dockerfile 由 `setup.py` 独立生成，已在这个实际入口补充 PCRE2、zlib 更新；共享 JVM 模板和 worker 的修改继续保留。镜像中的 OGNL 3.4.4 来自 MyBatis 内嵌依赖，已使用官方 MyBatis 3.6.0（内嵌 OGNL 3.4.16），不以单独覆盖 OGNL 坐标假装修复。该调整通过本机全部 33 模块打包和测试源码编译，实际测试执行与数据库兼容仍须看对应提交 CI，不能用 `-DskipTests` 打包替代。
+候选复扫继续发现 compact 的 Dockerfile 由 `setup.py` 独立生成，已在这个实际入口补充 PCRE2、zlib 更新；共享 JVM 模板和 worker 的修改继续保留。镜像中的 OGNL 3.4.4 来自 MyBatis 内嵌依赖，不能以单独覆盖 OGNL 坐标修复。尝试官方 MyBatis 3.6.0（内嵌 OGNL 3.4.16）时，虽然本机 33 模块打包和测试源码编译通过，但[准确提交的数据库 CI](https://github.com/W205614/Vocational-school/actions/runs/42783810048)在创建 `sqlSessionFactory` 时暴露 MyBatis-Plus 所需的旧 `MetaClass.forClass` API 不兼容。因此已撤销该版本覆盖，恢复框架管理的兼容版本，OGNL 发现继续保留。没有部署这批不兼容制品；后续需验证兼容的框架升级或维护可复现的上游补丁构建，不用 `-DskipTests` 成功替代真实兼容性。
 
 ## 告警与扫描边界
 
