@@ -1,5 +1,6 @@
 """Create and trust a disposable CA only on GitHub-hosted ephemeral Linux runners."""
 import os
+import shlex
 from pathlib import Path
 import subprocess
 from enable_tls import configure
@@ -31,7 +32,7 @@ def main():
     # The nginx worker is unprivileged; only this disposable server key is readable
     # in its container. The CA signing key remains inside the runner's 0700 directory.
     key.chmod(0o644)
-    run('sudo', 'cp', str(ca), '/usr/local/share/ca-certificates/zhixuetang-ci.crt')
+    run('sudo', 'install', '-m', '0644', str(ca), '/usr/local/share/ca-certificates/zhixuetang-ci.crt')
     run('sudo', 'update-ca-certificates')
     run('sudo', 'apt-get', 'install', '-y', '--no-install-recommends', 'libnss3-tools')
     nss = Path.home() / '.pki/nssdb'
@@ -40,9 +41,28 @@ def main():
         run('certutil', '-N', '--empty-password', '-d', 'sql:' + str(nss))
     run('certutil', '-A', '-d', 'sql:' + str(nss), '-n', 'Zhixuetang isolated CI CA',
         '-t', 'C,,', '-i', str(ca))
+    firefox_store = directory / 'firefox-store'
+    firefox_store.mkdir(mode=0o700)
+    run('certutil', '-N', '--empty-password', '-d', 'sql:' + str(firefox_store))
+    run('certutil', '-A', '-d', 'sql:' + str(firefox_store), '-n', 'Zhixuetang isolated CI CA',
+        '-t', 'C,,', '-i', str(ca))
+    firefox = subprocess.check_output([
+        'node', '-e', "process.stdout.write(require('./frontend/node_modules/playwright').firefox.executablePath())"
+    ], text=True)
+    launcher = directory / 'firefox-with-ca.sh'
+    launcher.write_text(
+        '#!/bin/sh\nset -eu\nprevious=\nseeded=no\nfor argument do\n'
+        '  if [ "$previous" = "-profile" ]; then\n'
+        + '    cp ' + shlex.quote(str(firefox_store / 'cert9.db')) + ' "$argument/cert9.db"\n'
+        + '    cp ' + shlex.quote(str(firefox_store / 'key4.db')) + ' "$argument/key4.db"\n'
+        + '    seeded=yes\n  fi\n  previous=$argument\ndone\n'
+        '[ "$seeded" = yes ] || { echo "Firefox profile argument is required" >&2; exit 2; }\n'
+        + 'exec ' + shlex.quote(firefox) + ' "$@"\n', encoding='utf8')
+    launcher.chmod(0o700)
     configure(BASE, cert, key)
     with Path(os.environ['GITHUB_ENV']).open('a', encoding='utf8') as env:
-        env.write('ZXT_COMPACT_HTTPS=1\nNODE_EXTRA_CA_CERTS=' + str(ca)
+        env.write('ZXT_FIREFOX_EXECUTABLE=' + str(launcher.resolve())
+                  + '\nZXT_COMPACT_HTTPS=1\nNODE_EXTRA_CA_CERTS=' + str(ca)
                   + '\nREQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt\n')
 
 

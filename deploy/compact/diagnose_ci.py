@@ -55,7 +55,7 @@ if ids:
             'health=' + str(item['health']),
             'oom=' + str(item['oomKilled']),
         )
-for name in ['up-None.log', 'browser.log', 'maven.log', 'transport-tests.log']:
+for name in ['up-None.log', 'browser.log', 'browser-firefox.log', 'browser-webkit.log', 'maven.log', 'transport-tests.log']:
     path = LOCAL / name
     if path.exists():
         report['privateLogExcerpts'][name] = excerpt(

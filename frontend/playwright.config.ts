@@ -28,7 +28,13 @@ export default defineConfig({
     ...devices[desktop],
     browserName,
     ...(browserName === 'firefox'
-      ? { launchOptions: { firefoxUserPrefs: { 'security.enterprise_roots.enabled': true } } }
+      ? { launchOptions: { firefoxUserPrefs: {
+          'security.enterprise_roots.enabled': true,
+        },
+          ...(process.env.ZXT_FIREFOX_EXECUTABLE
+            ? { executablePath: process.env.ZXT_FIREFOX_EXECUTABLE }
+            : {}),
+        } }
       : {}),
     ...(browserName === 'chromium'
       ? {

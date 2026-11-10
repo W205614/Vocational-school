@@ -16,7 +16,7 @@ python deploy/compact/enable_tls.py --home deploy/compact --certificate C:/priva
 
 工具为两个现有网页服务添加 TLS 配置与只读证书挂载，保留宿主端口，网页变为 `https://localhost:24500/` 和 `https://localhost:24501/`。内部健康检查继续使用 HTTP，不发送刷新凭据。证书由操作者保留和续期；工具不安装主机信任根。已有实例先核对配置原件、服务中断与回退前提，不能重复首次安装流程。
 
-CI 仅在 GitHub 托管临时 Linux runner 中生成短期 CA，并安装到 runner 系统和浏览器信任库。三个浏览器、Requests、Node 保留证书校验；`ci_tls.py` 拒绝在个人主机或自托管 runner 安装根证书。
+CI 仅在 GitHub 托管临时 Linux runner 中生成短期 CA，并安装到 runner 系统和浏览器信任库。Linux Firefox 按 [Mozilla 的 NSS 配置方法](https://support.mozilla.org/en-US/kb/setting-certificate-authorities-firefox)使用 `certutil` 准备证书库，再在启动器创建的每个临时 profile 中预置该库；浏览器配置相互隔离，不依赖系统根证书选项或异步策略导入。三个浏览器、Requests、Node 保留证书校验；`ci_tls.py` 拒绝在个人主机或自托管 runner 安装根证书。
 
 独立 API 冒烟使用 `ZXT_ACCEPTANCE_ORIGIN` 选择已配置 HTTPS 的入口。compact 浏览器、课程导入和负载工具根据本部署 `.local/web-tls.json` 选择 HTTPS。Python 客户端可通过 `REQUESTS_CA_BUNDLE` 指定可信 CA 文件，不关闭验证。
 
