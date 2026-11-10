@@ -6,7 +6,7 @@
 
 - 安全脚本的漏洞与失败配置检查覆盖全部严重级别，包含 UNKNOWN、LOW、MEDIUM、HIGH、CRITICAL。新增回归确保低级别发现也会阻断门禁，不新增忽略项。
 - 验收、compact 和生产工具的 Requests 均由 2.32.5 升至 2.33.1，覆盖 [GHSA-gc5v-m9x4-r6x2](https://github.com/advisories/GHSA-gc5v-m9x4-r6x2) 的修复版本范围。
-- 微信支付配置中的应用、商户与证书序列标识改为环境变量空默认值，与原有私钥和 API v3 密钥入口一致。当前源码不再提供历史凭据默认值；未启用微信支付时不需要真实供应商凭据。
+- 微信支付配置中的应用、商户与证书序列标识改为环境变量空默认值，与原有私钥和 API v3 密钥入口一致。当前源码不再提供历史标识默认值；未启用微信支付时不需要真实供应商凭据。
 - 清退没有调用或配置注册的 `SignUtils`、`PermuteUtil`，以及 Base32 的未使用字节数组编解码接口。兑换码调用的 `encode(long)`、`decode(String)` 保留。旧工具中的令牌日志、旧签名算法和溢出循环不再进入构建。
 - 分类查询不再记录整个输入 DTO；通用异常日志转义 URI 中的换行，保留异常堆栈用于诊断。
 - 首次完整 CI 的新门禁检出了旧门禁遗漏的依赖：RabbitMQ 客户端升至 5.37.0、HttpClient 5 至 5.6.3、OpenTelemetry 至 1.67.0；Okio 统一使用已有的 3.6.0，避免旧 SDK 再带入 1.12.0。COS／支付宝 SDK 排除旧 `bcprov-jdk15on`，显式使用项目已解析的 `bcprov-jdk18on`。JVM 和 worker 镜像在原有 APT 更新步骤中补装 PCRE2、zlib 的安全更新。
@@ -19,9 +19,13 @@
 
 首次启用 CodeQL 扩展规则集后，旧基线 `e7a1dec` 的默认分支有 41 条 CodeQL、4 条 Dependabot、2 条凭据告警。后续须读取目标提交的分析，不能把这份基线当作修复后结果。
 
-两条历史凭据告警的归属、有效性和撤销情况未知。删除当前配置中的值不能撤销已暴露的值，也不能据此标记已撤销。需要实际所有者在供应商侧核对；不在公开文档展示凭据或其原值。
+两条初始凭据告警经实际匹配值与原 YAML 字段摘要比对，分别只命中 `appId` 和 `mchId`（商户号），没有命中 AppSecret、API 密钥、私钥或访问令牌。依据[微信官方参数定义](https://pay.wechatpay.cn/doc/v3/merchant/4013070756)区分标识符和密钥后，已将这两项记录为 `false_positive`，并重新读取远端确认；没有将它们标记为已撤销，也没有关闭扫描或 push protection。此前“支付 token 待撤销”的判断不准确，现予更正。不公开原标识值。
 
-首个修复提交 `cf45ed1` 的 CodeQL 分析完成后，未解决项为 32 条（含仍需复核的日志规则），Dependabot 剩 1 条，凭据仍 2 条；没有手动关闭或忽略发现。该提交的[源码安全 CI](https://github.com/W205614/Vocational-school/actions/runs/42778020760)检出 19 条依赖发现，[候选镜像 CI](https://github.com/W205614/Vocational-school/actions/runs/42778020887)检出 817 条（771 MEDIUM、46 LOW），因此均未通过。它们按制品／包／CVE 分别计数，不能当作独立漏洞数量相加；其中 743 条未给出修复版本，多数属于 support 内的 FFmpeg 家族。下轮依赖和系统包修正仍须用准确提交复扫，不把已有页面或编译成功当作安全通过。
+历史 Git 中另曾出现过真实支付私钥，其归属、使用和撤销情况仍未知，与上述两个标识符误报分开记录。当前跟踪源码不再携带该项；若曾用于真实商户，仍须由实际所有者在供应商侧核对并撤销／轮换。误报处置不能证明该历史私钥已撤销。
+
+首个修复提交 `cf45ed1` 的 CodeQL 分析完成时，未解决项为 32 条（含仍需复核的日志规则），Dependabot 剩 1 条，凭据当时仍 2 条；当时尚未作上述误报处置。该提交的[源码安全 CI](https://github.com/W205614/Vocational-school/actions/runs/42778020760)检出 19 条依赖发现，[候选镜像 CI](https://github.com/W205614/Vocational-school/actions/runs/42778020887)检出 817 条（771 MEDIUM、46 LOW），因此均未通过。它们按制品／包／CVE 分别计数，不能当作独立漏洞数量相加；其中 743 条未给出修复版本，多数属于 support 内的 FFmpeg 家族。
+
+后续工程提交 `765808b` 的[完整源码安全 CI](https://github.com/W205614/Vocational-school/actions/runs/42780132464)已完成扫描，依赖发现减至 1 条，仍为 XXL-JOB，无未完成扫描；该门禁仍失败。CodeQL 复扫未解决项为 31 条，尚未归零。最终候选镜像与默认分支 CI 仍按准确提交分别核对，不把本地编译、误报关闭或已有网页当作整体安全通过。不新增忽略或自动豁免规则。
 
 XXL-JOB 的 [GHSA-f8vw-8vgh-22r9](https://github.com/advisories/GHSA-f8vw-8vgh-22r9) 描述示例 `httpJobHandler`。本机解析的 2.4.2 core JAR 未包含该示例类或方法引用；这只是适用性调查，尚未作为已修复漏洞或关闭告警的依据。跨版本升级还需核对执行器与调度中心的协议兼容性。
 
