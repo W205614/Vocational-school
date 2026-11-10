@@ -17,21 +17,44 @@ IMAGES = {
 LOGGING = {'driver': 'local', 'options': {'max-size': '10m', 'max-file': '3'}}
 
 
-def private_export_directory(home):
+def _protect_path(path):
     import importlib.util
 
-    directory = Path(home) / '.local/privacy-exports'
-    if directory.is_symlink():
-        raise RuntimeError('Private export directory must not be a link')
-    directory.mkdir(parents=True, exist_ok=True)
     specification = importlib.util.spec_from_file_location(
         'zhixuetang_privacy_permissions',
         Path(__file__).resolve().parents[1] / 'production/database.py',
     )
     private_files = importlib.util.module_from_spec(specification)
     specification.loader.exec_module(private_files)
-    private_files.protect(directory)
+    private_files.protect(path)
+
+
+def private_directory(directory):
+    directory = Path(directory)
+    if directory.is_symlink() or directory.is_junction():
+        raise RuntimeError('Private directory must not be a link')
+    directory.mkdir(parents=True, exist_ok=True)
+    _protect_path(directory)
     return directory
+
+
+def private_file(path):
+    path = Path(path)
+    if path.is_symlink() or not path.is_file():
+        raise RuntimeError('Private file must be a regular file, not a link')
+    _protect_path(path)
+    return path
+
+
+def private_text(path, value):
+    path = Path(path)
+    if not path.exists():
+        path.touch(mode=0o600)
+    private_file(path).write_text(value, encoding='utf8')
+
+
+def private_export_directory(home):
+    return private_directory(Path(home) / '.local/privacy-exports')
 
 
 def harden(compose, offset=0):
@@ -193,7 +216,7 @@ def module_defaults(alias, config):
 
 
 def generate(home, compose, token):
-    local = Path(home) / '.local'
+    local = private_directory(Path(home) / '.local')
     directory = local / 'observability'
     directory.mkdir(parents=True, exist_ok=True)
     (local / 'ops-status').mkdir(exist_ok=True)

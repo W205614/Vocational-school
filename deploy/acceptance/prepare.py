@@ -6,6 +6,7 @@ import subprocess, secrets, argparse, json, time, os, sys
 BASE = Path(__file__).resolve().parent
 sys.path.append(str(BASE.parent / 'compact'))
 from runtime_compose import rabbit_username
+from operations_config import private_directory, private_file
 
 RUNTIME = Path(os.environ.get('ZXT_RUNTIME_HOME', str(BASE))).resolve()
 LOCAL = RUNTIME / '.local'
@@ -69,9 +70,13 @@ def mysql(sql, db=None):
 
 
 def local_secrets():
-    LOCAL.mkdir(exist_ok=True)
+    private_directory(LOCAL)
     path = RUNTIME / '.env'
-    if not path.exists():
+    fresh = not path.exists()
+    if fresh:
+        path.touch(mode=0o600)
+    private_file(path)
+    if fresh:
         path.write_text(
             'ACCEPTANCE_DB_PASSWORD='
             + secrets.token_hex(24)

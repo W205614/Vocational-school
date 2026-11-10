@@ -4,11 +4,30 @@ from pathlib import Path
 import tempfile
 import unittest
 import yaml
-from operations_config import observability, module_defaults, upgrade, MONITORS
+from operations_config import (
+    observability, module_defaults, upgrade, MONITORS, private_directory, private_text,
+)
 from runtime_compose import active_compose
 
 
 class OperationsConfigurationTest(unittest.TestCase):
+    def test_runtime_secrets_have_operator_only_storage_permissions(self):
+        import importlib.util
+
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = private_directory(Path(temporary) / 'private')
+            secret = directory / 'app.env'
+            private_text(secret, 'TOKEN=synthetic\n')
+            private_text(secret, 'TOKEN=replaced\n')
+            self.assertEqual('TOKEN=replaced\n', secret.read_text())
+            specification = importlib.util.spec_from_file_location(
+                'permission_check',
+                Path(__file__).resolve().parents[1] / 'production/database.py',
+            )
+            permissions = importlib.util.module_from_spec(specification)
+            specification.loader.exec_module(permissions)
+            self.assertEqual(secret.resolve(), permissions.private_file(secret))
+
     def test_existing_privacy_and_trial_configuration_is_upgraded_idempotently(self):
         user = module_defaults('user', {})
         self.assertEqual(

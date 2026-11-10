@@ -4,6 +4,7 @@ import argparse, json, shutil, subprocess, hashlib, yaml
 from pathlib import Path
 from prepare import BASE, LOCAL, local_secrets
 from start_service import MODULES
+from operations_config import private_text
 
 ROOT = BASE.parents[1]
 DIR = LOCAL / 'containers'
@@ -40,10 +41,7 @@ def rewrite(value, mode):
 def prepare():
     DIR.mkdir(parents=True, exist_ok=True)
     secret = local_secrets()
-    (DIR / 'env').write_text(
-        'ZXT_INTERNAL_TOKEN=' + secret['ACCEPTANCE_INTERNAL_TOKEN'] + '\n',
-        encoding='utf8',
-    )
+    private_text(DIR / 'env', 'ZXT_INTERNAL_TOKEN=' + secret['ACCEPTANCE_INTERNAL_TOKEN'] + '\n')
     shutil.copyfile(LOCAL / 'acceptance-signing.jks', DIR / 'signing.jks')
     probe = DIR / 'probe'
     probe.mkdir(exist_ok=True)

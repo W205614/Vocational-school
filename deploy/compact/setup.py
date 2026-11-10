@@ -20,6 +20,7 @@ ACC = SOURCE.parent / 'acceptance'
 LOCAL = BASE / '.local'
 sys.path.insert(0, str(ACC))
 from start_service import MODULES
+from operations_config import private_directory, private_file, private_text
 
 GROUPS = {
     'identity': ['auth', 'user'],
@@ -72,9 +73,13 @@ def mysql(sql):
 
 
 def secrets_config():
-    LOCAL.mkdir(exist_ok=True)
+    private_directory(LOCAL)
     path = BASE / '.env'
-    if not path.exists():
+    fresh = not path.exists()
+    if fresh:
+        path.touch(mode=0o600)
+    private_file(path)
+    if fresh:
         path.write_text(
             '\n'.join(
                 k + '=' + secrets.token_hex(32)
@@ -144,9 +149,7 @@ def prepare():
     from operations_config import private_export_directory
 
     private_export_directory(BASE)
-    (LOCAL / 'app.env').write_text(
-        'ZXT_INTERNAL_TOKEN=' + env['ACCEPTANCE_INTERNAL_TOKEN'] + '\n', encoding='utf8'
-    )
+    private_text(LOCAL / 'app.env', 'ZXT_INTERNAL_TOKEN=' + env['ACCEPTANCE_INTERNAL_TOKEN'] + '\n')
     key = LOCAL / 'signing.jks'
     if not key.exists():
         run(

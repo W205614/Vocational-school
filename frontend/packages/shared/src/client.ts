@@ -44,6 +44,12 @@ function refreshIdentity(): Promise<void> {
 export function setTokenProvider(provider: () => string) {
   tokenProvider = provider;
 }
+function apiTarget(path: string) {
+  // The fixed origin is only for URL normalization; fetch receives a relative path.
+  const target = new URL('/api/v2' + path, 'https://api.invalid');
+  if (!target.pathname.startsWith('/api/v2/')) throw new ApiError('无效的 API 路径', 400);
+  return target.pathname + target.search;
+}
 export async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -61,7 +67,7 @@ export async function request<T>(
     if (token) headers.set('Authorization', 'Bearer ' + token);
     if (key) headers.set('Idempotency-Key', key);
     const signal = options.signal ? AbortSignal.any([options.signal, abort.signal]) : abort.signal;
-    const response = await fetch('/api/v2' + path, {
+    const response = await fetch(apiTarget(path), {
       ...options,
       headers,
       credentials: 'include',
@@ -114,7 +120,7 @@ export async function downloadFile(
   retried = false,
 ): Promise<Blob> {
   const token = tokenProvider();
-  const response = await fetch('/api/v2' + path, {
+  const response = await fetch(apiTarget(path), {
     method: 'POST',
     credentials: 'include',
     redirect: 'error',

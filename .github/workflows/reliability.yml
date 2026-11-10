@@ -87,8 +87,6 @@ jobs:
       - run: python deploy/compact/setup.py build
       - uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
         with: { version: v0.76.1, cache: true }
-      - name: Scan actual candidate application and web images
-        run: python deploy/production/security_scan.py images --commit '${{ github.sha }}' --images-file deploy/compact/.local/images.json --output deploy/compact/.local/image-security.json
       - run: python deploy/compact/setup.py up
       - run: python deploy/compact/prepare_search.py
       - run: python deploy/compact/rebuild_search.py
@@ -104,6 +102,9 @@ jobs:
         run: python deploy/compact/run_browser.py
       - run: python deploy/compact/audit_smoke.py
       - run: python deploy/compact/redis_roundtrip.py
+      - name: Scan actual candidate application and web images
+        if: ${{ !cancelled() }}
+        run: python deploy/production/security_scan.py images --commit '${{ github.sha }}' --images-file deploy/compact/.local/images.json --output deploy/compact/.local/image-security.json
       - name: Capture redacted diagnostics before stopping failed services
         if: failure()
         run: python deploy/compact/diagnose_ci.py
