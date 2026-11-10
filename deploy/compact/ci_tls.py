@@ -52,7 +52,7 @@ def main():
     launcher = directory / 'firefox-with-ca.sh'
     launcher.write_text(
         '#!/bin/sh\nset -eu\nprevious=\nseeded=no\nfor argument do\n'
-        '  if [ "$previous" = "-profile" ]; then\n'
+        '  if [ "$previous" = "-profile" ] || [ "$previous" = "--profile" ]; then\n'
         + '    cp ' + shlex.quote(str(firefox_store / 'cert9.db')) + ' "$argument/cert9.db"\n'
         + '    cp ' + shlex.quote(str(firefox_store / 'key4.db')) + ' "$argument/key4.db"\n'
         + '    seeded=yes\n  fi\n  previous=$argument\ndone\n'
