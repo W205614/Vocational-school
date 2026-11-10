@@ -14,6 +14,8 @@
 
 账号文件、Secret、签名材料、隐私导出和备份应限制读取权限。凭据疑似泄露时，及时撤销或轮换、核对访问记录并保留脱敏证据；轮换顺序见[认证密钥维护](docs/key-maintenance.md)，服务凭据见[账户安全说明](docs/account-security.md#私有服务凭据生成与轮换)。
 
-依赖、当前已跟踪源码中的敏感信息及候选镜像由[安全工作流](.github/workflows/production-security.yml)检查，结果绑定具体提交和执行时间。该扫描不覆盖 Git 历史、本地忽略文件或其他部署的镜像；历史凭据暴露仍需在供应商侧核对并撤销或轮换。
+依赖、当前已跟踪源码中的敏感信息及候选镜像由[安全工作流](.github/workflows/production-security.yml)检查，结果绑定具体提交和执行时间。漏洞和配置门禁包含 UNKNOWN、LOW、MEDIUM、HIGH、CRITICAL，未修复项不会因严重级别较低而自动放行。该扫描不覆盖 Git 历史、本地忽略文件或其他部署的镜像；历史凭据暴露仍需在供应商侧核对并撤销或轮换。
+
+GitHub CodeQL 与 Dependabot 已于 2026-11-10 启用；启用分析或工作流成功不等于告警归零。本轮发现、修复范围及仍受阻事项见[安全复核记录](docs/security-review-20261110.md)。当前未宣称完成全部安全门禁，也未据此发布新的应用镜像。
 
 实际部署方负责云 IAM、入口、备份、监控及后续安全更新，配置导航见[生产就绪说明](docs/production-readiness.md)。

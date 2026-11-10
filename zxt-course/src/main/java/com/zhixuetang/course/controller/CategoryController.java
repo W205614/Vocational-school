@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.Operation;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +30,6 @@ import java.util.List;
 @RestController
 @Tag(name = "课程分类相关接口")
 @RequestMapping("categorys")
-@Slf4j
 @Validated
 public class CategoryController {
 
@@ -40,7 +38,6 @@ public class CategoryController {
     @GetMapping("list")
     @Operation(summary = "查询课程分类信息")
     public List<CategoryVO> list(CategoryListDTO categoryListDTO) {
-        log.info("list categoryListDTO : {}", categoryListDTO);
         return categoryService.list(categoryListDTO);
     }
 

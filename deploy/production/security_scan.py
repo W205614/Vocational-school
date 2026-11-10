@@ -18,6 +18,8 @@ import tarfile
 import hashlib
 import os
 
+SEVERITIES = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
+
 
 class ScannerFailure(RuntimeError):
     """Only finite diagnostic codes and numeric metadata may leave the process."""
@@ -235,18 +237,17 @@ def summarize(report):
     for result in report.get("Results", []):
         target = result.get("Target", "")
         for value in result.get("Vulnerabilities", []):
-            if value.get("Severity") in {"HIGH", "CRITICAL"}:
-                findings.append(
-                    {
-                        "kind": "vulnerability",
-                        "target": target,
-                        "id": value.get("VulnerabilityID"),
-                        "package": value.get("PkgName"),
-                        "installed": value.get("InstalledVersion"),
-                        "fixed": value.get("FixedVersion"),
-                        "severity": value["Severity"],
-                    }
-                )
+            findings.append(
+                {
+                    "kind": "vulnerability",
+                    "target": target,
+                    "id": value.get("VulnerabilityID"),
+                    "package": value.get("PkgName"),
+                    "installed": value.get("InstalledVersion"),
+                    "fixed": value.get("FixedVersion"),
+                    "severity": value.get("Severity", "UNKNOWN"),
+                }
+            )
         for value in result.get("Secrets", []):
             findings.append(
                 {
@@ -258,16 +259,13 @@ def summarize(report):
                 }
             )
         for value in result.get("Misconfigurations", []):
-            if (
-                value.get("Severity") in {"HIGH", "CRITICAL"}
-                and value.get("Status") == "FAIL"
-            ):
+            if value.get("Status") == "FAIL":
                 findings.append(
                     {
                         "kind": "configuration",
                         "target": target,
                         "id": value.get("ID"),
-                        "severity": value["Severity"],
+                        "severity": value.get("Severity", "UNKNOWN"),
                     }
                 )
     return findings
@@ -286,7 +284,7 @@ def scan(arguments, raw_file):
         "--ignore-unfixed=false",
     ]
     if "--severity" not in arguments:
-        policy += ["--severity", "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"]
+        policy += ["--severity", SEVERITIES]
     command = [
         "trivy",
         *arguments,
@@ -539,7 +537,7 @@ def main(argv=None):
                             "--scanners",
                             "vuln",
                             "--severity",
-                            "HIGH,CRITICAL",
+                            SEVERITIES,
                             "--skip-files",
                             "**/pom.xml",
                             "--skip-files",
@@ -560,7 +558,7 @@ def main(argv=None):
             tasks.append(
                 (
                     "maven-dependencies",
-                    ["sbom", "--severity", "HIGH,CRITICAL", str(args.bom)],
+                    ["sbom", "--severity", SEVERITIES, str(args.bom)],
                 )
             )
             if args.standalone_jar is not None:
@@ -573,7 +571,7 @@ def main(argv=None):
                                 "--scanners",
                                 "vuln",
                                 "--severity",
-                                "HIGH,CRITICAL",
+                                SEVERITIES,
                                 str(args.standalone_jar),
                             ],
                         )
@@ -615,7 +613,7 @@ def main(argv=None):
                                 "--scanners",
                                 "vuln",
                                 "--severity",
-                                "HIGH,CRITICAL",
+                                SEVERITIES,
                                 identity,
                             ],
                         )

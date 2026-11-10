@@ -21,6 +21,50 @@ import security_scan
 
 
 class SourceBindingTest(unittest.TestCase):
+    def test_wechat_identifiers_use_environment_references_without_literal_defaults(self):
+        root = Path(__file__).resolve().parents[2]
+        config = yaml.safe_load((root / 'zxt-pay/zxt-pay-service/src/main/resources/bootstrap.yml').read_text(encoding='utf8'))
+        wx = config['zxt']['pay']['wx']
+        for name in ['appId', 'mchId', 'mchSerialNo', 'privateKey', 'apiV3Key']:
+            with self.subTest(property=name):
+                safe = isinstance(wx[name], str) and re.fullmatch(r'\$\{[A-Z_][A-Z0-9_]*:\}', wx[name]) is not None
+                self.assertTrue(safe, 'Provider settings must not carry literal credentials or account defaults')
+
+    def test_all_severities_remain_visible_in_sanitized_findings(self):
+        for severity in ['UNKNOWN', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL']:
+            with self.subTest(severity=severity):
+                report = {
+                    'SchemaVersion': 2,
+                    'Results': [{
+                        'Target': 'application',
+                        'Vulnerabilities': [{
+                            'VulnerabilityID': 'CVE-fixture', 'PkgName': 'fixture',
+                            'InstalledVersion': '1', 'Severity': severity,
+                        }],
+                        'Misconfigurations': [{
+                            'ID': 'AVD-fixture', 'Severity': severity, 'Status': 'FAIL',
+                        }],
+                    }],
+                }
+                findings = security_scan.summarize(report)
+                self.assertEqual(['vulnerability', 'configuration'], [v['kind'] for v in findings])
+                self.assertEqual([severity, severity], [v['severity'] for v in findings])
+
+    def test_low_severity_finding_fails_the_source_gate(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            finding = {'kind': 'vulnerability', 'severity': 'LOW', 'id': 'CVE-fixture'}
+            with patch('security_scan.validate_bom'), patch(
+                'security_scan.source_snapshot', return_value=root
+            ), patch('security_scan.scan', side_effect=[[finding], [], []]), redirect_stdout(io.StringIO()):
+                status = security_scan.main([
+                    'source', '--commit', 'a' * 40, '--output', str(root / 'result.json'),
+                ])
+            self.assertEqual(1, status)
+            result = json.loads((root / 'result.json').read_text(encoding='utf8'))
+            self.assertEqual('FAILED', result['status'])
+            self.assertEqual('LOW', result['findings'][0]['severity'])
+
     def test_snapshot_excludes_private_ignored_and_untracked_files_and_rejects_dirty_source(
         self,
     ):
@@ -264,7 +308,7 @@ class SourceBindingTest(unittest.TestCase):
                         "--scanners",
                         "vuln",
                         "--severity",
-                        "HIGH,CRITICAL",
+                        "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
                         str(artifact),
                     ],
                     scanner.call_args.args[0],

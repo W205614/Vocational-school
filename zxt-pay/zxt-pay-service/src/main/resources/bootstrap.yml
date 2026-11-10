@@ -40,8 +40,8 @@ zxt:
       merchantPrivateKey: ${ZXT_PAY_ZXT_PAY_ALI_MERCHANTPRIVATEKEY:}
       publicKey: ${ZXT_PAY_ZXT_PAY_ALI_PUBLICKEY:}
     wx:
-      appId: 'wx0ca99a203b1e9943'
-      mchId: '1561414331'
-      mchSerialNo: '4B3B3DC35414AD50B1B755BAF8DE9CC7CF407606'
+      appId: ${WX_PAY_APP_ID:}
+      mchId: ${WX_PAY_MCH_ID:}
+      mchSerialNo: ${WX_PAY_MCH_SERIAL_NO:}
       privateKey: ${ZXT_PAY_ZXT_PAY_WX_PRIVATEKEY:}
       apiV3Key: ${ZXT_PAY_ZXT_PAY_WX_APIV3KEY:}

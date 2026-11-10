@@ -85,7 +85,8 @@ public class CommonExceptionAdvice {
 
     @ExceptionHandler(Exception.class)
     public Object handleRuntimeException(Exception e) {
-        log.error("其他异常 uri : {} -> ", WebUtils.getRequest().getRequestURI(), e);
+        String uri = WebUtils.getRequest().getRequestURI().replaceAll("[\\r\\n]", "_");
+        log.error("其他异常 uri : {} -> ", uri, e);
         return processResponse(500, 500, "服务器内部异常");
     }
 

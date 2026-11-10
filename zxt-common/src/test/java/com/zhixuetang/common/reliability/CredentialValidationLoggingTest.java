@@ -18,6 +18,29 @@ class CredentialValidationLoggingTest {
     public void form(Object ignored) {}
 
     @Test
+    void unexpectedFailuresKeepUriOnOneLogLine() {
+        var logger = (Logger) LoggerFactory.getLogger(CommonExceptionAdvice.class);
+        var events = new ListAppender<ILoggingEvent>();
+        events.start();
+        logger.addAppender(events);
+        var request = new MockHttpServletRequest();
+        request.setRequestURI("/api/v2/courses/42\r\nforged-entry");
+        RequestContextHolder.setRequestAttributes(
+                new ServletRequestAttributes(request, new MockHttpServletResponse()));
+        try {
+            new CommonExceptionAdvice().handleRuntimeException(new IllegalStateException("failure"));
+            assertEquals(1, events.list.size());
+            assertEquals("其他异常 uri : /api/v2/courses/42__forged-entry -> ",
+                    events.list.getFirst().getFormattedMessage());
+            assertNotNull(events.list.getFirst().getThrowableProxy());
+        } finally {
+            RequestContextHolder.resetRequestAttributes();
+            logger.detachAppender(events);
+            events.stop();
+        }
+    }
+
+    @Test
     void bindingFailuresNeverLogRejectedCredentialsEvenAtDebugLevel() throws Exception {
         var logger = (Logger) LoggerFactory.getLogger(CommonExceptionAdvice.class);
         Level previous = logger.getLevel();
