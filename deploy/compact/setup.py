@@ -853,8 +853,8 @@ def build(package=True, group=None):
             'health-compile',
         )
         heap = '384m' if group == 'gateway' else '768m'
-        # Refresh APT and Brotli from the security repository; only support needs ffmpeg.
-        packages = 'apt libapt-pkg6.0t64 libbrotli1' + (
+        # Refresh vulnerable base packages; only support needs ffmpeg.
+        packages = 'apt libapt-pkg6.0t64 libbrotli1 libpcre2-8-0 zlib1g' + (
             ' ffmpeg' if group == 'support' else ''
         )
         apt = (

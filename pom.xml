@@ -67,6 +67,12 @@
     <!-- 对依赖包进行管理 -->
     <dependencyManagement>
         <dependencies>
+            <!-- MyBatis embeds OGNL; upgrading a separate OGNL coordinate does not fix it. -->
+            <dependency>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis</artifactId>
+                <version>3.6.0</version>
+            </dependency>
             <!-- Keep the legacy SDKs on the same Okio implementation as OkHttp 4. -->
             <dependency>
                 <groupId>com.squareup.okio</groupId>
