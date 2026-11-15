@@ -57,6 +57,30 @@ python deploy/acceptance/verify_observability.py
 
 故障测试会停止本验收 RabbitMQ 或学习/交易 JVM，必须在专用验收窗口执行。测试使用新 ID 的业务夹具，管理页面按实际覆盖的浏览器路径记录结果。支付成功模拟器调用本项目支付服务，真实支付宝渠道需独立凭据和环境验证。
 
+`api_smoke.py` 每次创建独立免费课程，通过真实报名、Outbox 和学习权益投影后再验证笔记与收藏，不直接插入课表冒充权益。已通过授权检查、只需复验持久化部分时，可使用 `python deploy/acceptance/api_smoke.py --persistence-only`；结果中的 `selection` 与 `checks` 会记录实际覆盖范围。刷新 Cookie 检查仍要求上文的 HTTPS 入口。
+
+### Windows 上的原生媒资用例
+
+缺少 `ffmpeg`／`ffprobe` 或符号链接权限时，使用与 Linux CI 相同的平台条件，不跳过用例或修改 Windows 全局安全设置。测试镜像包含 JDK 21、Maven、视频工具；只在本机构建，不发布：
+
+```powershell
+docker build -t zhixuetang-test/media:local -f deploy/acceptance/docker/Dockerfile.media-tests deploy/acceptance/docker
+```
+
+将源码挂载到 `/workspace`，通过 `--network container:<隔离 MySQL 容器名>` 共享其网络，设置 `ACCEPTANCE_DB_PORT=3306`，并用 `-e ACCEPTANCE_DB_PASSWORD -e ZXT_INTERNAL_TOKEN` 从当前进程环境传入独立测试库密码及测试签名令牌（与 `run_tests.py` 一致，令牌至少 32 字符）。可挂载本机 Maven 缓存并用 `-Dmaven.repo.local` 指定容器内路径。不得连接日常数据库。
+
+Windows 跨文件系统挂载编译较慢时，将当前源码快照解包到容器内部的 `/workspace` 再运行 Maven；快照仅包含当前源码与测试资源，不包含 `.env`、`.local` 或日常媒资。
+
+只复验以下八个原生媒资用例时，容器内的 Maven 参数为：
+
+```bash
+mvn -B -pl zxt-media -am '-Dtest=FfprobeNativeMediaDurationTest,TrialMediaDatabaseTest,TrialMediaNativeTest#physicallyClipsRealVideoToTheTrialLimit,LocalMediaImportControllerTest#rejectsSymlinkFileAndDirectoryComponents' -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+前三组验证真实探测、物理裁剪与专用 MySQL 持久化；最后一项在容器 `/tmp` 中实际创建文件和目录符号链接，再验证拒绝逻辑。期望执行八项、零失败／错误／跳过；不要把其他已经通过的类一并加入重跑。
+
+### 性能实验与契约生成
+
 空闲窗口运行 `load_claims.py`、`sustained_claims.py --seconds 60`。五档并发依次为 1、10、50、100、200；指标包含客户端轮询耗时，按短时工作流吞吐记录；生产容量另按持续负载测量。压测会写入验收优惠券与合成用户 ID，不会创建真实用户或访问原部署。
 
 ```powershell

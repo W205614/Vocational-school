@@ -1,4 +1,4 @@
-import requests, json, uuid, time, concurrent.futures, os
+import requests, json, uuid, time, concurrent.futures, os, argparse
 from prepare import LOCAL, mysql
 
 BASE = os.environ.get('ZXT_ACCEPTANCE_ORIGIN', 'http://127.0.0.1:23310').rstrip('/') + '/api/v2'
@@ -48,37 +48,65 @@ def wait(session, service, op):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--persistence-only', action='store_true',
+        help='Run persistence checks without repeating the authorization checks',
+    )
+    args = parser.parse_args()
     student = login('student')
-    admin = login('admin')
-    teacher = login('teacher')
-    print('Three isolated roles logged in', flush=True)
-    anon = requests.Session()
-    anon.headers.update(
-        {
-            'user-info': accounts['admin']['id'],
-            'user-role': '1',
-            'X-Internal-Token': 'forged',
-        }
-    )
-    call(anon, 'GET', '/favorites', expected=401)
-    call(student, 'GET', '/admin/payment-conflicts', expected=403)
-    # The gateway replaces a client-supplied origin and identity with its own values.
-    student.headers.update(
-        {
-            'x-request-from': 'feign',
-            'user-info': accounts['admin']['id'],
-            'user-role': '1',
-        }
-    )
-    call(student, 'GET', '/favorites')
-    print('Identity spoofing and student/admin boundary checked', flush=True)
+    if not args.persistence_only:
+        admin = login('admin')
+        teacher = login('teacher')
+        print('Three isolated roles logged in', flush=True)
+        anon = requests.Session()
+        anon.headers.update(
+            {
+                'user-info': accounts['admin']['id'],
+                'user-role': '1',
+                'X-Internal-Token': 'forged',
+            }
+        )
+        call(anon, 'GET', '/favorites', expected=401)
+        call(student, 'GET', '/admin/payment-conflicts', expected=403)
+        # The gateway replaces a client-supplied origin and identity with its own values.
+        student.headers.update(
+            {
+                'x-request-from': 'feign',
+                'user-info': accounts['admin']['id'],
+                'user-role': '1',
+            }
+        )
+        call(student, 'GET', '/favorites')
+        print('Identity spoofing and student/admin boundary checked', flush=True)
     user = accounts['student']['id']
+    marker = uuid.uuid4().hex
+    course = str(820000000000000000 + int(marker[:14], 16))
+    # Seed only a new catalogue row; the real enrollment/outbox flow grants learning rights.
     mysql(
-        f"INSERT IGNORE INTO learning_lesson(id,user_id,course_id,expire_time,status,learned_sections) VALUES(800000000000000010,{user},1,NOW()+INTERVAL 1 YEAR,0,0)",
-        'tj_learning',
+        'CREATE TEMPORARY TABLE api_smoke_course LIKE course;'
+        'INSERT INTO api_smoke_course SELECT * FROM course WHERE id=1;'
+        f"UPDATE api_smoke_course SET id={course},name='API smoke free {marker}',"
+        'free=1,price=0,status=2,deleted=0,valid_duration=12,'
+        'purchase_start_time=NOW()-INTERVAL 1 DAY,purchase_end_time=NOW()+INTERVAL 1 YEAR;'
+        'INSERT INTO course SELECT * FROM api_smoke_course;',
+        'tj_course',
     )
+    enrollment = wait(
+        student, 'trade',
+        call(student, 'POST', '/orders/free-courses/' + course, {}, marker, 202),
+    )
+    assert enrollment['status'] == 'SUCCEEDED', enrollment
+    deadline = time.monotonic() + 60
+    while True:
+        lesson = call(student, 'GET', '/services/learning/learning-records/course/' + course)
+        if lesson is not None and lesson['status'] != 3:
+            break
+        if time.monotonic() >= deadline:
+            raise AssertionError('Free enrollment did not project valid learning rights')
+        time.sleep(0.3)
     key = uuid.uuid4().hex
-    payload = dict(courseId='1', content='Acceptance private note ' + key)
+    payload = dict(courseId=course, content='Acceptance private note ' + key)
     original = call(student, 'POST', '/notes', payload, key, 202)
     repeated = call(student, 'POST', '/notes', payload, key, 202)
     assert repeated['operationId'] == original['operationId']
@@ -113,18 +141,18 @@ if __name__ == '__main__':
         ),
     )
     assert stale['status'] == 'FAILED'
-    call(student, 'PUT', '/favorites/1')
-    call(student, 'PUT', '/favorites/1')
-    assert call(student, 'GET', '/favorites/1')['favorited'] is True
+    call(student, 'PUT', '/favorites/' + course)
+    call(student, 'PUT', '/favorites/' + course)
+    assert call(student, 'GET', '/favorites/' + course)['favorited'] is True
     assert (
         mysql(
-            f'SELECT COUNT(*) FROM course_favorite WHERE user_id={user} AND course_id=1',
+            f'SELECT COUNT(*) FROM course_favorite WHERE user_id={user} AND course_id={course}',
             'tj_learning',
         )
         == '1'
     )
-    call(student, 'DELETE', '/favorites/1')
-    call(student, 'DELETE', '/favorites/1')
+    call(student, 'DELETE', '/favorites/' + course)
+    call(student, 'DELETE', '/favorites/' + course)
     current = call(student, 'GET', '/notes/' + note['id'])
     delete_key = uuid.uuid4().hex
     delete_path = '/notes/' + note['id'] + '?version=' + str(current['version'])
@@ -210,10 +238,11 @@ if __name__ == '__main__':
         json.dumps(
             dict(
                 status='PASSED',
-                checks=[
-                    'three roles login',
-                    'identity spoofing',
-                    'admin boundary',
+                selection='PERSISTENCE' if args.persistence_only else 'ALL',
+                checks=([] if args.persistence_only else [
+                    'three roles login', 'identity spoofing', 'admin boundary',
+                ]) + [
+                    'free enrollment projects real learning rights',
                     'durable note create and replay',
                     'same key conflict',
                     'note optimistic conflict',
