@@ -10,7 +10,7 @@
 
 项目按需维护，日常改动合入 `dev`。参与开发见[贡献指南](CONTRIBUTING.md)，安全问题报告见[安全政策](SECURITY.md)。
 
-最新已发布的源码预览为 [v0.1.0-preview.2](https://github.com/W205614/Vocational-school/releases/tag/v0.1.0-preview.2)，改动与历史验证范围见[版本说明](docs/releases/v0.1.0-preview.2.md)。`dev` 另含后续工程修正；它们尚未组成新 Release。`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
+最新源码预览为 [v0.1.0-preview.3](https://github.com/W205614/Vocational-school/tree/v0.1.0-preview.3)，通过 Git Tag 获取。该版本完善了选课资料、课程试看、作业版本与订正、教学待办和媒资管理。`dev` 用于跟进开发，`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
 
 [获取方式](#获取方式与发布状态) · [首次部署](#全新环境准备) · [已有环境启动](#已有环境启动) · [源码导航](#源码导航)
 
@@ -18,11 +18,11 @@
 
 | 方式 | 当前状态与用途 |
 | --- | --- |
-| 源码构建 + Docker Compose | 当前可用的部署入口，按下文从 Git 克隆 `dev`，生成本地配置并构建镜像；需要完整工具链和依赖下载网络 |
-| 预构建 Docker/OCI 镜像 | 已确定使用公开 GHCR，**尚未发布、未验证匿名拉取**；目前不能省略源码构建步骤 |
-| 历史源码预览 | `preview.1`、`preview.2` 保留原提交和历史说明，均没有附带应用镜像；不代表当前安全告警已清零 |
+| 从源码构建并运行 | 按下文克隆 `v0.1.0-preview.3`，生成本地配置，用 Docker Compose 运行自建镜像 |
+| 跟进开发 | 克隆 `dev`，按[贡献指南](CONTRIBUTING.md)使用独立开发和验收环境 |
+| 查阅历史版本 | [GitHub Tags](https://github.com/W205614/Vocational-school/tags)保留各版源码，[preview.2 版本说明](docs/releases/v0.1.0-preview.2.md)记录当时的改动和验证 |
 
-计划的 GHCR 位置为 `ghcr.io/w205614/zhixuetang-{identity,commerce,education,support,gateway,student,admin}`，平台为 `linux/amd64`。计划版本 `v0.1.0-preview.3` 尚无 Tag、Release 或镜像摘要；许可材料和安全门禁未完成前，不将这些地址作为可用下载入口。最新调查见[安全与发布复核](docs/security-review-20261110.md)。应用交付采用 OCI 镜像，不提供 Maven 应用包安装或发布方式。
+本次公开交付范围为源码 Tag，运行所需应用镜像由下文的脚本在本地构建。
 
 源码 ZIP 不含 Git 元数据，而构建工具需要核对提交和源码绑定，请使用下文的 Git 克隆方式。新源码不会自动替换已有日常容器；已有环境先按[升级说明](docs/stability-operations.md#升级已有部署)核对完整构建绑定和恢复前提，不用初始化空库代替升级。
 
@@ -51,7 +51,7 @@ python deploy/compact/setup.py up
 以下命令以 **Windows PowerShell** 为例，后续均在仓库根目录执行：
 
 ```powershell
-git clone --branch dev https://github.com/W205614/Vocational-school.git
+git clone --branch v0.1.0-preview.3 https://github.com/W205614/Vocational-school.git
 cd Vocational-school
 python -m pip install -r deploy/compact/requirements.txt
 npm --prefix frontend ci
@@ -108,10 +108,10 @@ Get-Content deploy/compact/.local/accounts.json
 
 分别使用 `student`、`teacher`、`admin` 下的 `username` 和 `password` 登录对应端。密码随机生成，账号文件仅保存在本地，不要提交或公开。
 
-1. **游客选课**：打开学生门户，搜索课程并查看详情、章节目录，无需先登录。
-2. **学生体验**：使用学生账号登录，将课程加入购物车并完成模拟支付；进入「我的学习」设置周目标、继续学习、记录笔记，再查看考试、错题本和积分签到。
-3. **教师体验**：在管理工作台使用教师账号登录，进入「授课学情与答疑」或「考试」查看授权课程、答疑和待评分答卷。没有提交的答卷时，待评分列表为空。
-4. **管理员体验**：使用管理员账号登录管理工作台，维护课程、章节、媒资、题库和试卷；在「赛季与奖励」查看积分来源并配置未来赛季奖励。
+1. **游客**可在目录按难度、预计学习时长和试看状态筛选，打开课程详情核对学习目标与先修要求。
+2. **学生**可使用模拟支付报名，在「我的学习」继续播放与记笔记，提交课程作业、查看教师反馈，收到更正提醒后对照原版与新版要求。考试讲评、错题本和积分记录也从学生端进入。
+3. **教师**可从「教学待办」查看授权课程的阅卷、答疑和待反馈作业，按课程筛选，处理后打开下一项。
+4. **管理员**可盘点历史课程资料和变更记录，批量准备草稿或已上架课程的试看片段，更正已发布作业，并在删除媒资前查看引用它的课程与小节。
 
 启动成功后，可以在学生门户搜索到演示课程并打开详情，在管理工作台用对应角色登录。页面打不开或搜索为空时，见[日常启停与排障](deploy/compact/README.md#日常启停与常见问题)。
 
@@ -133,11 +133,9 @@ Get-Content deploy/compact/.local/accounts.json
 
 ## 验证与已知边界
 
-前端类型、单元测试与构建入口，以及后端和真实依赖测试要求见[贡献指南](CONTRIBUTING.md#修改与验证)。2026-11-10 后续工程提交 `31d89ad` 的本机前端 40 项单元测试、类型检查、双端构建和 compact 工具 137 项通过，准确提交的前后端 CI 通过；它们与镜像扫描、完整隔离业务及日常验收分别记录。
+2026-11-22 的隔离验收使用合成账号、模拟支付和本地视频，覆盖购买与权益、学习与答疑、考试阅卷、退款，以及课程资料补录、批量试看、作业更正和并发编辑。各轮测试条件、结果和候选提交见[多角色体验](docs/product-experience-acceptance.md)、[四项后续需求](docs/product-experience-followup-acceptance.md)和[七项产品改进](docs/product-improvements-acceptance.md)。
 
-该提交的两个本机网页候选镜像全级别扫描均为零发现，候选及更新后的日常网页各通过 53 项三角色只读／路径校验；日常网页为 `31d89ad`，后端仍为 `dd1870b`，验收后 14 个容器恢复停止。只替换网页，没有执行数据库迁移，也未发布这些镜像至 GHCR。
-
-仓库整体仍有 16 条活动 CodeQL、1 条 Dependabot 告警；13 条有逐项证据的 CodeQL 误报处置不计为代码修复。本机五个 JVM 镜像复扫仍因 Java 漏洞库下载中断而未完成，不能将网页扫描结果推广至后端。默认支付、短信是模拟，真实外部服务、生产容量及备份恢复没有因此得到认证。完整问题、CI 与版本边界见[复核记录](docs/security-review-20261110.md)。
+源码检查结果见 [GitHub Actions](https://github.com/W205614/Vocational-school/actions)。在本地复现可从[贡献指南](CONTRIBUTING.md#修改与验证)进入前端检查及隔离回归。真实支付、短信、对象存储，以及生产容量、高可用和容灾的验证范围见[生产就绪说明](docs/production-readiness.md)。
 
 ## 来源与许可
 
