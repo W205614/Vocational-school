@@ -29,6 +29,7 @@ const courses = ref<Row[]>([]);
 const title = ref('');
 const instructions = ref('');
 const configuration = ref<PracticeAssignmentView>({ assignment: null, versions: [] });
+const configuredCourseId = ref('');
 const assignment = computed(() => configuration.value.assignment);
 const versions = computed(() => configuration.value.versions);
 const currentVersion = computed(() => versions.value.find((version) => version.version === assignment.value?.version));
@@ -81,6 +82,7 @@ async function loadConfiguration(keepDraft = false) {
     const result = await get<PracticeAssignmentView>(adminPath(course));
     if (course !== courseId.value) return;
     configuration.value = result;
+    configuredCourseId.value = course;
     const latest = result.assignment;
     if (!keepDraft || !latest?.version) {
       resetEditor();
@@ -252,6 +254,7 @@ watch(courseId, async (course) => {
   selected.value = undefined;
   work.value = { list: [], total: 0 };
   configuration.value = { assignment: null, versions: [] };
+  configuredCourseId.value = '';
   resetEditor();
   if (!course) return;
   if (session.role === 3) {
@@ -365,7 +368,7 @@ onMounted(async () => {
     </template>
     <template v-else>
       <EntityPicker v-model="courseId" kind="courses" label="选择试点课程" :course-statuses="[2]" :disabled="task.busy.value" />
-      <el-form v-if="courseId" label-position="top" class="practice-editor" aria-label="配置实操作业"
+      <el-form v-if="courseId && configuredCourseId === courseId" label-position="top" class="practice-editor" aria-label="配置实操作业"
         :disabled="task.busy.value">
         <el-form-item label="作业标题">
           <el-input v-model="title" maxlength="120" :disabled="!!publishedAt && !correcting" />
@@ -398,6 +401,7 @@ onMounted(async () => {
           <el-button type="primary" :disabled="task.busy.value || !title.trim() || !instructions.trim()" @click="save(true)">发布作业</el-button>
         </div>
       </el-form>
+      <el-button v-else-if="courseId && task.error.value" @click="loadConfiguration()">重新载入作业</el-button>
     </template>
   </section>
 </template>

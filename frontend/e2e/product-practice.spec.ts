@@ -25,7 +25,8 @@ test('product practice: correct a published task and review each version from th
   const originalInstructions = '提交一份作品说明，可以补充演示链接。';
   const correctedInstructions = '请提交作品说明，并注明成果验证方法。';
   const reason = '补充成果验证要求';
-  const correctionPath = '/admin/learning-hub/practice/' + course + '/corrections';
+  const assignmentPath = '/admin/learning-hub/practice/' + course;
+  const correctionPath = assignmentPath + '/corrections';
   const queuePath = '/teacher/learning-hub/practice/pending';
   const work = '/teacher/learning-hub/practice/' + course + '/submissions';
   const submissionPath = '/learning-hub/practice/' + course + '/submissions';
@@ -35,7 +36,22 @@ test('product practice: correct a published task and review each version from th
     const picker = admin.getByRole('dialog', { name: '选择试点课程' });
     await picker.getByRole('textbox', { name: '选择试点课程关键词' }).fill(courseName);
     await picker.getByRole('button', { name: '查询', exact: true }).click();
-    await picker.getByRole('row').filter({ hasText: courseName }).getByRole('button', { name: '选用' }).click();
+    let releaseConfiguration!: () => void;
+    const configurationMayProceed = new Promise<void>((resolve) => { releaseConfiguration = resolve; });
+    let configurationRequested!: () => void;
+    const configurationInFlight = new Promise<void>((resolve) => { configurationRequested = resolve; });
+    await admin.route('**/api/v2' + assignmentPath, async (route) => {
+      configurationRequested();
+      await configurationMayProceed;
+      await route.continue();
+    }, { times: 1 });
+    try {
+      await picker.getByRole('row').filter({ hasText: courseName }).getByRole('button', { name: '选用' }).click();
+      await configurationInFlight;
+      await expect(admin.getByRole('form', { name: '配置实操作业' })).toHaveCount(0);
+    } finally {
+      releaseConfiguration();
+    }
     await admin.getByRole('textbox', { name: '作业标题' }).fill(assignmentTitle);
     await admin.getByRole('textbox', { name: '任务说明' }).fill(originalInstructions);
     await admin.getByRole('button', { name: '保存草稿' }).click();
@@ -162,7 +178,10 @@ test('product practice: correct a published task and review each version from th
     await api(teacher, 'PUT', work + '/' + first.id + '/feedback', {
       status: 'NEEDS_REVISION', feedback: '补充成果验证。',
     });
+    const feedbackConflict = staleTeacher.waitForResponse((response) =>
+      response.request().method() === 'PUT' && new URL(response.url()).pathname === '/api/v2' + work + '/' + first.id + '/feedback');
     await staleDialog.getByRole('button', { name: '通过作业', exact: true }).click();
+    expect((await feedbackConflict).status()).toBe(409);
     await expect(staleDialog.getByText(/这份提交已处理，请刷新/)).toBeVisible();
     await expect(staleDialog.getByRole('button', { name: '通过作业', exact: true })).toHaveCount(0);
     await staleDialog.getByRole('button', { name: '刷新作品与反馈' }).click();
