@@ -29,6 +29,11 @@ public class UserInboxDTO {
     @Schema(description = "通知或私信内容")
     private String content;
 
+    private String targetType;
+    private Long targetId;
+    private Long courseId;
+    private Long sectionId;
+
     @Schema(description = "是否已读")
     private Boolean isRead;
 

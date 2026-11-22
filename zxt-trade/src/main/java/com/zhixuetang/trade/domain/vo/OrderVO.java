@@ -15,6 +15,12 @@ public class OrderVO {
     @Schema(description = "订单创建时间")
     private LocalDateTime createTime;
 
+    @Schema(description = "已确认的付款时间，包括关闭订单后确认的支付事实")
+    private LocalDateTime paidAt;
+
+    @Schema(description = "付款已确认但订单已关闭，需核对处理")
+    private Boolean paymentNeedsReview;
+
     @Schema(description = "订单实付金额")
     private Integer realAmount;
 

@@ -220,6 +220,15 @@ onMounted(load);
       <el-button @click="load" :disabled="task.busy.value">刷新积分</el-button>
     </div>
     <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
+    <details class="card points-rules">
+      <summary>积分与奖励规则</summary>
+      <ul>
+        <li>首次完成视频或考试小节可得 10 分，每日最多 50 分。</li>
+        <li>每日签到可得 1 分，连续签到 7、14、28 天分别有额外奖励。</li>
+        <li>回答被授课教师采纳可得 5 分，每日最多 20 分。</li>
+        <li>赛季结算后在「赛季奖励」查看发放结果，领取条件以当期规则为准。</li>
+      </ul>
+    </details>
     <p v-if="creditHint" class="credit-pending" :role="creditPending ? 'status' : undefined">
       {{ creditHint }}
     </p>

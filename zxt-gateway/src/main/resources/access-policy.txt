@@ -649,3 +649,16 @@ POST:/api/v2/admin/user/account-privacy/deletion
 POST:/api/v2/admin/user/account-privacy/consent
 POST:/api/v2/admin/pay/notify/ali
 GET:/api/v2/admin/media/cloud-content/{id}
+GET:/api/v2/admin/course/courses/publication/{id}
+GET:/api/v2/services/course/courses/{id}/handout
+GET:/api/v2/exam-review/suggestions
+GET:/api/v2/admin/dashboard/pending-entitlements
+GET:/api/v2/admin/media/processing-failures
+GET:/api/v2/admin/learning-hub/practice/{courseId}
+PUT:/api/v2/admin/learning-hub/practice/{courseId}
+GET:/api/v2/learning-hub/practice
+GET:/api/v2/learning-hub/practice/{courseId}
+POST:/api/v2/learning-hub/practice/{courseId}/submissions
+GET:/api/v2/teacher/learning-hub/practice/{courseId}/submissions
+GET:/api/v2/teacher/learning-hub/practice/{courseId}/submissions/{studentId}
+PUT:/api/v2/teacher/learning-hub/practice/{courseId}/submissions/{id}/feedback

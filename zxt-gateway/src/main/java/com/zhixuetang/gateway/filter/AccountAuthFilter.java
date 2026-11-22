@@ -180,6 +180,7 @@ public class AccountAuthFilter implements GlobalFilter, Ordered {
                             "GET:/api/v2/services/search/recommend/**",
                             "GET:/api/v2/services/course/course/*",
                             "GET:/api/v2/services/course/courses/*/catalogs",
+                            "GET:/api/v2/services/course/courses/*/handout",
                             "GET:/api/v2/services/course/categorys/list",
                             "GET:/api/v2/services/learning/lessons/**",
                             "POST:/api/v2/services/learning/lessons/plans",

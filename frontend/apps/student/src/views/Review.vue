@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { questionOptions } from '../../../../packages/shared/src/questionOptions';
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { get } from '../../../../packages/shared/src/client';
 import { enrolledCourseOptions } from '../../../../packages/shared/src/courseOptions';
 import { useOperations } from '../../../../packages/shared/src/operations';
 import { useTask, query, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
-const task = useTask(),
+const route = useRoute(),
+  task = useTask(),
   ops = useOperations(),
   rows = ref<Row[]>([]),
   total = ref(0),
@@ -18,6 +20,13 @@ const task = useTask(),
   selected = ref<Row>(),
   response = ref(''),
   result = ref<Row>();
+const suggestions = ref<Row[]>([]),
+  suggestionsTask = useTask();
+async function loadSuggestions() {
+  await suggestionsTask.run(async () => {
+    suggestions.value = await get<Row[]>('/exam-review/suggestions');
+  });
+}
 const listBusy = ref(false),
   listError = ref('');
 let listRevision = 0;
@@ -75,6 +84,7 @@ async function review() {
       selected.value = await loadQuestion(row);
       result.value = selected.value;
       task.message.value = '复习已记录，原考试成绩保持不变';
+      await loadSuggestions();
     }
   });
 }
@@ -92,25 +102,43 @@ async function mark() {
   });
   if (ok) {
     selected.value = undefined;
-    await load();
+    await Promise.all([load(), loadSuggestions()]);
   }
 }
-const choicesAbort = new AbortController();
+const choicesAbort = new AbortController(), courseOptionsError = ref('');
 onBeforeUnmount(() => {
   listRevision++;
   choicesAbort.abort();
 });
+async function openFromRoute() {
+  const { attemptId, questionId } = route.query;
+  if (attemptId === undefined && questionId === undefined) return;
+  if (
+    typeof attemptId !== 'string' ||
+    typeof questionId !== 'string' ||
+    !/^[1-9][0-9]{0,18}$/.test(attemptId) ||
+    !/^[1-9][0-9]{0,18}$/.test(questionId)
+  ) {
+    task.error.value = '错题链接无效';
+    return;
+  }
+  selected.value = undefined;
+  await open({ attempt_id: attemptId, question_id: questionId });
+}
+watch(() => [route.query.attemptId, route.query.questionId], () => void openFromRoute());
 onMounted(async () => {
-  await load();
-  if (choicesAbort.signal.aborted) return;
-  await task.run(async () => {
-    try {
-      const all = await enrolledCourseOptions(choicesAbort.signal);
-      if (!choicesAbort.signal.aborted) courses.value = all;
-    } catch (error) {
-      if (!choicesAbort.signal.aborted) throw error;
-    }
-  });
+  await Promise.all([
+    load(),
+    loadSuggestions(),
+    openFromRoute(),
+    enrolledCourseOptions(choicesAbort.signal)
+      .then((all) => {
+        if (!choicesAbort.signal.aborted) courses.value = all;
+      })
+      .catch(() => {
+        if (!choicesAbort.signal.aborted) courseOptionsError.value = '已报名课程暂时无法加载';
+      }),
+  ]);
 });
 async function loadQuestion(row: Row) {
   const detail = await get<Row>('/exam-review/' + row.attempt_id + '/' + row.question_id);
@@ -132,6 +160,25 @@ async function loadQuestion(row: Row) {
       :error="task.error.value || listError"
       :message="task.message.value"
     /><el-button v-if="listError" @click="load" :disabled="listBusy">重试加载错题</el-button>
+    <section class="suggested-review" aria-label="今日建议复习">
+      <h2>今日建议复习</h2>
+      <Status :busy="suggestionsTask.busy.value" :error="suggestionsTask.error.value" />
+      <el-button v-if="suggestionsTask.error.value" @click="loadSuggestions">重试复习建议</el-button>
+      <p v-else-if="!suggestions.length && !suggestionsTask.busy.value" class="muted">
+        暂无建议复习的错题。
+      </p>
+      <article v-for="row in suggestions" :key="row.attempt_id + '-' + row.question_id" class="suggested-item">
+        <div>
+          <h3>{{ row.name }}</h3>
+          <p>
+            历史失分 {{ row.failed_attempts }} 次 ·
+            {{ row.last_reviewed_at ? '上次复习 ' + String(row.last_reviewed_at).replace('T', ' ') : '尚未复习' }}
+          </p>
+        </div>
+        <el-button @click="open(row)">开始复习</el-button>
+      </article>
+    </section>
+    <p v-if="courseOptionsError" class="muted">{{ courseOptionsError }}</p>
     <div class="toolbar">
       <el-select
         v-model="courseId"
@@ -246,6 +293,14 @@ async function loadQuestion(row: Row) {
           <p>解析：{{ selected.analysis || '暂无解析' }}</p>
           <p v-if="selected.feedback">教师反馈：{{ selected.feedback }}</p>
         </details>
+        <p v-if="selected.lecture_section_id">
+          <RouterLink
+            :to="{
+              path: '/courses/' + selected.course_id,
+              query: { sectionId: selected.lecture_section_id, moment: selected.lecture_moment ?? undefined },
+            }"
+          >回看课程讲解 →</RouterLink>
+        </p>
         <p class="muted">复习仅记录掌握情况，不修改原考试成绩。</p>
         <el-button @click="mark" :disabled="task.busy.value">{{
           isMastered(selected.mastered) ? '重新加入复习' : '标记已掌握'
@@ -254,3 +309,19 @@ async function loadQuestion(row: Row) {
     /></el-dialog>
   </section>
 </template>
+
+<style scoped>
+.suggested-review { margin-block: 1rem 1.5rem; }
+.suggested-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--el-border-color);
+  overflow-wrap: anywhere;
+}
+.suggested-item h3,
+.suggested-item p { margin: 0.25rem 0; }
+</style>

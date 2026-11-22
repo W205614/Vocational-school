@@ -5,6 +5,7 @@ import { get, write, request } from '../../../../packages/shared/src/client';
 import { useOperations } from '../../../../packages/shared/src/operations';
 import { useTask, money, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
+import CourseFacts from '../../../../packages/shared/src/CourseFacts.vue';
 import { learningProgress } from '../../../../packages/shared/src/learningProgress';
 import { playbackTiming, type PlaybackState } from '../../../../packages/shared/src/playbackTiming';
 import {
@@ -59,6 +60,7 @@ const route = useRoute(),
   onlyMine = ref(false),
   replyPage = ref(1),
   replyTotal = ref(0);
+const handout = ref(''), handoutError = ref(''), handoutLoading = ref(false);
 const loading = ref(false),
   readError = ref(''),
   playbackError = ref(''),
@@ -110,6 +112,29 @@ const owned = computed(
     Number(lesson.value.status) !== 3 &&
     (!lesson.value.expireTime || new Date(lesson.value.expireTime).getTime() > Date.now()),
 );
+const trialSection = computed(() =>
+  sections.value.find((item) => Number(item.type) === 2 && item.trailer),
+);
+async function loadHandout() {
+  const scope = loadRevision, courseId = id(), who = identity.value;
+  const current = () => scope === loadRevision && courseId === id() && who === identity.value && owned.value;
+  handoutLoading.value = true;
+  handoutError.value = '';
+  try {
+    const data = await get<{ text?: string }>('/services/course/courses/' + courseId + '/handout');
+    if (current()) handout.value = data?.text?.trim() || '';
+  } catch (error) {
+    if (current()) handoutError.value = error instanceof Error ? error.message : '讲义加载失败';
+  } finally {
+    if (current()) handoutLoading.value = false;
+  }
+}
+watch(owned, (value) => {
+  handout.value = '';
+  handoutError.value = '';
+  handoutLoading.value = false;
+  if (value) void loadHandout();
+});
 const preparation = entitlementPreparation<Row | null>(
   () => identity.value + ':' + id(),
   (signal) => request<Row | null>('/services/learning/learning-records/course/' + id(), { signal }),
@@ -148,6 +173,12 @@ const timing = playbackTiming(
       { method: 'POST', body: JSON.stringify(body), signal },
     ),
 );
+const synchronizationLabel = computed(() => {
+  if (timing.error.value || progressWriter.error.value) return '学习进度尚未同步';
+  if (timing.busy.value || progressWriter.busy.value) return '正在保存学习进度';
+  if (timing.current.value?.lastSequence) return '上次进度已保存';
+  return '等待首次进度同步';
+});
 const timeLabel = (milliseconds: unknown) => {
   const seconds = Math.floor(Number(milliseconds || 0) / 1000);
   return Math.floor(seconds / 60) + '分' + (seconds % 60) + '秒';
@@ -450,9 +481,9 @@ async function load() {
     if (current()) loading.value = false;
   }
 }
-function requireLogin() {
+function requireLogin(redirect = route.fullPath) {
   if (session.token) return false;
-  void router.push({ path: '/login', query: { redirect: route.fullPath } });
+  void router.push({ path: '/login', query: { redirect } });
   return true;
 }
 async function enroll() {
@@ -488,9 +519,12 @@ async function toggleFavorite() {
     task.message.value = favorite.value ? '已收藏，可在我的收藏中查看' : '已取消收藏';
   });
 }
-async function select(item: Row) {
+async function select(item: Row, resumeAt?: number) {
   if (!session.token && Number(item.type) === 2) {
-    requireLogin();
+    requireLogin(router.resolve({
+      path: route.path,
+      query: { ...route.query, sectionId: String(item.id) },
+    }).fullPath);
     return;
   }
   if (!owned.value && Number(item.type) === 2 && !item.trailer) {
@@ -514,7 +548,7 @@ async function select(item: Row) {
   play.value = undefined;
   playbackError.value = '';
   const previous = lesson.value?.records?.find((r: Row) => String(r.sectionId) === String(item.id));
-  moment.value = Number(previous?.moment || 0);
+  moment.value = resumeAt ?? Number(previous?.moment || 0);
   lastVideoPosition = moment.value;
   if (Number(item.type) !== 2) return;
   if (!canPlay.value) {
@@ -590,6 +624,9 @@ function resetCourse() {
   discussionError.value = '';
   course.value = undefined;
   lesson.value = undefined;
+  handout.value = '';
+  handoutError.value = '';
+  handoutLoading.value = false;
   section.value = undefined;
   play.value = undefined;
   favorite.value = false;
@@ -766,17 +803,58 @@ async function like(item: Row) {
     task.message.value = liked ? '已点赞' : '已取消点赞';
   });
 }
-watch(identity, () => {
-  progressWriter.reset();
+async function applyCourseLocation() {
+  if (!course.value) return;
+  const scope = loadRevision, courseId = id();
+  const sectionId = String(route.query.sectionId || '');
+  const questionId = String(route.query.questionId || '');
+  if (questionId) {
+    tab.value = 'discussion';
+    if (!session.token) {
+      requireLogin();
+      return;
+    }
+    if (!owned.value) {
+      discussionError.value = '当前课程没有有效学习权限';
+      return;
+    }
+    if (!/^[1-9][0-9]{0,18}$/.test(questionId)) {
+      discussionError.value = '该讨论已不可查看';
+      return;
+    }
+    try {
+      const item = await get<Row | null>('/services/learning/questions/' + questionId);
+      if (scope !== loadRevision || questionId !== String(route.query.questionId || '')) return;
+      if (!item || String(item.courseId) !== courseId ||
+          (sectionId && String(item.sectionId) !== sectionId)) {
+        discussionError.value = '该讨论已不可查看';
+        return;
+      }
+      await answers(item);
+    } catch (error) {
+      if (scope === loadRevision && questionId === String(route.query.questionId || ''))
+        discussionError.value = error instanceof Error ? error.message : '讨论加载失败';
+    }
+    return;
+  }
+  if (!sectionId) return;
+  const target = sections.value.find((item) => String(item.id) === sectionId);
+  if (!target) return;
+  const rawMoment = String(route.query.moment ?? '');
+  const seconds = /^[0-9]+$/.test(rawMoment) ? Number(rawMoment) : NaN;
+  tab.value = 'catalogue';
+  await select(target, Number.isSafeInteger(seconds) ? seconds : undefined);
+}
+watch([identity, () => route.params.id], async ([who], [previous]) => {
+  if (who !== previous) progressWriter.reset();
   resetCourse();
-  void load();
+  const scope = loadRevision + 1;
+  await load();
+  if (scope === loadRevision) await applyCourseLocation();
 });
 watch(
-  () => route.params.id,
-  () => {
-    resetCourse();
-    void load();
-  },
+  () => [route.query.sectionId, route.query.questionId, route.query.moment],
+  () => { if (!loading.value) void applyCourseLocation(); },
 );
 onMounted(async () => {
   document.addEventListener('visibilitychange', visibilityChanged);
@@ -786,13 +864,7 @@ onMounted(async () => {
   }, 10000);
   await loadCapabilities();
   await load();
-  if (route.query.sectionId) {
-    const target = sections.value.find((x) => String(x.id) === String(route.query.sectionId));
-    if (target) {
-      await select(target);
-      moment.value = Number(route.query.moment || moment.value);
-    }
-  }
+  await applyCourseLocation();
 });
 onBeforeUnmount(() => {
   preparation.reset();
@@ -864,6 +936,7 @@ onBeforeUnmount(() => {
           </p>
           <p v-if="course.introduce" class="content">{{ plain(course.introduce) }}</p>
           <p class="price">{{ Number(course.price) === 0 ? '免费课程' : money(course.price) }}</p>
+          <CourseFacts :course="course" />
           <div class="toolbar">
             <template v-if="!owned && enrollmentEnded"
               ><el-button size="large" disabled>报名已结束</el-button
@@ -890,7 +963,9 @@ onBeforeUnmount(() => {
               @click="continueLearning"
               :disabled="busy"
               >继续学习</el-button
-            ><el-button :disabled="busy" @click="toggleFavorite">{{
+            ><el-button v-if="!owned && trialSection" :disabled="busy" @click="select(trialSection)">
+              试看 · {{ trialSection.name }}
+            </el-button><el-button :disabled="busy" @click="toggleFavorite">{{
               favorite ? '取消收藏' : '收藏课程'
             }}</el-button
             ><RouterLink v-if="owned" :to="'/exams?courseId=' + id()">参加考试 →</RouterLink
@@ -915,8 +990,16 @@ onBeforeUnmount(() => {
       <el-tabs v-model="tab" class="course-tabs"
         ><el-tab-pane label="课程目录" name="catalogue" /><el-tab-pane
           label="课程介绍"
-          name="intro" /><el-tab-pane label="课程互动" name="discussion"
-      /></el-tabs>
+          name="intro" /><el-tab-pane v-if="owned" label="随堂讲义" name="handout" />
+        <el-tab-pane label="课程互动" name="discussion" />
+      </el-tabs>
+      <section v-if="tab === 'handout' && owned" class="card">
+        <h2>随堂讲义</h2>
+        <Status :busy="handoutLoading" :error="handoutError" />
+        <el-button v-if="handoutError" @click="loadHandout">重试加载讲义</el-button>
+        <p v-else-if="handout" class="handout-text">{{ handout }}</p>
+        <p v-else-if="!handoutLoading">教师尚未为这门课发布讲义。</p>
+      </section>
       <section v-if="tab === 'intro'" class="card">
         <h2>关于这门课程</h2>
         <p class="content">
@@ -1024,6 +1107,7 @@ onBeforeUnmount(() => {
                 正在更新播放地址，将保留播放位置和状态…
               </p>
               <div v-if="owned" aria-label="学习计时">
+                <p v-if="play?.playUrl" class="muted" role="status">{{ synchronizationLabel }}</p>
                 <p class="muted">
                   续播位置自动保存。累计折算时长达到视频时长的 90% 才完成，支持 0.5 至 2
                   倍速；暂停、缓冲、隐藏页面和拖动不增加时长。
@@ -1167,3 +1251,7 @@ onBeforeUnmount(() => {
     >
   </div>
 </template>
+
+<style scoped>
+.handout-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>

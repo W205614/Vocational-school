@@ -16,7 +16,7 @@ import org.apache.ibatis.annotations.Param;
 public interface CourseContentDraftMapper extends BaseMapper<CourseContentDraft> {
 
     String COLUMNS =
-            "id,course_introduce,use_people,course_detail,dep_id,create_time,update_time,creater,updater,deleted";
+            "id,course_introduce,use_people,course_detail,learning_outcomes,prerequisites,difficulty,practice_overview,handout,dep_id,create_time,update_time,creater,updater,deleted";
 
     @Insert(
             "insert into course_content_draft ("

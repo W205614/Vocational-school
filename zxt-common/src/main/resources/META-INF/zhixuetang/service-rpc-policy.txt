@@ -110,3 +110,9 @@ identity|GET|/_modules/data/internal/privacy/inventory
 identity|GET|/_modules/data/internal/privacy/export
 identity|POST|/_modules/data/internal/privacy/plan
 identity|POST|/_modules/data/internal/privacy/cleanup
+education|GET|/_modules/course/internal/v1/course/{courseId}/exam-sections/{sectionId}
+education|GET|/_modules/course/internal/v1/course/{courseId}/lecture-sections/{sectionId}
+education|GET|/_modules/exam/internal/v1/exams/published-sections
+education|POST|/_modules/media/internal/v2/media/durations
+commerce|POST|/_modules/learning/internal/v1/learning-entitlements/order-details
+education|GET|/_modules/course/internal/v1/courses/taught

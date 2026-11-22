@@ -54,13 +54,6 @@ public interface ICourseCatalogueDraftService extends IService<CourseCatalogueDr
     List<CataSimpleSubjectVO> getSuject(Long courseId);
 
     /**
-     * 校验课程对应的目录数据完整，包含  视频，题目，
-     *
-     * @param courseId
-     */
-    void checkCataInfoImplated(Long courseId);
-
-    /**
      * 复制试题到架上
      *
      * @param courseId

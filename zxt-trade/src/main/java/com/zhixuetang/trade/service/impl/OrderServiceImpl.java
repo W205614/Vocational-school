@@ -11,6 +11,8 @@ import com.zhixuetang.api.dto.promotion.CouponDiscountDTO;
 import com.zhixuetang.api.dto.promotion.OrderCouponDTO;
 import com.zhixuetang.api.dto.promotion.OrderCourseDTO;
 import com.zhixuetang.api.dto.trade.OrderBasicDTO;
+import com.zhixuetang.api.dto.trade.OrderEntitlementLookup.Line;
+import com.zhixuetang.api.dto.trade.OrderEntitlementLookup.Status;
 import com.zhixuetang.common.autoconfigure.mq.RabbitMqHelper;
 import com.zhixuetang.common.constants.MqConstants;
 import com.zhixuetang.common.domain.dto.PageDTO;
@@ -28,9 +30,11 @@ import com.zhixuetang.trade.constants.TradeErrorInfo;
 import com.zhixuetang.trade.domain.dto.PlaceOrderDTO;
 import com.zhixuetang.trade.domain.po.Order;
 import com.zhixuetang.trade.domain.po.OrderDetail;
+import com.zhixuetang.trade.domain.po.RefundApply;
 import com.zhixuetang.trade.domain.query.OrderPageQuery;
 import com.zhixuetang.trade.domain.vo.*;
 import com.zhixuetang.trade.mapper.OrderMapper;
+import com.zhixuetang.trade.mapper.RefundApplyMapper;
 import com.zhixuetang.trade.service.ICartService;
 import com.zhixuetang.trade.service.IOrderDetailService;
 import com.zhixuetang.trade.service.IOrderService;
@@ -72,6 +76,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final org.springframework.transaction.PlatformTransactionManager transactionManager;
     private final tools.jackson.databind.json.JsonMapper json;
     private final ZeroAmountSettlementService zeroAmountSettlement;
+    private final OrderEntitlementProgress entitlementProgress;
+    private final RefundApplyMapper refundApplies;
 
     @Override
     public PlaceOrderResultVO placeOrder(PlaceOrderDTO request) {
@@ -486,31 +492,67 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (order == null || !Objects.equals(order.getUserId(), UserContext.requireUser())) {
             throw new BadRequestException(ORDER_NOT_EXISTS);
         }
-        // 2.查询订单详情
         List<OrderDetail> details = detailService.queryByOrderId(id);
-        // 3.转换VO
-        // 3.1.订单
+        var refunds = refundApplies.selectList(
+                com.baomidou.mybatisplus.core.toolkit.Wrappers.<RefundApply>lambdaQuery()
+                        .eq(RefundApply::getOrderId, id)
+                        .orderByDesc(RefundApply::getId));
+        var refundsByDetail = refunds.stream().collect(Collectors.groupingBy(RefundApply::getOrderDetailId));
+        var entitlementLines = details.stream()
+                .filter(d -> !OrderStatus.NO_PAY.equalsValue(d.getStatus()) && !OrderStatus.CLOSED.equalsValue(d.getStatus()))
+                .map(d -> new Line(d.getId(), d.getUserId(), d.getCourseId()))
+                .toList();
+        var entitlements = orderDetailEntitlements(entitlementLines);
+
         OrderVO vo = BeanUtils.toBean(order, OrderVO.class);
-        // 3.2.订单详情
-        List<OrderDetailVO> dvs =
-                BeanUtils.copyList(
-                        details,
-                        OrderDetailVO.class,
-                        (d, v) ->
-                                v.setCanRefund(
-                                        // 订单已经支付，且 退款没有在进行中，标记为可退款状态
-                                        OrderStatus.canRefund(d.getStatus())
-                                                && !RefundStatus.inProgress(v.getRefundStatus())));
-        vo.setDetails(dvs);
-        // 3.3.订单进度
+        vo.setStatusDesc(OrderStatus.desc(order.getStatus()));
+        LocalDateTime paidAt = order.getPayTime();
+        if (paidAt == null && OrderStatus.CLOSED.equalsValue(order.getStatus())) {
+            paidAt = jdbc.queryForObject("SELECT MIN(paid_at) FROM payment_fact WHERE order_id=?",
+                    LocalDateTime.class, id);
+        }
+        vo.setPaidAt(paidAt);
+        vo.setPaymentNeedsReview(paidAt != null && OrderStatus.CLOSED.equalsValue(order.getStatus()));
+        vo.setDetails(BeanUtils.copyList(details, OrderDetailVO.class, (d, v) -> {
+            var history = refundsByDetail.getOrDefault(d.getId(), List.of());
+            v.setCanRefund((OrderStatus.PAYED.equalsValue(order.getStatus())
+                            || OrderStatus.REFUNDED.equalsValue(order.getStatus()))
+                    && OrderStatus.canRefund(d.getStatus()) && !RefundStatus.inProgress(v.getRefundStatus())
+                    && history.size() < 2);
+            v.setEntitlement(OrderEntitlementProgress.view(d.getStatus(), entitlements.get(d.getId())));
+            v.setRefunds(history.stream().map(OrderServiceImpl::refundProgress).toList());
+        }));
         vo.setProgressNodes(detailService.packageProgressNodes(order, null));
-        // 3.4 优惠明细
         List<String> rules =
                 CollUtils.isEmpty(order.getCouponIds())
                         ? List.of()
                         : promotionClient.queryDiscountRules(order.getCouponIds());
         vo.setCouponDesc(String.join("/", rules));
         return vo;
+    }
+
+    private Map<Long, Status> orderDetailEntitlements(List<Line> lines) {
+        try {
+            return entitlementProgress.lookup(lines);
+        } catch (feign.FeignException | org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException unavailable) {
+            return Map.of();
+        }
+    }
+
+    private static OrderRefundProgressVO refundProgress(RefundApply apply) {
+        var nodes = new ArrayList<OrderProgressNodeVO>(3);
+        nodes.add(new OrderProgressNodeVO("提交退款申请", apply.getCreateTime()));
+        if (apply.getApproveTime() != null) {
+            var approved = !RefundStatus.REJECT.equalsValue(apply.getStatus());
+            nodes.add(new OrderProgressNodeVO(approved ? "审核通过" : "审核未通过", apply.getApproveTime()));
+        }
+        if (RefundStatus.CANCEL.equalsValue(apply.getStatus())) {
+            nodes.add(new OrderProgressNodeVO("取消退款申请", apply.getUpdateTime()));
+        } else if (apply.getFinishTime() != null) {
+            nodes.add(new OrderProgressNodeVO(RefundStatus.desc(apply.getStatus()), apply.getFinishTime()));
+        }
+        return new OrderRefundProgressVO(apply.getId(), apply.getStatus(), apply.getRefundAmount(),
+                apply.getCreateTime(), nodes);
     }
 
     @Override

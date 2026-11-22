@@ -102,6 +102,8 @@ export interface TeachingOverview extends Page<LearningStudent> {
 export interface LearningReminders {
   pendingExams: number | null;
   waitingForGradingExams: number | null;
+  activeAttempt?: { attemptId: string; courseId: string; sectionId: string } | null;
+  pendingReview?: { attemptId: string; questionId: string; courseId: string; sectionId: string } | null;
   examReminderError: string | null;
   unreadReplies: number | null;
   replyReminderError: string | null;

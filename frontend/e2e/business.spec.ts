@@ -340,6 +340,14 @@ test('browser purchase, real local video, discussions, exam grading and targeted
     await page.goto('/exams?courseId=' + fixture.course);
     await page.getByRole('button', { name: '开始 / 继续考试' }).first().click();
     await expect(page.getByPlaceholder('请写下你的答案', { exact: true })).toHaveCount(1);
+    const nav = page.getByRole('navigation', { name: '答卷题号导航' });
+    const second = nav.getByRole('button', { name: '第 2 题，未作答' });
+    await second.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.exam-question h4').nth(1)).toBeFocused();
+    await page.getByRole('button', { name: '提交全部答案' }).click();
+    await page.getByRole('button', { name: '定位第一道漏答题' }).click();
+    await expect(page.locator('.exam-question h4').first()).toBeFocused();
     await page.locator('.answer-options .el-checkbox').filter({ hasText: 'A. A' }).click();
     await page.locator('.answer-options .el-checkbox').filter({ hasText: 'B. B' }).click();
     await page
@@ -449,6 +457,7 @@ test('browser purchase, real local video, discussions, exam grading and targeted
     await page.getByRole('button', { name: '提交全部答案' }).click();
     await page.getByRole('button', { name: '确认提交答卷', exact: true }).click();
     await expect(page.getByText('等待教师评分', { exact: true })).toBeVisible();
+    await expect(page.locator('.exam-receipt')).toContainText('已提交');
     const attempt = await page.evaluate(() => sessionStorage.getItem('school-active-exam'));
     const submitToken = await page.evaluate(() => sessionStorage.getItem('school-token'));
     const lateDraft = await page.request.put('/api/v2/exam-attempts/' + attempt + '/draft', {
@@ -492,6 +501,9 @@ test('browser purchase, real local video, discussions, exam grading and targeted
     ).toBeVisible();
     await page.getByRole('button', { name: '刷新评分状态' }).click();
     await expect(page.locator('.exam-result')).toContainText('20');
+    await expect(page.locator('.exam-result')).toContainText('已通过');
+    await page.goto('/exams?attemptId=' + attempt);
+    await expect(page.locator('.exam-receipt')).toContainText('评分完成于');
     await expect(page.locator('.exam-result')).toContainText('已通过');
     await expect
       .poll(

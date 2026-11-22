@@ -3,6 +3,9 @@ package com.zhixuetang.learning.reliability;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.zhixuetang.api.client.exam.ExamClient;
 import com.zhixuetang.api.client.message.LearningNotificationClient;
+import com.zhixuetang.api.dto.exam.ExamLearningOverview;
+import com.zhixuetang.api.dto.exam.ExamLearningOverview.ActiveAttempt;
+import com.zhixuetang.api.dto.exam.ExamLearningOverview.PendingReview;
 import com.zhixuetang.common.exceptions.UnauthorizedException;
 import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.learning.service.impl.*;
@@ -10,6 +13,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import java.time.LocalDateTime;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -89,11 +93,13 @@ class LearningReminderTest {
                             assertTrue(Collections.disjoint(observed, ids));
                             observed.addAll(ids);
                             batches.add(ids.size());
-                            return Map.of(
-                                    "pendingExams",
-                                    ids.size() * 2,
-                                    "waitingForGradingExams",
-                                    ids.size());
+                            boolean second = batches.size() > 1;
+                            return new ExamLearningOverview(
+                                    ids.size() * 2, ids.size(),
+                                    new ActiveAttempt(second ? 5L : 4L, ids.getFirst(), 3L,
+                                            LocalDateTime.of(2026, 1, second ? 2 : 1, 0, 0)),
+                                    new PendingReview(second ? 5L : 4L, 3L, ids.getFirst(), 3L,
+                                            second ? 3 : 2, null));
                         });
         var result = service.overview();
         assertEquals(expected, observed);
@@ -101,6 +107,8 @@ class LearningReminderTest {
         assertEquals(242, result.get("pendingExams"));
         assertEquals(121, result.get("waitingForGradingExams"));
         assertEquals(121, result.get("unreadReplies"));
+        assertEquals(5L, ((ActiveAttempt) result.get("activeAttempt")).attemptId());
+        assertEquals(5L, ((PendingReview) result.get("pendingReview")).attemptId());
         assertNull(result.get("examReminderError"));
         assertNull(result.get("replyReminderError"));
     }
@@ -114,7 +122,7 @@ class LearningReminderTest {
         assertNull(failedExam.get("waitingForGradingExams"));
         assertNotNull(failedExam.get("examReminderError"));
         assertEquals(121, failedExam.get("unreadReplies"));
-        doReturn(Map.of("pendingExams", 2, "waitingForGradingExams", 1))
+        doReturn(new ExamLearningOverview(2, 1, null, null))
                 .when(exams)
                 .learningOverview(anyList());
         when(notifications.unreadInteractions())
@@ -131,7 +139,7 @@ class LearningReminderTest {
         assertEquals(0, service.overview().get("pendingExams"));
         verifyNoInteractions(exams);
         course(user, 1, "NULL", 0);
-        when(exams.learningOverview(anyList())).thenReturn(Map.of("pendingExams", 2));
+        when(exams.learningOverview(anyList())).thenReturn(new ExamLearningOverview(2, null, null, null));
         when(notifications.unreadInteractions()).thenReturn(-1);
         var result = service.overview();
         assertNull(result.get("pendingExams"));

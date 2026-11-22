@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -62,15 +63,17 @@ class LearningExamReminderTest {
         return id;
     }
 
-    private void attempt(long paper, long actor, String status, boolean passed) {
+    private long attempt(long paper, long actor, String status, boolean passed) {
+        long id = IdWorker.getId();
         jdbc.update(
                 "INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id,status,passed) VALUES(?,?,?,?,?,?)",
-                IdWorker.getId(),
+                id,
                 paper,
                 actor,
                 course,
                 status,
                 passed);
+        return id;
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request(
@@ -103,6 +106,37 @@ class LearningExamReminderTest {
                 .andExpect(jsonPath("$.pendingExams").value(4))
                 .andExpect(jsonPath("$.waitingForGradingExams").value(1))
                 .andExpect(jsonPath("$.answer").doesNotExist());
+    }
+
+    @Test
+    void nextAttemptUsesDraftActivityAndNeverUsesAnotherStudentsDraft() throws Exception {
+        long first = paper(IdWorker.getId(), 1), second = paper(IdWorker.getId(), 1);
+        long idle = attempt(first, user, "IN_PROGRESS", false);
+        long active = attempt(second, user, "IN_PROGRESS", false);
+        long foreign = attempt(first, other, "IN_PROGRESS", false);
+        jdbc.update("UPDATE exam_attempt SET created_at='2026-11-01 08:00:00' WHERE id IN (?,?,?)",
+                idle, active, foreign);
+        jdbc.update("INSERT INTO exam_draft(attempt_id,answers,updated_at) VALUES(?,'{}','2026-11-04 08:00:00'),(?,'{}','2026-11-05 08:00:00')",
+                active, foreign);
+        mvc.perform(request("[" + course + "]"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activeAttempt.attemptId").value(org.hamcrest.Matchers.is(active), Long.class))
+                .andExpect(jsonPath("$.pendingReview").doesNotExist());
+    }
+
+    @Test
+    void publishedSectionsReturnDistinctIdsAndRequireInternalService() throws Exception {
+        long section = IdWorker.getId();
+        paper(section, 1);
+        paper(section, 2);
+        mvc.perform(get("/internal/v1/exams/published-sections").param("courseId", Long.toString(course)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/internal/v1/exams/published-sections")
+                        .header("X-Internal-Token", System.getenv("ZXT_INTERNAL_TOKEN"))
+                        .param("courseId", Long.toString(course)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0]").value(org.hamcrest.Matchers.is(section), Long.class));
     }
 
     @Test

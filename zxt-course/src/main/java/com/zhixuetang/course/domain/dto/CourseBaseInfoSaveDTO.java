@@ -10,6 +10,8 @@ import lombok.Data;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 /**
@@ -73,6 +75,22 @@ public class CourseBaseInfoSaveDTO implements Checker {
             message = CourseErrorInfo.Msg.COURSE_SAVE_DETAIL_NULL,
             groups = CourseSaveBaseGroup.class)
     private String detail;
+
+    @Size(max = 500, groups = CourseSaveBaseGroup.class, message = "学习成果最多500字")
+    private String learningOutcomes;
+
+    @Size(max = 500, groups = CourseSaveBaseGroup.class, message = "先修要求最多500字")
+    private String prerequisites;
+
+    @Pattern(regexp = "|BEGINNER|INTERMEDIATE|ADVANCED", groups = CourseSaveBaseGroup.class,
+            message = "请选择有效的课程难度")
+    private String difficulty;
+
+    @Size(max = 500, groups = CourseSaveBaseGroup.class, message = "实操说明最多500字")
+    private String practiceOverview;
+
+    @Size(max = 10000, groups = CourseSaveBaseGroup.class, message = "随堂讲义最多10000字")
+    private String handout;
 
     @Schema(description = "学习周期，0或不传表示没有期限，其他表示月数")
     @NotNull(message = CourseErrorInfo.Msg.COURSE_SAVE_DURATION_NULL)

@@ -13,7 +13,9 @@ import com.zhixuetang.common.exceptions.UnauthorizedException;
 import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.course.domain.po.Course;
 import com.zhixuetang.course.domain.po.CourseCatalogue;
+import com.zhixuetang.course.domain.po.CourseContent;
 import com.zhixuetang.course.mapper.CourseCatalogueMapper;
+import com.zhixuetang.course.mapper.CourseContentMapper;
 import com.zhixuetang.course.mapper.CourseMapper;
 import com.zhixuetang.course.service.ICategoryService;
 import com.zhixuetang.course.service.ICourseTeacherService;
@@ -29,6 +31,7 @@ import static org.mockito.Mockito.*;
 
 class PublicCourseMetadataTest {
     private final CourseMapper courses = mock(CourseMapper.class);
+    private final CourseContentMapper content = mock(CourseContentMapper.class);
     private final CourseCatalogueMapper catalogues = mock(CourseCatalogueMapper.class);
     private final ExamClient exams = mock(ExamClient.class);
     private final UserClient users = mock(UserClient.class);
@@ -53,6 +56,7 @@ class PublicCourseMetadataTest {
         ReflectionTestUtils.setField(directory, "examClient", exams);
         var service = new CourseServiceImpl();
         ReflectionTestUtils.setField(service, "baseMapper", courses);
+        ReflectionTestUtils.setField(service, "courseContentMapper", content);
         ReflectionTestUtils.setField(service, "courseCatalogueService", directory);
         ReflectionTestUtils.setField(service, "courseTeacherService", teachers);
         ReflectionTestUtils.setField(service, "userClient", users);
@@ -79,6 +83,12 @@ class PublicCourseMetadataTest {
                         .setFree(0)
                         .setDepId(7001L);
         when(courses.selectById(42L)).thenReturn(course);
+        when(content.selectById(42L)).thenReturn(new CourseContent()
+                .setLearningOutcomes("Complete a catalog task")
+                .setPrerequisites("None")
+                .setDifficulty("BEGINNER")
+                .setPracticeOverview("Work through an example")
+                .setHandout("Enrolled students only"));
         var chapter = node(10, 0, 1, 1, "chapter");
         var video = node(20, 10, 2, 2, "video");
         var exam = node(30, 10, 3, 1, "test");
@@ -89,6 +99,10 @@ class PublicCourseMetadataTest {
         var result = assertDoesNotThrow(() -> controller.course(42));
         assertNull(UserContext.getUser());
         assertEquals("Public course", result.get("name"));
+        assertEquals("Complete a catalog task", result.get("learningOutcomes"));
+        assertEquals("BEGINNER", result.get("difficulty"));
+        assertFalse(result.containsKey("handout"));
+        assertFalse(result.toString().contains("Enrolled students only"));
         assertFalse(result.containsKey("depId"));
         assertFalse(result.containsKey("teacherIds"));
         assertFalse(result.containsKey("records"));
@@ -97,13 +111,14 @@ class PublicCourseMetadataTest {
         var children = (List<Map<String, Object>>) chapters.getFirst().get("sections");
         assertEquals(
                 List.of("test", "video"), children.stream().map(row -> row.get("name")).toList());
+        assertEquals(Boolean.TRUE, children.get(1).get("trailer"));
         assertSafe(chapters);
         verifyNoInteractions(exams, users, trade, learning, teachers);
         var capture = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(catalogues).selectList(capture.capture());
         var query = capture.getValue();
         assertEquals(
-                Set.of("id", "name", "type", "parent_catalogue_id", "c_index", "media_duration"),
+                Set.of("id", "name", "type", "parent_catalogue_id", "c_index", "media_duration", "trailer"),
                 Set.of(query.getSqlSelect().split(",")));
         assertTrue(query.getSqlSegment().contains("course_id"));
         assertTrue(query.getSqlSegment().contains("deleted"));
@@ -120,7 +135,7 @@ class PublicCourseMetadataTest {
         assertEquals("section", section.getName());
         assertNull(section.getMediaId());
         assertNull(section.getMediaName());
-        assertNull(section.getTrailer());
+        assertTrue(section.getTrailer());
         assertFalse(Boolean.TRUE.equals(section.getCanUpdate()));
         assertNull(section.getSubjectNum());
         verifyNoInteractions(exams);
@@ -156,7 +171,7 @@ class PublicCourseMetadataTest {
     private void assertSafe(List<Map<String, Object>> nodes) {
         for (var node : nodes) {
             assertEquals(
-                    Set.of("id", "name", "index", "type", "mediaDuration", "sections"),
+                    Set.of("id", "name", "index", "type", "mediaDuration", "trailer", "sections"),
                     node.keySet());
             assertFalse(node.toString().contains("private-video"));
             assertSafe((List<Map<String, Object>>) node.get("sections"));

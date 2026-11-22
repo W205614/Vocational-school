@@ -1,6 +1,8 @@
 package com.zhixuetang.learning.controller;
 
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.zhixuetang.api.client.course.CourseClient;
+import com.zhixuetang.common.exceptions.ForbiddenException;
 import com.zhixuetang.common.autoconfigure.reliability.OperationStore;
 import com.zhixuetang.common.domain.query.PageQuery;
 import com.zhixuetang.common.exceptions.BadRequestException;
@@ -25,6 +27,7 @@ public class LearningHubController {
     private final OperationStore operations;
     private final LearningHubOperationHandler handler;
     private final LearningReminderService reminders;
+    private final CourseClient courses;
 
     public LearningHubController(
             JdbcTemplate jdbc,
@@ -33,7 +36,8 @@ public class LearningHubController {
             ILearningLessonService lessons,
             OperationStore operations,
             LearningHubOperationHandler handler,
-            LearningReminderService reminders) {
+            LearningReminderService reminders,
+            CourseClient courses) {
         this.jdbc = jdbc;
         this.clock = clock;
         this.seasons = seasons;
@@ -41,6 +45,7 @@ public class LearningHubController {
         this.operations = operations;
         this.handler = handler;
         this.reminders = reminders;
+        this.courses = courses;
     }
 
     @GetMapping("/overview")
@@ -65,7 +70,18 @@ public class LearningHubController {
                         user));
         var next =
                 jdbc.queryForList(
-                        "SELECT course_id AS courseId,latest_section_id AS sectionId,learned_sections AS learnedSections,latest_learn_time AS latestLearnTime FROM learning_lesson WHERE user_id=? AND status IN(0,1) AND (expire_time IS NULL OR expire_time>?) ORDER BY latest_learn_time DESC,id DESC LIMIT 1",
+                        """
+                        SELECT l.course_id AS courseId,l.latest_section_id AS sectionId,
+                               l.learned_sections AS learnedSections,l.latest_learn_time AS latestLearnTime,
+                               r.moment
+                        FROM learning_lesson l
+                        JOIN learning_record r ON r.lesson_id=l.id AND r.section_id=l.latest_section_id
+                        WHERE l.user_id=? AND l.status IN(0,1) AND EXISTS(
+                            SELECT 1 FROM learning_entitlement e
+                            WHERE e.user_id=l.user_id AND e.course_id=l.course_id AND e.active=1
+                            AND (e.expires_at IS NULL OR e.expires_at>?))
+                        ORDER BY l.latest_learn_time DESC,l.id DESC LIMIT 1
+                        """,
                         user,
                         LocalDateTime.now(clock));
         result.put("continueLearning", next.isEmpty() ? null : next.getFirst());
@@ -143,22 +159,46 @@ public class LearningHubController {
     }
 
     @GetMapping("/teaching/questions")
-    public Object teachingQuestions(@RequestParam long courseId, PageQuery page) {
+    public Object teachingQuestions(
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(defaultValue = "false") boolean pendingOnly,
+            PageQuery page) {
         page.validate();
         long actor = UserContext.requireUser();
-        handler.requireTeacher(actor, UserContext.getRole(), courseId);
+        Long role = UserContext.getRole();
+        boolean admin = Long.valueOf(1).equals(role);
+        if (!admin && !Long.valueOf(3).equals(role))
+            throw new ForbiddenException("需要授课教师权限");
+
+        String from = " FROM interaction_question q WHERE q.hidden=0";
+        List<Object> args = new ArrayList<>();
+        if (courseId != null) {
+            if (courseId <= 0) throw new BadRequestException("课程标识无效");
+            handler.requireTeacher(actor, role, courseId);
+            from += " AND q.course_id=?";
+            args.add(courseId);
+        } else if (!admin) {
+            var assigned = courses.taughtCourseIds(actor);
+            if (assigned.isEmpty()) return Map.of("list", List.of(), "total", 0);
+            from += " AND q.course_id IN (" + String.join(",", Collections.nCopies(assigned.size(), "?")) + ")";
+            args.addAll(assigned);
+        }
+        String unanswered =
+                "q.accepted_reply_id IS NULL AND NOT EXISTS(SELECT 1 FROM interaction_reply r WHERE r.question_id=q.id AND r.answer_id IS NULL AND r.hidden=0)";
+        if (pendingOnly) from += " AND " + unanswered;
+        Long total = jdbc.queryForObject("SELECT COUNT(*)" + from, Long.class, args.toArray());
+        args.add(page.getPageSize());
+        args.add(page.from());
         return Map.of(
                 "list",
                 jdbc.queryForList(
-                        "SELECT id,title,description,course_id AS courseId,section_id AS sectionId,answer_times AS answerTimes,accepted_reply_id AS acceptedReplyId,accepted_at AS acceptedAt,create_time AS createTime FROM interaction_question WHERE course_id=? AND hidden=0 ORDER BY create_time DESC,id DESC LIMIT ? OFFSET ?",
-                        courseId,
-                        page.getPageSize(),
-                        page.from()),
+                        "SELECT q.id,q.title,q.description,q.course_id AS courseId,q.section_id AS sectionId,q.answer_times AS answerTimes,q.accepted_reply_id AS acceptedReplyId,q.accepted_at AS acceptedAt,q.create_time AS createTime"
+                                + from
+                                + (pendingOnly ? " ORDER BY q.create_time,q.id" : " ORDER BY q.create_time DESC,q.id DESC")
+                                + " LIMIT ? OFFSET ?",
+                        args.toArray()),
                 "total",
-                jdbc.queryForObject(
-                        "SELECT COUNT(*) FROM interaction_question WHERE course_id=? AND hidden=0",
-                        Long.class,
-                        courseId));
+                total);
     }
 
     public record Acceptance(Long replyId) {}

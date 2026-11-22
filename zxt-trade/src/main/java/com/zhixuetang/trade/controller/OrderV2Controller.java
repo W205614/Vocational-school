@@ -4,6 +4,7 @@ import com.zhixuetang.common.autoconfigure.reliability.OperationStore;
 import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.trade.domain.dto.PlaceOrderDTO;
 import com.zhixuetang.trade.domain.query.OrderPageQuery;
+import com.zhixuetang.trade.domain.vo.OrderVO;
 import com.zhixuetang.trade.service.IOrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -53,7 +54,7 @@ public class OrderV2Controller {
     }
 
     @GetMapping("/{id}")
-    public Object detail(@PathVariable Long id) {
+    public OrderVO detail(@PathVariable Long id) {
         return orders.queryOrderById(id);
     }
 

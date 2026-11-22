@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zhixuetang.api.client.remark.RemarkClient;
 import com.zhixuetang.api.client.user.UserClient;
+import com.zhixuetang.api.dto.message.ProductNotice;
 import com.zhixuetang.api.dto.user.UserDTO;
 import com.zhixuetang.common.domain.dto.PageDTO;
 import com.zhixuetang.common.exceptions.BadRequestException;
@@ -112,22 +113,21 @@ public class InteractionReplyServiceImpl
             // dto.getIsStudent()为true则代表学生提交，如果是将问题表中该问题的status字段改为未查看
             jdbc.update("UPDATE interaction_question SET status=0 WHERE id=?", question.getId());
         }
-        if (!Objects.equals(userId, question.getUserId()))
+        if (!Objects.equals(userId, question.getUserId())) {
             outbox.enqueue(
                     "reply-notice:" + reply.getId(),
                     "learning.topic",
-                    "learning.notice.created",
-                    java.util.Map.of(
-                            "noticeId",
+                    "learning.notice.product",
+                    new ProductNotice(
                             "reply:" + reply.getId(),
-                            "userId",
                             question.getUserId(),
-                            "title",
-                            "你的课程问题收到新回复",
-                            "content",
+                            staff ? "教师回复了你的课程问题" : "你的课程问题收到新回复",
                             "打开课程讨论查看回复内容。",
-                            "bizId",
-                            question.getId()));
+                            "QUESTION",
+                            question.getId(),
+                            question.getCourseId(),
+                            question.getSectionId()));
+        }
     }
 
     @Override

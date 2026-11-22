@@ -368,6 +368,7 @@ test('teacher chooses a taught course, sees persisted learning and grading, answ
     ),
   ).toBe(true);
   await expect(page.getByRole('heading', { name: '考试表现', exact: true })).toBeVisible();
+  await page.getByRole('switch', { name: '只看未答问题' }).click();
   const question = page
     .locator('.review-row')
     .filter({ has: page.getByRole('heading', { name: m.questionTitle, exact: true }) });
@@ -389,6 +390,7 @@ test('teacher chooses a taught course, sees persisted learning and grading, answ
   ).toBe(true);
   await page.reload();
   await choose(page, '教学课程', m.name);
+  await page.getByRole('switch', { name: '只看未答问题' }).click();
   await question.getByRole('button', { name: '查看与答疑', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: '课程答疑', exact: true }).getByText(content, { exact: true }),

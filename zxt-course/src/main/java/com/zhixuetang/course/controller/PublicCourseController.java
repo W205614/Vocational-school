@@ -38,6 +38,10 @@ public class PublicCourseController {
         result.put("introduce", course.getIntroduce());
         result.put("detail", course.getDetail());
         result.put("usePeople", course.getUsePeople());
+        result.put("learningOutcomes", course.getLearningOutcomes());
+        result.put("prerequisites", course.getPrerequisites());
+        result.put("difficulty", course.getDifficulty());
+        result.put("practiceOverview", course.getPracticeOverview());
         result.put("sectionNum", course.getSectionNum());
         result.put("purchaseEndTime", course.getPurchaseEndTime());
         result.put("validDuration", course.getValidDuration());
@@ -56,6 +60,7 @@ public class PublicCourseController {
                             item.put("index", c.getIndex());
                             item.put("type", c.getType());
                             item.put("mediaDuration", c.getMediaDuration());
+                            item.put("trailer", Boolean.TRUE.equals(c.getTrailer()));
                             item.put("sections", catalogue(c.getSections()));
                             return item;
                         })

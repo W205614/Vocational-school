@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AccountPrivacyPanel from '../../../../packages/shared/src/AccountPrivacyPanel.vue';
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { get, write } from '../../../../packages/shared/src/client';
 import { enrolledCourseOptions } from '../../../../packages/shared/src/courseOptions';
 import { useOperations } from '../../../../packages/shared/src/operations';
@@ -65,6 +65,24 @@ const titles: Record<string, string> = {
   messages: '消息中心',
   settings: '个人设置',
 };
+function messageDestination(row: Row) {
+  if (!/^\d{1,20}$/.test(String(row.targetId ?? ''))) return;
+  const targetId = String(row.targetId);
+  if (row.targetType === 'EXAM')
+    return { to: { path: '/exams', query: { attemptId: targetId } }, label: '查看答卷' };
+  if (row.targetType === 'ORDER')
+    return { to: { path: '/orders', query: { orderId: targetId } }, label: '查看订单进度' };
+  if (row.targetType === 'PRACTICE')
+    return { to: { path: '/practice', query: { courseId: targetId } }, label: '查看作业反馈' };
+  if (row.targetType === 'QUESTION' && /^\d{1,20}$/.test(String(row.courseId ?? '')))
+    return {
+      to: { path: '/courses/' + row.courseId, query: { sectionId: row.sectionId, questionId: targetId } },
+      label: '查看课程回复',
+    };
+}
+const messages = computed(() =>
+  rows.value.map((row) => ({ row, destination: messageDestination(row) })),
+);
 let loadRevision = 0,
   loadPending = false;
 // Navigation and filters can change while useTask is guarding an in-flight request.
@@ -287,10 +305,11 @@ onMounted(load);
       ></template
     >
     <template v-else-if="mode === 'messages'"
-      ><article v-for="row in rows" :key="row.id" class="section journal-entry">
+      ><article v-for="{ row, destination } in messages" :key="row.id" class="section journal-entry">
         <h3>{{ row.title || row.subject }}</h3>
         <p class="content">{{ row.content }}</p>
-        <small>{{ row.pushTime }}</small
+        <small>{{ row.pushTime }}</small>
+        <RouterLink v-if="destination" :to="destination.to">{{ destination.label }}</RouterLink
         ><el-button
           v-if="!row.isRead"
           @click="
@@ -301,7 +320,11 @@ onMounted(load);
           "
           >标为已读</el-button
         ><span v-else>已读</span>
-      </article></template
+      </article>
+      <el-empty v-if="!task.busy.value && !task.error.value && !messages.length" description="暂无消息" />
+      <el-pagination v-if="total > 20" v-model:current-page="page" :page-size="20" :total="total"
+        aria-label="消息分页" layout="prev, pager, next" @current-change="load" />
+    </template
     >
     <el-form v-else-if="mode === 'settings'" aria-label="个人资料设置" label-width="90px"
       ><el-form-item label="昵称"><el-input v-model="profile.name" maxlength="50" /></el-form-item

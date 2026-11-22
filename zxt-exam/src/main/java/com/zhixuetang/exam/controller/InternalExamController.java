@@ -1,6 +1,10 @@
 package com.zhixuetang.exam.controller;
 
+import com.zhixuetang.api.dto.exam.ExamLearningOverview;
+import com.zhixuetang.api.dto.exam.ExamLearningOverview.ActiveAttempt;
+import com.zhixuetang.api.dto.exam.ExamLearningOverview.PendingReview;
 import com.zhixuetang.common.utils.InternalAuth;
+import com.zhixuetang.exam.service.impl.ExamReviewService;
 import com.zhixuetang.api.dto.exam.ExamSettlementPage;
 import com.zhixuetang.common.exceptions.BadRequestException;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,21 +27,21 @@ public class InternalExamController {
     /** Only trusted learning service callers supply courses resolved from current entitlement facts.
      * The actor comes from the authenticated relay, never from request parameters. */
     @PostMapping("/learning-overview")
-    public Map<String, Integer> learningOverview(@RequestBody java.util.List<Long> courseIds) {
+    public ExamLearningOverview learningOverview(@RequestBody List<Long> courseIds) {
         InternalAuth.requireService();
         long user = com.zhixuetang.common.utils.UserContext.requireUser();
         if (courseIds == null
                 || courseIds.isEmpty()
                 || courseIds.size() > 100
                 || courseIds.stream().anyMatch(id -> id == null || id < 1)
-                || new java.util.HashSet<>(courseIds).size() != courseIds.size())
-            throw new com.zhixuetang.common.exceptions.BadRequestException("课程参数无效");
-        var args = new java.util.ArrayList<Object>();
+                || new HashSet<>(courseIds).size() != courseIds.size())
+            throw new BadRequestException("课程参数无效");
+        var args = new ArrayList<Object>();
         args.add(user);
         args.add(user);
         args.addAll(courseIds);
         String placeholders =
-                String.join(",", java.util.Collections.nCopies(courseIds.size(), "?"));
+                String.join(",", Collections.nCopies(courseIds.size(), "?"));
         // Every paper row is an immutable published snapshot. A newer publication supersedes
         // its section's older version; attempts are scoped to the relayed student.
         String sql =
@@ -42,11 +49,50 @@ public class InternalExamController {
                         + placeholders
                         + ") AND NOT EXISTS(SELECT 1 FROM exam_paper newer WHERE newer.course_id=p.course_id AND newer.section_id=p.section_id AND newer.version>p.version)) papers";
         var counts = jdbc.queryForMap(sql, args.toArray());
-        return Map.of(
-                "pendingExams",
+        List<Object> owned = new ArrayList<>();
+        owned.add(user);
+        owned.addAll(courseIds);
+        var active =
+                jdbc.query(
+                        "SELECT a.id,p.course_id,p.section_id,COALESCE(d.updated_at,a.created_at) AS updated_at"
+                                + " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id LEFT JOIN exam_draft d ON d.attempt_id=a.id"
+                                + " WHERE a.user_id=? AND a.status='IN_PROGRESS' AND p.course_id IN ("
+                                + placeholders
+                                + ") ORDER BY updated_at DESC,a.id DESC LIMIT 1",
+                        (rs, index) ->
+                                new ActiveAttempt(
+                                        rs.getLong("id"),
+                                        rs.getLong("course_id"),
+                                        rs.getLong("section_id"),
+                                        rs.getObject("updated_at", LocalDateTime.class)),
+                        owned.toArray());
+        var review =
+                jdbc.query(
+                        ExamReviewService.pendingReviewSql(placeholders),
+                        (rs, index) ->
+                                new PendingReview(
+                                        rs.getLong("attempt_id"),
+                                        rs.getLong("question_id"),
+                                        rs.getLong("course_id"),
+                                        rs.getLong("section_id"),
+                                        rs.getLong("failed_attempts"),
+                                        rs.getObject("last_reviewed_at", LocalDateTime.class)),
+                        owned.toArray());
+        return new ExamLearningOverview(
                 Math.toIntExact(((Number) counts.get("pending")).longValue()),
-                "waitingForGradingExams",
-                Math.toIntExact(((Number) counts.get("waiting")).longValue()));
+                Math.toIntExact(((Number) counts.get("waiting")).longValue()),
+                active.isEmpty() ? null : active.getFirst(),
+                review.isEmpty() ? null : review.getFirst());
+    }
+
+    @GetMapping("/published-sections")
+    public List<Long> publishedSections(@RequestParam long courseId) {
+        InternalAuth.requireService();
+        if (courseId <= 0) throw new BadRequestException("课程参数无效");
+        return jdbc.queryForList(
+                "SELECT DISTINCT section_id FROM exam_paper WHERE course_id=? ORDER BY section_id",
+                Long.class,
+                courseId);
     }
 
     @GetMapping("/settlement-readiness")

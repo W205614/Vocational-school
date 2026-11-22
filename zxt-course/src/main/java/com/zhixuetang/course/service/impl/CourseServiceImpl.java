@@ -30,6 +30,7 @@ import com.zhixuetang.course.domain.po.Category3PO;
 import com.zhixuetang.course.domain.po.Course;
 import com.zhixuetang.course.domain.po.CourseTeacher;
 import com.zhixuetang.course.domain.vo.*;
+import com.zhixuetang.course.mapper.CourseContentMapper;
 import com.zhixuetang.course.mapper.CourseDraftMapper;
 import com.zhixuetang.course.mapper.CourseMapper;
 import com.zhixuetang.course.mapper.CourseTeacherMapper;
@@ -60,6 +61,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Autowired private CourseTeacherMapper courseTeacherMapper;
 
     @Autowired private CourseDraftMapper courseDraftMapper;
+
+    @Autowired private CourseContentMapper courseContentMapper;
 
     @Autowired private ICourseDraftService courseDraftService;
 
@@ -425,6 +428,17 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         }
         // 2.转换vo
         CourseFullInfoDTO courseFullInfoDTO = BeanUtils.toBean(course, CourseFullInfoDTO.class);
+
+        var content = courseContentMapper.selectById(id);
+        if (content != null) {
+            courseFullInfoDTO.setIntroduce(content.getCourseIntroduce());
+            courseFullInfoDTO.setDetail(content.getCourseDetail());
+            courseFullInfoDTO.setUsePeople(content.getUsePeople());
+            courseFullInfoDTO.setLearningOutcomes(content.getLearningOutcomes());
+            courseFullInfoDTO.setPrerequisites(content.getPrerequisites());
+            courseFullInfoDTO.setDifficulty(content.getDifficulty());
+            courseFullInfoDTO.setPracticeOverview(content.getPracticeOverview());
+        }
 
         // 3.查询目录信息
         if (withCatalogue) {

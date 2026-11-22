@@ -4,10 +4,10 @@
   "datasets": [
     {
       "name": "inbox",
-      "select": "SELECT id,type,title,content,is_read,push_time,expire_time FROM user_inbox WHERE user_id=? ORDER BY id",
+      "select": "SELECT id,type,title,content,is_read,push_time,expire_time,target_type,target_id,course_id,section_id FROM user_inbox WHERE user_id=? ORDER BY id",
       "count": "SELECT COUNT(*) FROM user_inbox WHERE user_id=?",
       "eligible": "SELECT COUNT(*) FROM user_inbox WHERE user_id=? AND push_time<?",
-      "cleanup": "UPDATE user_inbox SET title='[已清理]',content='[已清理]' WHERE user_id=? AND push_time<?"
+      "cleanup": "UPDATE user_inbox SET title='[已清理]',content='[已清理]',target_type=NULL,target_id=NULL,course_id=NULL,section_id=NULL WHERE user_id=? AND push_time<?"
     },
     {
       "name": "operations",

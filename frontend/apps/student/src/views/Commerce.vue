@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { get, write } from '../../../../packages/shared/src/client';
+import { ApiError, get, write } from '../../../../packages/shared/src/client';
 import { useOperations } from '../../../../packages/shared/src/operations';
 import { useTask, money, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
@@ -31,7 +31,6 @@ const props = defineProps<{ mode: string }>(),
   total = ref(0),
   checkoutOpen = ref(false),
   checkoutPay = ref(false),
-  detailOpen = ref(false),
   paymentOpen = ref(false),
   created = ref(''),
   cancelId = ref(''),
@@ -43,6 +42,37 @@ const props = defineProps<{ mode: string }>(),
   paymentOrder = ref(''),
   candidateCoupons = ref<string[]>([]);
 const zeroCompleted = ref(false);
+const detailBusy = ref(false), detailError = ref(''), detailMessage = ref('');
+const detailOrderId = computed(() =>
+  props.mode === 'orders' && typeof route.query.orderId === 'string' ? route.query.orderId : '',
+);
+const detailOpen = computed({
+  get: () => Boolean(detailOrderId.value),
+  set(open: boolean) {
+    if (!open && detailOrderId.value)
+      void router.replace({ path: '/orders', query: { ...route.query, orderId: undefined } });
+  },
+});
+const entitlementStates: Record<string, string> = {
+  NOT_GRANTED: '本次订单尚未开课',
+  SYNC_PENDING: '学习权限正在同步，无需重复付款',
+  ACTIVE: '学习权限已生效',
+  EXPIRED: '本次学习权益已到期',
+  REVOCATION_PENDING: '退款完成，学习权限正在更新',
+  REVOKED: '本次购买的学习权限已撤销',
+  CHECK_UNAVAILABLE: '学习权限暂时无法确认，请稍后刷新',
+};
+const refundStates: Record<number, string> = {
+  1: '等待审核',
+  2: '申请已取消',
+  3: '审核通过，退款处理中',
+  4: '审核未通过',
+  5: '退款完成',
+  6: '退款失败',
+};
+function timelineTime(value: unknown) {
+  return typeof value === 'string' ? value.replace('T', ' ').slice(0, 19) : '';
+}
 function couponExpiry(coupon: Row) {
   const value = coupon.termEndTime || coupon.expireTime;
   if (!value) return '';
@@ -86,7 +116,7 @@ async function load() {
   });
   if (revision === loadRevision && mode === 'orders' && typeof route.query.pay === 'string') {
     const id = route.query.pay;
-    await router.replace('/orders');
+    await router.replace({ path: '/orders', query: { ...route.query, pay: undefined } });
     await payment(id);
   }
 }
@@ -181,11 +211,37 @@ async function cancel() {
   }
 }
 async function showDetail(id: string) {
-  await task.run(async () => {
-    detail.value = await get<Row>('/orders/' + id);
-    detailOpen.value = true;
-  });
+  if (detailOrderId.value === String(id)) {
+    await loadOrderDetail();
+    return;
+  }
+  await router.push({ path: '/orders', query: { ...route.query, orderId: String(id) } });
 }
+let detailRevision = 0;
+async function loadOrderDetail() {
+  const revision = ++detailRevision, id = detailOrderId.value;
+  detailBusy.value = Boolean(id);
+  detailError.value = '';
+  if (String(detail.value?.id) !== id) detail.value = undefined;
+  if (!id) return;
+  try {
+    if (!/^[1-9]\d{0,18}$/.test(id) || (id.length === 19 && id > '9223372036854775807'))
+      throw new Error('订单编号无效');
+    const result = await get<Row>('/orders/' + id);
+    if (revision === detailRevision) detail.value = result;
+  } catch (error) {
+    if (revision !== detailRevision) return;
+    detailError.value = error instanceof Error ? error.message : '订单详情加载失败';
+    if (error instanceof ApiError && error.requestId)
+      detailError.value += '（请求 ' + error.requestId + '）';
+  } finally {
+    if (revision === detailRevision) detailBusy.value = false;
+  }
+}
+watch(detailOrderId, () => {
+  detailMessage.value = '';
+  void loadOrderDetail();
+}, { immediate: true });
 async function payment(id: string) {
   pay.value = '';
   await task.run(async () => {
@@ -222,13 +278,14 @@ async function submitRefund() {
       questionDesc: refundReason.value.trim(),
     });
     refund.value = undefined;
-    detailOpen.value = false;
     return result.status === 'SUCCEEDED';
   });
   if (done) {
-    await load();
-    task.message.value = '退款申请已提交';
-  } else if (!task.error.value) task.message.value = '退款申请正在处理，请在操作记录中查看结果';
+    await Promise.all([load(), loadOrderDetail()]);
+    detailMessage.value = '退款申请已提交';
+  } else if (!task.error.value) {
+    detailMessage.value = '退款申请正在处理，请刷新查看最新进度';
+  }
 }
 watch(
   () => props.mode,
@@ -454,6 +511,7 @@ onMounted(load);
         <p v-else>订单已创建，请完成付款。付款结果确认后，课程会出现在「我的学习」。</p>
         <p class="muted">订单号 {{ created }}</p></template
       ><template #footer
+        ><el-button v-if="created && zeroCompleted" @click="showDetail(created)">查看订单详情</el-button
         ><el-button @click="checkoutOpen = false" :disabled="task.busy.value">{{
           created ? (zeroCompleted ? '关闭' : '稍后付款') : '返回修改'
         }}</el-button
@@ -471,37 +529,72 @@ onMounted(load);
         ></template
       ></el-dialog
     >
-    <el-dialog v-model="detailOpen" title="订单详情" class="purchase-dialog"
-      ><template v-if="detail"
-        ><p class="muted">订单号 {{ detail.id }}</p>
+    <el-dialog v-model="detailOpen" title="订单详情" class="purchase-dialog">
+      <Status :busy="detailBusy" :error="detailError" :message="detailMessage" />
+      <template v-if="detail">
+        <p class="muted">订单号 {{ detail.id }}</p>
         <p>
-          <el-tag>{{
-            detail.payChannel === 'ZERO' && Number(detail.status) === 2
-              ? '零元成交'
-              : statusName(detail.status)
-          }}</el-tag>
-          · 实付 {{ money(detail.realAmount) }}
+          <el-tag>{{ detail.payChannel === 'ZERO' && Number(detail.status) === 2 ? '零元成交' : statusName(detail.status) }}</el-tag>
+          · {{ detail.paidAt ? '实付' : Number(detail.status) === 1 ? '待付' : '订单金额' }}
+          {{ money(detail.realAmount) }}
         </p>
-        <div
-          v-for="item in detail.details || detail.orderDetails"
-          :key="item.id"
-          class="order-line"
-        >
-          <div>
-            <strong>{{ item.name }}</strong>
-            <p>{{ money(item.realPayAmount) }}</p>
+        <el-alert
+          v-if="detail.paymentNeedsReview"
+          title="付款已确认，订单已关闭。请联系管理员核对，无需再次付款。"
+          type="warning" :closable="false"
+        />
+        <ol v-if="detail.progressNodes?.length || detail.paymentNeedsReview" class="order-progress" aria-label="订单进度">
+          <li v-for="(node, index) in detail.progressNodes" :key="index">
+            {{ node.name }} <time :datetime="node.time">{{ timelineTime(node.time) }}</time>
+          </li>
+          <li v-if="detail.paymentNeedsReview">
+            付款已确认，等待核对 <time :datetime="detail.paidAt">{{ timelineTime(detail.paidAt) }}</time>
+          </li>
+        </ol>
+        <article v-for="item in detail.details || detail.orderDetails" :key="item.id" class="order-detail-item">
+          <h3>{{ item.name }}</h3>
+          <p>{{ money(item.realPayAmount) }}</p>
+          <p v-if="item.entitlement" aria-live="polite">
+            {{ entitlementStates[item.entitlement.state] }}
+            <span v-if="item.entitlement.state === 'ACTIVE' && item.entitlement.recordedAt">
+              · {{ timelineTime(item.entitlement.recordedAt) }} 开通
+            </span>
+            <span v-if="item.entitlement.otherOrderActive"> · 另有有效购买，可继续学习</span>
+          </p>
+          <template v-if="item.refunds?.length">
+            <h4>退款记录</h4>
+            <article v-for="request in item.refunds" :key="request.id" class="refund-record">
+              <p><strong>{{ refundStates[Number(request.status)] }}</strong> · {{ money(request.amount) }}</p>
+              <ol class="order-progress" aria-label="退款进度">
+                <li v-for="(node, index) in request.nodes" :key="index">
+                  {{ node.name }} <time v-if="node.time" :datetime="node.time">{{ timelineTime(node.time) }}</time>
+                </li>
+              </ol>
+              <p v-if="Number(request.status) === 5" class="muted">
+                <RouterLink to="/learning">查看保留的学习记录 →</RouterLink>
+              </p>
+              <p v-else-if="[4, 6].includes(Number(request.status))" class="muted">
+                {{ item.canRefund ? '可以提交新的退款申请。' : '如需继续处理，请联系管理员。' }}
+              </p>
+            </article>
+          </template>
+          <div class="toolbar">
+            <el-button v-if="item.canRefund === true" @click="refund = item; refundReason = ''">
+              申请退款
+            </el-button>
+            <RouterLink :to="'/courses/' + item.courseId">
+              {{ item.entitlement?.canLearn ? '前往学习 →' : '查看课程 →' }}
+            </RouterLink>
           </div>
-          <el-button
-            v-if="item.canRefund === true"
-            @click="
-              refund = item;
-              refundReason = '';
-            "
-            >申请退款</el-button
-          ><RouterLink :to="'/courses/' + item.courseId">查看课程 →</RouterLink>
-        </div></template
-      ></el-dialog
-    >
+        </article>
+      </template>
+      <template #footer>
+        <el-button @click="loadOrderDetail" :disabled="detailBusy">刷新订单进度</el-button>
+        <el-button v-if="Number(detail?.status) === 1" type="primary" @click="payment(String(detail?.id))">
+          继续付款
+        </el-button>
+      </template>
+    </el-dialog>
     <el-dialog v-model="paymentOpen" title="完成付款" class="purchase-dialog"
       ><Status :busy="task.busy.value" :error="task.error.value" />
       <p class="muted">订单号 {{ paymentOrder }}</p>
@@ -527,6 +620,7 @@ onMounted(load);
           type="primary"
           @click="
             paymentOpen = false;
+            showDetail(paymentOrder);
             load();
           "
           >刷新订单状态</el-button
@@ -584,3 +678,25 @@ onMounted(load);
     >
   </section>
 </template>
+
+<style scoped>
+.order-detail-item {
+  border-top: 1px solid var(--el-border-color);
+  padding-block: 0.75rem;
+}
+.order-progress {
+  padding-inline-start: 1.4rem;
+  margin-block: 0.5rem 1rem;
+}
+.order-progress li {
+  margin-block: 0.375rem;
+}
+.order-progress time {
+  color: var(--el-text-color-secondary);
+  margin-inline-start: 0.5rem;
+}
+.refund-record {
+  border-inline-start: 2px solid var(--el-border-color);
+  padding-inline-start: 0.75rem;
+}
+</style>

@@ -11,6 +11,7 @@ import { useTask } from '../../../packages/shared/src/ui';
 import Status from '../../../packages/shared/src/Status.vue';
 import BrandLogo from '../../../packages/shared/src/BrandLogo.vue';
 import { resources } from './resources';
+import { teacherPages } from './router';
 const route = useRoute(),
   router = useRouter(),
   session = useSession(),
@@ -29,7 +30,7 @@ function mfaCompleted() {
   task.message.value = '验证器已启用，请等待下一枚验证码后登录。';
 }
 const teacherRestricted = computed(
-  () => session.role === 3 && !['/exams', '/operations', '/teaching'].includes(route.path),
+  () => session.role === 3 && !teacherPages.includes(route.path),
 );
 async function login() {
   const requested = route.fullPath;
@@ -37,8 +38,8 @@ async function login() {
   if (session.initialPasswordRequired) return;
   password.value = '';
   mfaCode.value = '';
-  const allowed = ['/teaching', '/exams', '/operations'].includes(requested.split('?')[0]!);
-  await router.replace(session.role === 3 && !allowed ? '/exams' : requested);
+  const allowed = teacherPages.includes(requested.split('?')[0]!);
+  await router.replace(session.role === 3 && !allowed ? '/teaching' : requested);
   void ops.resume();
 }
 
@@ -60,6 +61,7 @@ const pageTitle = computed(
     {
       '/': '数据看板',
       '/teaching': '教学学情',
+      '/practice': '实操作业',
       '/seasons': '赛季与奖励',
       '/exams': '试卷与评分',
       '/reliability': '失败与补偿任务',
@@ -161,6 +163,7 @@ const pageTitle = computed(
             ><RouterLink v-if="session.role !== 3" to="/seasons" exact-active-class="selected"
               >赛季与奖励</RouterLink
             ><RouterLink to="/exams" exact-active-class="selected">试卷与评分</RouterLink
+            ><RouterLink to="/practice" exact-active-class="selected">实操作业</RouterLink
             ><RouterLink v-if="session.role !== 3" to="/reliability" exact-active-class="selected"
               >失败与补偿任务</RouterLink
             ><RouterLink v-if="session.role !== 3" to="/audit" exact-active-class="selected"

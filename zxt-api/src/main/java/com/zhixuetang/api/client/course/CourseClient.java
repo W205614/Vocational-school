@@ -11,6 +11,9 @@ import java.util.List;
 @FeignClient(contextId = "course", value = "course-service")
 public interface CourseClient {
 
+    @GetMapping("/internal/v1/courses/taught")
+    List<Long> taughtCourseIds(@RequestParam("teacherId") long teacherId);
+
     /**
      * 根据老师id列表获取老师出题数据和讲课数据
      * @param teacherIds 老师id列表
@@ -28,6 +31,14 @@ public interface CourseClient {
      */
     @GetMapping("/internal/v1/course/section/{id}")
     SectionInfoDTO sectionInfo(@PathVariable("id") Long sectionId);
+
+    @GetMapping("/internal/v1/course/{courseId}/exam-sections/{sectionId}")
+    ExamSectionPublicationDTO examSectionForPublication(
+            @PathVariable("courseId") long courseId, @PathVariable("sectionId") long sectionId);
+
+    @GetMapping("/internal/v1/course/{courseId}/lecture-sections/{sectionId}")
+    ExamSectionPublicationDTO lectureSectionForPublication(
+            @PathVariable("courseId") long courseId, @PathVariable("sectionId") long sectionId);
 
     /**
      * 根据媒资Id列表查询媒资被引用的次数

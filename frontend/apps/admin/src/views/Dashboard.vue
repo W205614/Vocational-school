@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { get } from '../../../../packages/shared/src/client';
 import { useTask, money, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
+import OperationsQueue from '../components/OperationsQueue.vue';
 const task = useTask(),
   data = ref<Row>({}),
   table = ref(false);
@@ -66,6 +67,7 @@ onMounted(load);
         }}</strong>
       </article>
     </div>
+    <OperationsQueue />
     <div class="dashboard-columns">
       <section class="card">
         <div class="section-heading">

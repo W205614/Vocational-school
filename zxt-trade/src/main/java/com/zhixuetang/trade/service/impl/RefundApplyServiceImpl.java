@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.zhixuetang.api.cache.RoleCache;
 import com.zhixuetang.api.client.user.UserClient;
+import com.zhixuetang.api.dto.message.ProductNotice;
 import com.zhixuetang.api.dto.trade.OrderBasicDTO;
 import com.zhixuetang.api.dto.user.UserDTO;
 import com.zhixuetang.common.autoconfigure.mq.RabbitMqHelper;
@@ -127,6 +128,7 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
                 "UPDATE order_detail SET status=6,refund_status=? WHERE id=? AND status IN(2,6)",
                 apply.getStatus(),
                 detail.getId());
+        publishRefundNotice(apply, RefundStatus.of(apply.getStatus()), detail.getCourseId());
         if (admin) sendRefundRequestAsync(apply);
     }
 
@@ -319,6 +321,7 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
                 target == 4 ? 2 : 6,
                 apply.getOrderDetailId());
         refreshRefundAggregate(apply.getOrderId());
+        publishRefundNotice(apply, RefundStatus.of(target), detailService.getById(apply.getOrderDetailId()).getCourseId());
         if (target == 3) sendRefundRequestAsync(apply);
     }
 
@@ -354,6 +357,7 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
                 "UPDATE order_detail SET refund_status=2,status=2 WHERE id=?",
                 apply.getOrderDetailId());
         refreshRefundAggregate(apply.getOrderId());
+        publishRefundNotice(apply, RefundStatus.CANCEL, detailService.getById(apply.getOrderDetailId()).getCourseId());
     }
 
     @Override
@@ -465,10 +469,10 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
 
         refreshRefundAggregate(refundApply.getOrderId());
 
+        OrderDetail detail = detailService.getById(refundApply.getOrderDetailId());
+        publishRefundNotice(refundApply, RefundStatus.of(r.getStatus()), detail.getCourseId());
         // 4.如果是退款成功，要取消用户报名的课程
         if (status == RefundResultDTO.SUCCESS) {
-            // 4.1.查询子订单信息
-            OrderDetail detail = detailService.getById(refundApply.getOrderDetailId());
             // 4.2.发送MQ消息，通知报名成功
             outbox.enqueue(
                     "refund:" + refundApply.getId() + ":success",
@@ -558,6 +562,21 @@ public class RefundApplyServiceImpl extends ServiceImpl<RefundApplyMapper, Refun
                 target,
                 OrderStatus.desc(target),
                 orderId);
+    }
+
+    private void publishRefundNotice(RefundApply apply, RefundStatus state, Long courseId) {
+        String title = switch (state) {
+            case UN_APPROVE -> "退款申请已受理";
+            case CANCEL -> "退款申请已取消";
+            case AGREE -> "退款审核通过";
+            case REJECT -> "退款审核未通过";
+            case SUCCESS -> "课程退款已完成";
+            case FAILED -> "课程退款处理失败";
+        };
+        String noticeId = "refund:" + apply.getId() + ":notice:" + state.getValue();
+        outbox.enqueue(noticeId, "learning.topic", "learning.notice.product",
+                new ProductNotice(noticeId, apply.getUserId(), title, "在订单详情查看课程退款进度。",
+                        "ORDER", apply.getOrderId(), courseId, null));
     }
 
     private void sendRefundRequestAsync(RefundApply refundApply) {

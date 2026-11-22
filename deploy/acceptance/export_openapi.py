@@ -65,6 +65,8 @@ for name in args.services:
             )
         elif name == 'user' and path.startswith('/account-privacy/requests'):
             external = '/api/v2/admin/user' + path
+        elif name == 'course' and path.startswith('/courses/publication/'):
+            external = '/api/v2/admin/course' + path
         else:
             external = (
                 path

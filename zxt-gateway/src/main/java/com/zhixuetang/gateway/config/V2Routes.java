@@ -181,6 +181,7 @@ public class V2Routes {
                         r.path(
                                         "/api/v2/orders/**",
                                         "/api/v2/admin/dashboard",
+                                        "/api/v2/admin/dashboard/pending-entitlements",
                                         "/api/v2/admin/payment-conflicts/**",
                                         "/api/v2/admin/compensations/**")
                                 .filters(
@@ -244,7 +245,8 @@ public class V2Routes {
                                         "/api/v2/admin/media-upload",
                                         "/api/v2/admin/course-cover-upload",
                                         "/api/v2/admin/media-upload-tasks",
-                                        "/api/v2/admin/media-upload-tasks/**")
+                                        "/api/v2/admin/media-upload-tasks/**",
+                                        "/api/v2/admin/media/processing-failures")
                                 .filters(
                                         f ->
                                                 f.prefixPath(

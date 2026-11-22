@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.zhixuetang.api.client.exam.ExamClient;
 import com.zhixuetang.api.client.learning.LearningClient;
+import com.zhixuetang.api.client.media.MediaClient;
 import com.zhixuetang.api.client.trade.TradeClient;
 import com.zhixuetang.api.client.user.UserClient;
 import com.zhixuetang.api.dto.course.CourseDTO;
@@ -22,6 +23,7 @@ import com.zhixuetang.common.exceptions.BizIllegalException;
 import com.zhixuetang.common.exceptions.DbException;
 import com.zhixuetang.common.utils.*;
 import com.zhixuetang.course.constants.CourseConstants;
+import com.zhixuetang.course.constants.CourseConstants.CataType;
 import com.zhixuetang.course.constants.CourseErrorInfo;
 import com.zhixuetang.course.constants.CourseStatus;
 import com.zhixuetang.course.domain.dto.CourseBaseInfoSaveDTO;
@@ -29,6 +31,8 @@ import com.zhixuetang.course.domain.dto.CoursePageQuery;
 import com.zhixuetang.course.domain.po.*;
 import com.zhixuetang.course.domain.vo.CourseBaseInfoVO;
 import com.zhixuetang.course.domain.vo.CoursePageVO;
+import com.zhixuetang.course.domain.vo.CoursePublicationVO;
+import com.zhixuetang.course.domain.vo.CoursePublicationVO.Issue;
 import com.zhixuetang.course.domain.vo.CourseSaveVO;
 import com.zhixuetang.course.domain.vo.NameExistVO;
 import com.zhixuetang.course.mapper.*;
@@ -40,10 +44,13 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.validation.ValidatorFactory;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -91,6 +98,8 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
 
     @Autowired private LearningClient learningClient;
 
+    @Autowired private MediaClient mediaClient;
+
     @Override
     @Transactional(
             propagation = Propagation.REQUIRED,
@@ -126,6 +135,11 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
         courseContentDraft.setCourseIntroduce(courseBaseInfoSaveDTO.getIntroduce());
         courseContentDraft.setCourseDetail(courseBaseInfoSaveDTO.getDetail());
         courseContentDraft.setUsePeople(courseBaseInfoSaveDTO.getUsePeople());
+        courseContentDraft.setLearningOutcomes(courseBaseInfoSaveDTO.getLearningOutcomes());
+        courseContentDraft.setPrerequisites(courseBaseInfoSaveDTO.getPrerequisites());
+        courseContentDraft.setDifficulty(courseBaseInfoSaveDTO.getDifficulty());
+        courseContentDraft.setPracticeOverview(courseBaseInfoSaveDTO.getPracticeOverview());
+        courseContentDraft.setHandout(courseBaseInfoSaveDTO.getHandout());
         // 2.2.课程封面和课程下架时间
         courseDraft.setCoverUrl(courseBaseInfoSaveDTO.getCoverUrl());
         courseDraft.setPurchaseEndTime(courseBaseInfoSaveDTO.getPurchaseEndTime());
@@ -212,6 +226,15 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                 // 1.11.设置课程适用人群
                 courseBaseInfoVO.setUsePeople(
                         courseContent == null ? "" : courseContent.getUsePeople());
+                if (courseContent != null) {
+                    courseBaseInfoVO.setLearningOutcomes(courseContent.getLearningOutcomes());
+                    courseBaseInfoVO.setPrerequisites(courseContent.getPrerequisites());
+                    courseBaseInfoVO.setDifficulty(courseContent.getDifficulty());
+                    courseBaseInfoVO.setPracticeOverview(courseContent.getPracticeOverview());
+                    if (Long.valueOf(1).equals(UserContext.getRole())) {
+                        courseBaseInfoVO.setHandout(courseContent.getHandout());
+                    }
+                }
                 // 1.12.设置小节总数量
                 courseBaseInfoVO.setCataTotalNum(course.getSectionNum());
             }
@@ -235,6 +258,15 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                 // 2.7.适用人群
                 courseBaseInfoVO.setUsePeople(
                         courseContentDraft == null ? "" : courseContentDraft.getUsePeople());
+                if (courseContentDraft != null) {
+                    courseBaseInfoVO.setLearningOutcomes(courseContentDraft.getLearningOutcomes());
+                    courseBaseInfoVO.setPrerequisites(courseContentDraft.getPrerequisites());
+                    courseBaseInfoVO.setDifficulty(courseContentDraft.getDifficulty());
+                    courseBaseInfoVO.setPracticeOverview(courseContentDraft.getPracticeOverview());
+                    if (Long.valueOf(1).equals(UserContext.getRole())) {
+                        courseBaseInfoVO.setHandout(courseContentDraft.getHandout());
+                    }
+                }
                 // 2.8.课程章节数
                 courseBaseInfoVO.setCataTotalNum(courseDraft.getSectionNum());
                 // 2.9.设置课程评分
@@ -408,43 +440,113 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
 
     @Override
     public void checkBeforeUpShelf(Long id) {
-        // 1.获取上架的课程草稿信息
-        CourseDraft courseDraft = baseMapper.selectById(id);
-        // 1.1.获取课程信息
-        Course course = courseMapper.selectById(id);
-        // 2.课程校验
-        // 2.1.课程上架幂等校验
-        if (courseDraft == null && course != null) {
-            throw new BizIllegalException(CourseErrorInfo.Msg.COURSE_UP_SHELF_AREADY);
+        var draft = baseMapper.selectById(id);
+        var course = courseMapper.selectById(id);
+        if (draft == null)
+            throw new BizIllegalException(course == null
+                    ? CourseErrorInfo.Msg.COURSE_UP_SHELF_NOT_FOUND_COURSE
+                    : CourseErrorInfo.Msg.COURSE_UP_SHELF_AREADY);
+        var blocker = publicationIssues(draft, course, courseContentDraftMapper.selectById(id))
+                .stream().filter(Issue::blocking).findFirst();
+        if (blocker.isPresent()) throw new BizIllegalException(blocker.get().message());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CoursePublicationVO publication(long id) {
+        var draft = baseMapper.selectById(id);
+        if (draft == null) throw new BadRequestException("未找到课程草稿");
+        var content = courseContentDraftMapper.selectById(id);
+        var chapters = courseCatalogueDraftService.queryCourseCatalogues(id, false, true);
+        var preview = new CoursePublicationVO.Preview(
+                draft.getName(), draft.getCoverUrl(), draft.getPrice(), draft.getSectionNum(),
+                draft.getPurchaseEndTime(),
+                content == null ? null : content.getCourseIntroduce(),
+                content == null ? null : content.getCourseDetail(),
+                content == null ? null : content.getUsePeople(),
+                content == null ? null : content.getLearningOutcomes(),
+                content == null ? null : content.getPrerequisites(),
+                content == null ? null : content.getDifficulty(),
+                content == null ? null : content.getPracticeOverview(),
+                content == null ? null : content.getHandout(),
+                chapters);
+        return new CoursePublicationVO(preview, publicationIssues(draft, courseMapper.selectById(id), content));
+    }
+
+    private List<Issue> publicationIssues(CourseDraft draft, Course course, CourseContentDraft content) {
+        long courseId = draft.getId();
+        List<Issue> issues = new ArrayList<>();
+        if (course != null && !CourseStatus.DOWN_SHELF.equals(course.getStatus())) {
+            issues.add(new Issue("BASE", null, CourseErrorInfo.Msg.COURSE_UP_SHELF_STATE_WRONG, true));
         }
-        // 2.2.课程id不存在的课程无法上架
-        if (courseDraft == null && course == null) {
-            throw new BizIllegalException(CourseErrorInfo.Msg.COURSE_UP_SHELF_NOT_FOUND_COURSE);
+        if (draft.getPurchaseEndTime() == null || !draft.getPurchaseEndTime().isAfter(DateUtils.now())) {
+            issues.add(new Issue("BASE", null, CourseErrorInfo.Msg.COURSE_UP_SHELF_PURCHASE_ILLEGAL, true));
         }
-        // 2.3.草稿信息不完整无法上架
-        if (courseDraft.getStep() != CourseConstants.CourseStep.TEACHER) {
-            throw new BizIllegalException(CourseErrorInfo.Msg.COURSE_UP_SHELF_INFO_INCOMPLETE);
+        if (content == null || StringUtils.isBlank(draft.getName())
+                || StringUtils.isBlank(draft.getCoverUrl())
+                || StringUtils.isBlank(content.getCourseIntroduce())
+                || StringUtils.isBlank(content.getCourseDetail())
+                || StringUtils.isBlank(content.getUsePeople())) {
+            issues.add(new Issue("BASE", null, CourseErrorInfo.Msg.COURSE_UP_SHELF_INFO_INCOMPLETE, true));
+        } else if (StringUtils.isBlank(content.getLearningOutcomes())
+                || StringUtils.isBlank(content.getPrerequisites())
+                || StringUtils.isBlank(content.getDifficulty())
+                || StringUtils.isBlank(content.getPracticeOverview())) {
+            issues.add(new Issue("BASE", null, "建议补全学习成果、先修要求、难度和实操说明", false));
         }
-        // 课程
-        // 2.4.已上架/已完结课程不能上架
-        if (course != null && course.getStatus() != CourseStatus.DOWN_SHELF.getStatus()) {
-            throw new BizIllegalException(CourseErrorInfo.Msg.COURSE_UP_SHELF_STATE_WRONG);
+        if (course == null && courseMapper.countSameName(draft.getName()) > 0) {
+            issues.add(new Issue("BASE", null, CourseErrorInfo.Msg.COURSE_SAVE_NAME_EXISTS, true));
         }
-        // 2.5.校验课程结束时间
-        if (courseDraft.getPurchaseEndTime().isBefore(DateUtils.now())) {
-            throw new BizIllegalException(CourseErrorInfo.Msg.COURSE_UP_SHELF_PURCHASE_ILLEGAL);
+
+        var nodes = courseCatalogueDraftMapper.getByCourseId(courseId);
+        var chapters = nodes.stream().filter(node -> Integer.valueOf(CataType.CHAPTER).equals(node.getType())).toList();
+        var videos = nodes.stream().filter(node -> Integer.valueOf(CataType.SECTION).equals(node.getType())).toList();
+        var exams = nodes.stream().filter(node -> Integer.valueOf(CataType.PRATICE).equals(node.getType())).toList();
+        if (chapters.isEmpty() || videos.size() + exams.size() == 0) {
+            issues.add(new Issue("CHAPTER", null, "请至少保存一个章节和一个学习小节", true));
         }
-        // 2.6.首次上架校验逻辑
-        if (course == null) {
-            // 2.5.1.统计同名的课程数量
-            int sameNameNum = courseMapper.countSameName(courseDraft.getName());
-            // 2.5.2.有同名课程不能上架
-            if (sameNameNum > 0) {
-                throw new BadRequestException(CourseErrorInfo.Msg.COURSE_SAVE_NAME_EXISTS);
+
+        var ids = videos.stream().map(CourseCatalogueDraft::getMediaId)
+                .filter(mediaId -> mediaId != null && mediaId > 0).distinct().toList();
+        Set<Long> ready = new HashSet<>();
+        for (int offset = 0; offset < ids.size(); offset += 500) {
+            ready.addAll(mediaClient.readyDurations(
+                    Set.copyOf(ids.subList(offset, Math.min(offset + 500, ids.size())))).keySet());
+        }
+        boolean hasTrial = false;
+        for (var video : videos) {
+            Long mediaId = video.getMediaId();
+            if (mediaId == null || mediaId <= 0 || StringUtils.isBlank(video.getVideoName())) {
+                issues.add(new Issue("MEDIA", video.getId(), "小节「" + video.getName() + "」缺少视频关联", true));
+            } else if (!ready.contains(mediaId)) {
+                issues.add(new Issue("MEDIA", video.getId(), "小节「" + video.getName() + "」的视频仍在处理或不可用", true));
+            } else if (Integer.valueOf(1).equals(video.getTrailer())) {
+                hasTrial = true;
             }
         }
-        // 2.7.校验课程目录
-        courseCatalogueDraftService.checkCataInfoImplated(id);
+        if (hasTrial) {
+            issues.add(new Issue("MEDIA", null, "试看已启用，学生首次请求试看时生成独立片段，处理完成后可播放", false));
+        }
+
+        if (!exams.isEmpty()) {
+            var published = Set.copyOf(examClient.publishedSections(courseId));
+            var linked = courseCataSubjectDraftMapper.getByCourseId(courseId).stream()
+                    .map(CourseCataSubjectDraft::getCataId).collect(Collectors.toSet());
+            for (var exam : exams) {
+                if (!linked.contains(exam.getId())) {
+                    issues.add(new Issue("QUESTIONS", exam.getId(), "考试「" + exam.getName() + "」尚未关联题库", true));
+                }
+                if (!published.contains(exam.getId())) {
+                    issues.add(new Issue("EXAM", exam.getId(), "考试「" + exam.getName() + "」尚未发布试卷", true));
+                }
+            }
+        }
+        if (!Integer.valueOf(CourseConstants.CourseStep.TEACHER).equals(draft.getStep())
+                || courseTeacherDraftMapper.selectCount(Wrappers.lambdaQuery(CourseTeacherDraft.class)
+                        .eq(CourseTeacherDraft::getCourseId, courseId)) == 0) {
+            issues.add(new Issue("TEACHERS", null, "请保存至少一名授课教师", true));
+        }
+        return issues;
     }
 
     @Override

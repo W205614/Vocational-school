@@ -88,6 +88,12 @@ public class CourseBaseInfoVO {
     @Schema(description = "使用人群")
     private String usePeople;
 
+    private String learningOutcomes;
+    private String prerequisites;
+    private String difficulty;
+    private String practiceOverview;
+    private String handout;
+
     @Schema(description = "详情")
     private String detail;
 

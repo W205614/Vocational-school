@@ -1,13 +1,25 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, nextTick, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
 import { get, write, newKey } from '../../../../packages/shared/src/client';
-import { useTask, type Row } from '../../../../packages/shared/src/ui';
+import { useTask, money, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
 import EntityPicker from '../components/EntityPicker.vue';
+import CourseForm from '../components/CourseForm.vue';
+import CourseFacts from '../../../../packages/shared/src/CourseFacts.vue';
+
+type Issue = { area: string; sectionId?: string; message: string; blocking: boolean };
+type Publication = { preview: Row; issues: Issue[] };
 const route = useRoute(),
+  router = useRouter(),
   task = useTask(),
+  publicationTask = useTask(),
+  formsTask = useTask(),
+  publication = ref<Publication>(),
+  previewOpen = ref(false),
+  baseOpen = ref(false),
+  pendingIssue = ref<Issue>(),
   id = ref(''),
   selectedCourse = ref<Row[]>([]),
   chapters = ref<Row[]>([]),
@@ -61,6 +73,66 @@ async function load(next = id.value) {
     questionIds.value = [];
     questionRows.value = [];
   });
+}
+async function showPublication() {
+  publication.value = undefined;
+  previewOpen.value = true;
+  await publicationTask.run(async () => {
+    publication.value = await get<Publication>('/admin/course/courses/publication/' + id.value);
+  });
+}
+async function publish() {
+  if (!publication.value || publication.value.issues.some((issue) => issue.blocking)) return;
+  const saved = await publicationTask.run(async () => {
+    await write('/admin/course/courses/upShelf', 'POST', { id: id.value }, newKey());
+    return true;
+  });
+  if (saved) await router.push({ path: '/courses' });
+}
+async function saveBase(body: Row) {
+  const saved = await formsTask.run(async () => {
+    await write('/admin/course/courses/baseInfo/save', 'POST', body, newKey());
+    selectedCourse.value = [await get<Row>('/admin/course/courses/baseInfo/' + id.value + '?see=false')];
+    return true;
+  });
+  if (saved) {
+    baseOpen.value = false;
+    task.message.value = '课程资料已保存';
+  }
+}
+function goToIssue(issue: Issue) {
+  pendingIssue.value = issue;
+  previewOpen.value = false;
+}
+async function focusIssue() {
+  const issue = pendingIssue.value;
+  pendingIssue.value = undefined;
+  if (!issue) return;
+  if (issue.area === 'BASE') {
+    baseOpen.value = true;
+    return;
+  }
+  if (issue.area === 'EXAM') {
+    await router.push({
+      path: '/exams',
+      query: { courseId: id.value, sectionId: issue.sectionId, draft: 'true' },
+    });
+    return;
+  }
+  const areas: Record<string, string> = {
+    CHAPTER: 'course-chapters', MEDIA: 'course-media',
+    QUESTIONS: 'course-questions', TEACHERS: 'course-teachers',
+  };
+  if (issue.area === 'MEDIA' && issue.sectionId) {
+    media.value.cataId = videos.value.find((item) => String(item.id) === issue.sectionId)?.id;
+    selectVideo();
+  } else if (issue.area === 'QUESTIONS' && issue.sectionId) {
+    examSection.value = issue.sectionId;
+    selectExam();
+  }
+  await nextTick();
+  const target = document.getElementById(areas[issue.area] || '');
+  target?.focus();
 }
 function addChapter() {
   chapters.value.push({
@@ -172,9 +244,14 @@ onMounted(() => {
         :disabled="task.busy.value"
         @update:model-value="load(String($event))"
       /><el-button @click="addChapter" :disabled="!id || task.busy.value">新增章</el-button>
+      <el-button v-if="id" @click="baseOpen = true" :disabled="task.busy.value">编辑课程资料</el-button>
+      <el-button v-if="id" type="primary" @click="showPublication" :disabled="dirty || task.busy.value">
+        预览与上架检查
+      </el-button>
     </div>
     <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
     <template v-if="id">
+      <h3 id="course-chapters" tabindex="-1">课程目录</h3>
       <article
         v-for="(chapter, index) in chapters"
         :key="chapter.id || index"
@@ -224,7 +301,7 @@ onMounted(() => {
         >保存章节</el-button
       >
       <el-divider />
-      <h3>关联视频</h3>
+      <h3 id="course-media" tabindex="-1">关联视频</h3>
       <p class="muted">
         请先保存目录，再选择已登记的视频。名称与时长来自真实媒资记录，无须手工复制编号。
       </p>
@@ -259,7 +336,7 @@ onMounted(() => {
         ></el-form
       >
       <el-divider />
-      <h3>关联题库</h3>
+      <h3 id="course-questions" tabindex="-1">关联题库</h3>
       <div class="toolbar">
         <el-select
           v-model="examSection"
@@ -283,7 +360,7 @@ onMounted(() => {
         >关联题目</el-button
       >
       <el-divider />
-      <h3>授课教师</h3>
+      <h3 id="course-teachers" tabindex="-1">授课教师</h3>
       <EntityPicker
         v-model="teachers"
         kind="teachers"
@@ -296,5 +373,78 @@ onMounted(() => {
         >保存授课教师</el-button
       >
     </template>
+    <el-dialog v-model="baseOpen" title="编辑课程资料" width="min(96vw, 56rem)" destroy-on-close>
+      <Status :error="formsTask.error.value" />
+      <CourseForm
+        v-if="selectedCourse[0]"
+        :model-value="selectedCourse[0]"
+        :busy="formsTask.busy.value"
+        @save="saveBase"
+        @cancel="baseOpen = false"
+      />
+    </el-dialog>
+    <el-dialog
+      v-model="previewOpen"
+      title="学生视角预览与上架检查"
+      width="min(96vw, 56rem)"
+      destroy-on-close
+      @closed="focusIssue"
+    >
+      <Status :busy="publicationTask.busy.value" :error="publicationTask.error.value" />
+      <template v-if="publication">
+        <section aria-label="课程发布检查">
+          <h3>上架检查</h3>
+          <p v-if="!publication.issues.length">所有检查项均已通过。</p>
+          <ul v-else class="publication-issues">
+            <li v-for="issue in publication.issues" :key="issue.message">
+              <span>{{ issue.blocking ? '需处理' : '提示' }} · {{ issue.message }}</span>
+              <el-button link @click="goToIssue(issue)">前往处理</el-button>
+            </li>
+          </ul>
+        </section>
+        <section class="card publication-preview" aria-label="学生视角预览">
+          <h3>{{ publication.preview.name }}</h3>
+          <img v-if="publication.preview.coverUrl" :src="publication.preview.coverUrl" alt="课程封面预览" />
+          <p>{{ publication.preview.introduce?.replace(/<[^>]*>/g, '') }}</p>
+          <p>{{ Number(publication.preview.price) ? money(publication.preview.price) : '免费课程' }}</p>
+          <CourseFacts :course="publication.preview" />
+          <p v-if="publication.preview.usePeople">适用人群 · {{ publication.preview.usePeople }}</p>
+          <h4>课程目录</h4>
+          <div v-for="chapter in publication.preview.chapters" :key="chapter.id">
+            <strong>{{ chapter.name }}</strong>
+            <ul>
+              <li v-for="item in chapter.sections" :key="item.id">
+                {{ item.name }} · {{ Number(item.type) === 3 ? '考试' : item.trailer ? '可试看' : '报名后学习' }}
+              </li>
+            </ul>
+          </div>
+          <details v-if="publication.preview.handout">
+            <summary>报名后可见的随堂讲义</summary>
+            <p>{{ publication.preview.handout }}</p>
+          </details>
+        </section>
+      </template>
+      <template #footer>
+        <el-button @click="previewOpen = false">关闭</el-button>
+        <el-button
+          v-if="publicationTask.error.value"
+          :disabled="publicationTask.busy.value"
+          @click="showPublication"
+        >重新检查</el-button>
+        <el-button
+          type="primary"
+          :disabled="publicationTask.busy.value || !publication || publication.issues.some((issue) => issue.blocking)"
+          @click="publish"
+        >确认上架</el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
+
+<style scoped>
+.publication-issues { padding-left: 1.25rem; }
+.publication-issues li { margin: .35rem 0; overflow-wrap: anywhere; }
+.publication-preview { padding: 1.25rem; overflow-wrap: anywhere; }
+.publication-preview img { max-width: min(100%, 15rem); height: auto; }
+.publication-preview details p { white-space: pre-wrap; }
+</style>

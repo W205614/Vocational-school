@@ -18,13 +18,17 @@ public class ExamWorkflowService implements OperationHandler {
     private final OutboxStore outbox;
     private final com.zhixuetang.api.client.learning.LearningClient learning;
 
+    public record Explanation(long sectionId, Integer moment) {}
+
     public record Publish(
             long courseId,
             long sectionId,
             List<Long> questionIds,
             Integer passPercent,
             List<Long> graders,
-            Integer sectionCount) {}
+            Integer sectionCount,
+            boolean draft,
+            Map<Long, Explanation> explanations) {}
 
     public record Command(
             String action,
@@ -67,12 +71,17 @@ public class ExamWorkflowService implements OperationHandler {
                         + 1;
         List<Map<String, Object>> questions = new ArrayList<>();
         int total = 0;
+        String query =
+                "SELECT q.id,q.name,q.type,q.score,d.options,d.answer,d.analysis FROM question q JOIN question_detail d ON d.id=q.id";
         for (Long id : form.questionIds()) {
+            // Draft associations are authoritatively checked by the course service before the command is accepted.
             var rows =
-                    jdbc.queryForList(
-                            "SELECT q.id,q.name,q.type,q.score,d.options,d.answer,d.analysis FROM question q JOIN question_detail d ON d.id=q.id JOIN question_biz b ON b.question_id=q.id WHERE q.id=? AND b.biz_id=?",
-                            id,
-                            form.sectionId());
+                    form.draft()
+                            ? jdbc.queryForList(query + " WHERE q.id=?", id)
+                            : jdbc.queryForList(
+                                    query + " JOIN question_biz b ON b.question_id=q.id WHERE q.id=? AND b.biz_id=?",
+                                    id,
+                                    form.sectionId());
             if (rows.isEmpty()) throw new BadRequestException("题目未关联到该考试小节");
             var q = rows.getFirst();
             int score = ((Number) q.get("score")).intValue(),
@@ -97,18 +106,24 @@ public class ExamWorkflowService implements OperationHandler {
                 form.passPercent() == null ? 60 : form.passPercent(),
                 form.sectionCount());
         int position = 0;
-        for (var q : questions)
+        for (var q : questions) {
+            long questionId = ((Number) q.get("id")).longValue();
+            Explanation explanation =
+                    form.explanations() == null ? null : form.explanations().get(questionId);
             jdbc.update(
-                    "INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,options,answer,analysis) VALUES(?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score,options,answer,analysis,lecture_section_id,lecture_moment) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                     id,
-                    q.get("id"),
+                    questionId,
                     ++position,
                     q.get("name"),
                     q.get("type"),
                     q.get("score"),
                     q.get("options"),
                     q.get("answer"),
-                    q.get("analysis"));
+                    q.get("analysis"),
+                    explanation == null ? null : explanation.sectionId(),
+                    explanation == null ? null : explanation.moment());
+        }
         if (form.graders() != null)
             for (Long user : new HashSet<>(form.graders()))
                 jdbc.update("INSERT INTO exam_grader(paper_id,user_id) VALUES(?,?)", id, user);
@@ -293,6 +308,20 @@ public class ExamWorkflowService implements OperationHandler {
                 score,
                 passed,
                 id);
+        String notice = "exam:" + id + ":graded-notice";
+        outbox.enqueue(
+                notice,
+                "learning.topic",
+                "learning.notice.product",
+                Map.of(
+                        "noticeId", notice,
+                        "userId", attempt.get("user_id"),
+                        "title", "考试评分已完成",
+                        "content", passed ? "本次考试已通过，打开答卷查看详情。" : "打开答卷查看评分反馈与错题。",
+                        "targetType", "EXAM",
+                        "targetId", id,
+                        "courseId", paper.get("course_id"),
+                        "sectionId", paper.get("section_id")));
         if (passed)
             outbox.enqueue(
                     "exam:" + id + ":passed",
@@ -391,6 +420,9 @@ public class ExamWorkflowService implements OperationHandler {
             if (q.get("options") != null)
                 q.put("options", json.readValue(q.get("options").toString(), Object.class));
         }
+        var context = paper(((Number) attempt.get("paper_id")).longValue());
+        attempt.put("course_id", context.get("course_id"));
+        attempt.put("section_id", context.get("section_id"));
         attempt.put("questions", questions);
         // The attempt is a current read; its mutable answers must use the same view,
         // even when START established an older snapshot before waiting for submission.

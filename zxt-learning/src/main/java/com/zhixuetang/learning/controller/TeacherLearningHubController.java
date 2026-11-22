@@ -2,6 +2,8 @@ package com.zhixuetang.learning.controller;
 
 import com.zhixuetang.api.client.course.CourseClient;
 import com.zhixuetang.api.client.user.UserClient;
+import com.zhixuetang.api.dto.course.CatalogueDTO;
+import com.zhixuetang.common.exceptions.BadRequestException;
 import com.zhixuetang.common.domain.query.PageQuery;
 import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.learning.service.impl.LearningHubOperationHandler;
@@ -34,8 +36,10 @@ public class TeacherLearningHubController {
             @RequestParam(required = false) Long userId,
             PageQuery page) {
         page.validate();
+        if (courseId <= 0 || userId != null && userId <= 0)
+            throw new BadRequestException("学情筛选参数无效");
         permissions.requireTeacher(UserContext.requireUser(), UserContext.getRole(), courseId);
-        var course = courses.getCourseInfoById(courseId, false, false);
+        var course = courses.getCourseInfoById(courseId, true, false);
         int sections =
                 course == null || course.getSectionNum() == null ? 0 : course.getSectionNum();
         var stats =
@@ -58,7 +62,7 @@ public class TeacherLearningHubController {
         summary.put(
                 "unansweredQuestions",
                 jdbc.queryForObject(
-                        "SELECT COUNT(*) FROM interaction_question WHERE course_id=? AND hidden=0 AND answer_times=0",
+                        "SELECT COUNT(*) FROM interaction_question q WHERE q.course_id=? AND q.hidden=0 AND q.accepted_reply_id IS NULL AND NOT EXISTS(SELECT 1 FROM interaction_reply r WHERE r.question_id=q.id AND r.answer_id IS NULL AND r.hidden=0)",
                         Long.class,
                         courseId));
         summary.put(
@@ -133,7 +137,44 @@ public class TeacherLearningHubController {
                 summary,
                 "list",
                 rows,
+                "chapters",
+                chapterProgress(course == null ? null : course.getChapters(), courseId, userId, total),
                 "total",
                 total);
+    }
+
+    private List<Map<String, Object>> chapterProgress(
+            List<CatalogueDTO> chapters, long courseId, Long userId, long students) {
+        if (chapters == null || chapters.isEmpty()) return List.of();
+        var completed = new HashMap<Long, Long>();
+        String sql =
+                "SELECT r.section_id,COUNT(*) AS finished FROM learning_record r JOIN learning_lesson l ON l.id=r.lesson_id WHERE l.course_id=? AND r.finished=1"
+                        + (userId == null ? "" : " AND l.user_id=?")
+                        + " GROUP BY r.section_id";
+        jdbc.query(
+                sql,
+                rs -> {
+                    completed.put(rs.getLong("section_id"), rs.getLong("finished"));
+                },
+                userId == null ? new Object[] {courseId} : new Object[] {courseId, userId});
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (var chapter : chapters) {
+            if (chapter.getSections() == null || chapter.getSections().isEmpty()) continue;
+            var sections =
+                    chapter.getSections().stream()
+                            .filter(s -> Set.of(2, 3).contains(s.getType()))
+                            .toList();
+            if (sections.isEmpty()) continue;
+            long required = students * sections.size();
+            long done = sections.stream().mapToLong(s -> completed.getOrDefault(s.getId(), 0L)).sum();
+            results.add(
+                    Map.of(
+                            "id", chapter.getId(),
+                            "name", chapter.getName(),
+                            "finished", done,
+                            "required", required,
+                            "remaining", required - done));
+        }
+        return results;
     }
 }

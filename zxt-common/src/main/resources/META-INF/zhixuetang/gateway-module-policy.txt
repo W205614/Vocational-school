@@ -451,3 +451,16 @@ gateway|PUT|/_modules/user/users
 gateway|PUT|/_modules/user/users/{id}
 gateway|PUT|/_modules/user/users/{id}/password/default
 gateway|PUT|/_modules/user/users/{id}/status/{status}
+gateway|GET|/_modules/course/courses/publication/{id}
+gateway|GET|/_modules/course/courses/{id}/handout
+gateway|GET|/_modules/exam/api/v2/exam-review/suggestions
+gateway|GET|/_modules/trade/api/v2/admin/dashboard/pending-entitlements
+gateway|GET|/_modules/media/api/v2/admin/media/processing-failures
+gateway|GET|/_modules/learning/api/v2/admin/learning-hub/practice/{courseId}
+gateway|PUT|/_modules/learning/api/v2/admin/learning-hub/practice/{courseId}
+gateway|GET|/_modules/learning/api/v2/learning-hub/practice
+gateway|GET|/_modules/learning/api/v2/learning-hub/practice/{courseId}
+gateway|POST|/_modules/learning/api/v2/learning-hub/practice/{courseId}/submissions
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/practice/{courseId}/submissions
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/practice/{courseId}/submissions/{studentId}
+gateway|PUT|/_modules/learning/api/v2/teacher/learning-hub/practice/{courseId}/submissions/{id}/feedback

@@ -112,7 +112,7 @@ class PublicCourseControllerTest {
     private void assertSafe(List<Map<String, Object>> nodes) {
         for (var node : nodes) {
             assertEquals(
-                    Set.of("id", "name", "index", "type", "mediaDuration", "sections"),
+                    Set.of("id", "name", "index", "type", "mediaDuration", "trailer", "sections"),
                     node.keySet());
             assertFalse(node.containsKey("mediaId"));
             assertFalse(node.containsKey("mediaName"));

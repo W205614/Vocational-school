@@ -7,11 +7,13 @@ const ExamAdmin = () => import('./views/ExamAdmin.vue');
 const CourseEditor = () => import('./views/CourseEditor.vue');
 const CouponIssue = () => import('./views/CouponIssue.vue');
 const OperationsPanel = () => import('../../../packages/shared/src/OperationsPanel.vue');
+export const teacherPages = ['/teaching', '/exams', '/operations', '/practice'];
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: Dashboard },
     { path: '/teaching', component: () => import('./views/Teaching.vue') },
+    { path: '/practice', component: () => import('./views/Practice.vue') },
     { path: '/seasons', component: () => import('./views/Seasons.vue') },
     ...Object.keys(resources).map((resource) => ({
       path: '/' + resource,
@@ -34,9 +36,9 @@ router.beforeEach((to) => {
   if (
     session.token &&
     session.role === 3 &&
-    !['/exams', '/operations', '/teaching'].includes(to.path)
+    !teacherPages.includes(to.path)
   )
-    return '/exams';
+    return '/teaching';
 });
 router.addRoute({
   path: '/privacy-requests',

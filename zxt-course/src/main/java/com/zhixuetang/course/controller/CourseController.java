@@ -1,12 +1,16 @@
 package com.zhixuetang.course.controller;
 
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.zhixuetang.api.client.learning.LearningClient;
 import com.zhixuetang.api.dto.course.CourseSimpleInfoDTO;
 import com.zhixuetang.common.domain.dto.PageDTO;
+import com.zhixuetang.common.exceptions.ForbiddenException;
+import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.common.validate.annotations.ParamChecker;
 import com.zhixuetang.course.constants.CourseStatus;
 import com.zhixuetang.course.domain.dto.*;
 import com.zhixuetang.course.domain.vo.*;
+import com.zhixuetang.course.mapper.CourseContentMapper;
 import com.zhixuetang.course.service.*;
 import com.zhixuetang.course.utils.CourseSaveBaseGroup;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,11 +50,31 @@ public class CourseController {
 
     @Autowired private ICourseCatalogueService courseCatalogueService;
 
+    @Autowired private CourseContentMapper courseContentMapper;
+
+    @Autowired private LearningClient learningClient;
+
     // todo 二期做
     //    @GetMapping("statistics")
     //    @Operation(summary = "课程数据统计")
     public CourseStatisticsVO statistics() {
         return null;
+    }
+
+    public record CourseHandout(String text) {}
+
+    @GetMapping("/{id}/handout")
+    public CourseHandout handout(@PathVariable long id) {
+        UserContext.requireUser();
+        if (learningClient.isLessonValid(id) == null) throw new ForbiddenException("没有课程学习权限");
+        var content = courseContentMapper.selectById(id);
+        return new CourseHandout(content == null ? null : content.getHandout());
+    }
+
+    @GetMapping("publication/{id}")
+    public CoursePublicationVO publication(@PathVariable long id) {
+        UserContext.requireAdmin();
+        return courseDraftService.publication(id);
     }
 
     @GetMapping("baseInfo/{id}")

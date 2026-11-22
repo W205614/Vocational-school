@@ -2,3 +2,42 @@
 @import './portal.css';
 
 @import './editorial.css';
+
+@media (max-width: 640px) {
+  .student-main,
+  .student-main .card,
+  .student-main .exam-question,
+  .student-main .section-heading > * {
+    min-width: 0;
+  }
+
+  .student-main .section-heading {
+    flex-wrap: wrap;
+  }
+
+  .student-main .exam-question {
+    scroll-margin-block-start: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  .student-main .answer-options .el-radio,
+  .student-main .answer-options .el-checkbox {
+    max-width: 100%;
+    height: auto;
+    white-space: normal;
+  }
+
+  .student-main .el-input__inner,
+  .student-main .el-textarea__inner {
+    font-size: 16px;
+  }
+
+  .student-main video {
+    max-inline-size: 100%;
+  }
+
+  .purchase-dialog {
+    max-height: 88dvh;
+    overscroll-behavior: contain;
+  }
+}

@@ -8,6 +8,7 @@ import com.zhixuetang.course.domain.dto.CoursePageQuery;
 import com.zhixuetang.course.domain.po.CourseDraft;
 import com.zhixuetang.course.domain.vo.CourseBaseInfoVO;
 import com.zhixuetang.course.domain.vo.CoursePageVO;
+import com.zhixuetang.course.domain.vo.CoursePublicationVO;
 import com.zhixuetang.course.domain.vo.CourseSaveVO;
 import com.zhixuetang.course.domain.vo.NameExistVO;
 
@@ -55,6 +56,8 @@ public interface ICourseDraftService extends IService<CourseDraft> {
     void upShelf(Long id);
 
     void checkBeforeUpShelf(Long id);
+
+    CoursePublicationVO publication(long id);
 
     /**
      * 课程下架

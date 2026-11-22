@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, reactive, watch, onBeforeUnmount } from 'vue';
+import { ref, reactive, watch, onBeforeUnmount, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { get, write } from '../../../../packages/shared/src/client';
 import { useTask, money, query, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
-const task = useTask(),
+const route = useRoute(),
+  task = useTask(),
   service = ref('trade'),
-  identifier = ref(''),
+  identifier = ref(typeof route.query.identifier === 'string' ? route.query.identifier : ''),
   errorCode = ref('');
 const services = [
   'auth',
@@ -143,6 +145,9 @@ async function loadCompensations() {
 }
 watch(compensationKind, () => {
   compensations.value = [];
+});
+onMounted(() => {
+  if (identifier.value) loadFailures();
 });
 function load() {
   loadFailures();

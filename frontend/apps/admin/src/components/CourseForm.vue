@@ -84,7 +84,11 @@ function save() {
     error.value = '封面地址应为 HTTP 图片地址或站内路径';
     return;
   }
-  emit('save', { ...model.value, price: model.value.free ? 0 : Math.round(price.value * 100) });
+  emit('save', {
+    ...model.value,
+    difficulty: model.value.difficulty ?? '',
+    price: model.value.free ? 0 : Math.round(price.value * 100),
+  });
 }
 </script>
 <template>
@@ -180,6 +184,27 @@ function save() {
         :rows="7"
         placeholder="完整课程说明；支持保存原有 HTML 内容"
     /></el-form-item>
+    <div class="grid">
+      <el-form-item label="学习成果">
+        <el-input v-model="model.learningOutcomes" aria-label="学习成果" type="textarea" :rows="2" maxlength="500" />
+      </el-form-item>
+      <el-form-item label="先修要求">
+        <el-input v-model="model.prerequisites" aria-label="先修要求" type="textarea" :rows="2" maxlength="500" placeholder="无先修要求时可填写「无」" />
+      </el-form-item>
+      <el-form-item label="难度">
+        <el-select v-model="model.difficulty" aria-label="课程难度" clearable>
+          <el-option label="入门" value="BEGINNER" />
+          <el-option label="进阶" value="INTERMEDIATE" />
+          <el-option label="高阶" value="ADVANCED" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="实操内容">
+        <el-input v-model="model.practiceOverview" aria-label="实操内容" type="textarea" :rows="2" maxlength="500" placeholder="例：完成一份演示作品；无实操可填写「无」" />
+      </el-form-item>
+    </div>
+    <el-form-item label="随堂讲义（报名后可看）">
+      <el-input v-model="model.handout" aria-label="随堂讲义" type="textarea" :rows="5" maxlength="10000" />
+    </el-form-item>
     <div class="toolbar">
       <el-button @click="emit('cancel')">取消</el-button
       ><el-button type="primary" @click="save" :disabled="!ready">保存课程资料</el-button>

@@ -258,7 +258,7 @@ test('free enrollment survives refresh and expired enrollment is explained upfro
   await expect(page.getByRole('button', { name: '免费报名', exact: true })).toHaveCount(0);
 });
 
-test('teacher login opens the grading workspace without requesting the admin dashboard', async ({
+test('teacher login opens the teaching workspace without requesting the admin dashboard', async ({
   page,
 }, info) => {
   test.skip(info.project.name !== 'admin');
@@ -268,14 +268,13 @@ test('teacher login opens the grading workspace without requesting the admin das
       dashboards.push(request.url());
   });
   await login(page, 'teacher');
-  await expect(page).toHaveURL(/\/exams$/);
-  await expect(
-    page.getByRole('heading', { name: '试卷版本与教师评分', exact: true }),
-  ).toBeVisible();
+  await expect(page).toHaveURL(/\/teaching$/);
+  await expect(page.getByRole('heading', { name: '教学待办', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '课程答疑', exact: true })).toBeVisible();
   await expect(page.getByText(/需要管理员权限/)).toHaveCount(0);
   expect(dashboards).toEqual([]);
   await page.goto('/refunds');
-  await expect(page).toHaveURL(/\/exams$/);
+  await expect(page).toHaveURL(/\/teaching$/);
   await expect(page.getByRole('link', { name: '退款审核', exact: true })).toHaveCount(0);
 });
 

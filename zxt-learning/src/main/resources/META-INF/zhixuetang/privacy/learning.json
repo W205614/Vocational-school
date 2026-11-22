@@ -94,6 +94,13 @@
       "cleanup": null
     },
     {
+      "name": "practice_submissions",
+      "select": "SELECT id,course_id,revision,description,work_url,status,feedback,submitted_at,reviewed_at FROM learning_practice_submission WHERE user_id=? AND cleaned_at IS NULL ORDER BY id",
+      "count": "SELECT COUNT(*) FROM learning_practice_submission WHERE user_id=? AND cleaned_at IS NULL",
+      "eligible": "SELECT COUNT(*) FROM learning_practice_submission WHERE user_id=? AND cleaned_at IS NULL AND COALESCE(reviewed_at,submitted_at)<?",
+      "cleanup": "UPDATE learning_practice_submission SET description='[已清理]',work_url=NULL,feedback=NULL,cleaned_at=CURRENT_TIMESTAMP(3) WHERE user_id=? AND cleaned_at IS NULL AND COALESCE(reviewed_at,submitted_at)<?"
+    },
+    {
       "name": "operations",
       "select": "SELECT operation_id,kind,status,error_code,created_at,updated_at FROM reliability_operation WHERE user_id=? ORDER BY created_at,operation_id",
       "count": "SELECT COUNT(*) FROM reliability_operation WHERE user_id=?",

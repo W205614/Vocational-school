@@ -52,6 +52,11 @@ public class UserInbox implements Serializable {
      */
     private String content;
 
+    private String targetType;
+    private Long targetId;
+    private Long courseId;
+    private Long sectionId;
+
     /**
      * 公告是否已读
      */

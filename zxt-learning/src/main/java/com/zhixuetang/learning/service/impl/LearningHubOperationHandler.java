@@ -2,6 +2,7 @@ package com.zhixuetang.learning.service.impl;
 
 import com.zhixuetang.api.client.course.CourseClient;
 import com.zhixuetang.api.client.user.UserClient;
+import com.zhixuetang.api.dto.message.ProductNotice;
 import com.zhixuetang.common.autoconfigure.reliability.OperationHandler;
 import com.zhixuetang.common.autoconfigure.reliability.OutboxStore;
 import com.zhixuetang.common.exceptions.*;
@@ -129,21 +130,20 @@ public class LearningHubOperationHandler implements OperationHandler {
                 time,
                 cmd.questionId());
         points.award(student, 5, PointsRecordType.QA, "accepted:" + cmd.questionId(), time);
+        Number section = (Number) question.get("section_id");
         outbox.enqueue(
                 "accepted-notice:" + cmd.questionId(),
                 "learning.topic",
-                "learning.notice.created",
-                Map.of(
-                        "noticeId",
+                "learning.notice.product",
+                new ProductNotice(
                         "accepted:" + cmd.questionId(),
-                        "userId",
                         student,
-                        "title",
                         "你的回答已被教师采纳",
-                        "content",
                         "课程回答获得采纳，积分按每日规则计入赛季。",
-                        "bizId",
-                        cmd.questionId()));
+                        "QUESTION",
+                        cmd.questionId(),
+                        ((Number) question.get("course_id")).longValue(),
+                        section == null ? null : section.longValue()));
         return Map.of("acceptedReplyId", cmd.replyId());
     }
 

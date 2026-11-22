@@ -3,6 +3,7 @@ package com.zhixuetang.api.client.exam;
 import com.zhixuetang.api.dto.exam.QuestionBizDTO;
 import com.zhixuetang.api.dto.exam.QuestionDTO;
 import com.zhixuetang.api.dto.exam.ExamSettlementPage;
+import com.zhixuetang.api.dto.exam.ExamLearningOverview;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +24,10 @@ public interface ExamClient {
             @RequestParam(value = "upperBound", required = false) Long upperBound);
 
     @PostMapping("/internal/v1/exams/learning-overview")
-    Map<String, Integer> learningOverview(@RequestBody List<Long> courseIds);
+    ExamLearningOverview learningOverview(@RequestBody List<Long> courseIds);
+
+    @GetMapping("/internal/v1/exams/published-sections")
+    List<Long> publishedSections(@RequestParam("courseId") long courseId);
 
     @PostMapping("/question-biz/list")
     void saveQuestionBizInfoBatch(@RequestBody Iterable<QuestionBizDTO> qbs);

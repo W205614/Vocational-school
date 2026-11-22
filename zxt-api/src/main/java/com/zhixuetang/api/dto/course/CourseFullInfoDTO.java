@@ -22,6 +22,10 @@ public class CourseFullInfoDTO {
     private String introduce;
     private String detail;
     private String usePeople;
+    private String learningOutcomes;
+    private String prerequisites;
+    private String difficulty;
+    private String practiceOverview;
 
     @Schema(description = "课程id")
     private Long id;

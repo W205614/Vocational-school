@@ -107,6 +107,42 @@ test('a delayed old course never replaces the current course or its entitlement'
   await expect(page.getByRole('heading', { name: 'Course 11', exact: true })).toHaveCount(0);
 });
 
+test('an answer-sheet deep link supports keyboard navigation and focuses the first unanswered item', async ({ page }, info) => {
+  test.skip(info.project.name !== 'student');
+  await setup(page);
+  await page.route('**/api/v2/exam-papers?**', (route) => answer(route, []));
+  await page.route('**/api/v2/services/course/course/11?**', (route) =>
+    answer(route, { id: '11', name: 'Accessible exam', chapters: [] }),
+  );
+  await page.route('**/api/v2/exam-attempts/page?**', (route) =>
+    answer(route, { list: [], total: 0 }),
+  );
+  await page.route('**/api/v2/exam-attempts/211', (route) =>
+    answer(route, {
+      id: '211',
+      course_id: '11',
+      status: 'IN_PROGRESS',
+      questions: [
+        { question_id: '777', name: 'Question one', type: 5, score: 10 },
+        { question_id: '778', name: 'Question two', type: 5, score: 10 },
+      ],
+    }),
+  );
+  await page.route('**/api/v2/exam-attempts/211/draft', (route) =>
+    answer(route, { status: 'IN_PROGRESS', version: '0', answers: {} }),
+  );
+
+  await page.goto('/exams?attemptId=211');
+  await expect(page.getByRole('heading', { name: '我的答卷' })).toBeFocused();
+  const second = page.getByRole('button', { name: '第 2 题，未作答' });
+  await second.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: /Question two/ })).toBeFocused();
+  await page.getByRole('button', { name: '提交全部答案' }).click();
+  await page.getByRole('button', { name: '定位第一道漏答题' }).click();
+  await expect(page.getByRole('heading', { name: /Question one/ })).toBeFocused();
+});
+
 test('rapid wrong-answer filters display the latest query', async ({ page }) => {
   const started = deferred(),
     release = deferred();

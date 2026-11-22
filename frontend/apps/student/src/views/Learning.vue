@@ -80,6 +80,29 @@ onMounted(load);
       <RouterLink to="/">发现更多课程 →</RouterLink>
     </div>
     <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
+    <section class="learning-actions" aria-label="下一步学习">
+      <article v-if="overview.continueLearning" class="card">
+        <h2>接着上次学</h2>
+        <p>{{ rows.find((row) => String(row.courseId) === String(overview.continueLearning.courseId))
+          ?.courseName || '最近学习的课程' }}</p>
+        <RouterLink class="hero-cta" :to="{
+          path: '/courses/' + overview.continueLearning.courseId,
+          query: { sectionId: overview.continueLearning.sectionId, moment: overview.continueLearning.moment },
+        }">从上次进度继续 →</RouterLink>
+      </article>
+      <article v-if="overview.activeAttempt" class="card">
+        <h2>继续答卷</h2>
+        <RouterLink :to="{ path: '/exams', query: { attemptId: overview.activeAttempt.attemptId } }">
+          打开进行中的答卷 →
+        </RouterLink>
+      </article>
+      <article v-if="overview.pendingReview" class="card">
+        <h2>今日错题复习</h2>
+        <RouterLink :to="{ path: '/review', query: {
+          attemptId: overview.pendingReview.attemptId, questionId: overview.pendingReview.questionId
+        } }">打开建议复习的错题 →</RouterLink>
+      </article>
+    </section>
     <div class="study-summary">
       <div>
         <span>本周完成</span><strong>{{ overview.weekFinished ?? 0 }} <small>小节</small></strong>
@@ -105,6 +128,7 @@ onMounted(load);
     <div class="study-shortcuts">
       <RouterLink to="/notes">私人笔记 →</RouterLink
       ><RouterLink to="/review">错题复习 →</RouterLink>
+      <RouterLink to="/practice">实操作业 →</RouterLink>
       <div aria-label="互动通知提醒">
         <RouterLink to="/messages">回复与通知 →</RouterLink
         ><small v-if="!repliesUnavailable">未读互动通知 {{ overview.unreadReplies }} 条</small
@@ -121,26 +145,6 @@ onMounted(load);
         :disabled="reminderTask.busy.value"
         @click="refreshReminders"
         >重试提醒</el-button
-      >
-    </div>
-    <div v-if="overview.continueLearning" class="card">
-      <h2>接着上次学</h2>
-      <p>
-        {{
-          rows.find((row) => String(row.courseId) === String(overview.continueLearning.courseId))
-            ?.courseName || '最近学习的课程'
-        }}
-      </p>
-      <RouterLink
-        class="hero-cta"
-        :to="{
-          path: '/courses/' + overview.continueLearning.courseId,
-          query: {
-            sectionId: overview.continueLearning.sectionId,
-            moment: overview.continueLearning.moment,
-          },
-        }"
-        >从上次进度继续 →</RouterLink
       >
     </div>
     <h2>继续学习</h2>
@@ -206,6 +210,14 @@ onMounted(load);
   </section>
 </template>
 <style scoped>
+.learning-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0.75rem;
+}
+.learning-actions:not(:empty) {
+  margin-block: 0.75rem;
+}
 .study-shortcuts small,
 .study-summary [aria-label='考试提醒'] > small {
   display: block;

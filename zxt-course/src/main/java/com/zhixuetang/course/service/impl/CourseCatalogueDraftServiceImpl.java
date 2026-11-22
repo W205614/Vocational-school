@@ -275,54 +275,6 @@ public class CourseCatalogueDraftServiceImpl
     }
 
     @Override
-    public void checkCataInfoImplated(Long courseId) {
-        // 查询所有目录
-        LambdaQueryWrapper<CourseCatalogueDraft> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(CourseCatalogueDraft::getCourseId, courseId);
-        List<CourseCatalogueDraft> courseCatalogueDrafts = baseMapper.selectList(queryWrapper);
-
-        List<CourseCataSubjectDraft> courseCataSubjectDrafts =
-                courseCataSubjectDraftMapper.getByCourseId(courseId);
-
-        Map<Long, Long> subjectNumMap =
-                CollUtils.isEmpty(courseCataSubjectDrafts)
-                        ? new HashMap<>()
-                        : courseCataSubjectDrafts.stream()
-                                .collect(
-                                        Collectors.groupingBy(
-                                                CourseCataSubjectDraft::getCataId,
-                                                Collectors.counting()));
-
-        // 校验练习或小节有没有上传题目和媒资
-        CollUtils.check(
-                courseCatalogueDrafts,
-                new Checker<CourseCatalogueDraft>() {
-                    @Override
-                    public void check(CourseCatalogueDraft courseCatalogueDraft) {
-                        if (courseCatalogueDraft.getType() == CourseConstants.CataType.SECTION
-                                && StringUtils.isEmpty(
-                                        courseCatalogueDraft.getVideoName())) { // 小节未上传视频
-                            throw new BizIllegalException(
-                                    StringUtils.format(
-                                            CourseErrorInfo.Msg
-                                                    .COURSE_UP_SHELF_SECTION_WITHOUT_MEDIA,
-                                            courseCatalogueDraft.getName()));
-                        } else if (courseCatalogueDraft.getType()
-                                        == CourseConstants.CataType.PRATICE
-                                && NumberUtils.null2Zero(
-                                                subjectNumMap.get(courseCatalogueDraft.getId()))
-                                        <= 0) { // 练习未添加题目
-                            throw new BizIllegalException(
-                                    StringUtils.format(
-                                            CourseErrorInfo.Msg
-                                                    .COURSE_UP_SHELF_PRACTICE_WITHOUT_SUBJECT,
-                                            courseCatalogueDraft.getName()));
-                        }
-                    }
-                });
-    }
-
-    @Override
     @Transactional(
             propagation = Propagation.REQUIRED,
             rollbackFor = {DbException.class, Exception.class})

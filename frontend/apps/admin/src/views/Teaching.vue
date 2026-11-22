@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { useRoute } from 'vue-router';
 import { get } from '../../../../packages/shared/src/client';
 import { useOperations } from '../../../../packages/shared/src/operations';
 import { useTask, query, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
-const task = useTask(),
+const route = useRoute(),
+  task = useTask(),
   ops = useOperations(),
   courseId = ref(''),
   studentId = ref(''),
@@ -15,46 +17,90 @@ const task = useTask(),
   studentPage = ref(1),
   questions = ref<Row[]>([]),
   questionTotal = ref(0),
-  questionPage = ref(1),
+  questionPage = ref(pageInQuery(route.query.questionPage)),
+  workCourse = ref(courseInQuery(route.query.workCourse)),
+  pendingOnly = ref(route.query.pendingOnly !== 'false'),
+  grades = ref<Row[]>([]),
+  gradeCourseIds = ref<string[]>([]),
+  gradePage = ref(pageInQuery(route.query.gradePage)),
+  gradeTotal = ref(0),
   current = ref<Row>(),
+  lastQuestionId = ref(''),
   replies = ref<Row[]>([]),
   reply = ref(''),
   replyPage = ref(1),
   replyTotal = ref(0),
   repliesReady = ref(false);
-type Section = 'learning' | 'exams' | 'questions';
+type Section = 'learning' | 'exams' | 'questions' | 'grading';
+const workCourses = computed(() => {
+  const options = new Map<string, string>(courses.value.map((course) => [String(course.id), course.name]));
+  for (const id of gradeCourseIds.value)
+    if (!options.has(id)) options.set(id, '课程 ' + id);
+  return options;
+});
+function pageInQuery(value: unknown) {
+  return typeof value === 'string' && /^[1-9][0-9]{0,3}$/.test(value) ? Number(value) : 1;
+}
+function courseInQuery(value: unknown) {
+  return typeof value === 'string' && /^[1-9][0-9]{0,18}$/.test(value) ? value : '';
+}
+const courseName = (id: unknown) => workCourses.value.get(String(id)) || '课程 ' + id;
+const pendingQuery = computed(() => ({
+  pendingCourseId: workCourse.value || undefined,
+  pendingPage: gradePage.value,
+  questionPage: questionPage.value,
+  pendingOnly: String(pendingOnly.value),
+  from: 'teaching',
+}));
+const displayTime = (time: unknown) => time ? String(time).replace('T', ' ') : '暂无记录';
 const reads = reactive({
   learning: { busy: false, error: '' },
   exams: { busy: false, error: '' },
   questions: { busy: false, error: '' },
+  grading: { busy: false, error: '' },
 });
-const readsBusy = computed(() => Object.values(reads).some((state) => state.busy));
-const revisions: Record<Section, number> = { learning: 0, exams: 0, questions: 0 };
+const readsBusy = computed(() => reads.learning.busy || reads.exams.busy);
+const revisions: Record<Section, number> = { learning: 0, exams: 0, questions: 0, grading: 0 };
 function clear(section: Section) {
   if (section === 'learning') learning.value = {};
   else if (section === 'exams') stats.value = {};
-  else {
+  else if (section === 'questions') {
     questions.value = [];
     questionTotal.value = 0;
+  } else {
+    grades.value = [];
+    gradeTotal.value = 0;
   }
 }
 function filter() {
   studentPage.value = 1;
   examPage.value = 1;
-  questionPage.value = 1;
-  current.value = undefined;
-  reply.value = '';
-  replies.value = [];
   void load();
+  if (workCourses.value.has(courseId.value)) {
+    workCourse.value = courseId.value;
+    filterWork();
+  }
+}
+function filterWork() {
+  questionPage.value = 1;
+  gradePage.value = 1;
+  void loadWork();
+}
+function filterQuestions() {
+  questionPage.value = 1;
+  void loadSection('questions');
 }
 async function loadSection(section: Section) {
   const revision = ++revisions[section],
-    course = courseId.value,
+    course = section === 'questions' || section === 'grading' ? workCourse.value : courseId.value,
     student = studentId.value;
   clear(section);
   reads[section].error = '';
   reads[section].busy = true;
-  if (!course) {
+  if (
+    (!course && (section === 'learning' || section === 'exams')) ||
+    (section === 'questions' && course && !courses.value.some((row) => String(row.id) === course))
+  ) {
     reads[section].busy = false;
     return;
   }
@@ -65,30 +111,51 @@ async function loadSection(section: Section) {
       : section === 'exams'
         ? '/teacher/exam-statistics?' +
           query({ courseId: course, studentId: student, pageNo: examPage.value, pageSize: 20 })
-        : '/learning-hub/teaching/questions?' +
-          query({ courseId: course, pageNo: questionPage.value, pageSize: 20 });
+        : section === 'questions'
+          ? '/learning-hub/teaching/questions?' +
+            query({ courseId: course, pendingOnly: pendingOnly.value, pageNo: questionPage.value, pageSize: 20 })
+          : '/teacher/exam-attempts/page?' +
+            query({ courseId: course, pageNo: gradePage.value, pageSize: 20 });
   try {
     const data = await get<Row>(path);
-    if (revision !== revisions[section] || course !== courseId.value) return;
+    if (revision !== revisions[section]) return;
     if (section === 'learning') learning.value = data;
     else if (section === 'exams') stats.value = data;
-    else {
+    else if (section === 'questions') {
+      const total = Number(data.total || 0);
+      const last = Math.max(1, Math.ceil(total / 20));
+      if (questionPage.value > last) {
+        questionPage.value = last;
+        await loadSection('questions');
+        return;
+      }
       questions.value = data.list || [];
-      questionTotal.value = Number(data.total || 0);
+      questionTotal.value = total;
+    } else {
+      const total = Number(data.total || 0);
+      const last = Math.max(1, Math.ceil(total / 20));
+      if (gradePage.value > last) {
+        gradePage.value = last;
+        await loadSection('grading');
+        return;
+      }
+      grades.value = data.list || [];
+      gradeTotal.value = total;
+      if (!course) gradeCourseIds.value = (data.courseIds || []).map(String);
+      else if (!gradeCourseIds.value.includes(course)) gradeCourseIds.value.push(course);
     }
   } catch (error) {
-    if (revision === revisions[section] && course === courseId.value)
+    if (revision === revisions[section])
       reads[section].error = error instanceof Error ? error.message : '请求失败';
   } finally {
     if (revision === revisions[section]) reads[section].busy = false;
   }
 }
 async function load() {
-  await Promise.allSettled([
-    loadSection('learning'),
-    loadSection('exams'),
-    loadSection('questions'),
-  ]);
+  await Promise.allSettled([loadSection('learning'), loadSection('exams')]);
+}
+async function loadWork() {
+  await Promise.allSettled([loadSection('questions'), loadSection('grading')]);
 }
 onBeforeUnmount(() => {
   for (const name of Object.keys(revisions) as Section[]) revisions[name]++;
@@ -100,6 +167,7 @@ async function answers(row: Row) {
     reply.value = '';
   }
   current.value = row;
+  lastQuestionId.value = String(row.id);
   replies.value = [];
   replyTotal.value = 0;
   repliesReady.value = false;
@@ -118,6 +186,10 @@ async function answers(row: Row) {
     }
   });
 }
+function returnToQuestionQueue() {
+  const control = document.getElementById('teacher-question-' + lastQuestionId.value);
+  (control || document.getElementById('teacher-questions-heading'))?.focus();
+}
 async function respond() {
   if (!current.value || !repliesReady.value || !reply.value.trim()) return;
   const ok = await task.run(async () => {
@@ -130,7 +202,7 @@ async function respond() {
   });
   if (ok && current.value) {
     reply.value = '';
-    await answers(current.value);
+    await Promise.all([answers(current.value), loadSection('questions')]);
   }
 }
 async function accept(row: Row) {
@@ -143,9 +215,9 @@ async function accept(row: Row) {
     );
     return op.status === 'SUCCEEDED';
   });
-  if (ok) {
-    await load();
-    current.value = questions.value.find((q) => q.id === current.value?.id);
+  if (ok && current.value) {
+    current.value = { ...current.value, acceptedReplyId: row.id };
+    await Promise.all([load(), loadSection('questions')]);
     task.message.value = '回答已采纳，积分按规则到账';
   }
 }
@@ -162,14 +234,98 @@ onMounted(async () => {
     courses.value = all;
     courseId.value = String(all[0]?.id || '');
   });
-  if (courseId.value) await load();
+  await Promise.allSettled([load(), loadWork()]);
+  if (route.hash === '#teacher-tasks-heading') {
+    await nextTick();
+    document.getElementById('teacher-tasks-heading')?.focus();
+  }
 });
 </script>
 <template>
   <section class="card teaching-page">
     <h1>教学学情与答疑</h1>
-    <p>按课程查看考试表现，及时回应学生的问题。</p>
+    <p>处理待答问题和待评分答卷，查看所授课程的学习进度。</p>
     <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
+    <section aria-labelledby="teacher-tasks-heading">
+      <div class="section-heading">
+        <h2 id="teacher-tasks-heading" tabindex="-1">教学待办</h2>
+        <RouterLink :to="{ path: '/exams', query: pendingQuery }">进入阅卷 →</RouterLink>
+      </div>
+      <div class="toolbar">
+        <el-select
+          v-model="workCourse"
+          clearable
+          filterable
+          aria-label="筛选待办课程"
+          placeholder="全部可处理课程"
+          @change="filterWork"
+        >
+          <el-option v-for="[id, name] in workCourses" :key="id" :value="id" :label="name" />
+        </el-select>
+      </div>
+      <h3>待评分答卷</h3>
+      <Status :busy="reads.grading.busy" :error="reads.grading.error" />
+      <el-button v-if="reads.grading.error" @click="loadSection('grading')">重试待评分列表</el-button>
+      <article v-for="row in grades" :key="row.id" class="review-row">
+        <div>
+          <h4>{{ courseName(row.course_id) }}</h4>
+          <p>提交于 {{ displayTime(row.submitted_at) }} · 学生 {{ row.user_id }}</p>
+        </div>
+        <RouterLink
+          :to="{ path: '/exams', query: { ...pendingQuery, pendingAttemptId: row.id } }"
+        >查看待评分答卷 →</RouterLink>
+      </article>
+      <el-empty
+        v-if="!grades.length && !reads.grading.busy && !reads.grading.error"
+        description="当前范围没有待评分答卷"
+      />
+      <el-pagination
+        v-if="gradeTotal > 20"
+        v-model:current-page="gradePage"
+        :total="gradeTotal"
+        :page-size="20"
+        layout="prev,pager,next"
+        @current-change="loadSection('grading')"
+      />
+    <section aria-label="课程答疑">
+      <Status :busy="reads.questions.busy" :error="reads.questions.error" /><el-button
+        v-if="reads.questions.error"
+        @click="loadSection('questions')"
+        :disabled="reads.questions.busy"
+        >重试课程答疑</el-button
+      >
+      <div class="section-heading">
+        <h3 id="teacher-questions-heading" tabindex="-1">课程答疑</h3>
+        <el-switch
+          v-model="pendingOnly"
+          aria-label="只看未答问题"
+          active-text="只看未答"
+          @change="filterQuestions"
+        />
+      </div>
+      <article v-for="row in questions" :key="row.id" class="review-row">
+        <div>
+          <h3>{{ row.title }}</h3>
+          <p>
+            {{ courseName(row.courseId) }} · {{ displayTime(row.createTime) }} ·
+            {{ row.answerTimes || 0 }} 个回答<span v-if="row.acceptedReplyId"> · 已采纳</span>
+          </p>
+        </div>
+        <el-button :id="'teacher-question-' + row.id" @click="answers(row)">查看与答疑</el-button>
+      </article>
+      <el-empty
+        v-if="!questions.length && !reads.questions.busy && !reads.questions.error"
+        :description="pendingOnly ? '当前范围没有待答问题' : '当前范围暂无问题'"
+      /><el-pagination
+        v-if="questionTotal > 20"
+        v-model:current-page="questionPage"
+        :total="questionTotal"
+        :page-size="20"
+        layout="prev,pager,next"
+        @current-change="loadSection('questions')"
+      />
+    </section>
+    </section>
     <div class="toolbar">
       <el-select
         v-model="courseId"
@@ -230,7 +386,9 @@ onMounted(async () => {
               >{{ Math.floor(Number(row.creditedMillis || 0) / 60000) }} 分
               {{ Math.floor(Number(row.creditedMillis || 0) / 1000) % 60 }} 秒</template
             ></el-table-column
-          ><el-table-column prop="latestLearnTime" label="最近学习" min-width="180" /></el-table
+          ><el-table-column label="最近学习" min-width="180">
+            <template #default="{ row }">{{ displayTime(row.latestLearnTime) }}</template>
+          </el-table-column></el-table
         ><el-pagination
           v-if="learning.total > 20"
           v-model:current-page="studentPage"
@@ -238,7 +396,14 @@ onMounted(async () => {
           :page-size="20"
           layout="prev,pager,next"
           @current-change="loadSection('learning')"
-      /></template>
+        />
+        <h3 v-if="learning.chapters?.length">章节完成情况</h3>
+        <el-table v-if="learning.chapters?.length" :data="learning.chapters">
+          <el-table-column prop="name" label="章节" />
+          <el-table-column prop="finished" label="已完成小节次数" />
+          <el-table-column prop="remaining" label="待完成小节次数" />
+        </el-table>
+      </template>
     </section>
     <section aria-label="考试统计">
       <Status :busy="reads.exams.busy" :error="reads.exams.error" /><el-button
@@ -265,40 +430,16 @@ onMounted(async () => {
         v-if="courseId && !reads.exams.busy && !reads.exams.error && !Number(stats.total || 0)"
         description="当前评分范围暂无记录"
       />
-    </section>
-    <section aria-label="课程答疑">
-      <Status :busy="reads.questions.busy" :error="reads.questions.error" /><el-button
-        v-if="reads.questions.error"
-        @click="loadSection('questions')"
-        :disabled="reads.questions.busy"
-        >重试课程答疑</el-button
-      >
-      <div class="section-heading">
-        <h2>课程答疑</h2>
-        <RouterLink to="/exams">前往评分 →</RouterLink>
-      </div>
-      <article v-for="row in questions" :key="row.id" class="review-row">
-        <div>
-          <h3>{{ row.title }}</h3>
-          <p>{{ row.answerTimes || 0 }} 个回答 · {{ row.acceptedReplyId ? '已采纳' : '待处理' }}</p>
-        </div>
-        <el-button @click="answers(row)">查看与答疑</el-button>
-      </article>
-      <el-empty
-        v-if="!questions.length && !reads.questions.busy && !reads.questions.error"
-        :description="courseId ? '本课程暂无待查看问题' : '先选择一门所授课程'"
-      /><el-pagination
-        v-if="questionTotal > 20"
-        v-model:current-page="questionPage"
-        :total="questionTotal"
-        :page-size="20"
-        layout="prev,pager,next"
-        @current-change="loadSection('questions')"
-      />
+      <h3 v-if="stats.commonMistakes?.length">高频失分题</h3>
+      <el-table v-if="stats.commonMistakes?.length" :data="stats.commonMistakes">
+        <el-table-column prop="name" label="题目" />
+        <el-table-column prop="students" label="失分学生人数" />
+      </el-table>
     </section>
     <el-dialog
       :model-value="!!current"
       title="课程答疑"
+      @closed="returnToQuestionQueue"
       @update:model-value="
         (v: boolean) => {
           if (!v) current = undefined;

@@ -2,6 +2,7 @@ package com.zhixuetang.exam.controller;
 
 import com.zhixuetang.api.client.course.CourseClient;
 import com.zhixuetang.api.client.learning.LearningClient;
+import com.zhixuetang.api.dto.course.ExamSectionPublicationDTO;
 import com.zhixuetang.common.autoconfigure.reliability.OperationStore;
 import com.zhixuetang.common.domain.R;
 import com.zhixuetang.common.exceptions.*;
@@ -34,18 +35,25 @@ public class ExamWorkflowController {
             long sectionId,
             List<Long> questionIds,
             Integer passPercent,
-            List<Long> graders) {}
+            List<Long> graders,
+            Map<Long, Explanation> explanations) {}
 
     @PostMapping("/admin/exam-papers")
     public ResponseEntity<OperationStore.View> publish(
             @RequestBody PublishRequest form, @RequestHeader("Idempotency-Key") String key) {
         UserContext.requireAdmin();
-        var section = courses.sectionInfo(form.sectionId());
-        var course = courses.getCourseInfoById(form.courseId(), false, false);
-        if (section == null
-                || !Objects.equals(section.getCourseId(), form.courseId())
-                || !Integer.valueOf(3).equals(section.getType())
-                || course == null) throw new BadRequestException("考试小节不属于该课程");
+        if (form.courseId() <= 0 || form.sectionId() <= 0)
+            throw new BadRequestException("课程和考试小节标识无效");
+        var section = courses.examSectionForPublication(form.courseId(), form.sectionId());
+        if (section == null) throw new BadRequestException("考试小节不属于该课程");
+        boolean draft = section.draftQuestionIds() != null;
+        if (form.questionIds() == null
+                || form.questionIds().isEmpty()
+                || form.questionIds().size() > 100
+                || form.questionIds().stream().anyMatch(id -> id == null || id <= 0))
+            throw new BadRequestException("试卷题目参数无效");
+        if (draft && !new HashSet<>(section.draftQuestionIds()).containsAll(form.questionIds()))
+            throw new BadRequestException("题目未关联到该草稿的考试小节");
         if (form.graders() != null && !form.graders().isEmpty()) {
             if (form.graders().size() > 100
                     || form.graders().stream().anyMatch(id -> id == null || id <= 0))
@@ -54,6 +62,26 @@ public class ExamWorkflowController {
             if (assigned.size() != new HashSet<>(form.graders()).size()
                     || assigned.stream().anyMatch(u -> !Integer.valueOf(3).equals(u.getType())))
                 throw new BadRequestException("评分人必须是有效教师");
+        }
+        if (form.explanations() != null && !form.explanations().isEmpty()) {
+            if (form.explanations().size() > 100
+                    || !new HashSet<>(form.questionIds()).containsAll(form.explanations().keySet()))
+                throw new BadRequestException("讲解须关联到试卷中的题目");
+            var verified = new HashMap<Long, ExamSectionPublicationDTO>();
+            for (var explanation : form.explanations().values()) {
+                if (explanation == null || explanation.sectionId() <= 0)
+                    throw new BadRequestException("讲解视频小节无效");
+                var lecture = verified.computeIfAbsent(
+                        explanation.sectionId(),
+                        id -> courses.lectureSectionForPublication(form.courseId(), id));
+                if (lecture == null) throw new BadRequestException("讲解视频小节不属于该课程");
+                Integer moment = explanation.moment();
+                if (moment != null
+                        && (moment < 0
+                                || lecture.mediaDuration() == null
+                                || moment >= lecture.mediaDuration()))
+                    throw new BadRequestException("讲解时间须在视频时长内");
+            }
         }
         return ResponseEntity.accepted()
                 .body(
@@ -68,7 +96,9 @@ public class ExamWorkflowController {
                                         form.questionIds(),
                                         form.passPercent(),
                                         form.graders(),
-                                        course.getSectionNum())));
+                                        section.totalSections(),
+                                        draft,
+                                        form.explanations())));
     }
 
     @GetMapping("/exam-papers")
@@ -190,7 +220,12 @@ public class ExamWorkflowController {
         Long role = UserContext.getRole();
         if (!Set.of(1L, 3L).contains(role == null ? 0L : role))
             throw new ForbiddenException("需要评分教师权限");
-        if (pageNo < 1 || pageNo > 10000 || pageSize < 1 || pageSize > 100)
+        if (pageNo < 1
+                || pageNo > 10000
+                || pageSize < 1
+                || pageSize > 100
+                || courseId != null && courseId <= 0
+                || studentId != null && studentId <= 0)
             throw new BadRequestException("分页范围无效");
         String from =
                 " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE a.status='WAIT_GRADING'";
@@ -200,6 +235,13 @@ public class ExamWorkflowController {
                     " AND EXISTS(SELECT 1 FROM exam_grader g WHERE g.paper_id=a.paper_id AND g.user_id=?)";
             parameters.add(user);
         }
+        var courseIds =
+                courseId == null
+                        ? jdbc.queryForList(
+                                "SELECT DISTINCT p.course_id" + from + " ORDER BY p.course_id",
+                                Long.class,
+                                parameters.toArray())
+                        : List.<Long>of();
         if (courseId != null) {
             from += " AND p.course_id=?";
             parameters.add(courseId);
@@ -219,6 +261,8 @@ public class ExamWorkflowController {
                 pageNo,
                 "pageSize",
                 pageSize,
+                "courseIds",
+                courseIds,
                 "list",
                 jdbc.queryForList(
                         "SELECT a.*,p.course_id,p.section_id"
@@ -258,21 +302,35 @@ public class ExamWorkflowController {
                 || pageSize > 100
                 || courseId != null && courseId <= 0
                 || studentId != null && studentId <= 0) throw new BadRequestException("统计筛选参数无效");
-        String from = " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE 1=1";
+        String attempts = " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id";
+        String filters = "";
         List<Object> args = new ArrayList<>();
         if (role != 1L) {
-            from +=
+            filters +=
                     " AND EXISTS(SELECT 1 FROM exam_grader g WHERE g.paper_id=p.id AND g.user_id=?)";
             args.add(user);
         }
         if (courseId != null) {
-            from += " AND p.course_id=?";
+            filters += " AND p.course_id=?";
             args.add(courseId);
         }
         if (studentId != null) {
-            from += " AND a.user_id=?";
+            filters += " AND a.user_id=?";
             args.add(studentId);
         }
+        var commonMistakes =
+                jdbc.queryForList(
+                        "WITH scoped AS (SELECT p.course_id,a.user_id,a.graded_at,a.id AS attempt_id,pq.question_id,pq.name"
+                                + attempts
+                                + " JOIN exam_answer r ON r.attempt_id=a.id JOIN exam_paper_question pq ON pq.paper_id=p.id AND pq.question_id=r.question_id"
+                                + " WHERE a.status='FINISHED' AND r.score<pq.score"
+                                + filters
+                                + "),"
+                                + " ranked AS (SELECT *,ROW_NUMBER() OVER(PARTITION BY course_id,question_id ORDER BY graded_at DESC,attempt_id DESC) AS latest FROM scoped)"
+                                + " SELECT course_id,question_id,MAX(CASE WHEN latest=1 THEN name END) AS name,COUNT(DISTINCT user_id) AS students"
+                                + " FROM ranked GROUP BY course_id,question_id ORDER BY students DESC,course_id,question_id LIMIT 10",
+                        args.toArray());
+        String from = attempts + " WHERE 1=1" + filters;
         String groups = " GROUP BY p.course_id,a.user_id";
         Long total =
                 jdbc.queryForObject(
@@ -294,6 +352,8 @@ public class ExamWorkflowController {
         return Map.of(
                 "scope",
                 "GRADING_ASSIGNMENT",
+                "commonMistakes",
+                commonMistakes,
                 "total",
                 total,
                 "pageNo",

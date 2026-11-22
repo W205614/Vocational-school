@@ -49,6 +49,9 @@ def main():
     environment = call(student, 'GET', '/environment')
     assert environment['payment'] == 'SIMULATED'
     identity = order(student)
+    assert call(student, 'GET', '/orders/' + identity)['details'][0]['entitlement']['state'] == 'NOT_GRANTED'
+    call(student, 'GET', '/admin/dashboard/pending-entitlements', expected=403)
+    call(admin, 'GET', '/admin/media/processing-failures')
     pay(student, identity)
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
         futures = [
@@ -83,6 +86,11 @@ def main():
         == '1'
     )
     assert scalar('SELECT COUNT(*) FROM payment_fact WHERE order_id=' + identity) == '1'
+    paid = call(student, 'GET', '/orders/' + identity)
+    assert paid['paidAt'] and not paid['paymentNeedsReview']
+    assert paid['details'][0]['entitlement']['state'] == 'ACTIVE'
+    assert paid['details'][0]['entitlement']['canLearn'] is True
+    assert all(str(row['orderId']) != identity for row in call(admin, 'GET', '/admin/dashboard/pending-entitlements')['list'])
     # Repeated asynchronous refund command shares operation and result.
     key = uuid.uuid4().hex
     body = dict(
@@ -103,6 +111,12 @@ def main():
         + detail
         + ' ORDER BY id DESC LIMIT 1'
     )
+    pending = call(student, 'GET', '/orders/' + identity)['details'][0]
+    assert pending['refunds'][0]['status'] == 1
+    assert str(pending['refunds'][0]['id']) == refund
+    assert len(pending['refunds'][0]['nodes']) == 1
+    queued = call(admin, 'GET', '/admin/trade/refund-apply/page?refundStatus=1&id=' + refund)
+    assert [str(item['id']) for item in queued['list']] == [refund]
     approved = call(
         admin,
         'PUT',
@@ -137,6 +151,11 @@ def main():
         )
         == '1'
     )
+    refunded = call(student, 'GET', '/orders/' + identity)['details'][0]
+    assert refunded['refunds'][0]['status'] == 5 and len(refunded['refunds'][0]['nodes']) == 3
+    assert refunded['entitlement']['state'] == 'REVOKED'
+    assert call(admin, 'GET', '/admin/trade/refund-apply/page?refundStatus=1&id=' + refund)['list'] == []
+    assert scalar("SELECT COUNT(*) FROM reliability_outbox WHERE business_key LIKE 'refund:" + refund + ":notice:%'") == '3'
     # Late payment is a persisted manual case and must not grant an entitlement.
     closed = order(student)
     pay(student, closed)
@@ -148,6 +167,9 @@ def main():
         'late payment case',
     )
     assert scalar('SELECT status FROM `order` WHERE id=' + closed) == '3'
+    late = call(student, 'GET', '/orders/' + closed)
+    assert late['paidAt'] and late['paymentNeedsReview']
+    assert late['details'][0]['entitlement']['state'] == 'NOT_GRANTED'
     closed_detail = scalar('SELECT id FROM order_detail WHERE order_id=' + closed)
     assert (
         scalar(
@@ -241,18 +263,56 @@ def main():
             == '0',
             'target entitlement revoked',
         )
+    # A partially refunded order exposes per-course status while the user's other order is still active.
+    mixed = order(student, ['1', fixture['course']])
+    alternate = order(student)
+    for number in [mixed, alternate]:
+        pay(student, number)
+        call(student, 'POST', '/simulator/payments/' + number + '/confirm')
+        eventually(lambda: all(
+            item['entitlement']['state'] == 'ACTIVE'
+            for item in call(student, 'GET', '/orders/' + number)['details']
+        ), 'orders independently grant course entitlements')
+    mixed_view = call(student, 'GET', '/orders/' + mixed)
+    target = next(item for item in mixed_view['details'] if str(item['courseId']) == '1')
+    requested = call(student, 'POST', '/services/trade/refund-apply', dict(
+        orderDetailId=str(target['id']), refundReason='Partial acceptance', questionDesc='Retain the other courses',
+    ), uuid.uuid4().hex, 202)
+    assert wait(student, 'trade', requested)['status'] == 'SUCCEEDED'
+    lines = call(student, 'GET', '/orders/' + mixed)['details']
+    partial_refund = next(line['refunds'][0]['id'] for line in lines if line['id'] == target['id'])
+    approved = call(admin, 'PUT', '/services/trade/refund-apply/approval', dict(
+        id=str(partial_refund), approveType=1, approveOpinion='Partial acceptance',
+    ), uuid.uuid4().hex, 202)
+    assert wait(admin, 'trade', approved)['status'] == 'SUCCEEDED'
+    eventually(lambda: any(
+        str(item['courseId']) == '1' and item['entitlement']['state'] == 'REVOKED'
+        for item in call(student, 'GET', '/orders/' + mixed)['details']
+    ), 'refund propagates on exactly one order line')
+    mixed_view = call(student, 'GET', '/orders/' + mixed)
+    mixed_items = {str(item['courseId']): item for item in mixed_view['details']}
+    assert mixed_view['status'] == 2
+    assert mixed_items['1']['refunds'][0]['status'] == 5
+    assert mixed_items['1']['entitlement']['otherOrderActive'] is True
+    assert mixed_items['1']['entitlement']['canLearn'] is True
+    assert mixed_items[str(fixture['course'])]['entitlement']['state'] == 'ACTIVE'
     evidence = dict(
         status='PASSED',
         paidOrder=identity,
         refundedDetail=detail,
         latePaidOrder=closed,
         concurrentRefundOrder=dual,
+        partialRefundOrder=mixed,
         checks=[
             'idempotent order',
             '20 repeated payment confirmations',
             'one payment fact and paid event',
             'grant by order detail',
             'idempotent refund command',
+            'payment fact, per-course entitlement and refund progress through the student API',
+            'admin queue access and approved refund removed from pending view',
+            'one notice per refund state transition',
+            'partial refund preserves sibling course and an independent order still grants the same course',
             'refund terminal and entitlement revoke',
             'learning history preserved',
             'concurrent two-detail refunds and 20 repeated approvals aggregate one terminal order',

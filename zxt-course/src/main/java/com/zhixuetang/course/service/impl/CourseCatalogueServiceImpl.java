@@ -50,7 +50,8 @@ public class CourseCatalogueServiceImpl extends ServiceImpl<CourseCatalogueMappe
                                 CourseCatalogue::getType,
                                 CourseCatalogue::getParentCatalogueId,
                                 CourseCatalogue::getCIndex,
-                                CourseCatalogue::getMediaDuration)
+                                CourseCatalogue::getMediaDuration,
+                                CourseCatalogue::getTrailer)
                         .eq(CourseCatalogue::getCourseId, courseId)
                         .eq(CourseCatalogue::getDeleted, 0)
                         .in(CourseCatalogue::getType, 1, 2, 3)
@@ -66,6 +67,8 @@ public class CourseCatalogueServiceImpl extends ServiceImpl<CourseCatalogueMappe
             node.setType(row.getType());
             node.setIndex(row.getCIndex());
             node.setMediaDuration(row.getMediaDuration());
+            node.setTrailer(Integer.valueOf(CourseConstants.CataType.SECTION).equals(row.getType())
+                    && Integer.valueOf(1).equals(row.getTrailer()));
             node.setSections(new ArrayList<>());
             nodes.put(row.getId(), node);
         }

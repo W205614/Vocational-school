@@ -6,6 +6,7 @@ import com.zhixuetang.exam.service.impl.ExamReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,6 +28,11 @@ public class ExamReviewController {
             @RequestParam(required = false) Integer type,
             @RequestParam(required = false) Boolean mastered) {
         return review.page(UserContext.requireUser(), pageNo, pageSize, courseId, type, mastered);
+    }
+
+    @GetMapping("/suggestions")
+    public List<Map<String, Object>> suggestions() {
+        return review.suggestions(UserContext.requireUser());
     }
 
     @GetMapping("/{attemptId}/{questionId}")

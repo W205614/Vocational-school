@@ -295,16 +295,53 @@ class ExamReviewReliabilityTest {
     }
 
     @Test
+    void suggestionsRankRepeatedLossesAndRetainAssignedLectureAfterSubmission() {
+        long newestAttempt = com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();
+        long secondQuestion = com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();
+        long lecture = com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();
+        jdbc.update("INSERT INTO exam_paper_question(paper_id,question_id,position,name,type,score) VALUES(?,?,2,'additional question',5,10)",
+                paper, secondQuestion);
+        jdbc.update("UPDATE exam_attempt SET graded_at='2026-11-02 08:00:00' WHERE id=?", attempt);
+        jdbc.update(
+                "INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id,status,score,passed,graded_at) VALUES(?,?,?,?,'FINISHED',0,0,'2026-11-03 08:00:00')",
+                newestAttempt, paper, user, paper);
+        jdbc.update(
+                "INSERT INTO exam_answer(attempt_id,question_id,response,score) VALUES(?,?,'3',0),(?,?,'missed',0)",
+                newestAttempt, question, newestAttempt, secondQuestion);
+        jdbc.update("UPDATE exam_paper_question SET lecture_section_id=?,lecture_moment=0 WHERE paper_id=? AND question_id=?",
+                lecture, paper, question);
+
+        var suggested = reviews.suggestions(user);
+        assertEquals(2, suggested.size());
+        assertEquals(question, ((Number) suggested.getFirst().get("question_id")).longValue());
+        assertEquals(newestAttempt, ((Number) suggested.getFirst().get("attempt_id")).longValue());
+        assertEquals(2L, ((Number) suggested.getFirst().get("failed_attempts")).longValue());
+        assertEquals(secondQuestion, ((Number) suggested.getLast().get("question_id")).longValue());
+        assertEquals(lecture, ((Number) reviews.detail(user, newestAttempt, question).get("lecture_section_id")).longValue());
+        assertEquals(0, reviews.detail(user, newestAttempt, question).get("lecture_moment"));
+        assertTrue(reviews.suggestions(teacher).isEmpty());
+        execute(new ExamReviewService.Command("STATE", newestAttempt, question, null, true, 0L));
+        assertEquals(1, reviews.suggestions(user).size());
+        assertEquals(secondQuestion, ((Number) reviews.suggestions(user).getFirst().get("question_id")).longValue());
+    }
+
+    @Test
     void gradingStatisticsNeverGrantTaughtCourseOrOtherPaperAccess() {
         var controller = new ExamWorkflowController(workflow, null, null, null, jdbc, null);
         UserContext.setUser(teacher);
         UserContext.setRole(3L);
         try {
-            assertEquals(0L, controller.statistics(1, 20, paper, null).get("total"));
+            var unauthorized = controller.statistics(1, 20, paper, null);
+            assertEquals(0L, unauthorized.get("total"));
+            assertEquals(List.of(), unauthorized.get("commonMistakes"));
             jdbc.update("INSERT INTO exam_grader(paper_id,user_id) VALUES(?,?)", paper, teacher);
             var statistics = controller.statistics(1, 20, paper, user);
             assertEquals("GRADING_ASSIGNMENT", statistics.get("scope"));
             assertEquals(1L, statistics.get("total"));
+            var mistakes = (List<Map<String, Object>>) statistics.get("commonMistakes");
+            assertEquals(1, mistakes.size());
+            assertEquals(question, ((Number) mistakes.getFirst().get("question_id")).longValue());
+            assertEquals(1L, ((Number) mistakes.getFirst().get("students")).longValue());
             assertEquals(0L, controller.statistics(1, 20, paper, user + 99).get("total"));
             UserContext.setRole(2L);
             assertThrows(ForbiddenException.class, () -> controller.statistics(1, 20, paper, null));

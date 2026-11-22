@@ -158,10 +158,16 @@ test('full coupon discount settles without payment and approved withdrawal keeps
     expect(orderDetail.details[0].canRefund).toBe(true);
     const detailDialog = page.getByRole('dialog', { name: '订单详情', exact: true });
     await expect(detailDialog).toBeVisible();
+    await expect(page).toHaveURL(/\/orders\?orderId=\d+$/);
+    await expect(detailDialog.getByText('学习权限已生效', { exact: false })).toBeVisible();
+    await expect(detailDialog.getByRole('list', { name: '订单进度', exact: true })).toBeVisible();
     await detailDialog.getByRole('button', { name: '申请退款', exact: true }).click();
     await page.getByPlaceholder('请说明退款原因').fill('全额抵扣订单退课，保留已使用券');
     await page.getByRole('button', { name: '提交退款申请', exact: true }).click();
     await expect(page.getByText('退款申请已提交', { exact: true })).toBeVisible();
+    await expect(detailDialog.getByText('等待审核', { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(detailDialog.getByText('等待审核', { exact: true })).toBeVisible();
     await admin.goto('/refunds');
     const refund = admin.locator('.el-table__row').filter({ hasText: String(order) });
     await refund.getByRole('button', { name: '同意退款', exact: true }).click();
@@ -170,6 +176,8 @@ test('full coupon discount settles without payment and approved withdrawal keeps
     await expect
       .poll(async () => (await api(page, 'GET', '/orders/' + order)).status, { timeout: 30000 })
       .toBe(7);
+    await expect.poll(async () => (await api(page, 'GET', '/orders/' + order)).details[0].entitlement.state,
+      { timeout: 30000 }).toBe('REVOKED');
     expect(
       (
         await api(

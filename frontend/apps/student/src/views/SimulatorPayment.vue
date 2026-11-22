@@ -39,6 +39,6 @@ async function confirm() {
     <p>订单 {{ route.params.id }}</p>
     <el-button type="primary" @click="confirm" :disabled="!enabled || confirmed || task.busy.value"
       >确认模拟支付成功</el-button
-    ><RouterLink to="/orders">查看业务订单结果</RouterLink>
+    ><RouterLink :to="{ path: '/orders', query: { orderId: String(route.params.id) } }">查看业务订单结果</RouterLink>
   </section>
 </template>

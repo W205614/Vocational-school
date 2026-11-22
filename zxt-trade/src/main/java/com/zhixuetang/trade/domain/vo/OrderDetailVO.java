@@ -2,6 +2,7 @@ package com.zhixuetang.trade.domain.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import java.util.List;
 
 @Data
 @Schema(description = "订单条目中的课程信息")
@@ -35,4 +36,8 @@ public class OrderDetailVO {
 
     @Schema(description = "是否可以退款")
     private Boolean canRefund;
+
+    private OrderEntitlementVO entitlement;
+
+    private List<OrderRefundProgressVO> refunds;
 }

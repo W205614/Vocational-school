@@ -555,6 +555,16 @@ class ExamReliabilityTest {
                         "SELECT COUNT(*) FROM reliability_outbox WHERE business_key=?",
                         Integer.class,
                         "exam:" + attempt + ":passed"));
+        var notices =
+                jdbc.queryForList(
+                        "SELECT routing_key,payload FROM reliability_outbox WHERE business_key=?",
+                        "exam:" + attempt + ":graded-notice");
+        assertEquals(1, notices.size());
+        assertEquals("learning.notice.product", notices.getFirst().get("routing_key"));
+        var payload = json.readTree(notices.getFirst().get("payload").toString()).get("payload");
+        assertEquals(user, payload.get("userId").asLong());
+        assertEquals(attempt, payload.get("targetId").asLong());
+        assertEquals("EXAM", payload.get("targetType").asString());
     }
 
     @Test

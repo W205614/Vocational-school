@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { questionOptions } from '../../../../packages/shared/src/questionOptions';
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch } from 'vue';
 import { ElMessageBox } from 'element-plus';
 import { useExamDraft } from '../composables/examDraft';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ApiError, get } from '../../../../packages/shared/src/client';
 import { enrolledCourseOptions } from '../../../../packages/shared/src/courseOptions';
 import { useOperations } from '../../../../packages/shared/src/operations';
 import { useTask, examStatus, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
 const route = useRoute(),
-  courseId = ref(String(route.query.courseId || '')),
+  router = useRouter(),
+  courseId = ref(''),
   course = ref<Row>(),
   lessons = ref<Row[]>([]),
   papers = ref<Row[]>([]),
@@ -20,11 +21,35 @@ const route = useRoute(),
   submitOpen = ref(false),
   task = useTask(),
   ops = useOperations();
-const answered = computed(
-  () =>
-    attempt.value?.questions?.filter((q: Row) => responses.value[q.question_id]?.trim()).length ||
-    0,
+const unanswered = computed<Row[]>(() =>
+  (attempt.value?.questions || []).filter(
+    (question: Row) => !responses.value[question.question_id]?.trim(),
+  ),
 );
+const answered = computed(() => (attempt.value?.questions.length || 0) - unanswered.value.length);
+let jumpAfterClose: Row | undefined;
+function questionAnchor(question: Row) {
+  return 'exam-question-' + question.question_id;
+}
+function focusQuestion(question: Row) {
+  document.getElementById(questionAnchor(question))?.focus();
+}
+function locateUnanswered() {
+  jumpAfterClose = unanswered.value[0];
+  submitOpen.value = false;
+}
+function focusClosedDialogQuestion() {
+  if (jumpAfterClose) focusQuestion(jumpAfterClose);
+  jumpAfterClose = undefined;
+}
+function isMistake(question: Row) {
+  return (attempt.value?.answers || []).some(
+    (answer: Row) =>
+      String(answer.question_id) === String(question.question_id) &&
+      answer.score != null &&
+      Number(answer.score) < Number(question.score),
+  );
+}
 const sectionName = (id: string) =>
   course.value?.chapters
     ?.flatMap((c: Row) => c.sections || [])
@@ -135,27 +160,57 @@ async function loadHistory() {
   });
 }
 async function chooseCourse() {
+  const selected = courseId.value || undefined;
+  if (selected !== route.query.courseId || route.query.attemptId) {
+    await router.replace({ path: '/exams', query: { courseId: selected } });
+  } else {
+    await loadRoute();
+  }
+}
+async function openHistory(row: Row) {
+  if (route.query.attemptId === String(row.id)) {
+    if (!attempt.value) await loadRoute();
+    else document.getElementById('exam-answer-heading')?.focus();
+    return;
+  }
+  await router.replace({
+    path: '/exams',
+    query: { attemptId: String(row.id), courseId: String(row.course_id) },
+  });
+}
+async function loadRoute(useRemembered = false) {
   attempt.value = undefined;
   papers.value = [];
   historyPage.value = 1;
-  await load();
-  await loadHistory();
-  await restore();
-}
-async function openHistory(row: Row) {
-  if (courseId.value !== String(row.course_id)) {
-    courseId.value = String(row.course_id);
-    await load();
-    historyPage.value = 1;
-    await loadHistory();
-  }
-  await historyTask.run(async () => {
-    await showAttempt(await get<Row>('/exam-attempts/' + row.id));
-    if (row.status === 'IN_PROGRESS') {
-      sessionStorage.setItem('school-active-exam', String(row.id));
-      sessionStorage.setItem('school-active-exam-course', courseId.value);
+  courseId.value = String(
+    route.query.courseId ||
+      (useRemembered && !route.query.attemptId
+        ? sessionStorage.getItem('school-active-exam-course') || ''
+        : ''),
+  );
+
+  if (route.query.attemptId !== undefined) {
+    const result = await task.run(async () => {
+      const id = route.query.attemptId;
+      if (typeof id !== 'string' || !/^[1-9][0-9]{0,18}$/.test(id))
+        throw new Error('答卷编号无效');
+      return get<Row>('/exam-attempts/' + id);
+    });
+    if (result) {
+      courseId.value = String(result.course_id || courseId.value);
+      if (courseId.value) await load();
+      await task.run(async () => {
+        await showAttempt(result);
+        await nextTick();
+        document.getElementById('exam-answer-heading')?.focus();
+      });
     }
-  });
+  } else {
+    if (courseId.value) await load();
+    await restore();
+  }
+
+  await loadHistory();
 }
 async function restore() {
   const active = sessionStorage.getItem('school-active-exam'),
@@ -179,6 +234,8 @@ async function start(id: string) {
       await showAttempt(await get<Row>('/exam-attempts/' + result.id));
       sessionStorage.setItem('school-active-exam', String(result.id));
       sessionStorage.setItem('school-active-exam-course', courseId.value);
+      await nextTick();
+      document.getElementById('exam-answer-heading')?.focus();
     } else task.message.value = '考试正在创建，请在操作记录中查看结果';
   });
 }
@@ -186,6 +243,7 @@ async function refresh() {
   if (attempt.value)
     await task.run(async () => {
       await showAttempt(await get<Row>('/exam-attempts/' + attempt.value!.id));
+      await loadHistory();
     });
 }
 async function submit() {
@@ -202,22 +260,14 @@ async function submit() {
     if (operation.status === 'SUCCEEDED') {
       await showAttempt(await get<Row>('/exam-attempts/' + attempt.value.id));
       submitOpen.value = false;
+      await loadHistory();
     } else task.message.value = '答卷正在提交，请在操作记录中查看结果';
   });
 }
-watch(
-  () => route.query.courseId,
-  async (value) => {
-    courseId.value = String(value || '');
-    await chooseCourse();
-  },
-);
+watch(() => [route.query.courseId, route.query.attemptId], () => void loadRoute());
 onMounted(async () => {
-  if (!courseId.value) courseId.value = sessionStorage.getItem('school-active-exam-course') || '';
-  if (!(await loadCourseChoices()) || choicesAbort.signal.aborted) return;
-  if (courseId.value) await load();
-  await loadHistory();
-  await restore();
+  await loadCourseChoices();
+  if (!choicesAbort.signal.aborted) await loadRoute(true);
 });
 function options(question: Row): string[] {
   return question.options.length
@@ -250,7 +300,7 @@ function selectMultiple(question: Row, values: unknown) {
         placeholder="选择已报名课程"
         aria-label="选择考试课程"
         :disabled="task.busy.value"
-        style="width: 360px"
+        class="exam-course-select"
         @change="chooseCourse"
         ><el-option
           v-if="course && !lessons.some((l: Row) => String(l.courseId) === courseId)"
@@ -321,13 +371,17 @@ function selectMultiple(question: Row, values: unknown) {
           ></el-table-column
         ><el-table-column label="成绩" width="90"
           ><template #default="{ row }">{{
-            row.score == null ? '待评分' : row.score + ' / ' + row.total_score
+            row.status === 'IN_PROGRESS'
+              ? '未提交'
+              : row.score == null ? '待评分' : row.score + ' / ' + row.total_score
           }}</template></el-table-column
         ><el-table-column label="开始时间" min-width="175"
           ><template #default="{ row }">{{
             historyTime(row.created_at)
           }}</template></el-table-column
-        ><el-table-column label="答卷" width="105" fixed="right"
+        ><el-table-column label="提交时间" min-width="175">
+          <template #default="{ row }">{{ historyTime(row.submitted_at) }}</template>
+        </el-table-column><el-table-column label="答卷" width="105" fixed="right"
           ><template #default="{ row }"
             ><el-button
               @click="openHistory(row)"
@@ -351,7 +405,7 @@ function selectMultiple(question: Row, values: unknown) {
     <article v-if="attempt" class="answer-sheet">
       <div class="section-heading">
         <div>
-          <h3>我的答卷</h3>
+          <h3 id="exam-answer-heading" tabindex="-1">我的答卷</h3>
           <small>考试记录 {{ attempt.id }}</small>
         </div>
         <el-tag
@@ -365,6 +419,10 @@ function selectMultiple(question: Row, values: unknown) {
           >{{ examStatus(attempt.status) }}</el-tag
         >
       </div>
+      <p v-if="attempt.submitted_at" class="muted exam-receipt" role="status">
+        已提交 · {{ historyTime(attempt.submitted_at) }}
+        <span v-if="attempt.graded_at"> · 评分完成于 {{ historyTime(attempt.graded_at) }}</span>
+      </p>
       <div v-if="attempt.status === 'FINISHED'" class="exam-result">
         <strong>{{ attempt.score }} <small>分</small></strong
         ><span>{{
@@ -391,12 +449,22 @@ function selectMultiple(question: Row, values: unknown) {
           >查看本机备份</el-button
         >
       </div>
+      <nav v-if="attempt.questions.length" aria-label="答卷题号导航" class="question-nav">
+        <el-button
+          v-for="(question, i) in attempt.questions"
+          :key="question.question_id"
+          :plain="attempt.status !== 'IN_PROGRESS' || !responses[question.question_id]?.trim()"
+          :type="attempt.status === 'IN_PROGRESS' && responses[question.question_id]?.trim() ? 'success' : ''"
+          :aria-label="'第 ' + (Number(i) + 1) + ' 题' + (attempt.status === 'IN_PROGRESS' ? (responses[question.question_id]?.trim() ? '，已作答' : '，未作答') : '')"
+          @click="focusQuestion(question)"
+        >{{ Number(i) + 1 }}</el-button>
+      </nav>
       <div
         v-for="(question, i) in attempt.questions"
         :key="question.question_id"
         class="exam-question"
       >
-        <h4>
+        <h4 :id="questionAnchor(question)" tabindex="-1">
           <span class="question-number">{{ Number(i) + 1 }}</span
           >{{ question.name }}
           <small>{{ typeName(question.type) }} · {{ question.score }} 分</small>
@@ -436,7 +504,10 @@ function selectMultiple(question: Row, values: unknown) {
         <div v-if="attempt.status === 'FINISHED'" class="answer-feedback">
           <p>标准答案：{{ question.answer || '暂无' }}</p>
           <p v-if="question.analysis">解析：{{ question.analysis }}</p>
-          <RouterLink to="/review">到错题复习继续练习 →</RouterLink>
+          <RouterLink
+            v-if="isMistake(question)"
+            :to="{ path: '/review', query: { attemptId: attempt.id, questionId: question.question_id } }"
+          >复习这道错题 →</RouterLink>
         </div>
         <p
           v-for="answer in (attempt.answers || []).filter(
@@ -475,7 +546,11 @@ function selectMultiple(question: Row, values: unknown) {
           :rows="3"
         /></article
     ></el-dialog>
-    <el-dialog v-model="submitOpen" title="确认提交答卷" class="purchase-dialog"
+    <el-dialog
+      v-model="submitOpen"
+      title="确认提交答卷"
+      class="purchase-dialog"
+      @closed="focusClosedDialogQuestion"
       ><Status :error="task.error.value" :busy="task.busy.value" />
       <p>已作答 {{ answered }} / {{ attempt?.questions.length || 0 }} 题。提交后不能修改答案。</p>
       <el-alert
@@ -484,7 +559,8 @@ function selectMultiple(question: Row, values: unknown) {
         type="warning"
         :closable="false"
       /><template #footer
-        ><el-button @click="submitOpen = false">继续检查</el-button
+        ><el-button v-if="unanswered.length" @click="locateUnanswered">定位第一道漏答题</el-button>
+        <el-button @click="submitOpen = false">继续检查</el-button
         ><el-button type="primary" @click="submit" :disabled="task.busy.value"
           >确认提交答卷</el-button
         ></template
@@ -492,3 +568,11 @@ function selectMultiple(question: Row, values: unknown) {
     >
   </section>
 </template>
+
+<style scoped>
+.exam-course-select { width: min(100%, 360px); }
+.question-nav { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-block: 1rem; }
+.question-nav .el-button { margin: 0; min-width: 2.75rem; min-height: 2.75rem; }
+.exam-question h4 { overflow-wrap: anywhere; scroll-margin-top: 5rem; }
+.exam-question h4:focus-visible { outline: 2px solid currentColor; outline-offset: 0.25rem; }
+</style>

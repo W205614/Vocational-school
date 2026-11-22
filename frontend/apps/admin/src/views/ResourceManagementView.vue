@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useRoute } from 'vue-router';
 import type { TemporaryCredential } from '../../../../packages/shared/src/types';
 import { get, write, newKey } from '../../../../packages/shared/src/client';
 import { useTask, query, money, type Row } from '../../../../packages/shared/src/ui';
@@ -35,7 +36,11 @@ const task = useTask();
 const rows = ref<Row[]>([]);
 const page = ref(1);
 const total = ref(0);
-const keyword = ref('');
+const route = useRoute();
+const directFilter = computed(() =>
+  ['orders', 'refunds'].includes(props.resource) && typeof route.query.id === 'string' ? route.query.id : '',
+);
+const keyword = ref(directFilter.value);
 const courseStatus = ref<number | undefined>(2);
 const form = ref<Row>();
 const original = ref<Row>();
@@ -227,11 +232,11 @@ async function remove(row: Row) {
   if (removed) await load();
 }
 watch(
-  () => props.resource,
+  [() => props.resource, directFilter],
   () => {
     credential.value = undefined;
     page.value = 1;
-    keyword.value = '';
+    keyword.value = directFilter.value;
     form.value = undefined;
     void load();
   },

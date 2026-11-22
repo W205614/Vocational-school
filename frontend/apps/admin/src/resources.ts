@@ -107,6 +107,11 @@ export const resources: Record<string, Resource> = {
       f('introduce', '课程介绍', 'long'),
       f('usePeople', '适用人群'),
       f('detail', '课程详情', 'long'),
+      f('learningOutcomes', '学习成果', 'long'),
+      f('prerequisites', '先修要求', 'long'),
+      f('difficulty', '难度'),
+      f('practiceOverview', '实操内容', 'long'),
+      f('handout', '随堂讲义', 'long'),
     ],
     remove: (r) => '/admin/course/courses/delete/' + r.id,
     actions: [

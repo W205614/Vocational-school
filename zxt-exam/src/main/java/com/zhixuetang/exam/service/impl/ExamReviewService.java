@@ -28,7 +28,15 @@ public class ExamReviewService implements OperationHandler {
     private static final String FROM =
             " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id JOIN exam_answer r ON r.attempt_id=a.id JOIN exam_paper_question q ON q.paper_id=a.paper_id AND q.question_id=r.question_id LEFT JOIN exam_review_state s ON s.attempt_id=a.id AND s.question_id=q.question_id WHERE a.user_id=? AND a.status='FINISHED' AND r.score IS NOT NULL AND r.score<q.score";
     private static final String FIELDS =
-            "a.id AS attempt_id,p.course_id,p.section_id,q.question_id,q.name,q.type,q.options,q.answer,q.analysis,q.score AS max_score,r.response,r.score,r.feedback,a.graded_at,COALESCE(s.mastered,0) AS mastered,COALESCE(s.version,0) AS version,s.last_reviewed_at";
+            "a.id AS attempt_id,p.course_id,p.section_id,q.question_id,q.name,q.type,q.options,q.answer,q.analysis,q.score AS max_score,r.response,r.score,r.feedback,a.graded_at,COALESCE(s.mastered,0) AS mastered,COALESCE(s.version,0) AS version,s.last_reviewed_at,q.lecture_section_id,q.lecture_moment";
+
+    private static final String SUGGESTED_CTE =
+            "WITH mistakes AS (SELECT a.id AS attempt_id,p.course_id,p.section_id,q.question_id,q.name,COALESCE(s.mastered,0) AS mastered,s.last_reviewed_at"
+                    + ",COUNT(*) OVER(PARTITION BY p.course_id,q.question_id) AS failed_attempts"
+                    + ",ROW_NUMBER() OVER(PARTITION BY p.course_id,q.question_id ORDER BY a.graded_at DESC,a.id DESC) AS latest"
+                    + FROM;
+    private static final String SUGGESTED_ORDER =
+            " AND latest=1 AND mastered=0 ORDER BY failed_attempts DESC,last_reviewed_at IS NOT NULL,last_reviewed_at,attempt_id DESC,question_id";
 
     @Override
     public String kind() {
@@ -71,6 +79,24 @@ public class ExamReviewService implements OperationHandler {
                         args.toArray());
         list.forEach(this::decodeOptions);
         return Map.of("total", total, "pageNo", pageNo, "pageSize", pageSize, "list", list);
+    }
+
+    public List<Map<String, Object>> suggestions(long user) {
+        return jdbc.queryForList(
+                SUGGESTED_CTE
+                        + ") SELECT attempt_id,course_id,section_id,question_id,name,failed_attempts,last_reviewed_at FROM mistakes WHERE 1=1"
+                        + SUGGESTED_ORDER
+                        + " LIMIT 5",
+                user);
+    }
+
+    public static String pendingReviewSql(String coursePlaceholders) {
+        return SUGGESTED_CTE
+                + " AND p.course_id IN ("
+                + coursePlaceholders
+                + ")) SELECT attempt_id,course_id,section_id,question_id,failed_attempts,last_reviewed_at FROM mistakes WHERE 1=1"
+                + SUGGESTED_ORDER
+                + " LIMIT 1";
     }
 
     public Map<String, Object> detail(long user, long attemptId, long questionId) {

@@ -1,6 +1,10 @@
 package com.zhixuetang.trade.controller;
 
+import com.zhixuetang.common.exceptions.BadRequestException;
 import com.zhixuetang.common.utils.UserContext;
+import com.zhixuetang.trade.service.impl.PendingOrderEntitlements;
+import java.time.LocalDateTime;
+import org.springframework.format.annotation.DateTimeFormat;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +15,17 @@ import java.util.*;
 @RequestMapping("/api/v2/admin/dashboard")
 public class DashboardController {
     private final JdbcTemplate jdbc;
+    private final PendingOrderEntitlements pending;
+
+    @GetMapping("/pending-entitlements")
+    public PendingOrderEntitlements.Page pendingEntitlements(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime afterPaidAt,
+            @RequestParam(required = false) Long afterDetailId) {
+        UserContext.requireAdmin();
+        if ((afterPaidAt == null) != (afterDetailId == null) || (afterDetailId != null && afterDetailId <= 0))
+            throw new BadRequestException("订单查询位置无效");
+        return pending.page(afterPaidAt == null ? null : new PendingOrderEntitlements.Cursor(afterPaidAt, afterDetailId));
+    }
 
     @GetMapping
     public Object dashboard() {

@@ -16,6 +16,7 @@ export const router = createRouter({
     { path: '/learning', component: () => import('./views/Learning.vue') },
     { path: '/points', component: () => import('./views/Points.vue') },
     { path: '/review', component: () => import('./views/Review.vue') },
+    { path: '/practice', component: () => import('./views/Practice.vue') },
     { path: '/courses/:id', component: Course },
     ...['cart', 'coupons', 'orders'].map((mode) => ({
       path: '/' + mode,
