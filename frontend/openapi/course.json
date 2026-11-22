@@ -3603,6 +3603,14 @@
             "type": "integer",
             "format": "int32"
           },
+          "expectedValues": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ExpectedValue"
+            },
+            "default": "",
+            "description": "每个待修改字段打开表单时的公开值，未填写为 null"
+          },
           "learningOutcomes": {
             "type": "string",
             "maxLength": 500,
@@ -3630,8 +3638,23 @@
           }
         },
         "required": [
+          "expectedValues",
           "status"
         ]
+      },
+      "ExpectedValue": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": "",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        }
       },
       "CourseStudyCounts": {
         "type": "object",

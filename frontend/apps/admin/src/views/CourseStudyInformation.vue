@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { get, write, newKey } from '../../../../packages/shared/src/client';
+import { ApiError, get, write, newKey } from '../../../../packages/shared/src/client';
 import { query, useTask, type Row } from '../../../../packages/shared/src/ui';
 import CourseFacts from '../../../../packages/shared/src/CourseFacts.vue';
 import { formatStudyMinutes, studyDifficulty } from '../../../../packages/shared/src/courseStudyFacts';
@@ -23,6 +23,14 @@ type Information = {
   estimatedStudyMinutes?: number;
   practiceOverview?: string;
 };
+const studyFields = {
+  learningOutcomes: 'OUTCOMES',
+  prerequisites: 'PREREQUISITES',
+  difficulty: 'DIFFICULTY',
+  estimatedStudyMinutes: 'ESTIMATED_TIME',
+  practiceOverview: 'PRACTICE',
+} satisfies Record<keyof Information, MissingField>;
+const studyKeys = Object.keys(studyFields) as (keyof Information)[];
 type Course = Information & {
   id: string;
   name: string;
@@ -53,6 +61,7 @@ const total = ref(0);
 const selected = ref<Course>();
 const dialog = ref(false);
 const draft = ref<Information>({});
+const conflict = ref<{ latest?: Course }>();
 const preview = ref<Row>();
 const historyOpen = ref(false);
 const history = ref<FieldChange[]>([]);
@@ -87,6 +96,18 @@ const changes = computed(() => {
   };
 });
 
+function studyValue(info: Information, key: keyof Information) {
+  const value = info[key];
+  return value == null ? null : String(value);
+}
+
+const conflictingKeys = computed(() => {
+  const previous = selected.value;
+  const latest = conflict.value?.latest;
+  if (!previous || !latest) return [];
+  return studyKeys.filter((key) => key in changes.value && studyValue(previous, key) !== studyValue(latest, key));
+});
+
 async function load(reset = false) {
   await listTask.run(async () => {
     if (reset) page.value = 1;
@@ -108,6 +129,7 @@ async function load(reset = false) {
 async function edit(course: Course) {
   await listTask.run(async () => {
     choose(await get<Course>(path + '/' + course.id));
+    conflict.value = undefined;
     preview.value = undefined;
     historyOpen.value = false;
     history.value = [];
@@ -119,20 +141,47 @@ async function edit(course: Course) {
 
 async function save() {
   const course = selected.value;
-  if (!course || !Object.keys(changes.value).length) return;
+  const edits = changes.value;
+  if (!course || conflict.value || !Object.keys(edits).length) return;
+  const expectedValues = Object.fromEntries(studyKeys.filter((key) => key in edits)
+    .map((key) => [studyFields[key], { value: studyValue(course, key) }]));
   const result = await editTask.run(async () => {
-    const updated = await write<Course>(
-      path + '/' + course.id, 'PATCH', { status: course.status, ...changes.value }, newKey(),
-    );
-    preview.value = undefined;
-    choose(updated);
-    editTask.message.value = '已更新学生可见的选课资料';
-    return updated;
+    try {
+      const updated = await write<Course>(
+        path + '/' + course.id, 'PATCH', { status: course.status, expectedValues, ...edits }, newKey(),
+      );
+      preview.value = undefined;
+      choose(updated);
+      editTask.message.value = '已更新学生可见的选课资料';
+      return updated;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) conflict.value = {};
+      throw error;
+    }
   });
   if (result) {
     await load();
     if (historyOpen.value) await loadChanges(true);
   }
+}
+
+async function loadCurrentValues() {
+  if (!selected.value || !conflict.value) return;
+  const id = selected.value.id;
+  await editTask.run(async () => {
+    conflict.value = { latest: await get<Course>(path + '/' + id) };
+  });
+}
+
+function resolveConflict(keepEdits: boolean) {
+  const latest = conflict.value?.latest;
+  if (!latest) return;
+  const edits = changes.value;
+  choose(latest);
+  if (keepEdits) draft.value = { ...draft.value, ...edits };
+  conflict.value = undefined;
+  preview.value = undefined;
+  editTask.message.value = keepEdits ? '已把你的修改应用到最新公开资料，请核对后保存。' : '已载入当前公开资料。';
 }
 
 async function checkPublicCourse() {
@@ -159,7 +208,7 @@ async function loadChanges(reset = false) {
   });
 }
 
-function changeValue(field: MissingField, value?: string) {
+function changeValue(field: MissingField, value?: string | null) {
   if (!value?.trim()) return '未填写';
   if (field === 'DIFFICULTY') return studyDifficulty[value] || value;
   if (field === 'ESTIMATED_TIME') return formatStudyMinutes(Number(value));
@@ -240,6 +289,21 @@ onMounted(load);
         <p><strong>{{ selected.name }}</strong></p>
         <p class="muted">只提交本次填写的改动。无先修要求或实操时可填写「无」。</p>
         <Status :busy="editTask.busy.value" :error="editTask.error.value" :message="editTask.message.value" />
+        <section v-if="conflict" aria-label="公开资料冲突">
+          <p>公开资料已变化，你填写的内容仍保留在下方。</p>
+          <el-button v-if="!conflict.latest" :disabled="editTask.busy.value" @click="loadCurrentValues">
+            载入当前公开值
+          </el-button>
+          <template v-else>
+            <dl v-for="key in conflictingKeys" :key="key" class="field-change">
+              <dt>{{ labels[studyFields[key]] }}</dt>
+              <dd>当前公开值 {{ changeValue(studyFields[key], studyValue(conflict.latest, key)) }}</dd>
+              <dd>你的草稿 {{ changeValue(studyFields[key], studyValue(draft, key)) }}</dd>
+            </dl>
+            <el-button :disabled="editTask.busy.value" @click="resolveConflict(true)">重应用我的修改</el-button>
+            <el-button :disabled="editTask.busy.value" @click="resolveConflict(false)">放弃修改并使用公开值</el-button>
+          </template>
+        </section>
         <el-form label-position="top" :disabled="editTask.busy.value">
           <el-form-item label="学习成果">
             <el-input v-model="draft.learningOutcomes" type="textarea" :rows="2" maxlength="500" aria-label="学习成果" />
@@ -287,9 +351,9 @@ onMounted(load);
         </section>
       </template>
       <template #footer>
-      <el-button :disabled="historyTask.busy.value" @click="loadChanges(true)">查看字段变更</el-button>
+        <el-button :disabled="historyTask.busy.value" @click="loadChanges(true)">查看字段变更</el-button>
         <el-button :disabled="editTask.busy.value" @click="checkPublicCourse">查看学生页资料</el-button>
-        <el-button type="primary" :disabled="editTask.busy.value || !Object.keys(changes).length" @click="save">
+        <el-button type="primary" :disabled="editTask.busy.value || !!conflict || !Object.keys(changes).length" @click="save">
           保存补录
         </el-button>
       </template>

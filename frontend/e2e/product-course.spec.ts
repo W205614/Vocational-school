@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { accounts, api, fixture, login } from './helpers';
+import { accounts, api, fixture, login, signIn } from './helpers';
 
 const fixtureVideo = fileURLToPath(
   new URL('../../zxt-media/src/test/resources/media-probe/recorder.webm', import.meta.url),
@@ -234,9 +234,17 @@ test('course publication gates trial generation and preserves draft, clip, and h
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/courses/' + course.id);
     await expect(page.getByText(outcome, { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: '试看 · 试点视频' })).toBeVisible();
     await expect(page.getByText(privateHandout, { exact: true })).toHaveCount(0);
-    await login(page, 'student', '/courses/' + course.id);
+    await page.getByRole('button', { name: '登录后试看 · 试点视频', exact: true }).click();
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    const redirect = new URL(page.url()).searchParams.get('redirect');
+    expect(redirect).toBe('/courses/' + course.id + '?sectionId=' + video);
+    const [playResponse] = await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes('/medias/signature/play?sectionId=' + video) && response.ok(),
+      ),
+      signIn(page, 'student'),
+    ]);
     await expect(page.getByText(outcome, { exact: true })).toBeVisible();
     const studentToken = await page.evaluate(() => sessionStorage.getItem('school-token'));
     const studentHeaders = { Authorization: 'Bearer ' + studentToken };
@@ -248,13 +256,6 @@ test('course publication gates trial generation and preserves draft, clip, and h
       headers: studentHeaders, data: { courseId: course.id, sectionId: video },
     });
     expect(deniedTrialPreview.status()).toBe(403);
-    await page.getByRole('tab', { name: '课程介绍', exact: true }).click();
-    const [playResponse] = await Promise.all([
-      page.waitForResponse((response) =>
-        response.url().includes('/medias/signature/play?sectionId=' + video) && response.ok(),
-      ),
-      page.getByRole('button', { name: '试看 · 试点视频' }).click(),
-    ]);
     const { data: trialTicket } = await playResponse.json();
     expect(trialTicket).toMatchObject({ trial: true, state: 'READY', provider: 'TRIAL' });
     expect(trialTicket.fileId).toBeFalsy();

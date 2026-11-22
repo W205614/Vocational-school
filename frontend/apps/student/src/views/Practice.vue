@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { get, newKey, write } from '../../../../packages/shared/src/client';
+import { ApiError, get, newKey, write } from '../../../../packages/shared/src/client';
+import { useSession } from '../../../../packages/shared/src/session';
 import { useTask } from '../../../../packages/shared/src/ui';
 import type {
   PracticeAssignment,
@@ -12,6 +13,9 @@ import PracticeHistory from '../../../../packages/shared/src/PracticeHistory.vue
 import PracticeComparison from '../../../../packages/shared/src/PracticeComparison.vue';
 import PracticeVersions from '../../../../packages/shared/src/PracticeVersions.vue';
 import Status from '../../../../packages/shared/src/Status.vue';
+import {
+  clearConfirmedPracticeDraft, draftMatchesAttempt, readPracticeDraft, storePracticeDraft, type PracticeDraft,
+} from '../practiceDraft';
 
 interface StudentView {
   assignment: PracticeAssignment;
@@ -23,6 +27,7 @@ interface StudentView {
 
 const route = useRoute();
 const task = useTask();
+const session = useSession();
 const assignments = ref<Pick<PracticeAssignment, 'courseId' | 'title'>[]>([]);
 const selected = ref<StudentView>();
 const submissions = computed(() => selected.value?.submissions ?? []);
@@ -38,13 +43,59 @@ const previous = computed(() => {
   const version = correction.value;
   if (version) return selected.value?.versions.find((item) => item.version === version.version - 1);
 });
-const description = ref('');
-const workUrl = ref('');
-let submittedDraft:
-  | { description: string; workUrl: string; submissionKey: string; assignmentVersion: number }
-  | undefined;
+const editor = ref<{ key: string; draft: PracticeDraft }>();
+const draftDescription = computed(() => editor.value?.draft.description ?? '');
+const draftLink = computed(() => editor.value?.draft.workUrl ?? '');
+const storageUnavailable = ref(false);
+const reviewNeeded = computed(() => !!editor.value &&
+  editor.value.draft.reviewedVersion !== selected.value?.assignment.version);
 let selection = 0;
 let reloadPending = false;
+
+function draftStorage<T>(action: () => T): T | undefined {
+  try {
+    const result = action();
+    storageUnavailable.value = false;
+    return result;
+  } catch {
+    storageUnavailable.value = true;
+  }
+}
+
+function restoreEditor(view: StudentView, owner: string) {
+  const { courseId, version } = view.assignment;
+  const key = owner ? 'school-practice-draft-' + owner + ':' + courseId : '';
+  let saved = editor.value?.key === key ? editor.value.draft :
+    key ? draftStorage(() => readPracticeDraft(key)) : undefined;
+  const attempt = saved?.attempt;
+  if (saved && attempt && draftMatchesAttempt(saved, attempt) && view.submissions.some((item) =>
+    item.revision > attempt.afterRevision && item.assignmentVersion === attempt.assignmentVersion &&
+    item.description === attempt.description && (item.workUrl ?? '') === attempt.workUrl)) {
+    if (key) draftStorage(() => clearConfirmedPracticeDraft(key, attempt));
+    saved = undefined;
+  }
+  editor.value = view.canSubmit && version !== null ? {
+    key, draft: saved ?? { description: '', workUrl: '', reviewedVersion: version },
+  } : undefined;
+}
+
+function saveEditor() {
+  const active = editor.value;
+  if (active?.key) draftStorage(() => storePracticeDraft(active.key, active.draft));
+}
+
+function editDraft(field: 'description' | 'workUrl', value: string) {
+  if (!editor.value) return;
+  editor.value.draft[field] = value;
+  saveEditor();
+}
+
+function confirmReview() {
+  const version = selected.value?.assignment.version;
+  if (!editor.value || !version) return;
+  editor.value.draft.reviewedVersion = version;
+  saveEditor();
+}
 
 async function load(courseId: unknown) {
   const current = ++selection;
@@ -62,9 +113,12 @@ async function load(courseId: unknown) {
     return;
   }
   selected.value = undefined;
+  const owner = session.userId;
   await task.run(async () => {
     const result = await get<StudentView>('/learning-hub/practice/' + encodeURIComponent(courseId));
-    if (current === selection) selected.value = result;
+    if (current !== selection) return;
+    selected.value = result;
+    restoreEditor(result, owner);
   });
 }
 
@@ -79,11 +133,11 @@ watch([() => selected.value?.assignment.courseId, requestedVersion], async ([cou
 });
 
 watch(
-  () => route.query.courseId,
-  (courseId) => {
-    description.value = '';
-    workUrl.value = '';
-    submittedDraft = undefined;
+  [() => route.query.courseId, () => session.userId],
+  ([courseId]) => {
+    selected.value = undefined;
+    editor.value = undefined;
+    storageUnavailable.value = false;
     void load(courseId);
   },
   { immediate: true },
@@ -91,37 +145,53 @@ watch(
 
 async function submit() {
   const current = selected.value;
-  if (!current?.canSubmit || current.assignment.version === null) return;
+  const active = editor.value;
+  if (!active || !current?.canSubmit || current.assignment.version === null ||
+    reviewNeeded.value || task.busy.value || !active.draft.description.trim()) return;
   const { courseId: course, version: assignmentVersion } = current.assignment;
-  const text = description.value.trim();
-  const url = workUrl.value.trim();
-  if (
-    !submittedDraft ||
-    submittedDraft.description !== text ||
-    submittedDraft.workUrl !== url ||
-    submittedDraft.assignmentVersion !== assignmentVersion
-  )
-    submittedDraft = { description: text, workUrl: url, submissionKey: newKey(), assignmentVersion };
-  let saved = false;
+  const owner = session.userId;
+  let attempt = active.draft.attempt;
+  if (!attempt || !draftMatchesAttempt(active.draft, attempt)) {
+    attempt = {
+      description: active.draft.description.trim(), workUrl: active.draft.workUrl.trim(),
+      submissionKey: newKey(), assignmentVersion, afterRevision: current.submissions[0]?.revision ?? 0,
+    };
+    active.draft.attempt = attempt;
+    saveEditor();
+  }
+  const { description, workUrl, submissionKey } = attempt;
+  let conflicted = false;
   await task.run(async () => {
-    const item = await write<PracticeSubmission>(
-      '/learning-hub/practice/' + course + '/submissions',
-      'POST',
-      submittedDraft,
-    );
-    if (selected.value?.assignment.courseId !== course) return;
+    let item: PracticeSubmission;
+    try {
+      item = await write<PracticeSubmission>(
+        '/learning-hub/practice/' + course + '/submissions', 'POST',
+        { description, workUrl, submissionKey, assignmentVersion },
+      );
+    } catch (error) {
+      conflicted = error instanceof ApiError && error.status === 409;
+      throw error;
+    }
+    if (active.key) draftStorage(() => clearConfirmedPracticeDraft(active.key, attempt));
+    if (editor.value !== active || selected.value?.assignment.courseId !== course) return;
     selected.value = {
       ...selected.value,
       canSubmit: item.status === 'NEEDS_REVISION',
       submissions: [item, ...selected.value.submissions.filter((prior) => prior.id !== item.id)],
     };
-    saved = true;
+    editor.value = item.status === 'NEEDS_REVISION' ? {
+      key: active.key, draft: { description: '', workUrl: '', reviewedVersion: assignmentVersion },
+    } : undefined;
+    task.message.value = '作品已提交，可在下方查看提交和反馈。';
   });
-  if (!saved) return;
-  description.value = '';
-  workUrl.value = '';
-  submittedDraft = undefined;
-  task.message.value = '作品已提交，可在下方查看提交和反馈。';
+  if (conflicted && owner === session.userId && editor.value === active &&
+    route.path === '/practice' && route.query.courseId === course) {
+    const conflict = task.error.value;
+    await load(course);
+    if (owner === session.userId && route.path === '/practice' && route.query.courseId === course &&
+      !reviewNeeded.value && !task.error.value)
+      task.error.value = conflict;
+  }
 }
 </script>
 
@@ -158,22 +228,31 @@ async function submit() {
         <RouterLink :to="'/courses/' + selected.assignment.courseId">查看课程</RouterLink>
       </article>
       <el-form
-        v-if="selected.canSubmit"
+        v-if="selected.canSubmit && editor"
         class="card"
         label-position="top"
         aria-label="提交作品"
+        :disabled="task.busy.value"
         @submit.prevent="submit"
       >
+        <p v-if="!editor.key || storageUnavailable" role="status">当前浏览器无法保存草稿，离开前请复制作品内容。</p>
+        <p v-else>草稿保存在当前浏览器，提交成功后清除。</p>
+        <div v-if="reviewNeeded">
+          <p role="status">任务说明已从第 {{ editor.draft.reviewedVersion }} 版更新到第 {{ selected.assignment.version }} 版。草稿已保留，请先核对新要求。</p>
+          <el-button @click="confirmReview">已核对第 {{ selected.assignment.version }} 版要求</el-button>
+        </div>
         <el-form-item label="作品说明" required>
-          <el-input v-model="description" type="textarea" :rows="5" maxlength="5000" />
+          <el-input :model-value="draftDescription" @update:model-value="editDraft('description', $event)"
+            type="textarea" :rows="5" maxlength="5000" />
         </el-form-item>
         <el-form-item label="作品链接（可选）">
-          <el-input v-model="workUrl" type="url" maxlength="2048" placeholder="https://" />
+          <el-input :model-value="draftLink" @update:model-value="editDraft('workUrl', $event)"
+            type="url" maxlength="2048" placeholder="https://" />
         </el-form-item>
         <el-button
           native-type="submit"
           type="primary"
-          :disabled="task.busy.value || !description.trim()"
+          :disabled="task.busy.value || reviewNeeded || !draftDescription.trim()"
         >
           {{ selected.submissions.length ? '修改后重交' : '提交作品' }}
         </el-button>

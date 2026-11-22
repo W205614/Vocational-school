@@ -44,6 +44,7 @@ const page = ref(1);
 const selected = ref<PracticeSubmission>();
 const history = ref<PracticeSubmission[]>([]);
 const feedback = ref('');
+const feedbackConflict = ref(false);
 const nextPracticeMessage = ref('');
 const latestSelected = computed(() => selected.value?.id === history.value[0]?.id);
 const adminPath = (course: string) => '/admin/learning-hub/practice/' + course;
@@ -148,6 +149,7 @@ async function open(studentId: string, submissionId?: string) {
   selected.value = target;
   history.value = submissions;
   feedback.value = '';
+  feedbackConflict.value = false;
   if (wasOpen) {
     await nextTick();
     focusSubmission();
@@ -164,15 +166,23 @@ function focusSubmission() {
 }
 
 async function review(status: 'NEEDS_REVISION' | 'PASSED') {
-  if (!selected.value || !latestSelected.value) return;
+  if (selected.value?.status !== 'SUBMITTED' || !latestSelected.value || feedbackConflict.value) return;
   const course = courseId.value;
   const item = selected.value;
   await task.run(async () => {
-    const result = await write<PracticeSubmission>(
-      teacherPath(course) + '/' + item.id + '/feedback',
-      'PUT',
-      { status, feedback: feedback.value },
-    );
+    let result: PracticeSubmission;
+    try {
+      result = await write<PracticeSubmission>(
+        teacherPath(course) + '/' + item.id + '/feedback',
+        'PUT',
+        { status, feedback: feedback.value },
+      );
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409 && selected.value?.id === item.id) {
+        feedbackConflict.value = true;
+      }
+      throw error;
+    }
     const current = selected.value;
     if (current?.id === item.id) {
       selected.value = result;
@@ -180,6 +190,16 @@ async function review(status: 'NEEDS_REVISION' | 'PASSED') {
     }
     task.message.value = '反馈已保存。';
     await refreshWork();
+  });
+}
+
+async function refreshFeedback() {
+  const item = selected.value;
+  if (!item) return;
+  await task.run(async () => {
+    await open(item.userId, item.id);
+    await refreshWork();
+    task.message.value = '已刷新作品与已保存的反馈。';
   });
 }
 
@@ -313,7 +333,12 @@ onMounted(async () => {
           <p>当前打开的是历史提交。</p>
           <el-button @click="showLatest">查看最近提交</el-button>
         </div>
-        <div v-if="latestSelected && selected?.status === 'SUBMITTED'">
+        <div v-if="feedbackConflict" class="practice-actions">
+          <el-button type="primary" :disabled="task.busy.value" @click="refreshFeedback">
+            刷新作品与反馈
+          </el-button>
+        </div>
+        <div v-else-if="latestSelected && selected?.status === 'SUBMITTED'">
           <el-input
             v-model="feedback"
             type="textarea"

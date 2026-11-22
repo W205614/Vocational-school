@@ -24,9 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -162,9 +164,15 @@ public class CourseStudyInformationService {
         String outcomes = provided(patch.learningOutcomes());
         String prerequisites = provided(patch.prerequisites());
         String practice = provided(patch.practiceOverview());
-        if (outcomes == null && prerequisites == null && practice == null
-                && patch.difficulty() == null && patch.estimatedStudyMinutes() == null) {
-            throw new BadRequestException("请填写至少一项选课资料");
+        var changed = EnumSet.noneOf(Field.class);
+        if (outcomes != null) changed.add(Field.OUTCOMES);
+        if (prerequisites != null) changed.add(Field.PREREQUISITES);
+        if (patch.difficulty() != null) changed.add(Field.DIFFICULTY);
+        if (patch.estimatedStudyMinutes() != null) changed.add(Field.ESTIMATED_TIME);
+        if (practice != null) changed.add(Field.PRACTICE);
+        if (changed.isEmpty()) throw new BadRequestException("请填写至少一项选课资料");
+        if (!changed.equals(patch.expectedValues().keySet())) {
+            throw new BadRequestException("每个待修改字段都须提交读取时的公开值");
         }
         var params = new MapSqlParameterSource("id", id);
         drafts.lockCourseState(id);
@@ -180,6 +188,10 @@ public class CourseStudyInformationService {
             throw new ConflictException("公开课程内容已删除，请核对课程状态");
         }
         var previous = audit.snapshot(id);
+        if (changed.stream().anyMatch(field ->
+                !Objects.equals(previous.get(field), patch.expectedValues().get(field).value()))) {
+            throw new ConflictException("同一字段的公开资料已更新，请载入当前值后再提交");
+        }
         params.addValue("userId", userId)
                 .addValue("outcomes", outcomes)
                 .addValue("prerequisites", prerequisites)

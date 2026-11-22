@@ -1163,12 +1163,23 @@ export interface components {
         CourseStudyInformationPatch: {
             /** Format: int32 */
             status: number;
+            /**
+             * @description 每个待修改字段打开表单时的公开值，未填写为 null
+             * @default
+             */
+            expectedValues: {
+                [key: string]: components["schemas"]["ExpectedValue"];
+            };
             learningOutcomes?: string;
             prerequisites?: string;
             difficulty?: string;
             /** Format: int32 */
             estimatedStudyMinutes?: number;
             practiceOverview?: string;
+        };
+        ExpectedValue: {
+            /** @default  */
+            value: string | null;
         };
         CourseStudyCounts: {
             enrolled?: string;

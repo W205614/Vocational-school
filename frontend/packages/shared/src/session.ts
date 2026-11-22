@@ -61,6 +61,7 @@ export const useSession = defineStore('session', () => {
       return 0;
     }
   });
+  const userId = computed(() => owner(token.value));
   async function login(username: string, password: string, management: boolean, mfaCode?: string) {
     initialPasswordRequired.value = false;
     let next: string;
@@ -110,5 +111,5 @@ export const useSession = defineStore('session', () => {
     );
     sessionStorage.setItem('school-token', token.value);
   }
-  return { token, admin, role, expiredMessage, initialPasswordRequired, login, logout, refresh };
+  return { token, admin, role, userId, expiredMessage, initialPasswordRequired, login, logout, refresh };
 });

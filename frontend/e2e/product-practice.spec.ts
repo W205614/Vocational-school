@@ -64,6 +64,9 @@ test('product practice: correct a published task and review each version from th
 
     await page.getByRole('textbox', { name: '作品说明' }).fill('第一版作品说明');
     await page.getByRole('textbox', { name: '作品链接（可选）' }).fill('https://example.com/practice');
+    await page.reload();
+    await expect(page.getByRole('textbox', { name: '作品说明' })).toHaveValue('第一版作品说明');
+    await expect(page.getByRole('textbox', { name: '作品链接（可选）' })).toHaveValue('https://example.com/practice');
     const captured = page.waitForRequest((request) =>
       request.method() === 'POST' && new URL(request.url()).pathname.endsWith(submissionPath),
     );
@@ -145,12 +148,29 @@ test('product practice: correct a published task and review each version from th
     const teacherComparison = dialog.getByRole('region', { name: '任务要求差异' });
     await expect(teacherComparison).toContainText(originalInstructions);
     await expect(teacherComparison).toContainText(correctedInstructions);
+    const staleTeacher = await teacherContext.newPage();
+    const teacherStorage = await teacher.evaluate(() => Object.entries(sessionStorage));
+    await staleTeacher.addInitScript((entries) => {
+      for (const [key, value] of entries) sessionStorage.setItem(key, value);
+    }, teacherStorage);
+    await staleTeacher.goto(firstWorkUrl);
+    const staleDialog = staleTeacher.getByRole('dialog', { name: '作品与反馈' });
+    await staleDialog.getByRole('textbox', { name: '教师反馈' }).fill('来自另一个页面的旧反馈');
     await dialog.getByRole('textbox', { name: '教师反馈' }).fill('补充成果验证。');
     await dialog.getByRole('button', { name: '需要修改', exact: true }).click();
     await expect(dialog.getByRole('heading', { name: '第 1 次提交 · 需要修改' })).toBeVisible();
     await api(teacher, 'PUT', work + '/' + first.id + '/feedback', {
       status: 'NEEDS_REVISION', feedback: '补充成果验证。',
     });
+    await staleDialog.getByRole('button', { name: '通过作业', exact: true }).click();
+    await expect(staleDialog.getByText(/这份提交已处理，请刷新/)).toBeVisible();
+    await expect(staleDialog.getByRole('button', { name: '通过作业', exact: true })).toHaveCount(0);
+    await staleDialog.getByRole('button', { name: '刷新作品与反馈' }).click();
+    await expect(staleDialog.getByRole('heading', { name: '第 1 次提交 · 需要修改' })).toBeVisible();
+    await expect(staleDialog.getByText('补充成果验证。', { exact: true })).toBeVisible();
+    await expect(staleDialog.getByRole('button', { name: '处理下一份作品' })).toBeVisible();
+    await expect(staleTeacher).toHaveURL(firstWorkUrl);
+    await staleTeacher.close();
     await dialog.getByRole('link', { name: '返回教学待办 →' }).click();
     await expect(teacher).toHaveURL(/\/teaching\?.*#teacher-practice-heading$/);
     const returned = new URL(teacher.url());
@@ -178,6 +198,8 @@ test('product practice: correct a published task and review each version from th
       has: page.getByRole('heading', { name: correctedTitle, exact: true }),
     });
     await expect(correctedTask.locator(':scope > p').filter({ hasText: correctedInstructions })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: '作品说明' })).toHaveValue('');
+    await expect(page.getByRole('textbox', { name: '作品链接（可选）' })).toHaveValue('');
     await page.getByRole('textbox', { name: '作品说明' }).fill('第二版，已补充成果验证。');
     await page.getByRole('button', { name: '修改后重交' }).click();
     await expect(page.getByRole('heading', { name: '第 2 次提交 · 待反馈' })).toBeVisible();
@@ -236,4 +258,161 @@ test('product practice: correct a published task and review each version from th
     await teacherContext.close();
     await adminContext.close();
   }
+});
+
+test('practice draft catches a real version conflict without losing the open editor', async ({ page, browser }, info) => {
+  test.skip(info.project.name !== 'student');
+  const course = fixture.rankedStudyCourse;
+  const adminContext = await browser.newContext({ baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501' });
+  const admin = await adminContext.newPage();
+  const assignment = '/admin/learning-hub/practice/' + course;
+  const submissionPath = '/learning-hub/practice/' + course + '/submissions';
+  const title = '开放页面更正 ' + fixture.marker;
+  const description = page.getByRole('textbox', { name: '作品说明' });
+  const workUrl = page.getByRole('textbox', { name: '作品链接（可选）' });
+  const submit = page.getByRole('button', { name: '提交作品', exact: true });
+  try {
+    await login(admin, 'admin', '/practice');
+    await api(admin, 'PUT', assignment, { title, instructions: '提交演示说明。', publish: true });
+    await login(page, 'student', '/practice?courseId=' + course);
+    await description.fill('正在编辑的真实合成作业');
+    await workUrl.fill('https://example.com/open-editor');
+    await api(admin, 'PUT', assignment + '/corrections', {
+      title, instructions: '演示中需要标注运行步骤。', reason: '明确提交要求', expectedVersion: 1,
+    });
+    const conflict = page.waitForResponse((response) => response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === '/api/v2' + submissionPath);
+    await submit.click();
+    expect((await conflict).status()).toBe(409);
+    await expect(page.getByText(/草稿已保留，请先核对新要求/)).toBeVisible();
+    await expect(page.locator('article > p').filter({ hasText: '演示中需要标注运行步骤。' })).toBeVisible();
+    await expect(description).toHaveValue('正在编辑的真实合成作业');
+    await expect(workUrl).toHaveValue('https://example.com/open-editor');
+    await expect(submit).toBeDisabled();
+    await page.getByRole('button', { name: '已核对第 2 版要求' }).click();
+    await submit.click();
+    await expect(page.getByRole('heading', { name: '第 1 次提交 · 待反馈' })).toBeVisible();
+    expect((await api(page, 'GET', '/learning-hub/practice/' + course)).submissions[0].assignmentVersion).toBe(2);
+  } finally {
+    await adminContext.close();
+  }
+});
+
+test('practice drafts are isolated by student and course and keep the request key across reloads', async ({ page }, info) => {
+  test.skip(info.project.name !== 'student');
+  const courseA = '9007199254740994';
+  const courseB = '9007199254740995';
+  const destination = (course: string) => '/practice?courseId=' + course;
+  const token = (id: string) => 'contract.' +
+    Buffer.from('{"user":{"userId":' + id + ',"roleId":2}}').toString('base64url') + '.fixture';
+  const tokenA = token('9007199254740992');
+  const tokenB = token('9007199254740993');
+  const draft = '草稿说明，可继续补充演示。';
+  const url = 'https://example.com/practice-draft';
+  const description = page.getByRole('textbox', { name: '作品说明' });
+  const workUrl = page.getByRole('textbox', { name: '作品链接（可选）' });
+  const submit = page.getByRole('button', { name: '提交作品', exact: true });
+  let version = 1;
+  let needsRevision = false;
+  let submitted: Record<string, unknown> | undefined;
+  const attempts: { submissionKey: string; assignmentVersion: number; description: string; workUrl: string }[] = [];
+
+  await page.route('**/api/v2/**', async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname.slice('/api/v2'.length);
+    const match = path.match(/^\/learning-hub\/practice\/(\d+)(\/submissions)?$/);
+    let data: unknown = null;
+    if (path === '/auth/accounts/login') data = request.postDataJSON().username === 'draft-b' ? tokenB : tokenA;
+    else if (path === '/services/user/users/me') data = { name: '草稿测试账号' };
+    else if (path === '/environment') data = { mode: 'SIMULATED', capabilities: {} };
+    else if (path === '/learning-hub/practice') data = [
+      { courseId: courseA, title: '草稿课程一' }, { courseId: courseB, title: '草稿课程二' },
+    ];
+    else if (match?.[2]) {
+      const attempt = request.postDataJSON();
+      attempts.push(attempt);
+      if (attempts.length <= 2) {
+        await route.fulfill({ status: 503, json: { code: 503, msg: '临时提交失败', data: null } });
+        return;
+      }
+      submitted = {
+        id: '7001', userId: '9007199254740992', revision: 1, assignmentVersion: attempt.assignmentVersion,
+        description: attempt.description, workUrl: attempt.workUrl, status: 'SUBMITTED', submittedAt: '2026-11-21T10:00:00',
+      };
+      data = submitted;
+    } else if (match) {
+      const course = match[1];
+      const row = course === courseA && request.headers().authorization === 'Bearer ' + tokenA ? submitted : undefined;
+      data = {
+        assignment: { courseId: course, title: course === courseA ? '草稿课程一' : '草稿课程二', instructions: '任务说明 ' + version, version },
+        versions: [], historyOnly: false, canSubmit: !row || needsRevision,
+        submissions: row ? [{ ...row, status: needsRevision ? 'NEEDS_REVISION' : 'SUBMITTED' }] : [],
+      };
+    }
+    await route.fulfill({ json: { code: 200, data, msg: 'OK' } });
+  });
+
+  async function signIn(username: string) {
+    await page.locator('input[autocomplete="username"]').fill(username);
+    await page.locator('input[autocomplete="current-password"]').fill('contract-password');
+    await page.getByRole('button', { name: '登录', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp('/practice\\?courseId=' + courseA + '$'));
+  }
+  async function switchIdentity(username: string) {
+    await page.getByRole('button', { name: '退出登录', exact: true }).click();
+    await expect(page).toHaveURL(/\/login\?/);
+    await signIn(username);
+  }
+
+  await page.goto('/login?redirect=' + encodeURIComponent(destination(courseA)));
+  await signIn('draft-a');
+  await description.fill(draft);
+  await workUrl.fill(url);
+  await page.getByRole('link', { name: '全部作业' }).click();
+  await page.getByRole('link', { name: '草稿课程一' }).click();
+  await expect(description).toHaveValue(draft);
+  await expect(workUrl).toHaveValue(url);
+  await page.reload();
+  await expect(description).toHaveValue(draft);
+  await expect(workUrl).toHaveValue(url);
+
+  await page.goto(destination(courseB));
+  await expect(description).toHaveValue('');
+  await expect(workUrl).toHaveValue('');
+  await description.fill('另一门课程草稿');
+  await page.goto(destination(courseA));
+  await expect(description).toHaveValue(draft);
+  await switchIdentity('draft-b');
+  await expect(description).toHaveValue('');
+  await expect(workUrl).toHaveValue('');
+  await description.fill('另一个账号草稿');
+  await switchIdentity('draft-a');
+  await expect(description).toHaveValue(draft);
+  await expect(workUrl).toHaveValue(url);
+
+  await submit.click();
+  await expect(page.getByText('临时提交失败')).toBeVisible();
+  await page.reload();
+  await submit.click();
+  await expect(page.getByText('临时提交失败')).toBeVisible();
+  expect(attempts[1]).toEqual(attempts[0]);
+
+  version = 2;
+  await page.reload();
+  await expect(description).toHaveValue(draft);
+  await expect(workUrl).toHaveValue(url);
+  await expect(page.getByText('任务说明已从第 1 版更新到第 2 版。草稿已保留，请先核对新要求。')).toBeVisible();
+  await expect(submit).toBeDisabled();
+  await page.getByRole('button', { name: '已核对第 2 版要求' }).click();
+  await submit.click();
+  await expect(page.getByRole('heading', { name: '第 1 次提交 · 待反馈' })).toBeVisible();
+  expect(attempts[2]).toMatchObject({ assignmentVersion: 2, description: draft, workUrl: url });
+  expect(attempts[2]?.submissionKey).not.toBe(attempts[0]?.submissionKey);
+
+  needsRevision = true;
+  await page.reload();
+  await expect(description).toHaveValue('');
+  await expect(workUrl).toHaveValue('');
+  await page.goto(destination(courseB));
+  await expect(description).toHaveValue('另一门课程草稿');
 });

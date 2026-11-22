@@ -132,3 +132,84 @@ test('historical course metadata can be supplemented while enrollment and indepe
     await adminContext.close();
   }
 });
+
+test('concurrent course editors keep local changes and explicitly reconcile an outdated field', async ({
+  browser,
+}, info) => {
+  test.skip(info.project.name !== 'student');
+  const baseURL = process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501';
+  const firstContext = await browser.newContext({ baseURL });
+  const secondContext = await browser.newContext({ baseURL });
+  const first = await firstContext.newPage();
+  const second = await secondContext.newPage();
+  const name = 'Browser study reference ' + fixture.marker;
+  const course = inventory + '/' + fixture.rankedStudyCourse;
+  const firstOutcome = '完成同事先发布的学习成果';
+  const secondOutcome = '完成当前草稿中的学习成果';
+  const prerequisites = '提前安装课程工具';
+  const practice = '保留其他同事补录的独立实操内容';
+  try {
+    // Open both editors before either publishes a change.
+    for (const admin of [first, second]) {
+      await login(admin, 'admin', '/course-study-information');
+      await admin.getByRole('textbox', { name: '课程名称', exact: true }).fill(name);
+      await admin.getByRole('button', { name: '查询', exact: true }).click();
+      await admin.getByRole('row', { name: new RegExp(name) }).getByRole('button', { name: '补录资料' }).click();
+      await expect(admin.getByRole('dialog', { name: '补录选课资料' })).toBeVisible();
+    }
+    const firstEditor = first.getByRole('dialog', { name: '补录选课资料' });
+    const secondEditor = second.getByRole('dialog', { name: '补录选课资料' });
+    const save = secondEditor.getByRole('button', { name: '保存补录' });
+    await firstEditor.getByRole('textbox', { name: '学习成果' }).fill(firstOutcome);
+    await secondEditor.getByRole('textbox', { name: '学习成果' }).fill(secondOutcome);
+    await secondEditor.getByRole('textbox', { name: '先修要求' }).fill(prerequisites);
+    await firstEditor.getByRole('button', { name: '保存补录' }).click();
+    await expect(firstEditor.getByText('已更新学生可见的选课资料')).toBeVisible();
+
+    const staleWrite = second.waitForResponse((response) =>
+      new URL(response.url()).pathname === '/api/v2' + course && response.request().method() === 'PATCH');
+    await save.click();
+    expect((await staleWrite).status()).toBe(409);
+    await expect(save).toBeDisabled();
+    const afterConflict = await api(first, 'GET', course);
+    expect(afterConflict.learningOutcomes).toBe(firstOutcome);
+    expect(afterConflict.prerequisites).toBeFalsy();
+
+    const token = await first.evaluate(() => sessionStorage.getItem('school-token'));
+    const withoutBaseline = await first.request.patch('/api/v2' + course, {
+      headers: { Authorization: 'Bearer ' + token, 'Idempotency-Key': crypto.randomUUID() },
+      data: { status: 2, practiceOverview: practice },
+    });
+    expect(withoutBaseline.status()).toBe(400);
+    await api(first, 'PATCH', course, {
+      status: 2, practiceOverview: practice, expectedValues: { PRACTICE: { value: null } },
+    }, crypto.randomUUID());
+
+    const conflict = secondEditor.getByRole('region', { name: '公开资料冲突' });
+    await conflict.getByRole('button', { name: '载入当前公开值' }).click();
+    await expect(conflict.getByText('当前公开值 ' + firstOutcome, { exact: true })).toBeVisible();
+    await expect(conflict.getByText('你的草稿 ' + secondOutcome, { exact: true })).toBeVisible();
+    await expect(secondEditor.getByRole('textbox', { name: '学习成果' })).toHaveValue(secondOutcome);
+    await expect(secondEditor.getByRole('textbox', { name: '先修要求' })).toHaveValue(prerequisites);
+    expect((await api(first, 'GET', course)).learningOutcomes).toBe(firstOutcome);
+    await conflict.getByRole('button', { name: '重应用我的修改' }).click();
+    await expect(secondEditor.getByRole('textbox', { name: '实操内容' })).toHaveValue(practice);
+    await api(first, 'PATCH', course, {
+      status: 2, difficulty: 'BEGINNER', expectedValues: { DIFFICULTY: { value: null } },
+    }, crypto.randomUUID());
+    await save.click();
+    await expect(secondEditor.getByText('已更新学生可见的选课资料')).toBeVisible();
+    expect(await api(first, 'GET', '/public/courses/' + fixture.rankedStudyCourse)).toMatchObject({
+      learningOutcomes: secondOutcome, prerequisites, practiceOverview: practice, difficulty: 'BEGINNER',
+    });
+    const history = await api(first, 'GET', course + '/changes?pageNo=1&pageSize=10');
+    expect(history.list).toHaveLength(5);
+    expect(history.list).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'OUTCOMES', previousValue: firstOutcome, newValue: secondOutcome }),
+      expect.objectContaining({ field: 'PRACTICE', newValue: practice }),
+    ]));
+  } finally {
+    await secondContext.close();
+    await firstContext.close();
+  }
+});

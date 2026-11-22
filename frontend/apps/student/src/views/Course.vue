@@ -968,7 +968,7 @@ onBeforeUnmount(() => {
               :disabled="busy"
               @click="tab = 'catalogue'; select(trialSection)"
             >
-              试看 · {{ trialSection.name }}
+              {{ session.token ? '试看' : '登录后试看' }} · {{ trialSection.name }}
             </el-button><el-button :disabled="busy" @click="toggleFavorite">{{
               favorite ? '取消收藏' : '收藏课程'
             }}</el-button
@@ -1037,7 +1037,7 @@ onBeforeUnmount(() => {
                       ? '考试'
                       : Math.ceil(Number(item.mediaDuration || 0) / 60) + ' 分钟'
                   }}<template v-if="!owned && Number(item.type) === 2">
-                    · {{ item.trailer ? '可试看' : '报名后学习' }}</template
+                    · {{ item.trailer ? (session.token ? '可试看' : '登录后试看') : '报名后学习' }}</template
                   ></small
                 ></span
               ><span v-if="completed(item)" class="lesson-done">已完成</span>
