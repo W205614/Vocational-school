@@ -56,8 +56,10 @@ test('product practice: correct a published task and review each version from th
     await page.goto('/learning');
     await page.getByRole('link', { name: '实操作业 →', exact: true }).click();
     await page.getByRole('link', { name: assignmentTitle, exact: true }).click();
-    await expect(page.getByRole('heading', { name: assignmentTitle, exact: true })).toBeVisible();
-    await expect(page.getByText(originalInstructions, { exact: true })).toBeVisible();
+    const currentTask = page.getByRole('article').filter({
+      has: page.getByRole('heading', { name: assignmentTitle, exact: true }),
+    });
+    await expect(currentTask.locator(':scope > p').filter({ hasText: originalInstructions })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
 
     await page.getByRole('textbox', { name: '作品说明' }).fill('第一版作品说明');
@@ -132,10 +134,13 @@ test('product practice: correct a published task and review each version from th
     }
     await expect.poll(feedbackCount).toBe(1);
     await page.goto('/messages');
-    await page.getByRole('link', { name: '查看作业反馈', exact: true }).first().click();
+    await page.getByRole('link', { name: '查看作业反馈', exact: true })
+      .and(page.locator('a[href="/practice?courseId=' + course + '"]')).first().click();
     await expect(page.getByText('补充成果验证。')).toBeVisible();
-    await expect(page.getByRole('heading', { name: correctedTitle, exact: true })).toBeVisible();
-    await expect(page.getByText(correctedInstructions, { exact: true })).toBeVisible();
+    const correctedTask = page.getByRole('article').filter({
+      has: page.getByRole('heading', { name: correctedTitle, exact: true }),
+    });
+    await expect(correctedTask.locator(':scope > p').filter({ hasText: correctedInstructions })).toBeVisible();
     await page.getByRole('textbox', { name: '作品说明' }).fill('第二版，已补充成果验证。');
     await page.getByRole('button', { name: '修改后重交' }).click();
     await expect(page.getByRole('heading', { name: '第 2 次提交 · 待反馈' })).toBeVisible();
@@ -159,9 +164,11 @@ test('product practice: correct a published task and review each version from th
     await page.reload();
     await expect(page.getByRole('heading', { name: '第 2 次提交 · 已通过' })).toBeVisible();
     await expect(page.getByText('通过，验证充分。')).toBeVisible();
-    await expect(page.getByRole('heading', { name: '第 1 次提交 · 需要修改' })).toBeVisible();
-    await page.getByText('提交时的任务说明 · 第 1 版', { exact: true }).click();
-    await expect(page.getByText(originalInstructions, { exact: true })).toBeVisible();
+    const firstSubmission = page.getByRole('listitem').filter({
+      has: page.getByRole('heading', { name: '第 1 次提交 · 需要修改', exact: true }),
+    });
+    await firstSubmission.getByText('提交时的任务说明 · 第 1 版', { exact: true }).click();
+    await expect(firstSubmission.getByText(originalInstructions, { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '修改后重交' })).toHaveCount(0);
   } finally {
     await teacherContext.close();
