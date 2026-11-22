@@ -680,6 +680,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/dashboard/pending-entitlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pendingEntitlements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/admin/consumer-failures/trade": {
         parameters: {
             query?: never;
@@ -1271,6 +1287,18 @@ export interface components {
              * @default false
              */
             canRefund: boolean;
+            entitlement?: components["schemas"]["OrderEntitlementVO"];
+            refunds?: components["schemas"]["OrderRefundProgressVO"][];
+        };
+        OrderEntitlementVO: {
+            /** @enum {string} */
+            state?: "NOT_GRANTED" | "SYNC_PENDING" | "ACTIVE" | "EXPIRED" | "REVOCATION_PENDING" | "REVOKED" | "CHECK_UNAVAILABLE";
+            canLearn?: boolean;
+            otherOrderActive?: boolean;
+            /** Format: date-time */
+            recordedAt?: string;
+            /** Format: date-time */
+            expiresAt?: string;
         };
         OrderProgressNodeVO: {
             /**
@@ -1284,6 +1312,16 @@ export interface components {
              * @default
              */
             time: string;
+        };
+        OrderRefundProgressVO: {
+            id?: string;
+            /** Format: int32 */
+            status?: number;
+            /** Format: int32 */
+            amount?: number;
+            /** Format: date-time */
+            appliedAt?: string;
+            nodes?: components["schemas"]["OrderProgressNodeVO"][];
         };
         /**
          * @description 订单详细信息
@@ -1301,6 +1339,17 @@ export interface components {
              * @default
              */
             createTime: string;
+            /**
+             * Format: date-time
+             * @description 已确认的付款时间，包括关闭订单后确认的支付事实
+             * @default
+             */
+            paidAt: string;
+            /**
+             * @description 付款已确认但订单已关闭，需核对处理
+             * @default false
+             */
+            paymentNeedsReview: boolean;
             /**
              * Format: int32
              * @description 订单实付金额
@@ -2982,7 +3031,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: Record<string, never>;
+                        data: components["schemas"]["OrderVO"];
                     };
                 };
             };
@@ -3232,6 +3281,34 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    pendingEntitlements: {
+        parameters: {
+            query?: {
+                afterPaidAt?: string;
+                afterDetailId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Page"];
                     };
                 };
             };

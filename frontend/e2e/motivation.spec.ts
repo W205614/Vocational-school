@@ -338,6 +338,11 @@ test('teacher chooses a taught course, sees persisted learning and grading, answ
   }
   expect(taughtIds).toContain(m.course);
   expect(taughtIds).not.toContain(m.unassignedCourse);
+  const acrossCourses = await api(
+    page, 'GET', '/learning-hub/teaching/questions?pageNo=1&pageSize=100',
+  );
+  expect(acrossCourses.list.some((row: any) => String(row.id) === m.question)).toBe(true);
+  expect(acrossCourses.list.every((row: any) => taughtIds.includes(String(row.courseId)))).toBe(true);
   await choose(page, '教学课程', m.name);
   await page.getByRole('textbox', { name: '筛选学生编号', exact: true }).fill(accounts.student.id);
   const learningResponse = page.waitForResponse(
@@ -368,7 +373,7 @@ test('teacher chooses a taught course, sees persisted learning and grading, answ
     ),
   ).toBe(true);
   await expect(page.getByRole('heading', { name: '考试表现', exact: true })).toBeVisible();
-  await page.getByRole('switch', { name: '只看未答问题' }).click();
+  await page.getByRole('checkbox', { name: '只看未答问题' }).uncheck();
   const question = page
     .locator('.review-row')
     .filter({ has: page.getByRole('heading', { name: m.questionTitle, exact: true }) });
@@ -390,7 +395,7 @@ test('teacher chooses a taught course, sees persisted learning and grading, answ
   ).toBe(true);
   await page.reload();
   await choose(page, '教学课程', m.name);
-  await page.getByRole('switch', { name: '只看未答问题' }).click();
+  await page.getByRole('checkbox', { name: '只看未答问题' }).uncheck();
   await question.getByRole('button', { name: '查看与答疑', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: '课程答疑', exact: true }).getByText(content, { exact: true }),

@@ -1839,6 +1839,50 @@
         }
       }
     },
+    "/api/v2/exam-review/suggestions": {
+      "get": {
+        "tags": [
+          "exam-review-controller"
+        ],
+        "operationId": "suggestions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/exam-review/page": {
       "get": {
         "tags": [
@@ -2730,6 +2774,75 @@
           }
         }
       },
+      "ActiveAttempt": {
+        "type": "object",
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ExamLearningOverview": {
+        "type": "object",
+        "properties": {
+          "pendingExams": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "waitingForGradingExams": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "activeAttempt": {
+            "$ref": "#/components/schemas/ActiveAttempt"
+          },
+          "pendingReview": {
+            "$ref": "#/components/schemas/PendingReview"
+          }
+        }
+      },
+      "PendingReview": {
+        "type": "object",
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "questionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "failedAttempts": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "lastReviewedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "Cleanup": {
         "type": "object",
         "properties": {
@@ -2808,6 +2921,19 @@
           }
         }
       },
+      "Explanation": {
+        "type": "object",
+        "properties": {
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "moment": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "PublishRequest": {
         "type": "object",
         "properties": {
@@ -2835,6 +2961,12 @@
             "items": {
               "type": "string",
               "pattern": "^-?[0-9]+$"
+            }
+          },
+          "explanations": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Explanation"
             }
           }
         }

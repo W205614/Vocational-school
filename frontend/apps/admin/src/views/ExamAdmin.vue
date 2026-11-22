@@ -184,7 +184,7 @@ watch(() => route.query, () => void openRoute());
             v-model="course"
             kind="courses"
             label="选择考试课程"
-            :course-statuses="[1, 2, 3, 4]"
+            :course-statuses="[2, 1, 3, 4]"
             :disabled="task.busy.value"
             @change="selectCourse"
         /></el-form-item>

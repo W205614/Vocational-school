@@ -1949,7 +1949,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "type": "object"
+                      "$ref": "#/components/schemas/OrderVO"
                     }
                   }
                 }
@@ -2456,6 +2456,66 @@
                     },
                     "data": {
                       "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/dashboard/pending-entitlements": {
+      "get": {
+        "tags": [
+          "dashboard-controller"
+        ],
+        "operationId": "pendingEntitlements",
+        "parameters": [
+          {
+            "name": "afterPaidAt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "afterDetailId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Page"
                     }
                   }
                 }
@@ -3403,6 +3463,46 @@
             "type": "boolean",
             "default": false,
             "description": "是否可以退款"
+          },
+          "entitlement": {
+            "$ref": "#/components/schemas/OrderEntitlementVO"
+          },
+          "refunds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderRefundProgressVO"
+            }
+          }
+        }
+      },
+      "OrderEntitlementVO": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "NOT_GRANTED",
+              "SYNC_PENDING",
+              "ACTIVE",
+              "EXPIRED",
+              "REVOCATION_PENDING",
+              "REVOKED",
+              "CHECK_UNAVAILABLE"
+            ]
+          },
+          "canLearn": {
+            "type": "boolean"
+          },
+          "otherOrderActive": {
+            "type": "boolean"
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -3422,6 +3522,33 @@
           }
         }
       },
+      "OrderRefundProgressVO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "appliedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderProgressNodeVO"
+            }
+          }
+        }
+      },
       "OrderVO": {
         "type": "object",
         "default": null,
@@ -3438,6 +3565,17 @@
             "format": "date-time",
             "default": "",
             "description": "订单创建时间"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "default": "",
+            "description": "已确认的付款时间，包括关闭订单后确认的支付事实"
+          },
+          "paymentNeedsReview": {
+            "type": "boolean",
+            "default": false,
+            "description": "付款已确认但订单已关闭，需核对处理"
           },
           "realAmount": {
             "type": "integer",

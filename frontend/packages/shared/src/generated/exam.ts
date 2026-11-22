@@ -461,6 +461,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/exam-review/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["suggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/exam-review/page": {
         parameters: {
             query?: never;
@@ -728,6 +744,30 @@ export interface components {
              */
             questionId: string;
         };
+        ActiveAttempt: {
+            attemptId?: string;
+            courseId?: string;
+            sectionId?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        ExamLearningOverview: {
+            /** Format: int32 */
+            pendingExams?: number;
+            /** Format: int32 */
+            waitingForGradingExams?: number;
+            activeAttempt?: components["schemas"]["ActiveAttempt"];
+            pendingReview?: components["schemas"]["PendingReview"];
+        };
+        PendingReview: {
+            attemptId?: string;
+            questionId?: string;
+            courseId?: string;
+            sectionId?: string;
+            failedAttempts?: string;
+            /** Format: date-time */
+            lastReviewedAt?: string;
+        };
         Cleanup: {
             requestId?: string;
             userId?: string;
@@ -755,6 +795,11 @@ export interface components {
             response?: string;
             version?: string;
         };
+        Explanation: {
+            sectionId?: string;
+            /** Format: int32 */
+            moment?: number;
+        };
         PublishRequest: {
             courseId?: string;
             sectionId?: string;
@@ -762,6 +807,9 @@ export interface components {
             /** Format: int32 */
             passPercent?: number;
             graders?: string[];
+            explanations?: {
+                [key: string]: components["schemas"]["Explanation"];
+            };
         };
         /**
          * @description 考试详情数据
@@ -2017,6 +2065,33 @@ export interface operations {
                         data: {
                             [key: string]: unknown;
                         };
+                    };
+                };
+            };
+        };
+    };
+    suggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        }[];
                     };
                 };
             };

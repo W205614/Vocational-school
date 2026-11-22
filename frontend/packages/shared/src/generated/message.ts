@@ -707,6 +707,10 @@ export interface components {
              * @default
              */
             content: string;
+            targetType?: string;
+            targetId?: string;
+            courseId?: string;
+            sectionId?: string;
             /**
              * @description 是否已读
              * @default false

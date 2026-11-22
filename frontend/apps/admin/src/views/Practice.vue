@@ -8,6 +8,7 @@ import { practiceStatus, type PracticeAssignment, type PracticeSubmission } from
 import PracticeHistory from '../../../../packages/shared/src/PracticeHistory.vue';
 import Status from '../../../../packages/shared/src/Status.vue';
 import EntityPicker from '../components/EntityPicker.vue';
+import { teacherCourses } from '../teacherCourses';
 
 interface Work {
   userId: string;
@@ -107,7 +108,7 @@ watch(courseId, async (course) => {
 onMounted(async () => {
   if (session.role !== 3) return;
   await task.run(async () => {
-    courses.value = await get<Row[]>('/teacher/courses');
+    courses.value = await teacherCourses();
   });
 });
 </script>
@@ -117,7 +118,8 @@ onMounted(async () => {
     <h1>实操作业</h1>
     <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
     <template v-if="session.role === 3">
-      <el-select v-model="courseId" aria-label="实操课程" placeholder="选择授课课程">
+      <el-select v-model="courseId" aria-label="实操课程" placeholder="选择授课课程"
+        filterable :disabled="task.busy.value">
         <el-option v-for="course in courses" :key="course.id" :value="String(course.id)" :label="course.name" />
       </el-select>
       <template v-if="courseId">
@@ -141,6 +143,7 @@ onMounted(async () => {
           v-model:current-page="page"
           :page-size="20"
           :total="work.total"
+          :disabled="task.busy.value"
           layout="prev, pager, next"
           @current-change="task.run(refreshWork)"
         />

@@ -502,7 +502,14 @@ test('browser purchase, real local video, discussions, exam grading and targeted
     await page.getByRole('button', { name: '刷新评分状态' }).click();
     await expect(page.locator('.exam-result')).toContainText('20');
     await expect(page.locator('.exam-result')).toContainText('已通过');
-    await page.goto('/exams?attemptId=' + attempt);
+    await expect.poll(async () =>
+      (await api(page, '/services/message/inboxes/query', 'POST')).list.filter(
+        (row: any) => row.targetType === 'EXAM' && String(row.targetId) === attempt,
+      ).length,
+      { timeout: 30000 },
+    ).toBe(1);
+    await page.goto('/messages');
+    await page.locator('a[href="/exams?attemptId=' + attempt + '"]').click();
     await expect(page.locator('.exam-receipt')).toContainText('评分完成于');
     await expect(page.locator('.exam-result')).toContainText('已通过');
     await expect

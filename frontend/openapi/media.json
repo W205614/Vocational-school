@@ -1362,6 +1362,56 @@
         }
       }
     },
+    "/api/v2/admin/media/processing-failures": {
+      "get": {
+        "tags": [
+          "media-processing-failures-controller"
+        ],
+        "operationId": "failures",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Page"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/admin/events/media/page": {
       "get": {
         "tags": [
@@ -1437,7 +1487,7 @@
         "tags": [
           "event-admin-controller"
         ],
-        "operationId": "failures",
+        "operationId": "failures_1",
         "parameters": [
           {
             "name": "limit",
@@ -2136,6 +2186,30 @@
           "pageSize": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "PageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "分页请求参数",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
           }
         }
       }

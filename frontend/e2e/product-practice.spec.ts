@@ -93,7 +93,6 @@ test('product practice: publish, submit, request revision, resubmit and open fee
     await page.getByRole('button', { name: '修改后重交' }).click();
     await expect(page.getByRole('heading', { name: '第 2 次提交 · 待反馈' })).toBeVisible();
 
-    await dialog.getByRole('button', { name: 'Close this dialog' }).click();
     await teacher.reload();
     await teacher.getByRole('combobox', { name: '实操课程' }).click();
     await teacher.getByRole('option', { name: courseName, exact: true }).click();

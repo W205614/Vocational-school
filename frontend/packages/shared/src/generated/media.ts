@@ -344,6 +344,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/media/processing-failures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["failures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/admin/events/media/page": {
         parameters: {
             query?: never;
@@ -367,7 +383,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["failures"];
+        get: operations["failures_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -695,6 +711,18 @@ export interface components {
             pageNo?: number;
             /** Format: int32 */
             pageSize?: number;
+        };
+        /**
+         * @description 分页请求参数
+         * @default null
+         */
+        PageQuery: {
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            isAsc?: boolean;
+            sortBy?: string;
         };
     };
     responses: never;
@@ -1401,6 +1429,33 @@ export interface operations {
             };
         };
     };
+    failures: {
+        parameters: {
+            query: {
+                page: components["schemas"]["PageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Page"];
+                    };
+                };
+            };
+        };
+    };
     page_1: {
         parameters: {
             query?: {
@@ -1430,7 +1485,7 @@ export interface operations {
             };
         };
     };
-    failures: {
+    failures_1: {
         parameters: {
             query?: {
                 limit?: number;

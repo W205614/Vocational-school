@@ -5,6 +5,7 @@ import { get } from '../../../../packages/shared/src/client';
 import { useOperations } from '../../../../packages/shared/src/operations';
 import { useTask, query, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
+import { teacherCourses } from '../teacherCourses';
 const route = useRoute(),
   task = useTask(),
   ops = useOperations(),
@@ -223,14 +224,7 @@ async function accept(row: Row) {
 }
 onMounted(async () => {
   await task.run(async () => {
-    let page = 1;
-    const all: Row[] = [];
-    let data: Row;
-    do {
-      data = await get<Row>('/teacher/courses?pageNo=' + page + '&pageSize=100');
-      all.push(...(data.list || []));
-      page++;
-    } while (all.length < Number(data.total || 0) && data.list?.length);
+    const all = await teacherCourses();
     courses.value = all;
     courseId.value = String(all[0]?.id || '');
   });
@@ -296,12 +290,10 @@ onMounted(async () => {
       >
       <div class="section-heading">
         <h3 id="teacher-questions-heading" tabindex="-1">课程答疑</h3>
-        <el-switch
-          v-model="pendingOnly"
-          aria-label="只看未答问题"
-          active-text="只看未答"
-          @change="filterQuestions"
-        />
+        <label class="question-filter">
+          <input v-model="pendingOnly" type="checkbox" @change="filterQuestions" />
+          只看未答问题
+        </label>
       </div>
       <article v-for="row in questions" :key="row.id" class="review-row">
         <div>

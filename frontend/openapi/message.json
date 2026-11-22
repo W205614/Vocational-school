@@ -2259,6 +2259,21 @@
             "default": "",
             "description": "通知或私信内容"
           },
+          "targetType": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
           "isRead": {
             "type": "boolean",
             "default": false,

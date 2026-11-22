@@ -1090,6 +1090,57 @@
         }
       }
     },
+    "/api/v2/services/course/courses/{id}/handout": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "operationId": "handout",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseHandout"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/services/course/courses/{id}/catalogs": {
       "get": {
         "tags": [
@@ -1309,6 +1360,57 @@
                       "items": {
                         "$ref": "#/components/schemas/CourseSimpleInfoDTO"
                       }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/course/courses/publication/{id}": {
+      "get": {
+        "tags": [
+          "课程相关接口"
+        ],
+        "operationId": "publication",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CoursePublicationVO"
                     }
                   }
                 }
@@ -3123,6 +3225,30 @@
             "default": "",
             "description": "详情"
           },
+          "learningOutcomes": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "prerequisites": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "difficulty": {
+            "type": "string",
+            "pattern": "|BEGINNER|INTERMEDIATE|ADVANCED"
+          },
+          "practiceOverview": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "handout": {
+            "type": "string",
+            "maxLength": 10000,
+            "minLength": 0
+          },
           "validDuration": {
             "type": "integer",
             "format": "int32",
@@ -3423,6 +3549,18 @@
           "usePeople": {
             "type": "string"
           },
+          "learningOutcomes": {
+            "type": "string"
+          },
+          "prerequisites": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string"
+          },
+          "practiceOverview": {
+            "type": "string"
+          },
           "id": {
             "type": "string",
             "default": "",
@@ -3493,6 +3631,26 @@
             "type": "array",
             "default": "",
             "description": "老师列表",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        }
+      },
+      "ExamSectionPublicationDTO": {
+        "type": "object",
+        "properties": {
+          "totalSections": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "draftQuestionIds": {
+            "type": "array",
             "items": {
               "type": "string",
               "pattern": "^-?[0-9]+$"
@@ -3640,6 +3798,14 @@
           "nextOffset": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "CourseHandout": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
           }
         }
       },
@@ -3976,6 +4142,180 @@
           }
         }
       },
+      "CataVO": {
+        "type": "object",
+        "default": null,
+        "description": "课程目录",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "章、节、练习id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "序号"
+          },
+          "name": {
+            "type": "string",
+            "default": "",
+            "description": "章节练习名称"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "课程总时长,单位秒"
+          },
+          "trailer": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否支持免费试看"
+          },
+          "mediaName": {
+            "type": "string",
+            "default": "",
+            "description": "媒资名称"
+          },
+          "mediaId": {
+            "type": "string",
+            "default": "",
+            "description": "媒资id",
+            "pattern": "^-?[0-9]+$"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "目录类型1：章，2：节，3：测试"
+          },
+          "subjectNum": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目数量"
+          },
+          "totalScore": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "题目总分"
+          },
+          "canUpdate": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否可以修改,默认不能修改"
+          },
+          "sections": {
+            "type": "array",
+            "default": "",
+            "description": "该章的所有小节和练习",
+            "items": {
+              "$ref": "#/components/schemas/CataVO"
+            }
+          },
+          "maxIndexOnShelf": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "已上架最大序号，查看时值为空，编辑查看时小节必有值"
+          },
+          "maxSectionIndexOnShelf": {
+            "type": "integer",
+            "format": "int32",
+            "default": "",
+            "description": "已上架小节最大序号，查看时，值为空，编辑查看时小节必有字段"
+          }
+        }
+      },
+      "CoursePublicationVO": {
+        "type": "object",
+        "properties": {
+          "preview": {
+            "$ref": "#/components/schemas/Preview"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "properties": {
+          "area": {
+            "type": "string"
+          },
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "message": {
+            "type": "string"
+          },
+          "blocking": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Preview": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "coverUrl": {
+            "type": "string"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sectionNum": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "purchaseEndTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "introduce": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "usePeople": {
+            "type": "string"
+          },
+          "learningOutcomes": {
+            "type": "string"
+          },
+          "prerequisites": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string"
+          },
+          "practiceOverview": {
+            "type": "string"
+          },
+          "handout": {
+            "type": "string"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CataVO"
+            }
+          }
+        }
+      },
       "CoursePageQuery": {
         "type": "object",
         "default": null,
@@ -4205,95 +4545,6 @@
           }
         }
       },
-      "CataVO": {
-        "type": "object",
-        "default": null,
-        "description": "课程目录",
-        "properties": {
-          "id": {
-            "type": "string",
-            "default": "",
-            "description": "章、节、练习id",
-            "pattern": "^-?[0-9]+$"
-          },
-          "index": {
-            "type": "integer",
-            "format": "int32",
-            "default": "",
-            "description": "序号"
-          },
-          "name": {
-            "type": "string",
-            "default": "",
-            "description": "章节练习名称"
-          },
-          "mediaDuration": {
-            "type": "integer",
-            "format": "int32",
-            "default": "",
-            "description": "课程总时长,单位秒"
-          },
-          "trailer": {
-            "type": "boolean",
-            "default": false,
-            "description": "是否支持免费试看"
-          },
-          "mediaName": {
-            "type": "string",
-            "default": "",
-            "description": "媒资名称"
-          },
-          "mediaId": {
-            "type": "string",
-            "default": "",
-            "description": "媒资id",
-            "pattern": "^-?[0-9]+$"
-          },
-          "type": {
-            "type": "integer",
-            "format": "int32",
-            "default": "",
-            "description": "目录类型1：章，2：节，3：测试"
-          },
-          "subjectNum": {
-            "type": "integer",
-            "format": "int32",
-            "default": "",
-            "description": "题目数量"
-          },
-          "totalScore": {
-            "type": "integer",
-            "format": "int32",
-            "default": "",
-            "description": "题目总分"
-          },
-          "canUpdate": {
-            "type": "boolean",
-            "default": false,
-            "description": "是否可以修改,默认不能修改"
-          },
-          "sections": {
-            "type": "array",
-            "default": "",
-            "description": "该章的所有小节和练习",
-            "items": {
-              "$ref": "#/components/schemas/CataVO"
-            }
-          },
-          "maxIndexOnShelf": {
-            "type": "integer",
-            "format": "int32",
-            "default": "",
-            "description": "已上架最大序号，查看时值为空，编辑查看时小节必有值"
-          },
-          "maxSectionIndexOnShelf": {
-            "type": "integer",
-            "format": "int32",
-            "default": "",
-            "description": "已上架小节最大序号，查看时，值为空，编辑查看时小节必有字段"
-          }
-        }
-      },
       "CataSimpleInfoVO": {
         "type": "object",
         "default": null,
@@ -4475,6 +4726,21 @@
             "type": "string",
             "default": "",
             "description": "使用人群"
+          },
+          "learningOutcomes": {
+            "type": "string"
+          },
+          "prerequisites": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string"
+          },
+          "practiceOverview": {
+            "type": "string"
+          },
+          "handout": {
+            "type": "string"
           },
           "detail": {
             "type": "string",

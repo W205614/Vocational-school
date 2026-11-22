@@ -316,6 +316,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/services/course/courses/{id}/handout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["handout"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/course/courses/{id}/catalogs": {
         parameters: {
             query?: never;
@@ -376,6 +392,22 @@ export interface paths {
         };
         /** 根根条件列表获取课程信息 */
         get: operations["getSimpleInfoList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/course/courses/publication/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publication"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1033,6 +1065,11 @@ export interface components {
              * @default
              */
             detail: string;
+            learningOutcomes?: string;
+            prerequisites?: string;
+            difficulty?: string;
+            practiceOverview?: string;
+            handout?: string;
             /**
              * Format: int32
              * @description 学习周期，0或不传表示没有期限，其他表示月数
@@ -1286,6 +1323,10 @@ export interface components {
             introduce?: string;
             detail?: string;
             usePeople?: string;
+            learningOutcomes?: string;
+            prerequisites?: string;
+            difficulty?: string;
+            practiceOverview?: string;
             /**
              * @description 课程id
              * @default
@@ -1350,6 +1391,13 @@ export interface components {
              * @default
              */
             teacherIds: string[];
+        };
+        ExamSectionPublicationDTO: {
+            /** Format: int32 */
+            totalSections?: number;
+            /** Format: int32 */
+            mediaDuration?: number;
+            draftQuestionIds?: string[];
         };
         /**
          * @description 小节信息，包含课程id和媒资id
@@ -1446,6 +1494,9 @@ export interface components {
             }[];
             /** Format: int32 */
             nextOffset?: number;
+        };
+        CourseHandout: {
+            text?: string;
         };
         /**
          * @description 章信息
@@ -1727,6 +1778,118 @@ export interface components {
             validDuration: number;
         };
         /**
+         * @description 课程目录
+         * @default null
+         */
+        CataVO: {
+            /**
+             * @description 章、节、练习id
+             * @default
+             */
+            id: string;
+            /**
+             * Format: int32
+             * @description 序号
+             * @default
+             */
+            index: number;
+            /**
+             * @description 章节练习名称
+             * @default
+             */
+            name: string;
+            /**
+             * Format: int32
+             * @description 课程总时长,单位秒
+             * @default
+             */
+            mediaDuration: number;
+            /**
+             * @description 是否支持免费试看
+             * @default false
+             */
+            trailer: boolean;
+            /**
+             * @description 媒资名称
+             * @default
+             */
+            mediaName: string;
+            /**
+             * @description 媒资id
+             * @default
+             */
+            mediaId: string;
+            /**
+             * Format: int32
+             * @description 目录类型1：章，2：节，3：测试
+             * @default
+             */
+            type: number;
+            /**
+             * Format: int32
+             * @description 题目数量
+             * @default
+             */
+            subjectNum: number;
+            /**
+             * Format: int32
+             * @description 题目总分
+             * @default
+             */
+            totalScore: number;
+            /**
+             * @description 是否可以修改,默认不能修改
+             * @default false
+             */
+            canUpdate: boolean;
+            /**
+             * @description 该章的所有小节和练习
+             * @default
+             */
+            sections: components["schemas"]["CataVO"][];
+            /**
+             * Format: int32
+             * @description 已上架最大序号，查看时值为空，编辑查看时小节必有值
+             * @default
+             */
+            maxIndexOnShelf: number;
+            /**
+             * Format: int32
+             * @description 已上架小节最大序号，查看时，值为空，编辑查看时小节必有字段
+             * @default
+             */
+            maxSectionIndexOnShelf: number;
+        };
+        CoursePublicationVO: {
+            preview?: components["schemas"]["Preview"];
+            issues?: components["schemas"]["Issue"][];
+        };
+        Issue: {
+            area?: string;
+            sectionId?: string;
+            message?: string;
+            blocking?: boolean;
+        };
+        Preview: {
+            name?: string;
+            coverUrl?: string;
+            /** Format: int32 */
+            price?: number;
+            /** Format: int32 */
+            sectionNum?: number;
+            /** Format: date-time */
+            purchaseEndTime?: string;
+            introduce?: string;
+            detail?: string;
+            usePeople?: string;
+            learningOutcomes?: string;
+            prerequisites?: string;
+            difficulty?: string;
+            practiceOverview?: string;
+            handout?: string;
+            chapters?: components["schemas"]["CataVO"][];
+        };
+        /**
          * @description 课程搜索条件
          * @default null
          */
@@ -1918,89 +2081,6 @@ export interface components {
             existed?: boolean;
         };
         /**
-         * @description 课程目录
-         * @default null
-         */
-        CataVO: {
-            /**
-             * @description 章、节、练习id
-             * @default
-             */
-            id: string;
-            /**
-             * Format: int32
-             * @description 序号
-             * @default
-             */
-            index: number;
-            /**
-             * @description 章节练习名称
-             * @default
-             */
-            name: string;
-            /**
-             * Format: int32
-             * @description 课程总时长,单位秒
-             * @default
-             */
-            mediaDuration: number;
-            /**
-             * @description 是否支持免费试看
-             * @default false
-             */
-            trailer: boolean;
-            /**
-             * @description 媒资名称
-             * @default
-             */
-            mediaName: string;
-            /**
-             * @description 媒资id
-             * @default
-             */
-            mediaId: string;
-            /**
-             * Format: int32
-             * @description 目录类型1：章，2：节，3：测试
-             * @default
-             */
-            type: number;
-            /**
-             * Format: int32
-             * @description 题目数量
-             * @default
-             */
-            subjectNum: number;
-            /**
-             * Format: int32
-             * @description 题目总分
-             * @default
-             */
-            totalScore: number;
-            /**
-             * @description 是否可以修改,默认不能修改
-             * @default false
-             */
-            canUpdate: boolean;
-            /**
-             * @description 该章的所有小节和练习
-             * @default
-             */
-            sections: components["schemas"]["CataVO"][];
-            /**
-             * Format: int32
-             * @description 已上架最大序号，查看时值为空，编辑查看时小节必有值
-             * @default
-             */
-            maxIndexOnShelf: number;
-            /**
-             * Format: int32
-             * @description 已上架小节最大序号，查看时，值为空，编辑查看时小节必有字段
-             * @default
-             */
-            maxSectionIndexOnShelf: number;
-        };
-        /**
          * @description 目录简单信息
          * @default null
          */
@@ -2168,6 +2248,11 @@ export interface components {
              * @default
              */
             usePeople: string;
+            learningOutcomes?: string;
+            prerequisites?: string;
+            difficulty?: string;
+            practiceOverview?: string;
+            handout?: string;
             /**
              * @description 详情
              * @default
@@ -2937,6 +3022,33 @@ export interface operations {
             };
         };
     };
+    handout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseHandout"];
+                    };
+                };
+            };
+        };
+    };
     queryCourseAndCatalogById: {
         parameters: {
             query?: never;
@@ -3045,6 +3157,33 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: components["schemas"]["CourseSimpleInfoDTO"][];
+                    };
+                };
+            };
+        };
+    };
+    publication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CoursePublicationVO"];
                     };
                 };
             };
