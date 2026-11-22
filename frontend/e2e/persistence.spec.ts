@@ -73,7 +73,20 @@ test('student favorites and access errors remain correct after refresh', async (
   });
   expect(forbidden.status()).toBe(403);
   await api(page, 'DELETE', '/favorites/1');
-  await api(page, 'DELETE', '/favorites/1');
+  const repeatDelete = () => page.request.delete('/api/v2/favorites/1', {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  let repeated = await repeatDelete();
+  if (repeated.status() === 429) {
+    // Other scenarios share this synthetic account and the same gateway quota.
+    const retryAfter = Number(repeated.headers()['retry-after']);
+    expect(retryAfter).toBeGreaterThan(0);
+    expect(retryAfter).toBeLessThanOrEqual(30);
+    await page.waitForTimeout(retryAfter * 1000);
+    repeated = await repeatDelete();
+  }
+  expect(repeated.status()).toBe(200);
+  expect((await repeated.json()).code).toBe(200);
   await page.reload();
   await expect(page.getByText('暂无记录', { exact: true })).toBeVisible();
 });
