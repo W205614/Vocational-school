@@ -13,6 +13,12 @@ import java.time.LocalDateTime;
 @Data
 @Schema(description = "课程搜索条件")
 public class CoursePageQuery extends PageQuery {
+    public enum Difficulty { BEGINNER, INTERMEDIATE, ADVANCED }
+
+    private Difficulty difficulty;
+    private Integer minStudyMinutes;
+    private Integer maxStudyMinutes;
+    private Boolean hasTrial;
 
     @Schema(description = "搜索关键字", example = "Redis")
     private String keyword;

@@ -11,7 +11,7 @@ import java.time.*;
 @Component
 @RequiredArgsConstructor
 public class LearningNoticeListener {
-    public enum Target { QUESTION, EXAM, ORDER, PRACTICE }
+    public enum Target { QUESTION, EXAM, ORDER, PRACTICE, PRACTICE_CORRECTION }
 
     public record Notice(
             String noticeId, Long userId, String title, String content, Long bizId,
@@ -32,7 +32,10 @@ public class LearningNoticeListener {
                 || notice.title() == null
                 || notice.content() == null
                 || (notice.targetType() != null && notice.targetId() == null)
-                || (notice.targetType() == Target.QUESTION && notice.courseId() == null))
+                || (notice.targetType() == Target.QUESTION && notice.courseId() == null)
+                || (notice.targetType() == Target.PRACTICE_CORRECTION
+                        && (notice.courseId() == null || notice.courseId() <= 0
+                                || notice.targetId() < 2 || notice.targetId() > Integer.MAX_VALUE)))
             throw new IllegalArgumentException("Invalid learning notice");
         inbox.once(
                 "learning.notice",

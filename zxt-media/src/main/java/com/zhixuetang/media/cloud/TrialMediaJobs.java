@@ -158,6 +158,13 @@ public class TrialMediaJobs {
         return rows.getFirst();
     }
 
+    public boolean retry(String id, long version) {
+        return jdbc.update("""
+                UPDATE media_trial SET state='PENDING',attempts=0,error_code=NULL,lease_token=NULL,
+                    lease_until=NULL,version=version+1 WHERE id=? AND state='FAILED' AND version=?
+                """, id, version) == 1;
+    }
+
     public void removeDerived(String source) {
         // Revoke leases before storage cleanup so an in-flight job cannot publish a live ticket.
         jdbc.update(

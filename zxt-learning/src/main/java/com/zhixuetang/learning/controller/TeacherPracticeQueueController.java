@@ -28,7 +28,7 @@ public class TeacherPracticeQueueController {
             Long submissionId, Long courseId, Long studentId, String studentName,
             String assignmentTitle, LocalDateTime submittedAt) {}
 
-    public record PendingPage(List<PendingWork> list, long total) {}
+    public record PendingPage(List<PendingWork> list, long total, LocalDateTime oldestPendingAt) {}
 
     @GetMapping("/api/v2/teacher/learning-hub/practice/pending")
     @Transactional(readOnly = true)
@@ -42,7 +42,7 @@ public class TeacherPracticeQueueController {
         if (courseId != null && !taught.contains(courseId))
             throw new ForbiddenException("需要该课程的授课权限");
         var scope = courseId == null ? taught : List.of(courseId);
-        if (scope.isEmpty()) return new PendingPage(List.of(), 0);
+        if (scope.isEmpty()) return new PendingPage(List.of(), 0, null);
 
         String courseSlots = String.join(",", Collections.nCopies(scope.size(), "?"));
         String from = """
@@ -56,8 +56,11 @@ public class TeacherPracticeQueueController {
                         AND later.revision>s.revision AND later.cleaned_at IS NULL
                   )
                 """.formatted(courseSlots);
-        long total = jdbc.queryForObject("SELECT COUNT(*) " + from, Long.class, scope.toArray());
-        if (offset >= total) return new PendingPage(List.of(), total);
+        var summary = jdbc.queryForObject(
+                "SELECT COUNT(*) AS total, MIN(s.submitted_at) AS oldest " + from,
+                (rs, n) -> new PendingPage(List.of(), rs.getLong("total"),
+                        rs.getObject("oldest", LocalDateTime.class)), scope.toArray());
+        if (offset >= summary.total()) return summary;
         var args = new ArrayList<Object>(scope);
         args.add(page.getPageSize());
         args.add(offset);
@@ -74,6 +77,6 @@ public class TeacherPracticeQueueController {
         return new PendingPage(rows.stream().map(row -> new PendingWork(
                 row.submissionId(), row.courseId(), row.studentId(),
                 names.getOrDefault(row.studentId(), "学员 " + row.studentId()),
-                row.assignmentTitle(), row.submittedAt())).toList(), total);
+                row.assignmentTitle(), row.submittedAt())).toList(), summary.total(), summary.oldestPendingAt());
     }
 }

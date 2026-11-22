@@ -102,6 +102,8 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
 
     @Autowired private MediaClient mediaClient;
     @Autowired private CourseProperties courseProperties;
+    @Autowired private CourseStudyInformationAudit studyAudit;
+    @Autowired private CourseMediaDeletionGuard mediaDeletionGuard;
 
     @Override
     @Transactional(
@@ -360,6 +362,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
             rollbackFor = {DbException.class, Exception.class})
     public void upShelf(Long id) {
         baseMapper.lockCourseState(id);
+        mediaDeletionGuard.requireDraftCanPublish(id);
         // 1.信息获取
         // 1.1获取上架的课程草稿信息
         CourseDraft courseDraft = baseMapper.selectById(id);
@@ -402,6 +405,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
         courseToShelf.setScore(course == null ? 0 : NumberUtils.null2Zero(course.getScore()));
 
         // 4.5.首次上架
+        var previousStudy = studyAudit.snapshot(id);
         if (isFirstUpShelf) {
             // 4.5.1.插入课程内容信息
             int result = courseContentMapper.insert(courseContent);
@@ -434,6 +438,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
             // 4.6.4.删除课程草稿内容信息
             courseContentDraftMapper.deleteById(id);
         }
+        studyAudit.recordChanges(id, UserContext.requireUser(), previousStudy);
         // 5.课程上架mq
         outbox.enqueue(
                 "course:" + id + ":up:" + publishTimes,

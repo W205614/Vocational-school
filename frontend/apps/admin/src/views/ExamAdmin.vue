@@ -7,6 +7,7 @@ import { useOperations } from '../../../../packages/shared/src/operations';
 import { useTask, examStatus, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
 import EntityPicker from '../components/EntityPicker.vue';
+import { nextTeacherTask, teacherQueuePath } from '../teacherQueue';
 const route = useRoute(),
   session = useSession(),
   task = useTask(),
@@ -28,7 +29,8 @@ const route = useRoute(),
 const page = ref(1),
   total = ref(0),
   filterCourse = ref(''),
-  filterStudent = ref('');
+  filterStudent = ref(''),
+  appliedFilters = ref({ courseId: '', studentId: '' });
 function validId(value: unknown) {
   return typeof value === 'string' && /^[1-9][0-9]{0,18}$/.test(value) ? value : '';
 }
@@ -96,30 +98,42 @@ async function publish() {
     task.message.value = result.status === 'SUCCEEDED' ? '试卷版本已发布' : '试卷发布处理中';
   });
 }
-async function loadPending() {
-  const params = new URLSearchParams({ pageNo: String(page.value), pageSize: '20' });
-  if (filterCourse.value) params.set('courseId', filterCourse.value);
-  if (filterStudent.value) params.set('studentId', filterStudent.value);
-  let result = await get<Row>('/teacher/exam-attempts/page?' + params);
+async function loadPending(filters = appliedFilters.value) {
+  const read = () => get<Row>(teacherQueuePath('grading', {
+    ...filters, pageNo: page.value, pageSize: 20,
+  }));
+  let result = await read();
   const lastPage = Math.max(1, Math.ceil(Number(result.total) / 20));
   if (page.value > lastPage) {
     page.value = lastPage;
-    params.set('pageNo', String(page.value));
-    result = await get<Row>('/teacher/exam-attempts/page?' + params);
+    result = await read();
   }
   pending.value = result.list;
   total.value = Number(result.total);
 }
 async function load() {
-  await task.run(loadPending);
+  await task.run(async () => {
+    const filters = { courseId: filterCourse.value.trim(), studentId: filterStudent.value.trim() };
+    await loadPending(filters);
+    appliedFilters.value = filters;
+  });
+}
+async function openAttempt(id: string) {
+  attempt.value = await get<Row>('/teacher/exam-attempts/' + id);
+  scores.value = {};
+  feedback.value = {};
+  await nextTick();
+  document.getElementById('grading-attempt-heading')?.focus();
 }
 async function view(id: string) {
+  await task.run(() => openAttempt(id));
+}
+async function nextAttempt() {
   await task.run(async () => {
-    attempt.value = await get<Row>('/teacher/exam-attempts/' + id);
-    scores.value = {};
-    feedback.value = {};
-    await nextTick();
-    document.getElementById('grading-attempt-heading')?.focus();
+    const { courseId, studentId } = appliedFilters.value;
+    const next = await nextTeacherTask('grading', courseId, studentId);
+    if (next) await openAttempt(String(next.id));
+    else task.message.value = '当前范围没有其他待评分答卷';
   });
 }
 async function returnToGradingQueue() {
@@ -313,7 +327,12 @@ watch(() => route.query, () => void openRoute());
     <article v-if="attempt">
       <div class="section-heading">
         <h3 id="grading-attempt-heading" tabindex="-1">考试 {{ attempt.id }} · {{ examStatus(attempt.status) }}</h3>
-        <el-button @click="returnToGradingQueue">回到待评分列表</el-button>
+        <div>
+          <el-button v-if="attempt.status === 'FINISHED'" @click="nextAttempt" :disabled="task.busy.value">
+            处理下一份答卷
+          </el-button>
+          <el-button @click="returnToGradingQueue">回到待评分列表</el-button>
+        </div>
       </div>
       <div v-for="answer in attempt.answers" :key="answer.question_id" class="section">
         <h4>

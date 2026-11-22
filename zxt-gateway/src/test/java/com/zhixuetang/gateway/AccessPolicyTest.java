@@ -53,6 +53,14 @@ class AccessPolicyTest {
         assertFalse(policy.declares("PUT", "/api/v2/teacher/learning-hub/practice/123/corrections"));
         assertTrue(policy.declares("GET", "/api/v2/teacher/learning-hub/practice/pending"));
         assertFalse(policy.declares("GET", "/api/v2/learning-hub/practice/pending"));
+        assertTrue(policy.declares("GET", "/api/v2/admin/course/study-information/123/changes"));
+        assertFalse(policy.declares("GET", "/api/v2/services/course/study-information/123/changes"));
+        assertTrue(policy.declares("GET", "/api/v2/admin/media/medias/123/references"));
+        assertFalse(policy.declares("GET", "/api/v2/admin/media/medias/example/references"));
+        assertFalse(policy.declares("GET", "/api/v2/services/media/medias/123/references"));
+        assertTrue(policy.declares("POST", "/api/v2/admin/media/trial-batches"));
+        assertTrue(policy.declares("GET", "/api/v2/admin/media/trial-batches"));
+        assertFalse(policy.declares("POST", "/api/v2/services/media/trial-batches"));
     }
 
     @Test

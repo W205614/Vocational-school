@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { get, newKey, write } from '../../../../packages/shared/src/client';
 import { useTask } from '../../../../packages/shared/src/ui';
@@ -9,6 +9,7 @@ import type {
   PracticeVersion,
 } from '../../../../packages/shared/src/practice';
 import PracticeHistory from '../../../../packages/shared/src/PracticeHistory.vue';
+import PracticeComparison from '../../../../packages/shared/src/PracticeComparison.vue';
 import PracticeVersions from '../../../../packages/shared/src/PracticeVersions.vue';
 import Status from '../../../../packages/shared/src/Status.vue';
 
@@ -25,6 +26,18 @@ const task = useTask();
 const assignments = ref<Pick<PracticeAssignment, 'courseId' | 'title'>[]>([]);
 const selected = ref<StudentView>();
 const submissions = computed(() => selected.value?.submissions ?? []);
+const currentVersion = computed(() => selected.value?.historyOnly ? undefined :
+  selected.value?.versions.find((version) => version.version === selected.value?.assignment.version));
+const requestedVersion = computed(() => {
+  const version = route.query.version;
+  if (typeof version === 'string' && /^[1-9][0-9]{0,9}$/.test(version) && Number(version) > 1)
+    return Number(version);
+});
+const correction = computed(() => selected.value?.versions.find((version) => version.version === requestedVersion.value));
+const previous = computed(() => {
+  const version = correction.value;
+  if (version) return selected.value?.versions.find((item) => item.version === version.version - 1);
+});
 const description = ref('');
 const workUrl = ref('');
 let submittedDraft:
@@ -57,6 +70,12 @@ async function load(courseId: unknown) {
 
 watch(task.busy, (busy) => {
   if (!busy && reloadPending) void load(route.query.courseId);
+});
+
+watch([() => selected.value?.assignment.courseId, requestedVersion], async ([course, version]) => {
+  if (!course || !version) return;
+  await nextTick();
+  document.getElementById('practice-correction-heading')?.focus();
 });
 
 watch(
@@ -115,6 +134,18 @@ async function submit() {
     </div>
     <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
     <template v-if="selected">
+      <section v-if="requestedVersion" class="card" aria-labelledby="practice-correction-heading">
+        <h2 id="practice-correction-heading" tabindex="-1">第 {{ requestedVersion }} 版更正</h2>
+        <template v-if="correction">
+          <h3>{{ correction.title }}</h3>
+          <p class="practice-text">更正说明 · {{ correction.changeReason }}</p>
+          <PracticeComparison v-if="previous" :before="previous" :after="correction"
+            :before-label="'更正前 · 第 ' + previous.version + ' 版'"
+            :after-label="'更正后 · 第 ' + correction.version + ' 版'" />
+          <p v-else class="practice-text">{{ correction.instructions }}</p>
+        </template>
+        <p v-else>当前无法查看这次更正。</p>
+      </section>
       <article class="card">
         <h2>{{ selected.assignment.title }}</h2>
         <p v-if="selected.historyOnly">学习权益已失效，以下为你提交时的任务说明。</p>
@@ -148,7 +179,7 @@ async function submit() {
         </el-button>
       </el-form>
       <h2 v-if="submissions.length">提交与反馈</h2>
-      <PracticeHistory :submissions="submissions" :versions="selected?.versions ?? []" />
+      <PracticeHistory :submissions="submissions" :versions="selected?.versions ?? []" :current-version="currentVersion" />
     </template>
     <template v-else-if="!route.query.courseId">
       <el-empty v-if="!task.busy.value && !task.error.value && !assignments.length" description="暂无实操作业" />

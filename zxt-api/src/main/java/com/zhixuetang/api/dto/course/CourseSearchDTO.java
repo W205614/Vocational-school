@@ -53,6 +53,10 @@ public class CourseSearchDTO {
     @Schema(description = "课程时长")
     private Integer duration;
 
+    private String difficulty;
+    private Integer estimatedStudyMinutes;
+    private Boolean hasTrial;
+
     @Schema(description = "老师id")
     private Long teacher;
 

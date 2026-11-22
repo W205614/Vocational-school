@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.zhixuetang.api.client.user.UserClient;
 import com.zhixuetang.api.dto.user.UserDTO;
 import com.zhixuetang.common.domain.dto.PageDTO;
+import com.zhixuetang.common.exceptions.BadRequestException;
 import com.zhixuetang.common.exceptions.CommonException;
 import com.zhixuetang.common.utils.*;
 import com.zhixuetang.search.config.InterestsProperties;
@@ -147,6 +148,19 @@ public class SearchServiceImpl implements ISearchService {
             filters.add(term(CourseRepository.CATEGORY_ID_LV3, query.getCategoryIdLv3()));
         if (query.getFree() != null) filters.add(term(CourseRepository.FREE, query.getFree()));
         if (query.getType() != null) filters.add(term(CourseRepository.TYPE, query.getType()));
+        if (query.getDifficulty() != null) filters.add(term("difficulty.keyword", query.getDifficulty().name()));
+        if (query.getHasTrial() != null) filters.add(term("hasTrial", query.getHasTrial()));
+        Integer minMinutes = query.getMinStudyMinutes(), maxMinutes = query.getMaxStudyMinutes();
+        if (minMinutes != null || maxMinutes != null) {
+            if ((minMinutes != null && minMinutes <= 0) || (maxMinutes != null && maxMinutes <= 0)
+                    || (minMinutes != null && maxMinutes != null && minMinutes > maxMinutes)) {
+                throw new BadRequestException("预计学习时长区间无效");
+            }
+            Map<String, Object> range = new HashMap<>();
+            if (minMinutes != null) range.put("gte", minMinutes);
+            if (maxMinutes != null) range.put("lte", maxMinutes);
+            filters.add(Map.of("range", Map.of("estimatedStudyMinutes", range)));
+        }
         if (query.getBeginTime() != null || query.getEndTime() != null) {
             Map<String, Object> range = new HashMap<>();
             if (query.getBeginTime() != null) range.put("gte", query.getBeginTime().toString());

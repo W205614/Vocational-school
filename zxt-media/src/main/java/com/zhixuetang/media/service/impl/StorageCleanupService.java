@@ -1,8 +1,8 @@
 package com.zhixuetang.media.service.impl;
 
+import com.zhixuetang.api.client.course.CourseClient;
 import com.zhixuetang.common.autoconfigure.reliability.OperationHandler;
 import com.zhixuetang.common.exceptions.*;
-import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.media.storage.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -21,6 +21,7 @@ public class StorageCleanupService implements OperationHandler {
     private final JsonMapper json;
     private final IFileStorage files;
     private final IMediaStorage medias;
+    private final CourseClient courses;
     private final ThreadPoolTaskExecutor executor;
 
     public StorageCleanupService(
@@ -28,11 +29,13 @@ public class StorageCleanupService implements OperationHandler {
             JsonMapper json,
             IFileStorage files,
             IMediaStorage medias,
+            CourseClient courses,
             @Qualifier("storageCleanupExecutor") ThreadPoolTaskExecutor executor) {
         this.jdbc = jdbc;
         this.json = json;
         this.files = files;
         this.medias = medias;
+        this.courses = courses;
         this.executor = executor;
     }
 
@@ -52,6 +55,7 @@ public class StorageCleanupService implements OperationHandler {
                         : request.kind().equals("FILE") ? "file" : null;
         if (table == null) throw new BadRequestException("资源类型无效");
         String column = table.equals("media") ? "file_id" : "`key`";
+        Map<Long, Object> objects = new LinkedHashMap<>();
         for (Long id : request.ids().stream().distinct().sorted().toList()) {
             var rows =
                     jdbc.queryForList(
@@ -67,12 +71,18 @@ public class StorageCleanupService implements OperationHandler {
                     && !Objects.equals(((Number) row.get("creater")).longValue(), user))
                 throw new ForbiddenException("不能删除他人的资源");
             if (((Number) row.get("deleted")).intValue() != 0) continue;
-            jdbc.update("UPDATE " + table + " SET deleted=1 WHERE id=? AND deleted=0", id);
+            objects.put(id, row.get("object_key"));
+        }
+        if (table.equals("media") && !objects.isEmpty() && !courses.reserveMediaDeletion(List.copyOf(objects.keySet()))) {
+            throw new ConflictException("媒资仍被课程引用。请查看引用详情并替换对应小节的媒资后重试");
+        }
+        for (var object : objects.entrySet()) {
+            jdbc.update("UPDATE " + table + " SET deleted=1 WHERE id=? AND deleted=0", object.getKey());
             jdbc.update(
                     "INSERT INTO storage_cleanup_task(id,kind,object_key) VALUES(?,?,?)",
                     UUID.randomUUID().toString(),
                     request.kind(),
-                    row.get("object_key"));
+                    object.getValue());
         }
         return Map.of("accepted", true);
     }

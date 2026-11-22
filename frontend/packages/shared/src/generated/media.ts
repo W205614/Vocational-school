@@ -15,6 +15,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/media/trial-batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["statuses"];
+        put?: never;
+        post: operations["prepare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/media/medias": {
         parameters: {
             query?: never;
@@ -188,6 +204,23 @@ export interface paths {
             cookie?: never;
         };
         get: operations["content"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/media/medias/{mediaId}/references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询阻止媒资删除的课程引用 */
+        get: operations["references"];
         put?: never;
         post?: never;
         delete?: never;
@@ -514,6 +547,23 @@ export interface components {
              */
             signature: string;
         };
+        TrialBatchRequest: {
+            courseId?: string;
+            draft?: boolean;
+            sectionIds?: string[];
+        };
+        TrialBatchItem: {
+            sectionId?: string;
+            sectionName?: string;
+            status?: components["schemas"]["TrialStatus"];
+        };
+        TrialStatus: {
+            taskId?: string;
+            /** @enum {string} */
+            state?: "UNAVAILABLE" | "MISSING" | "PENDING" | "PROCESSING" | "READY" | "FAILED" | "REMOVED";
+            errorCode?: string;
+            version?: string;
+        };
         /**
          * @description 媒体上传的结果
          * @default null
@@ -564,13 +614,6 @@ export interface components {
             mediaIds?: string[];
             /** Format: int32 */
             seconds?: number;
-        };
-        TrialStatus: {
-            taskId?: string;
-            /** @enum {string} */
-            state?: "UNAVAILABLE" | "MISSING" | "PENDING" | "PROCESSING" | "READY" | "FAILED" | "REMOVED";
-            errorCode?: string;
-            version?: string;
         };
         Cleanup: {
             requestId?: string;
@@ -706,6 +749,15 @@ export interface components {
              */
             list: components["schemas"]["MediaVO"][];
         };
+        CourseMediaReference: {
+            courseId?: string;
+            courseName?: string;
+            /** Format: int32 */
+            courseStatus?: number;
+            sectionId?: string;
+            sectionName?: string;
+            draft?: boolean;
+        };
         Dataset: {
             name?: string;
             select?: string;
@@ -789,6 +841,63 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: components["schemas"]["VideoPlayVO"];
+                    };
+                };
+            };
+        };
+    };
+    statuses: {
+        parameters: {
+            query: {
+                courseId: string;
+                draft: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["TrialBatchItem"][];
+                    };
+                };
+            };
+        };
+    };
+    prepare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrialBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["TrialBatchItem"][];
                     };
                 };
             };
@@ -1181,6 +1290,33 @@ export interface operations {
                 };
                 content: {
                     "video/mp4": string;
+                };
+            };
+        };
+    };
+    references: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseMediaReference"][];
+                    };
                 };
             };
         };

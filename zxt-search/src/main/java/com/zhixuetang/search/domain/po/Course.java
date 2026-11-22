@@ -44,6 +44,10 @@ public class Course {
     /** 章节数量 */
     private Integer sections;
 
+    private String difficulty;
+    private Integer estimatedStudyMinutes;
+    private Boolean hasTrial;
+
     /** 课程封面 */
     private String coverUrl;
 

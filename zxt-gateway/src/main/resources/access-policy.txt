@@ -669,3 +669,7 @@ POST:/api/v2/admin/media/trial-previews
 GET:/api/v2/teacher/learning-hub/practice/{courseId}
 PUT:/api/v2/admin/learning-hub/practice/{courseId}/corrections
 GET:/api/v2/teacher/learning-hub/practice/pending
+GET:/api/v2/admin/course/study-information/{id}/changes
+GET:/api/v2/admin/media/medias/{mediaId}/references
+GET:/api/v2/admin/media/trial-batches
+POST:/api/v2/admin/media/trial-batches

@@ -1,13 +1,22 @@
 package com.zhixuetang.api.client.learning;
 
 import com.zhixuetang.api.client.learning.fallback.LearningClientFallback;
+import com.zhixuetang.api.dto.leanring.CourseStudyCounts;
 import com.zhixuetang.api.dto.leanring.LearningLessonDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.Map;
+import java.util.Set;
 
 @FeignClient(value = "learning-service", fallbackFactory = LearningClientFallback.class)
 public interface LearningClient {
+
+    @PostMapping("/internal/v1/learning/course-study-counts")
+    Map<Long, CourseStudyCounts> courseStudyCounts(@RequestBody Set<Long> courseIds);
 
     /**
      * 统计课程学习人数

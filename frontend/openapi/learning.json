@@ -2970,7 +2970,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "type": "object"
+                      "$ref": "#/components/schemas/TeachingQuestionPage"
                     }
                   }
                 }
@@ -5895,6 +5895,10 @@
           "total": {
             "type": "string",
             "pattern": "^-?[0-9]+$"
+          },
+          "oldestPendingAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -5920,6 +5924,30 @@
             "type": "string"
           },
           "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TeachingQuestionPage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pendingTotal": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "oldestPendingAt": {
             "type": "string",
             "format": "date-time"
           }

@@ -122,7 +122,30 @@ public class PracticeAssignmentService {
         if (current.title().equals(title) && current.instructions().equals(instructions))
             throw new BadRequestException("标题或任务说明至少修改一项");
         publishVersion(course, next, admin, title, instructions, reason);
+        notifyCorrection(course, next);
         return configuration(course);
+    }
+
+    private void notifyCorrection(long course, int version) {
+        var recipients = jdbc.queryForList("""
+                SELECT l.user_id FROM learning_lesson l
+                WHERE l.course_id=? AND EXISTS (
+                    SELECT 1 FROM learning_entitlement e
+                    WHERE e.user_id=l.user_id AND e.course_id=l.course_id AND e.active=1
+                      AND (e.expires_at IS NULL OR e.expires_at>CURRENT_TIMESTAMP(3))
+                ) AND COALESCE((
+                    SELECT s.status FROM learning_practice_submission s
+                    WHERE s.course_id=l.course_id AND s.user_id=l.user_id AND s.cleaned_at IS NULL
+                    ORDER BY s.revision DESC LIMIT 1
+                ), 'SUBMITTED') <> 'PASSED'
+                """, Long.class, course);
+        for (long student : recipients) {
+            String noticeId = "practice-correction:" + course + ':' + version + ':' + student;
+            outbox.enqueue(noticeId, "learning.topic", "learning.notice.product",
+                    new ProductNotice(noticeId, student, "实操作业要求已更正",
+                            "课程实操作业已更新至第 " + version + " 版，可查看更正内容。",
+                            "PRACTICE_CORRECTION", (long) version, course, null));
+        }
     }
 
     private void publishVersion(long course, int version, long admin, String title, String instructions, String reason) {

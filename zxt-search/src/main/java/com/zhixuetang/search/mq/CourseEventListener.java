@@ -37,9 +37,9 @@ public class CourseEventListener {
                             value = @Queue(name = "search.course.up.queue", durable = "true"),
                             exchange =
                                     @Exchange(name = COURSE_EXCHANGE, type = ExchangeTypes.TOPIC),
-                            key = COURSE_UP_KEY))
+                            key = {COURSE_UP_KEY, COURSE_STUDY_INFORMATION_KEY}))
     public void listenCourseUp(Long courseId, org.springframework.amqp.core.Message raw) {
-        log.debug("监听到课程{}上架", courseId);
+        log.debug("监听到课程{}公开资料更新", courseId);
         stage(courseId, raw);
     }
 

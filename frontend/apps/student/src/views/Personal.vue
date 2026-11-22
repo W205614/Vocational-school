@@ -74,6 +74,11 @@ function messageDestination(row: Row) {
     return { to: { path: '/orders', query: { orderId: targetId } }, label: '查看订单进度' };
   if (row.targetType === 'PRACTICE')
     return { to: { path: '/practice', query: { courseId: targetId } }, label: '查看作业反馈' };
+  if (row.targetType === 'PRACTICE_CORRECTION' && /^\d{1,20}$/.test(String(row.courseId ?? '')))
+    return {
+      to: { path: '/practice', query: { courseId: String(row.courseId), version: targetId } },
+      label: '查看作业更正',
+    };
   if (row.targetType === 'QUESTION' && /^\d{1,20}$/.test(String(row.courseId ?? '')))
     return {
       to: { path: '/courses/' + row.courseId, query: { sectionId: row.sectionId, questionId: targetId } },
@@ -83,6 +88,23 @@ function messageDestination(row: Row) {
 const messages = computed(() =>
   rows.value.map((row) => ({ row, destination: messageDestination(row) })),
 );
+async function markRead(row: Row) {
+  await write('/services/message/inboxes/' + row.id + '/read', 'PUT');
+  row.isRead = true;
+}
+async function openCorrection(event: MouseEvent, row: Row, navigate: (event?: MouseEvent) => unknown) {
+  if (row.isRead || event.defaultPrevented || event.button !== 0 ||
+    event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) {
+    void navigate(event);
+    return;
+  }
+  event.preventDefault();
+  const marked = await task.run(async () => {
+    await markRead(row);
+    return true;
+  });
+  if (marked) void navigate();
+}
 let loadRevision = 0,
   loadPending = false;
 // Navigation and filters can change while useTask is guarding an in-flight request.
@@ -309,15 +331,15 @@ onMounted(load);
         <h3>{{ row.title || row.subject }}</h3>
         <p class="content">{{ row.content }}</p>
         <small>{{ row.pushTime }}</small>
-        <RouterLink v-if="destination" :to="destination.to">{{ destination.label }}</RouterLink
+        <RouterLink v-if="destination && row.targetType === 'PRACTICE_CORRECTION'"
+          v-slot="{ href, navigate }" :to="destination.to" custom>
+          <a :href="href" @click="openCorrection($event, row, navigate)">{{ destination.label }}</a>
+        </RouterLink>
+        <RouterLink v-else-if="destination" :to="destination.to">{{ destination.label }}</RouterLink
         ><el-button
           v-if="!row.isRead"
-          @click="
-            task.run(async () => {
-              await write('/services/message/inboxes/' + row.id + '/read', 'PUT');
-              row.isRead = true;
-            })
-          "
+          :disabled="task.busy.value"
+          @click="task.run(() => markRead(row))"
           >标为已读</el-button
         ><span v-else>已读</span>
       </article>

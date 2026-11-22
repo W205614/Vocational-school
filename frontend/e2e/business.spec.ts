@@ -331,6 +331,28 @@ test('browser purchase, real local video, discussions, exam grading and targeted
       'aria-pressed',
       'false',
     );
+    const firstPending = '待答一 ' + fixture.marker;
+    const secondPending = '待答二 ' + fixture.marker;
+    for (const title of [firstPending, secondPending]) {
+      await page.getByPlaceholder('问题标题').fill(title);
+      await page.getByPlaceholder('描述问题').fill('同一课程中的待答问题');
+      await page.getByRole('button', { name: '在当前小节提问' }).click();
+      await expect(page.getByRole('button', { name: title, exact: true })).toBeVisible();
+    }
+    await login(teacher, 'teacher', '/teaching?workCourse=' + fixture.course + '&pendingOnly=false');
+    const questionsSummary = teacher.locator('dl[aria-label="待办概览"] > div').filter({ hasText: '待答问题' });
+    await expect(questionsSummary).toContainText('2 项');
+    await expect(questionsSummary).toContainText('最早等待自');
+    await teacher.getByRole('region', { name: '课程答疑' }).getByRole('article')
+      .filter({ hasText: firstPending }).getByRole('button', { name: '查看与答疑' }).click();
+    const questionDialog = teacher.getByRole('dialog', { name: '课程答疑' });
+    await questionDialog.getByPlaceholder('写下教师解答').fill('第一条教师答疑');
+    await questionDialog.getByRole('button', { name: '发布解答' }).click();
+    await questionDialog.getByRole('button', { name: '处理下一条待答问题' }).click();
+    await expect(questionDialog.getByRole('heading', { name: secondPending })).toBeVisible();
+    await expect(questionDialog.getByPlaceholder('写下教师解答')).toHaveValue('');
+    await expect(questionsSummary).toContainText('1 项');
+    expect(new URL(teacher.url()).searchParams.get('workCourse')).toBe(fixture.course);
     fs.mkdirSync(home + '/ux-screenshots', { recursive: true });
     await page.screenshot({ path: home + '/ux-screenshots/course-learning.png', fullPage: true });
     await page.goto('/notes');
@@ -465,7 +487,11 @@ test('browser purchase, real local video, discussions, exam grading and targeted
       data: { version: 0, answers: { [fixture.subjective]: 'late change' } },
     });
     expect(lateDraft.status()).toBe(409);
-    await login(teacher, 'teacher', '/exams');
+    await teacher.goto('/teaching?workCourse=' + fixture.course);
+    const gradingSummary = teacher.locator('dl[aria-label="待办概览"] > div').filter({ hasText: '待评分答卷' });
+    await expect(gradingSummary).toContainText('1 项');
+    await expect(gradingSummary).toContainText('最早等待自');
+    await teacher.goto('/exams');
     await teacher.getByPlaceholder('课程编号筛选').fill(fixture.course);
     await teacher.getByPlaceholder('学生编号筛选').fill(accounts.admin.id);
     const emptyPending = teacher.waitForResponse(
@@ -499,6 +525,8 @@ test('browser purchase, real local video, discussions, exam grading and targeted
     await expect(
       teacher.getByText('已评分 10 · Reviewed browser answer', { exact: true }),
     ).toBeVisible();
+    await teacher.getByRole('button', { name: '处理下一份答卷' }).click();
+    await expect(teacher.getByText('当前范围没有其他待评分答卷', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: '刷新评分状态' }).click();
     await expect(page.locator('.exam-result')).toContainText('20');
     await expect(page.locator('.exam-result')).toContainText('已通过');

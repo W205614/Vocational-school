@@ -7,6 +7,7 @@ import org.hibernate.validator.constraints.Length;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 /**
  * 课程视频模型
@@ -24,6 +25,7 @@ public class CourseMediaDTO {
 
     @Schema(description = "媒资id")
     @NotNull(message = CourseErrorInfo.Msg.COURSE_MEDIA_SAVE_MEDIA_NULL)
+    @Positive
     private Long mediaId;
 
     @Schema(description = "是否支持试看")

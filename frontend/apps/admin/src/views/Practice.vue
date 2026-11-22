@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { get, write } from '../../../../packages/shared/src/client';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { ApiError, get, write } from '../../../../packages/shared/src/client';
 import { useSession } from '../../../../packages/shared/src/session';
 import { useTask, type Row } from '../../../../packages/shared/src/ui';
 import type { Page } from '../../../../packages/shared/src/learning';
 import { practiceStatus, type PracticeAssignmentView, type PracticeSubmission } from '../../../../packages/shared/src/practice';
 import PracticeHistory from '../../../../packages/shared/src/PracticeHistory.vue';
+import PracticeComparison from '../../../../packages/shared/src/PracticeComparison.vue';
 import PracticeVersions from '../../../../packages/shared/src/PracticeVersions.vue';
 import Status from '../../../../packages/shared/src/Status.vue';
 import EntityPicker from '../components/EntityPicker.vue';
 import { teacherCourses } from '../teacherCourses';
+import { nextTeacherTask } from '../teacherQueue';
 
 interface Work {
   userId: string;
@@ -20,6 +22,7 @@ interface Work {
 
 const session = useSession();
 const route = useRoute();
+const router = useRouter();
 const task = useTask();
 const courseId = ref('');
 const courses = ref<Row[]>([]);
@@ -28,8 +31,11 @@ const instructions = ref('');
 const configuration = ref<PracticeAssignmentView>({ assignment: null, versions: [] });
 const assignment = computed(() => configuration.value.assignment);
 const versions = computed(() => configuration.value.versions);
+const currentVersion = computed(() => versions.value.find((version) => version.version === assignment.value?.version));
 const publishedAt = computed(() => assignment.value?.publishedAt);
 const correcting = ref(false);
+const correctionConflict = ref(false);
+const reviewedOtherVersion = ref(false);
 const reason = ref('');
 const changed = computed(() => title.value.trim() !== assignment.value?.title ||
   instructions.value.trim() !== assignment.value?.instructions);
@@ -38,6 +44,7 @@ const page = ref(1);
 const selected = ref<PracticeSubmission>();
 const history = ref<PracticeSubmission[]>([]);
 const feedback = ref('');
+const nextPracticeMessage = ref('');
 const latestSelected = computed(() => selected.value?.id === history.value[0]?.id);
 const adminPath = (course: string) => '/admin/learning-hub/practice/' + course;
 const teacherAssignmentPath = (course: string) => '/teacher/learning-hub/practice/' + course;
@@ -61,15 +68,28 @@ function resetEditor() {
   instructions.value = assignment.value?.instructions || '';
   reason.value = '';
   correcting.value = false;
+  correctionConflict.value = false;
+  reviewedOtherVersion.value = false;
+  task.error.value = '';
 }
 
-async function loadConfiguration() {
+async function loadConfiguration(keepDraft = false) {
   const course = courseId.value;
+  const prior = assignment.value;
   await task.run(async () => {
     const result = await get<PracticeAssignmentView>(adminPath(course));
     if (course !== courseId.value) return;
     configuration.value = result;
-    resetEditor();
+    const latest = result.assignment;
+    if (!keepDraft || !latest?.version) {
+      resetEditor();
+      return;
+    }
+    if (title.value.trim() === prior?.title) title.value = latest.title;
+    if (instructions.value.trim() === prior?.instructions) instructions.value = latest.instructions;
+    correctionConflict.value = false;
+    reviewedOtherVersion.value = reviewedOtherVersion.value || latest.version !== prior?.version;
+    task.message.value = '已载入第 ' + latest.version + ' 版。你编辑的内容和更正说明已保留。';
   });
 }
 
@@ -92,12 +112,17 @@ async function correct() {
   const expectedVersion = assignment.value?.version;
   if (!expectedVersion) return;
   await task.run(async () => {
-    configuration.value = await write<PracticeAssignmentView>(adminPath(course) + '/corrections', 'PUT', {
-      title: title.value,
-      instructions: instructions.value,
-      reason: reason.value,
-      expectedVersion,
-    });
+    try {
+      configuration.value = await write<PracticeAssignmentView>(adminPath(course) + '/corrections', 'PUT', {
+        title: title.value,
+        instructions: instructions.value,
+        reason: reason.value,
+        expectedVersion,
+      });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) correctionConflict.value = true;
+      throw error;
+    }
     resetEditor();
     task.message.value = '新版本已发布。';
   });
@@ -115,13 +140,18 @@ async function open(studentId: string, submissionId?: string) {
   if (course !== courseId.value) return;
   const target = submissionId ? submissions.find((entry) => entry.id === submissionId) : submissions[0];
   if (!target) throw new Error('此作品已不可查看，请返回教学待办刷新列表。');
-  const knownVersions = new Set(versions.value.map((version) => version.version));
-  if (submissions.some((entry) => !knownVersions.has(entry.assignmentVersion))) {
-    configuration.value = await get<PracticeAssignmentView>(teacherAssignmentPath(course));
-  }
+  const latest = await get<PracticeAssignmentView>(teacherAssignmentPath(course));
+  if (course !== courseId.value) return;
+  configuration.value = latest;
+  const wasOpen = !!selected.value;
+  nextPracticeMessage.value = '';
   selected.value = target;
   history.value = submissions;
   feedback.value = '';
+  if (wasOpen) {
+    await nextTick();
+    focusSubmission();
+  }
 }
 
 function showLatest() {
@@ -151,6 +181,25 @@ async function review(status: 'NEEDS_REVISION' | 'PASSED') {
     task.message.value = '反馈已保存。';
     await refreshWork();
   });
+}
+
+async function nextSubmission() {
+  const scope = returnToQueue.value ? returnToQueue.value.query.workCourse || '' : courseId.value;
+  const result = await task.run(async () => ({ next: await nextTeacherTask('practice', scope) }));
+  if (!result) return;
+  const next = result.next;
+  if (!next) {
+    nextPracticeMessage.value = '当前范围没有其他待反馈实操作业';
+    return;
+  }
+  if (returnToQueue.value) {
+    await router.replace({ query: {
+      ...route.query, courseId: String(next.courseId),
+      studentId: String(next.studentId), submissionId: String(next.submissionId),
+    } });
+  } else {
+    await task.run(() => open(String(next.studentId), String(next.submissionId)));
+  }
 }
 
 function requestedSubmission() {
@@ -257,8 +306,9 @@ onMounted(async () => {
       </template>
       <el-dialog :model-value="!!selected" title="作品与反馈" @opened="focusSubmission"
         @update:model-value="(open: boolean) => { if (!open) selected = undefined; }">
-        <Status :error="task.error.value" />
-        <PracticeHistory :submissions="history" :versions="versions" :highlighted-id="selected?.id" />
+        <Status :error="task.error.value" :message="nextPracticeMessage || task.message.value" />
+        <PracticeHistory :submissions="history" :versions="versions" :current-version="currentVersion"
+          :highlighted-id="selected?.id" />
         <div v-if="selected && !latestSelected">
           <p>当前打开的是历史提交。</p>
           <el-button @click="showLatest">查看最近提交</el-button>
@@ -280,14 +330,18 @@ onMounted(async () => {
             </el-button>
           </div>
         </div>
-        <template v-if="returnToQueue" #footer>
-          <RouterLink :to="returnToQueue">返回教学待办 →</RouterLink>
+        <template #footer>
+          <el-button v-if="selected && latestSelected && selected.status !== 'SUBMITTED'" @click="nextSubmission" :disabled="task.busy.value">
+            处理下一份作品
+          </el-button>
+          <RouterLink v-if="returnToQueue" :to="returnToQueue">返回教学待办 →</RouterLink>
         </template>
       </el-dialog>
     </template>
     <template v-else>
       <EntityPicker v-model="courseId" kind="courses" label="选择试点课程" :course-statuses="[2]" :disabled="task.busy.value" />
-      <el-form v-if="courseId" label-position="top" class="practice-editor" aria-label="配置实操作业">
+      <el-form v-if="courseId" label-position="top" class="practice-editor" aria-label="配置实操作业"
+        :disabled="task.busy.value">
         <el-form-item label="作业标题">
           <el-input v-model="title" maxlength="120" :disabled="!!publishedAt && !correcting" />
         </el-form-item>
@@ -301,11 +355,15 @@ onMounted(async () => {
             <el-form-item label="更正说明" required>
               <el-input v-model="reason" type="textarea" maxlength="1000" :rows="3" />
             </el-form-item>
+            <PracticeComparison v-if="reviewedOtherVersion && assignment" :before="assignment"
+              :after="{ title, instructions }" :before-label="'当前发布 · 第 ' + assignment.version + ' 版'"
+              after-label="你的更正草稿" />
             <div class="practice-actions">
-              <el-button type="primary" :disabled="task.busy.value || !changed ||
+              <el-button type="primary" :disabled="task.busy.value || correctionConflict || !changed ||
                 !title.trim() || !instructions.trim() || !reason.trim()" @click="correct">发布新版本</el-button>
               <el-button :disabled="task.busy.value" @click="resetEditor">取消更正</el-button>
-              <el-button v-if="task.error.value" :disabled="task.busy.value" @click="loadConfiguration">载入最新版本</el-button>
+              <el-button v-if="task.error.value || correctionConflict" :disabled="task.busy.value"
+                @click="loadConfiguration(true)">载入最新版本并保留草稿</el-button>
             </div>
           </template>
           <el-button v-else :disabled="task.busy.value" @click="correcting = true">更正任务说明</el-button>

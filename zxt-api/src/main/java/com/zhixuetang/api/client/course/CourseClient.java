@@ -4,6 +4,8 @@ import com.zhixuetang.api.dto.course.*;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
@@ -35,6 +37,16 @@ public interface CourseClient {
     @GetMapping("/internal/v1/course/{courseId}/trial-sections/{sectionId}")
     SectionInfoDTO draftTrialSection(
             @PathVariable("courseId") long courseId, @PathVariable("sectionId") long sectionId);
+
+    @GetMapping("/internal/v1/course/{courseId}/trial-sections")
+    List<TrialSection> trialSections(@PathVariable("courseId") long courseId,
+                                     @RequestParam("draft") boolean draft);
+
+    @GetMapping("/internal/v1/course/media/{mediaId}/references")
+    List<CourseMediaReference> mediaReferences(@PathVariable("mediaId") long mediaId);
+
+    @PostMapping("/internal/v1/course/media/deletion-guard")
+    boolean reserveMediaDeletion(@RequestBody List<Long> mediaIds);
 
     @GetMapping("/internal/v1/course/{courseId}/exam-sections/{sectionId}")
     ExamSectionPublicationDTO examSectionForPublication(

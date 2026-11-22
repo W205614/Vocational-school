@@ -13,6 +13,7 @@ import com.zhixuetang.learning.service.impl.LearningHubOperationHandler.Command;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.time.*;
 import java.util.*;
@@ -158,8 +159,14 @@ public class LearningHubController {
                         month));
     }
 
+    public record TeachingQuestionPage(List<Map<String, Object>> list, long total,
+                                       long pendingTotal, LocalDateTime oldestPendingAt) {}
+
+    private record PendingQuestionSummary(long count, LocalDateTime oldest) {}
+
     @GetMapping("/teaching/questions")
-    public Object teachingQuestions(
+    @Transactional(readOnly = true)
+    public TeachingQuestionPage teachingQuestions(
             @RequestParam(required = false) Long courseId,
             @RequestParam(defaultValue = "false") boolean pendingOnly,
             PageQuery page) {
@@ -179,26 +186,26 @@ public class LearningHubController {
             args.add(courseId);
         } else if (!admin) {
             var assigned = courses.taughtCourseIds(actor);
-            if (assigned.isEmpty()) return Map.of("list", List.of(), "total", 0);
+            if (assigned.isEmpty()) return new TeachingQuestionPage(List.of(), 0, 0, null);
             from += " AND q.course_id IN (" + String.join(",", Collections.nCopies(assigned.size(), "?")) + ")";
             args.addAll(assigned);
         }
         String unanswered =
                 "q.accepted_reply_id IS NULL AND NOT EXISTS(SELECT 1 FROM interaction_reply r WHERE r.question_id=q.id AND r.answer_id IS NULL AND r.hidden=0)";
+        var summary = jdbc.queryForObject("SELECT COUNT(*) AS total, MIN(q.create_time) AS oldest" + from + " AND " + unanswered,
+                (rs, row) -> new PendingQuestionSummary(rs.getLong("total"), rs.getObject("oldest", LocalDateTime.class)),
+                args.toArray());
         if (pendingOnly) from += " AND " + unanswered;
-        Long total = jdbc.queryForObject("SELECT COUNT(*)" + from, Long.class, args.toArray());
+        long total = pendingOnly ? summary.count() : jdbc.queryForObject("SELECT COUNT(*)" + from, Long.class, args.toArray());
         args.add(page.getPageSize());
         args.add(page.from());
-        return Map.of(
-                "list",
-                jdbc.queryForList(
-                        "SELECT q.id,q.title,q.description,q.course_id AS courseId,q.section_id AS sectionId,q.answer_times AS answerTimes,q.accepted_reply_id AS acceptedReplyId,q.accepted_at AS acceptedAt,q.create_time AS createTime"
-                                + from
-                                + (pendingOnly ? " ORDER BY q.create_time,q.id" : " ORDER BY q.create_time DESC,q.id DESC")
-                                + " LIMIT ? OFFSET ?",
-                        args.toArray()),
-                "total",
-                total);
+        var items = jdbc.queryForList(
+                "SELECT q.id,q.title,q.description,q.course_id AS courseId,q.section_id AS sectionId,q.answer_times AS answerTimes,q.accepted_reply_id AS acceptedReplyId,q.accepted_at AS acceptedAt,q.create_time AS createTime"
+                        + from
+                        + (pendingOnly ? " ORDER BY q.create_time,q.id" : " ORDER BY q.create_time DESC,q.id DESC")
+                        + " LIMIT ? OFFSET ?",
+                args.toArray());
+        return new TeachingQuestionPage(items, total, summary.count(), summary.oldest());
     }
 
     public record Acceptance(Long replyId) {}

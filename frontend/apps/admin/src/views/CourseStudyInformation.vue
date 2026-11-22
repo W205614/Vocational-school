@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { get, write, newKey } from '../../../../packages/shared/src/client';
 import { query, useTask, type Row } from '../../../../packages/shared/src/ui';
 import CourseFacts from '../../../../packages/shared/src/CourseFacts.vue';
+import { formatStudyMinutes, studyDifficulty } from '../../../../packages/shared/src/courseStudyFacts';
 import Status from '../../../../packages/shared/src/Status.vue';
 
 const path = '/admin/course/study-information';
@@ -28,12 +29,23 @@ type Course = Information & {
   status: 2 | 4;
   videoEstimateMinutes?: string;
   missingFields: MissingField[];
+  counts?: { enrolled: string; started: string };
+};
+type FieldChange = {
+  field: MissingField;
+  previousValue?: string;
+  newValue?: string;
+  operatorId: string;
+  operatorName?: string;
+  changedAt: string;
 };
 
 const listTask = useTask();
 const editTask = useTask();
+const historyTask = useTask();
 const keyword = ref('');
 const missing = ref<MissingField | 'ANY' | 'ALL'>('ANY');
+const sort = ref('NEWEST');
 const page = ref(1);
 const pageSize = 20;
 const rows = ref<Course[]>([]);
@@ -42,6 +54,10 @@ const selected = ref<Course>();
 const dialog = ref(false);
 const draft = ref<Information>({});
 const preview = ref<Row>();
+const historyOpen = ref(false);
+const history = ref<FieldChange[]>([]);
+const historyPage = ref(1);
+const historyTotal = ref(0);
 
 function choose(course: Course) {
   selected.value = course;
@@ -75,7 +91,8 @@ async function load(reset = false) {
   await listTask.run(async () => {
     if (reset) page.value = 1;
     const read = () => get<{ list: Course[]; total: string }>(
-      path + '?' + query({ pageNo: page.value, pageSize, keyword: keyword.value.trim(), missing: missing.value }),
+      path + '?' + query({ pageNo: page.value, pageSize, keyword: keyword.value.trim(),
+        missing: missing.value, sort: sort.value }),
     );
     let result = await read();
     const lastPage = Math.max(1, Math.ceil(Number(result.total) / pageSize));
@@ -92,6 +109,8 @@ async function edit(course: Course) {
   await listTask.run(async () => {
     choose(await get<Course>(path + '/' + course.id));
     preview.value = undefined;
+    historyOpen.value = false;
+    history.value = [];
     editTask.error.value = '';
     editTask.message.value = '';
     dialog.value = true;
@@ -110,7 +129,10 @@ async function save() {
     editTask.message.value = '已更新学生可见的选课资料';
     return updated;
   });
-  if (result) await load();
+  if (result) {
+    await load();
+    if (historyOpen.value) await loadChanges(true);
+  }
 }
 
 async function checkPublicCourse() {
@@ -120,6 +142,28 @@ async function checkPublicCourse() {
     preview.value = undefined;
     preview.value = await get<Row>('/public/courses/' + course.id);
   });
+}
+
+async function loadChanges(reset = false) {
+  const course = selected.value;
+  if (!course) return;
+  if (reset) historyPage.value = 1;
+  historyOpen.value = true;
+  await historyTask.run(async () => {
+    const result = await get<{ list: FieldChange[]; total: string }>(
+      path + '/' + course.id + '/changes?' + query({ pageNo: historyPage.value, pageSize }),
+    );
+    if (course.id !== selected.value?.id) return;
+    history.value = result.list;
+    historyTotal.value = Number(result.total);
+  });
+}
+
+function changeValue(field: MissingField, value?: string) {
+  if (!value?.trim()) return '未填写';
+  if (field === 'DIFFICULTY') return studyDifficulty[value] || value;
+  if (field === 'ESTIMATED_TIME') return formatStudyMinutes(Number(value));
+  return value;
 }
 
 onMounted(load);
@@ -140,6 +184,11 @@ onMounted(load);
         <el-option label="缺任意一项" value="ANY" />
         <el-option label="全部公开课程" value="ALL" />
         <el-option v-for="(label, value) in labels" :key="value" :label="'缺' + label" :value="value" />
+      </el-select>
+      <el-select v-model="sort" aria-label="盘点排序" :disabled="listTask.busy.value" @change="load(true)">
+        <el-option label="课程编号倒序" value="NEWEST" />
+        <el-option label="有效报名人数最多" value="ENROLLED" />
+        <el-option label="已开始学习人数最多" value="STARTED" />
       </el-select>
       <el-button native-type="submit" :disabled="listTask.busy.value">查询</el-button>
     </form>
@@ -165,6 +214,12 @@ onMounted(load);
           <span v-else-if="row.videoEstimateMinutes">{{ row.videoEstimateMinutes }} 分钟（按视频时长估算）</span>
           <span v-else>待补录</span>
         </template>
+      </el-table-column>
+      <el-table-column label="有效报名" width="105">
+        <template #default="{ row }">{{ row.counts.enrolled }} 人</template>
+      </el-table-column>
+      <el-table-column label="已开始学习" width="115">
+        <template #default="{ row }">{{ row.counts.started }} 人</template>
       </el-table-column>
       <el-table-column label="操作" width="115">
         <template #default="{ row }">
@@ -215,8 +270,24 @@ onMounted(load);
           <h3>学生课程详情</h3>
           <CourseFacts :course="preview" />
         </section>
+        <section v-if="historyOpen" aria-label="字段变更记录">
+          <h3>字段变更记录</h3>
+          <Status :busy="historyTask.busy.value" :error="historyTask.error.value" />
+          <el-button v-if="historyTask.error.value" text @click="loadChanges()">重试</el-button>
+          <p v-else-if="!historyTask.busy.value && !history.length" class="muted">暂无已记录的变更</p>
+          <dl v-for="(entry, index) in history" :key="index" class="field-change">
+            <dt>{{ labels[entry.field] }} · {{ entry.changedAt.replace('T', ' ') }}</dt>
+            <dd>操作者 {{ entry.operatorName || `账号 ${entry.operatorId}` }}</dd>
+            <dd>原值 {{ changeValue(entry.field, entry.previousValue) }}</dd>
+            <dd>新值 {{ changeValue(entry.field, entry.newValue) }}</dd>
+          </dl>
+          <el-pagination v-if="historyTotal > pageSize" v-model:current-page="historyPage"
+            :page-size="pageSize" :total="historyTotal" :disabled="historyTask.busy.value"
+            layout="prev, pager, next" @current-change="loadChanges()" />
+        </section>
       </template>
       <template #footer>
+      <el-button :disabled="historyTask.busy.value" @click="loadChanges(true)">查看字段变更</el-button>
         <el-button :disabled="editTask.busy.value" @click="checkPublicCourse">查看学生页资料</el-button>
         <el-button type="primary" :disabled="editTask.busy.value || !Object.keys(changes).length" @click="save">
           保存补录
@@ -230,4 +301,6 @@ onMounted(load);
 .study-filters .el-input { width: min(18rem, 100%); }
 .study-filters .el-select { width: min(12rem, 100%); }
 .missing-fields { display: flex; flex-wrap: wrap; gap: .25rem; }
+.field-change { border-bottom: 1px solid var(--el-border-color); padding-block: .5rem; }
+.field-change dd { margin: .25rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 </style>

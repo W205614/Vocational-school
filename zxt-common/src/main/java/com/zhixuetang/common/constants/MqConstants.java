@@ -37,6 +37,7 @@ public interface MqConstants {
         /*课程有关的 RoutingKey*/
         String COURSE_NEW_KEY = "course.new";
         String COURSE_UP_KEY = "course.up";
+        String COURSE_STUDY_INFORMATION_KEY = "course.study-information";
         String COURSE_DOWN_KEY = "course.down";
         String COURSE_EXPIRE_KEY = "course.expire";
         String COURSE_DELETE_KEY = "course.delete";

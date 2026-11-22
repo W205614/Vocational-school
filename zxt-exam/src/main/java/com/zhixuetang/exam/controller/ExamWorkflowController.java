@@ -16,7 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -210,8 +212,14 @@ public class ExamWorkflowController {
                         user);
     }
 
+    public record PendingExamPage(List<Map<String, Object>> list, long total, int pageNo,
+                                  int pageSize, List<Long> courseIds, LocalDateTime oldestPendingAt) {}
+
+    private record PendingExamSummary(long count, LocalDateTime oldest) {}
+
     @GetMapping("/teacher/exam-attempts/page")
-    public Map<String, Object> pendingPage(
+    @Transactional(readOnly = true)
+    public PendingExamPage pendingPage(
             @RequestParam(defaultValue = "1") int pageNo,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) Long courseId,
@@ -250,25 +258,15 @@ public class ExamWorkflowController {
             from += " AND a.user_id=?";
             parameters.add(studentId);
         }
-        Long total =
-                jdbc.queryForObject("SELECT COUNT(*)" + from, Long.class, parameters.toArray());
+        var summary = jdbc.queryForObject("SELECT COUNT(*) AS total, MIN(a.submitted_at) AS oldest" + from,
+                (rs, row) -> new PendingExamSummary(rs.getLong("total"), rs.getObject("oldest", LocalDateTime.class)),
+                parameters.toArray());
         parameters.add(pageSize);
         parameters.add((pageNo - 1) * pageSize);
-        return Map.of(
-                "total",
-                total,
-                "pageNo",
-                pageNo,
-                "pageSize",
-                pageSize,
-                "courseIds",
-                courseIds,
-                "list",
-                jdbc.queryForList(
-                        "SELECT a.*,p.course_id,p.section_id"
-                                + from
-                                + " ORDER BY a.submitted_at,a.id LIMIT ? OFFSET ?",
-                        parameters.toArray()));
+        var items = jdbc.queryForList(
+                "SELECT a.*,p.course_id,p.section_id" + from + " ORDER BY a.submitted_at,a.id LIMIT ? OFFSET ?",
+                parameters.toArray());
+        return new PendingExamPage(items, summary.count(), pageNo, pageSize, courseIds, summary.oldest());
     }
 
     @GetMapping("/teacher/exam-attempts/{id}")

@@ -157,10 +157,6 @@ public class TrialPlaybackController {
     public void retry(@PathVariable String id, @RequestBody Retry form) {
         UserContext.requireAdmin();
         jobs.task(id);
-        if (jdbc.update(
-                        "UPDATE media_trial SET state='PENDING',attempts=0,error_code=NULL,lease_token=NULL,lease_until=NULL,version=version+1 WHERE id=? AND state='FAILED' AND version=?",
-                        id,
-                        form.version())
-                != 1) throw new ConflictException("试看任务已变化或不是失败状态");
+        if (!jobs.retry(id, form.version())) throw new ConflictException("试看任务已变化或不是失败状态");
     }
 }

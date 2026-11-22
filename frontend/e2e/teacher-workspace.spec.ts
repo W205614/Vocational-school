@@ -1,6 +1,56 @@
 import { test, expect } from '@playwright/test';
 import { login } from './helpers';
 
+test('teacher opens the next practical submission inside the original course scope', async ({ page }, info) => {
+  test.skip(info.project.name !== 'admin');
+  const courseId = '900000000000000021';
+  const firstId = '900000000000000022', nextId = '900000000000000023';
+  const firstStudent = '900000000000000024', nextStudent = '900000000000000025';
+  const base = '**/api/v2/teacher/learning-hub/practice';
+  const detail = `${base}/${courseId}`;
+  const time = '2026-11-22T08:00:00';
+  const assignment = { courseId, title: '练习题', instructions: '解释实现步骤', publishedAt: time, version: 1 };
+  const submission = (id: string, userId: string, status = 'SUBMITTED') => ({
+    id, userId, revision: 1, assignmentVersion: 1, description: '作品 ' + id, status,
+    submittedAt: time, feedback: status === 'PASSED' ? '通过' : null,
+  });
+  const success = (data: unknown) => ({ code: 200, msg: 'OK', data });
+  await page.route('**/api/v2/teacher/courses?**', (route) => route.fulfill({
+    json: success({ list: [{ id: courseId, name: '教师的课程' }], total: 1 }),
+  }));
+  await page.route(detail, (route) => route.fulfill({ json: success({
+    assignment, versions: [{ ...assignment, effectiveAt: time, changeReason: '首次发布' }],
+  }) }));
+  await page.route(detail + '/submissions?**', (route) => route.fulfill({ json: success({ list: [], total: 0 }) }));
+  for (const [student, id] of [[firstStudent, firstId], [nextStudent, nextId]]) {
+    await page.route(detail + '/submissions/' + student, (route) => route.fulfill({
+      json: success([submission(id!, student!)]),
+    }));
+  }
+  await page.route(detail + '/submissions/' + firstId + '/feedback', (route) => route.fulfill({
+    json: success(submission(firstId, firstStudent, 'PASSED')),
+  }));
+  await page.route(base + '/pending?**', (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    expect(params.get('courseId')).toBe(courseId);
+    expect(params.get('pageSize')).toBe('1');
+    return route.fulfill({ json: success({ list: [{ courseId, studentId: nextStudent, submissionId: nextId }] }) });
+  });
+  await login(page, 'teacher', `/practice?courseId=${courseId}&studentId=${firstStudent}&submissionId=${firstId}`
+    + `&from=teaching&workCourse=${courseId}&practicePage=3&pendingOnly=false`);
+  const dialog = page.getByRole('dialog', { name: '作品与反馈' });
+  await dialog.getByRole('textbox', { name: '教师反馈' }).fill('通过');
+  await dialog.getByRole('button', { name: '通过作业' }).click();
+  await dialog.getByRole('button', { name: '处理下一份作品' }).click();
+  await expect(dialog.getByText('作品 ' + nextId, { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('textbox', { name: '教师反馈' })).toHaveValue('');
+  await expect(page).toHaveURL(new RegExp('submissionId=' + nextId));
+  const back = new URL((await dialog.getByRole('link', { name: '返回教学待办 →' }).getAttribute('href'))!, page.url());
+  expect(back.searchParams.get('workCourse')).toBe(courseId);
+  expect(back.searchParams.get('practicePage')).toBe('3');
+  expect(back.searchParams.get('pendingOnly')).toBe('false');
+});
+
 test('teacher grading loads automatically, requires an explicit score and refreshes after grading', async ({
   page,
 }, info) => {
@@ -9,16 +59,18 @@ test('teacher grading loads automatically, requires an explicit score and refres
     listRequests = 0,
     gradeRequests = 0;
   const attemptId = '900000000000000001',
+    nextId = '900000000000000006',
+    courseId = '900000000000000004',
     questionId = '900000000000000002';
   const envelope = (data: unknown) => ({ code: 200, msg: 'OK', data });
   await page.route('**/api/v2/teacher/exam-attempts/page?**', async (route) => {
     listRequests++;
+    const params = new URL(route.request().url()).searchParams;
+    expect(params.get('courseId')).toBe(courseId);
     await route.fulfill({
       json: envelope({
-        list: graded
-          ? []
-          : [{ id: attemptId, user_id: '900000000000000003', course_id: '900000000000000004' }],
-        total: graded ? 0 : 1,
+        list: [{ id: graded ? nextId : attemptId, user_id: '900000000000000003', course_id: courseId }],
+        total: 1,
       }),
     });
   });
@@ -42,6 +94,9 @@ test('teacher grading loads automatically, requires an explicit score and refres
       }),
     }),
   );
+  await page.route('**/api/v2/teacher/exam-attempts/' + nextId, (route) => route.fulfill({
+    json: envelope({ id: nextId, status: 'WAIT_GRADING', questions: [], answers: [] }),
+  }));
   const operation = {
     operationId: 'isolated-grading-operation',
     status: 'SUCCEEDED',
@@ -58,7 +113,7 @@ test('teacher grading loads automatically, requires an explicit score and refres
   await page.route('**/api/v2/operations/exam/isolated-grading-operation', (route) =>
     route.fulfill({ json: envelope(operation) }),
   );
-  await login(page, 'teacher', '/exams');
+  await login(page, 'teacher', '/exams?pendingCourseId=' + courseId);
   const row = page.locator('.el-table__row').filter({ hasText: attemptId });
   await expect(row).toBeVisible();
   expect(listRequests).toBe(1);
@@ -79,6 +134,9 @@ test('teacher grading loads automatically, requires an explicit score and refres
   await expect(row).toHaveCount(0);
   expect(listRequests).toBe(2);
   expect(gradeRequests).toBe(1);
+  await page.getByRole('button', { name: '处理下一份答卷' }).click();
+  await expect(page.getByRole('heading', { name: '考试 ' + nextId + ' · 等待教师评分' })).toBeFocused();
+  expect(listRequests).toBe(3);
 });
 
 test('teacher answers show the question details and never carry replies or drafts into another question', async ({

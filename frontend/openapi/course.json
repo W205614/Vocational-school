@@ -910,6 +910,20 @@
                 "PRACTICE"
               ]
             }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "NEWEST",
+              "enum": [
+                "NEWEST",
+                "ENROLLED",
+                "STARTED"
+              ]
+            }
           }
         ],
         "responses": {
@@ -937,6 +951,66 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/PageDTOCourseStudyInformationVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/course/study-information/{id}/changes": {
+      "get": {
+        "tags": [
+          "course-study-information-controller"
+        ],
+        "operationId": "changes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "exclusiveMinimum": 0,
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOChange"
                     }
                   }
                 }
@@ -3559,6 +3633,19 @@
           "status"
         ]
       },
+      "CourseStudyCounts": {
+        "type": "object",
+        "properties": {
+          "enrolled": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "started": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
       "CourseStudyInformationVO": {
         "type": "object",
         "properties": {
@@ -3607,6 +3694,9 @@
                 "PRACTICE"
               ]
             }
+          },
+          "counts": {
+            "$ref": "#/components/schemas/CourseStudyCounts"
           }
         }
       },
@@ -3633,6 +3723,91 @@
             "description": "当前页数据",
             "items": {
               "$ref": "#/components/schemas/CourseStudyInformationVO"
+            }
+          }
+        }
+      },
+      "PageQuery": {
+        "type": "object",
+        "default": null,
+        "description": "分页请求参数",
+        "properties": {
+          "pageNo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1
+          },
+          "isAsc": {
+            "type": "boolean"
+          },
+          "sortBy": {
+            "type": "string"
+          }
+        }
+      },
+      "Change": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "ALL",
+              "ANY",
+              "OUTCOMES",
+              "PREREQUISITES",
+              "DIFFICULTY",
+              "ESTIMATED_TIME",
+              "PRACTICE"
+            ]
+          },
+          "previousValue": {
+            "type": "string"
+          },
+          "newValue": {
+            "type": "string"
+          },
+          "operatorId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "operatorName": {
+            "type": "string"
+          },
+          "changedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageDTOChange": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/Change"
             }
           }
         }
@@ -3699,6 +3874,16 @@
             "format": "int32",
             "default": "",
             "description": "视频播放时长"
+          },
+          "difficulty": {
+            "type": "string"
+          },
+          "estimatedStudyMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasTrial": {
+            "type": "boolean"
           },
           "validDuration": {
             "type": "integer",
@@ -3966,6 +4151,26 @@
           }
         }
       },
+      "ExamSectionPublicationDTO": {
+        "type": "object",
+        "properties": {
+          "totalSections": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "draftQuestionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        }
+      },
       "SectionInfoDTO": {
         "type": "object",
         "default": null,
@@ -4003,26 +4208,6 @@
           "type": {
             "type": "integer",
             "format": "int32"
-          }
-        }
-      },
-      "ExamSectionPublicationDTO": {
-        "type": "object",
-        "properties": {
-          "totalSections": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "mediaDuration": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "draftQuestionIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^-?[0-9]+$"
-            }
           }
         }
       },

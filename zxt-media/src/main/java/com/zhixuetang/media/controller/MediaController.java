@@ -1,5 +1,8 @@
 package com.zhixuetang.media.controller;
 
+import com.zhixuetang.api.dto.course.CourseMediaReference;
+import com.zhixuetang.common.exceptions.BadRequestException;
+import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.common.domain.dto.PageDTO;
 import com.zhixuetang.media.domain.dto.MediaDTO;
 import com.zhixuetang.media.domain.dto.MediaUploadResultDTO;
@@ -36,7 +39,7 @@ public class MediaController {
     private org.springframework.http.ResponseEntity<?> delete(
             java.util.List<Long> ids, String key) {
         com.zhixuetang.common.utils.UserContext.requireAdmin();
-        if (ids == null || ids.isEmpty() || ids.size() > 100)
+        if (ids == null || ids.isEmpty() || ids.size() > 100 || ids.stream().anyMatch(id -> id == null || id <= 0))
             throw new com.zhixuetang.common.exceptions.BadRequestException("每次最多删除 100 项");
         var quotes = courses.mediaUserInfo(ids);
         if (quotes == null) throw new com.zhixuetang.common.exceptions.CommonException("媒资引用核对未完成，请重试");
@@ -52,6 +55,14 @@ public class MediaController {
                                         "MEDIA",
                                         ids,
                                         com.zhixuetang.common.utils.UserContext.getRole())));
+    }
+
+    @Operation(summary = "查询阻止媒资删除的课程引用")
+    @GetMapping("/{mediaId}/references")
+    public List<CourseMediaReference> references(@PathVariable long mediaId) {
+        UserContext.requireAdmin();
+        if (mediaId <= 0) throw new BadRequestException("媒资编号无效");
+        return courses.mediaReferences(mediaId);
     }
 
     @Operation(summary = "分页搜索已上传媒资信息")

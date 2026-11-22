@@ -2110,6 +2110,8 @@ export interface components {
         PendingPage: {
             list?: components["schemas"]["PendingWork"][];
             total?: string;
+            /** Format: date-time */
+            oldestPendingAt?: string;
         };
         PendingWork: {
             submissionId?: string;
@@ -2119,6 +2121,15 @@ export interface components {
             assignmentTitle?: string;
             /** Format: date-time */
             submittedAt?: string;
+        };
+        TeachingQuestionPage: {
+            list?: {
+                [key: string]: unknown;
+            }[];
+            total?: string;
+            pendingTotal?: string;
+            /** Format: date-time */
+            oldestPendingAt?: string;
         };
         StudentAssignment: {
             courseId?: string;
@@ -3824,7 +3835,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: Record<string, never>;
+                        data: components["schemas"]["TeachingQuestionPage"];
                     };
                 };
             };

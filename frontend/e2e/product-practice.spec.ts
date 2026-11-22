@@ -94,9 +94,42 @@ test('product practice: correct a published task and review each version from th
     expect((await protectedRequest(admin, correctionPath, 'PUT', { ...correction, reason: '另一份修改' })).status()).toBe(409);
     expect((await api(page, 'POST', submissionPath, body)).assignmentVersion).toBe(1);
 
+    async function correctionNotices() {
+      const result = await api(page, 'POST', '/services/message/inboxes/query');
+      return result.list.filter((row: { targetType: string; courseId: string; targetId: string }) =>
+        row.targetType === 'PRACTICE_CORRECTION' && row.courseId === course && Number(row.targetId) === 2,
+      );
+    }
+    await expect.poll(async () => (await correctionNotices()).length, { timeout: 15_000 }).toBe(1);
+    await page.goto('/messages');
+    const correctionLink = page.getByRole('link', { name: '查看作业更正', exact: true })
+      .and(page.locator('a[href="/practice?courseId=' + course + '&version=2"]'));
+    const correctionArticle = page.getByRole('article').filter({ has: correctionLink });
+    await expect(correctionArticle.getByRole('button', { name: '标为已读' })).toBeVisible();
+    await correctionLink.click();
+    const correctionDetail = page.getByRole('region', { name: '第 2 版更正' });
+    await expect(correctionDetail).toContainText(reason);
+    await expect(correctionDetail).toContainText(originalInstructions);
+    await expect(correctionDetail).toContainText(correctedInstructions);
+    expect((await correctionNotices())[0].isRead).toBeTruthy();
+    const studentFeedback = page.getByRole('listitem').filter({
+      has: page.getByRole('heading', { name: '第 1 次提交 · 待反馈', exact: true }),
+    });
+    await studentFeedback.getByRole('button', { name: '对照当前任务要求' }).click();
+    const studentComparison = studentFeedback.getByRole('region', { name: '任务要求差异' });
+    await expect(studentComparison).toContainText('提交使用 · 第 1 版');
+    await expect(studentComparison).toContainText('当前要求 · 第 2 版');
+    await expect(studentComparison.locator('mark').first()).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
+
     await login(teacher, 'teacher', '/teaching?workCourse=' + course + '&pendingOnly=false');
     expect((await protectedRequest(teacher, '/teacher/learning-hub/practice/' + fixture.notesCourse + '/submissions')).status()).toBe(403);
     expect((await protectedRequest(teacher, queuePath + '?courseId=' + fixture.notesCourse)).status()).toBe(403);
+    const practiceSummary = teacher.locator('[aria-label="待办概览"] > div').filter({
+      has: teacher.getByText('待反馈实操作业', { exact: true }),
+    });
+    await expect(practiceSummary).toContainText('1 项');
+    await expect(practiceSummary).toContainText('最早等待自');
     const queue = teacher.getByRole('region', { name: '待反馈实操作业' });
     const firstQueueLink = queue.getByRole('article').filter({ hasText: assignmentTitle })
       .getByRole('link', { name: '查看待反馈作品 →' });
@@ -108,6 +141,10 @@ test('product practice: correct a published task and review each version from th
     await expect(dialog.getByText('第一版作品说明')).toBeVisible();
     await dialog.getByText('提交时的任务说明 · 第 1 版', { exact: true }).click();
     await expect(dialog.getByText(originalInstructions, { exact: true })).toBeVisible();
+    await dialog.getByRole('button', { name: '对照当前任务要求' }).click();
+    const teacherComparison = dialog.getByRole('region', { name: '任务要求差异' });
+    await expect(teacherComparison).toContainText(originalInstructions);
+    await expect(teacherComparison).toContainText(correctedInstructions);
     await dialog.getByRole('textbox', { name: '教师反馈' }).fill('补充成果验证。');
     await dialog.getByRole('button', { name: '需要修改', exact: true }).click();
     await expect(dialog.getByRole('heading', { name: '第 1 次提交 · 需要修改' })).toBeVisible();
@@ -157,6 +194,8 @@ test('product practice: correct a published task and review each version from th
     await dialog.getByRole('textbox', { name: '教师反馈' }).fill('通过，验证充分。');
     await dialog.getByRole('button', { name: '通过作业' }).click();
     await expect(dialog.getByRole('heading', { name: '第 2 次提交 · 已通过' })).toBeVisible();
+    await dialog.getByRole('button', { name: '处理下一份作品' }).click();
+    await expect(dialog.getByText('当前范围没有其他待反馈实操作业')).toBeVisible();
     await dialog.getByRole('link', { name: '返回教学待办 →' }).click();
     await expect(secondQueueLink).toHaveCount(0);
     await expect(queue.getByText('当前范围没有待反馈实操作业', { exact: true })).toBeVisible();
@@ -170,6 +209,29 @@ test('product practice: correct a published task and review each version from th
     await firstSubmission.getByText('提交时的任务说明 · 第 1 版', { exact: true }).click();
     await expect(firstSubmission.getByText(originalInstructions, { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '修改后重交' })).toHaveCount(0);
+
+    const draftTitle = '并行编辑时保留的作业标题 ' + fixture.marker;
+    const draftReason = '确认最新版后修订标题';
+    const concurrentInstructions = '教师在另一会话补充了预习要求。';
+    await admin.getByRole('button', { name: '更正任务说明' }).click();
+    await admin.getByRole('textbox', { name: '作业标题' }).fill(draftTitle);
+    await admin.getByRole('textbox', { name: '更正说明' }).fill(draftReason);
+    await api(admin, 'PUT', correctionPath, {
+      ...correction, expectedVersion: 2, instructions: concurrentInstructions, reason: '补充预习要求',
+    });
+    await admin.getByRole('button', { name: '发布新版本' }).click();
+    await expect(admin.getByText(/作业已有更新/)).toBeVisible();
+    await expect(admin.getByRole('button', { name: '发布新版本' })).toBeDisabled();
+    await admin.getByRole('button', { name: '载入最新版本并保留草稿' }).click();
+    await expect(admin.getByText('已发布 · 当前第 3 版')).toBeVisible();
+    await expect(admin.getByRole('textbox', { name: '作业标题' })).toHaveValue(draftTitle);
+    await expect(admin.getByRole('textbox', { name: '任务说明' })).toHaveValue(concurrentInstructions);
+    await expect(admin.getByRole('textbox', { name: '更正说明' })).toHaveValue(draftReason);
+    const draftComparison = admin.getByRole('region', { name: '任务要求差异' });
+    await expect(draftComparison).toContainText('当前发布 · 第 3 版');
+    await expect(draftComparison).toContainText('任务说明相同');
+    await admin.getByRole('button', { name: '发布新版本' }).click();
+    await expect(admin.getByText('已发布 · 当前第 4 版')).toBeVisible();
   } finally {
     await teacherContext.close();
     await adminContext.close();

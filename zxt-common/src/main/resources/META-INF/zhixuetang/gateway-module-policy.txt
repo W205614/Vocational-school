@@ -471,3 +471,7 @@ gateway|POST|/_modules/media/trial-previews
 gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/practice/{courseId}
 gateway|PUT|/_modules/learning/api/v2/admin/learning-hub/practice/{courseId}/corrections
 gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/practice/pending
+gateway|GET|/_modules/course/study-information/{id}/changes
+gateway|GET|/_modules/media/medias/{mediaId}/references
+gateway|GET|/_modules/media/trial-batches
+gateway|POST|/_modules/media/trial-batches

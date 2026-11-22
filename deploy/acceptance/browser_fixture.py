@@ -177,16 +177,26 @@ def main():
     # A legacy public row with a separate unpublished edit, isolated from the other browser flows.
     study_course = course + 40
     study_name = 'Browser study information ' + marker
+    ranked_study_course = course + 39
+    ranked_study_name = 'Browser study reference ' + marker
     study_substitutions = {
         **free_substitutions,
         'id': str(study_course),
         'name': "'" + study_name + "'",
     }
     study_values = ','.join(study_substitutions.get(c, '`' + c + '`') for c in columns)
+    ranked_study_substitutions = {
+        **study_substitutions,
+        'id': str(ranked_study_course),
+        'name': "'" + ranked_study_name + "'",
+    }
+    ranked_study_values = ','.join(ranked_study_substitutions.get(c, '`' + c + '`') for c in columns)
     mysql(
         f"""
         INSERT INTO course({','.join('`' + c + '`' for c in columns)})
         SELECT {study_values} FROM course WHERE id=1;
+        INSERT INTO course({','.join('`' + c + '`' for c in columns)})
+        SELECT {ranked_study_values} FROM course WHERE id=1;
         INSERT INTO course_draft (
             id,name,cover_url,first_cate_id,second_cate_id,third_cate_id,free,price,
             status,purchase_start_time,purchase_end_time,step,section_num,creater,updater
@@ -205,7 +215,45 @@ def main():
         """,
         'tj_course',
     )
+    ranked_study_lesson = course + 41
+    student = accounts['student']['id']
+    mysql(
+        f"""
+        INSERT INTO learning_lesson (id,user_id,course_id,status,learned_sections,latest_learn_time)
+        VALUES ({ranked_study_lesson},{student},{ranked_study_course},1,1,NOW());
+        INSERT INTO learning_entitlement (order_detail_id,order_id,user_id,course_id,active)
+        VALUES ({ranked_study_lesson},{ranked_study_lesson},{student},{ranked_study_course},1);
+        """,
+        'tj_learning',
+    )
+    legacy_trial_course = course + 60
+    legacy_trial_chapter, legacy_trial_first, legacy_trial_second = (
+        legacy_trial_course + 1, legacy_trial_course + 2, legacy_trial_course + 3
+    )
+    legacy_trial_unavailable = legacy_trial_course + 4
+    legacy_trial_name = 'Browser legacy trials ' + marker
+    legacy_trial_values = {
+        **free_substitutions,
+        'id': str(legacy_trial_course),
+        'name': "'" + legacy_trial_name + "'",
+        'section_num': '3',
+    }
+    mysql(
+        'INSERT INTO course(' + ','.join('`' + c + '`' for c in columns) + ') SELECT '
+        + ','.join(legacy_trial_values.get(c, '`' + c + '`') for c in columns)
+        + f" FROM course WHERE id=1; INSERT INTO course_catalogue"
+        + "(id,name,course_id,type,parent_catalogue_id,trailer,c_index,dep_id,creater,updater) VALUES"
+        + f"({legacy_trial_chapter},'Legacy chapter',{legacy_trial_course},1,0,0,1,0,{admin},{admin}),"
+        + f"({legacy_trial_first},'Legacy first',{legacy_trial_course},2,{legacy_trial_chapter},1,1,0,{admin},{admin}),"
+        + f"({legacy_trial_second},'Legacy second',{legacy_trial_course},2,{legacy_trial_chapter},1,2,0,{admin},{admin}),"
+        + f"({legacy_trial_unavailable},'Legacy missing source',{legacy_trial_course},2,{legacy_trial_chapter},1,3,0,{admin},{admin})",
+        'tj_course',
+    )
     fixture = dict(
+        legacyTrialCourse=str(legacy_trial_course),
+        legacyTrialName=legacy_trial_name,
+        legacyTrialFirst=str(legacy_trial_first),
+        legacyTrialSecond=str(legacy_trial_second),
         marker=marker,
         expiredCourse=str(expired_course),
         expiredAttempt=str(expired_attempt),
@@ -213,6 +261,7 @@ def main():
         freeCourse=str(free_course),
         studyCourse=str(study_course),
         studyName=study_name,
+        rankedStudyCourse=str(ranked_study_course),
         notesCourse=str(notes_course),
         notesLesson=str(notes_lesson),
         course=str(course),

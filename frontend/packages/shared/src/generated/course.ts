@@ -249,6 +249,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/course/study-information/{id}/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["changes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/course/course/{id}/searchInfo": {
         parameters: {
             query?: never;
@@ -1154,6 +1170,10 @@ export interface components {
             estimatedStudyMinutes?: number;
             practiceOverview?: string;
         };
+        CourseStudyCounts: {
+            enrolled?: string;
+            started?: string;
+        };
         CourseStudyInformationVO: {
             id?: string;
             name?: string;
@@ -1167,6 +1187,7 @@ export interface components {
             videoEstimateMinutes?: string;
             practiceOverview?: string;
             missingFields?: ("ALL" | "ANY" | "OUTCOMES" | "PREREQUISITES" | "DIFFICULTY" | "ESTIMATED_TIME" | "PRACTICE")[];
+            counts?: components["schemas"]["CourseStudyCounts"];
         };
         /**
          * @description 分页结果
@@ -1188,6 +1209,49 @@ export interface components {
              * @default
              */
             list: components["schemas"]["CourseStudyInformationVO"][];
+        };
+        /**
+         * @description 分页请求参数
+         * @default null
+         */
+        PageQuery: {
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            isAsc?: boolean;
+            sortBy?: string;
+        };
+        Change: {
+            /** @enum {string} */
+            field?: "ALL" | "ANY" | "OUTCOMES" | "PREREQUISITES" | "DIFFICULTY" | "ESTIMATED_TIME" | "PRACTICE";
+            previousValue?: string;
+            newValue?: string;
+            operatorId?: string;
+            operatorName?: string;
+            /** Format: date-time */
+            changedAt?: string;
+        };
+        /**
+         * @description 分页结果
+         * @default null
+         */
+        PageDTOChange: {
+            /**
+             * @description 总条数
+             * @default
+             */
+            total: string;
+            /**
+             * @description 总页码数
+             * @default
+             */
+            pages: string;
+            /**
+             * @description 当前页数据
+             * @default
+             */
+            list: components["schemas"]["Change"][];
         };
         /**
          * @description 课程信息
@@ -1248,6 +1312,10 @@ export interface components {
              * @default
              */
             duration: number;
+            difficulty?: string;
+            /** Format: int32 */
+            estimatedStudyMinutes?: number;
+            hasTrial?: boolean;
             /**
              * Format: int32
              * @description 课程有效期天数
@@ -1473,6 +1541,13 @@ export interface components {
              */
             teacherIds: string[];
         };
+        ExamSectionPublicationDTO: {
+            /** Format: int32 */
+            totalSections?: number;
+            /** Format: int32 */
+            mediaDuration?: number;
+            draftQuestionIds?: string[];
+        };
         /**
          * @description 小节信息，包含课程id和媒资id
          * @default null
@@ -1507,13 +1582,6 @@ export interface components {
             mediaDuration: number;
             /** Format: int32 */
             type?: number;
-        };
-        ExamSectionPublicationDTO: {
-            /** Format: int32 */
-            totalSections?: number;
-            /** Format: int32 */
-            mediaDuration?: number;
-            draftQuestionIds?: string[];
         };
         /**
          * @description 媒资被引用情况
@@ -3015,6 +3083,7 @@ export interface operations {
                 pageSize?: number;
                 keyword?: string;
                 missing?: "ALL" | "ANY" | "OUTCOMES" | "PREREQUISITES" | "DIFFICULTY" | "ESTIMATED_TIME" | "PRACTICE";
+                sort?: "NEWEST" | "ENROLLED" | "STARTED";
             };
             header?: never;
             path?: never;
@@ -3033,6 +3102,35 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: components["schemas"]["PageDTOCourseStudyInformationVO"];
+                    };
+                };
+            };
+        };
+    };
+    changes: {
+        parameters: {
+            query: {
+                page: components["schemas"]["PageQuery"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["PageDTOChange"];
                     };
                 };
             };

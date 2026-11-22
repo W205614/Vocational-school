@@ -118,7 +118,7 @@ class PublicCourseMetadataTest {
         verify(catalogues).selectList(capture.capture());
         var query = capture.getValue();
         assertEquals(
-                Set.of("id", "name", "type", "parent_catalogue_id", "c_index", "media_duration", "trailer"),
+                Set.of("id", "name", "type", "parent_catalogue_id", "c_index", "media_duration", "media_id", "trailer"),
                 Set.of(query.getSqlSelect().split(",")));
         assertTrue(query.getSqlSegment().contains("course_id"));
         assertTrue(query.getSqlSegment().contains("deleted"));
@@ -129,13 +129,15 @@ class PublicCourseMetadataTest {
     @Test
     void localDirectoryProjectionNeverCopiesPrivateMediaOrExamFields() {
         when(catalogues.selectList(any()))
-                .thenReturn(List.of(node(1, 0, 1, 1, "chapter"), node(2, 1, 2, 1, "section")));
+                .thenReturn(List.of(node(1, 0, 1, 1, "chapter"), node(2, 1, 2, 1, "section"),
+                        node(3, 1, 2, 2, "missing video").setMediaId(0L)));
         var tree = directory.queryPublicCourseCatalogues(42L);
         var section = tree.getFirst().getSections().getFirst();
         assertEquals("section", section.getName());
         assertNull(section.getMediaId());
         assertNull(section.getMediaName());
         assertTrue(section.getTrailer());
+        assertFalse(tree.getFirst().getSections().get(1).getTrailer());
         assertFalse(Boolean.TRUE.equals(section.getCanUpdate()));
         assertNull(section.getSubjectNum());
         verifyNoInteractions(exams);

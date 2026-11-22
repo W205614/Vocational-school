@@ -414,6 +414,10 @@ export interface components {
              * @example 3280
              */
             duration: number;
+            difficulty?: string;
+            /** Format: int32 */
+            estimatedStudyMinutes?: number;
+            hasTrial?: boolean;
             /**
              * @description 课程封面地址
              * @default
@@ -491,6 +495,13 @@ export interface components {
             pageSize?: number;
             isAsc?: boolean;
             sortBy?: string;
+            /** @enum {string} */
+            difficulty?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            /** Format: int32 */
+            minStudyMinutes?: number;
+            /** Format: int32 */
+            maxStudyMinutes?: number;
+            hasTrial?: boolean;
             /**
              * @description 搜索关键字
              * @default

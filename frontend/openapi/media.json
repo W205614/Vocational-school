@@ -60,6 +60,119 @@
         }
       }
     },
+    "/api/v2/admin/media/trial-batches": {
+      "get": {
+        "tags": [
+          "trial-batch-controller"
+        ],
+        "operationId": "statuses",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "draft",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TrialBatchItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "trial-batch-controller"
+        ],
+        "operationId": "prepare",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrialBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TrialBatchItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/services/media/medias": {
       "get": {
         "tags": [
@@ -826,6 +939,61 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/media/medias/{mediaId}/references": {
+      "get": {
+        "tags": [
+          "媒资管理相关接口"
+        ],
+        "summary": "查询阻止媒资删除的课程引用",
+        "operationId": "references",
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CourseMediaReference"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1934,6 +2102,68 @@
           }
         }
       },
+      "TrialBatchRequest": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "draft": {
+            "type": "boolean"
+          },
+          "sectionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "TrialBatchItem": {
+        "type": "object",
+        "properties": {
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionName": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TrialStatus"
+          }
+        }
+      },
+      "TrialStatus": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "UNAVAILABLE",
+              "MISSING",
+              "PENDING",
+              "PROCESSING",
+              "READY",
+              "FAILED",
+              "REMOVED"
+            ]
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
       "MediaUploadResultDTO": {
         "type": "object",
         "default": null,
@@ -2004,33 +2234,6 @@
           "seconds": {
             "type": "integer",
             "format": "int32"
-          }
-        }
-      },
-      "TrialStatus": {
-        "type": "object",
-        "properties": {
-          "taskId": {
-            "type": "string"
-          },
-          "state": {
-            "type": "string",
-            "enum": [
-              "UNAVAILABLE",
-              "MISSING",
-              "PENDING",
-              "PROCESSING",
-              "READY",
-              "FAILED",
-              "REMOVED"
-            ]
-          },
-          "errorCode": {
-            "type": "string"
-          },
-          "version": {
-            "type": "string",
-            "pattern": "^-?[0-9]+$"
           }
         }
       },
@@ -2201,6 +2404,32 @@
             "items": {
               "$ref": "#/components/schemas/MediaVO"
             }
+          }
+        }
+      },
+      "CourseMediaReference": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseName": {
+            "type": "string"
+          },
+          "courseStatus": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionName": {
+            "type": "string"
+          },
+          "draft": {
+            "type": "boolean"
           }
         }
       },

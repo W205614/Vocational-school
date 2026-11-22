@@ -24,6 +24,10 @@ public class CourseVO {
     @Schema(description = "课程时长，单位秒", example = "3280")
     private Integer duration;
 
+    private String difficulty;
+    private Integer estimatedStudyMinutes;
+    private Boolean hasTrial;
+
     @Schema(description = "课程封面地址", example = "default-cover-url.jpg")
     private String coverUrl;
 

@@ -118,3 +118,7 @@ commerce|POST|/_modules/learning/internal/v1/learning-entitlements/order-details
 education|GET|/_modules/course/internal/v1/courses/taught
 education|POST|/_modules/media/internal/v2/media/trials/status
 support|GET|/_modules/course/internal/v1/course/{courseId}/trial-sections/{sectionId}
+support|GET|/_modules/course/internal/v1/course/media/{mediaId}/references
+support|POST|/_modules/course/internal/v1/course/media/deletion-guard
+support|GET|/_modules/course/internal/v1/course/{courseId}/trial-sections
+education|POST|/_modules/learning/internal/v1/learning/course-study-counts

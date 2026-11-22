@@ -8,22 +8,9 @@ import Status from '../../../../packages/shared/src/Status.vue';
 import EntityPicker from '../components/EntityPicker.vue';
 import CourseForm from '../components/CourseForm.vue';
 import CourseFacts from '../../../../packages/shared/src/CourseFacts.vue';
+import { canPrepareTrial, isPreparingTrial, prepareCourseTrials, trialLabels, type Trial } from '../courseTrials';
 
 type Issue = { area: string; sectionId?: string; message: string; blocking: boolean };
-const trialLabels = {
-  UNAVAILABLE: '源视频不可用',
-  MISSING: '待生成',
-  PENDING: '等待生成',
-  PROCESSING: '正在生成',
-  READY: '已就绪',
-  FAILED: '生成失败',
-  REMOVED: '片段已移除',
-};
-type Trial = {
-  sectionId: string;
-  sectionName: string;
-  status: { state: keyof typeof trialLabels; taskId?: string; errorCode?: string; version?: number };
-};
 type Publication = { preview: Row; issues: Issue[]; trials: Trial[] };
 const route = useRoute(),
   router = useRouter(),
@@ -31,6 +18,7 @@ const route = useRoute(),
   publicationTask = useTask(),
   formsTask = useTask(),
   publication = ref<Publication>(),
+  selectedTrials = ref<string[]>([]),
   trialPlayer = ref<{ sectionId: string; taskId: string; url: string }>(),
   previewOpen = ref(false),
   baseOpen = ref(false),
@@ -55,6 +43,8 @@ const sections = computed<Row[]>(() =>
 const videos = computed(() => sections.value.filter((s) => s.id && Number(s.type) === 2)),
   exams = computed(() => sections.value.filter((s) => s.id && Number(s.type) === 3));
 const dirty = computed(() => baseline.value !== JSON.stringify(chapters.value));
+const preparableTrials = computed(() => (publication.value?.trials ?? []).filter(canPrepareTrial));
+const preparationTargets = computed(() => preparableTrials.value.filter((trial) => selectedTrials.value.includes(trial.sectionId)));
 async function load(next = id.value) {
   if (!next) return;
   if (id.value && dirty.value) {
@@ -91,6 +81,7 @@ async function load(next = id.value) {
 }
 async function showPublication() {
   publication.value = undefined;
+  selectedTrials.value = [];
   trialPlayer.value = undefined;
   previewOpen.value = true;
   await refreshPublication();
@@ -124,12 +115,18 @@ async function updateTrial(trial: Trial) {
     await readPublication();
   });
 }
+async function prepareTrials(all: boolean) {
+  trialPlayer.value = undefined;
+  await publicationTask.run(async () => {
+    await prepareCourseTrials(id.value, true, all ? [] : preparationTargets.value.map((trial) => trial.sectionId));
+    selectedTrials.value = [];
+    await readPublication();
+  });
+}
 watch(
   [previewOpen, publication, publicationTask.busy, publicationTask.error],
   ([open, result, busy, error], _, onCleanup) => {
-    if (!open || busy || error || !result?.trials.some(
-      ({ status }) => status.state === 'PENDING' || status.state === 'PROCESSING',
-    )) return;
+    if (!open || busy || error || !result?.trials.some(isPreparingTrial)) return;
     const poll = setTimeout(refreshPublication, 1500);
     onCleanup(() => clearTimeout(poll));
   },
@@ -461,8 +458,18 @@ onMounted(() => {
         </section>
         <section v-if="publication.trials.length" aria-label="小节试看片段">
           <h3>小节试看片段</h3>
-          <ul class="publication-issues">
+          <div class="toolbar">
+            <el-button :disabled="publicationTask.busy.value || !preparableTrials.length" @click="prepareTrials(true)">
+              生成整门课程的试看
+            </el-button>
+            <el-button :disabled="publicationTask.busy.value || !preparationTargets.length" @click="prepareTrials(false)">
+              生成所选小节
+            </el-button>
+          </div>
+          <el-checkbox-group v-model="selectedTrials" :disabled="publicationTask.busy.value" aria-label="选择草稿小节">
+           <ul class="publication-issues">
             <li v-for="trial in publication.trials" :id="'course-trial-' + trial.sectionId" :key="trial.sectionId" tabindex="-1">
+              <el-checkbox v-if="canPrepareTrial(trial)" :value="trial.sectionId" :aria-label="'选择' + trial.sectionName" />
               <strong>{{ trial.sectionName }}</strong> · {{ trialLabels[trial.status.state] }}
               <el-button
                 v-if="trial.status.state === 'MISSING' || trial.status.state === 'READY' || trial.status.state === 'FAILED'"
@@ -484,7 +491,8 @@ onMounted(() => {
                 playsinline
               />
             </li>
-          </ul>
+           </ul>
+          </el-checkbox-group>
           <el-button :disabled="publicationTask.busy.value" @click="refreshPublication">刷新试看状态</el-button>
         </section>
         <section class="card publication-preview" aria-label="学生视角预览">

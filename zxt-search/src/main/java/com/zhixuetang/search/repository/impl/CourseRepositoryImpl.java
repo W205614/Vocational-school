@@ -46,7 +46,8 @@ public class CourseRepositoryImpl implements CourseRepository {
 
     private Script metadataScript(long id, Course course, Long version) {
         String mutation =
-                "for(entry in params.metadata.entrySet()){ctx._source[entry.getKey()]=entry.getValue();} if(ctx._source.sold==null)ctx._source.sold=0;";
+                "ctx._source.remove('difficulty');ctx._source.remove('estimatedStudyMinutes');ctx._source.remove('hasTrial');"
+                        + "for(entry in params.metadata.entrySet()){ctx._source[entry.getKey()]=entry.getValue();} if(ctx._source.sold==null)ctx._source.sold=0;";
         if (version == null) return script(mutation, Map.of("metadata", metadata(id, course)));
         return script(
                 "if(ctx._source.metadataVersion==null || ctx._source.metadataVersion<=params.version){"

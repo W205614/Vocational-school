@@ -1354,6 +1354,16 @@
             "description": "课程时长，单位秒",
             "example": 3280
           },
+          "difficulty": {
+            "type": "string"
+          },
+          "estimatedStudyMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasTrial": {
+            "type": "boolean"
+          },
           "coverUrl": {
             "type": "string",
             "default": "",
@@ -1483,6 +1493,25 @@
           },
           "sortBy": {
             "type": "string"
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "BEGINNER",
+              "INTERMEDIATE",
+              "ADVANCED"
+            ]
+          },
+          "minStudyMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxStudyMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasTrial": {
+            "type": "boolean"
           },
           "keyword": {
             "type": "string",

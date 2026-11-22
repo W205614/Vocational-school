@@ -67,7 +67,7 @@ for name in args.services:
             external = '/api/v2/admin/user' + path
         elif name == 'course' and path.startswith('/courses/publication/'):
             external = '/api/v2/admin/course' + path
-        elif name == 'media' and path == '/trial-previews':
+        elif name == 'media' and path in ('/trial-previews', '/trial-batches', '/medias/{mediaId}/references'):
             external = '/api/v2/admin/media' + path
         elif name == 'course' and (
             path == '/study-information' or path.startswith('/study-information/')

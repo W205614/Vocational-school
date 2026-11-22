@@ -7,6 +7,7 @@ import { useOperations } from '../../../../packages/shared/src/operations';
 import { useTask, query, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
 import { teacherCourses } from '../teacherCourses';
+import { nextTeacherTask, teacherQueuePath, type TeacherQueue } from '../teacherQueue';
 const route = useRoute(),
   session = useSession(),
   task = useTask(),
@@ -31,6 +32,8 @@ const route = useRoute(),
   practicePage = ref(pageInQuery(route.query.practicePage)),
   practiceTotal = ref(0),
   current = ref<Row>(),
+  processedQuestion = ref(''),
+  nextQuestionMessage = ref(''),
   lastQuestionId = ref(''),
   replies = ref<Row[]>([]),
   reply = ref(''),
@@ -38,6 +41,12 @@ const route = useRoute(),
   replyTotal = ref(0),
   repliesReady = ref(false);
 type Section = 'learning' | 'exams' | 'questions' | 'grading' | 'practice';
+const queueNames: Record<TeacherQueue, string> = {
+  grading: '待评分答卷', questions: '待答问题', practice: '待反馈实操作业',
+};
+const queueSummaries = reactive<Record<TeacherQueue, { total: number; oldest?: string }>>({
+  grading: { total: 0 }, questions: { total: 0 }, practice: { total: 0 },
+});
 const workCourses = computed(() => {
   const options = new Map<string, string>(courses.value.map((course) => [String(course.id), course.name]));
   for (const id of gradeCourseIds.value)
@@ -118,6 +127,7 @@ async function loadSection(section: Section) {
     course = isLearning ? courseId.value : workCourse.value,
     student = studentId.value;
   clear(section);
+  if (!isLearning) queueSummaries[section] = { total: 0 };
   reads[section].error = '';
   reads[section].busy = true;
   if (
@@ -135,17 +145,20 @@ async function loadSection(section: Section) {
       : section === 'exams'
         ? '/teacher/exam-statistics?' +
           query({ courseId: course, studentId: student, pageNo: examPage.value, pageSize: 20 })
-        : section === 'questions'
-          ? '/learning-hub/teaching/questions?' +
-            query({ courseId: course, pendingOnly: pendingOnly.value, pageNo: questionPage.value, pageSize: 20 })
-          : section === 'grading'
-            ? '/teacher/exam-attempts/page?' +
-              query({ courseId: course, pageNo: gradePage.value, pageSize: 20 })
-            : '/teacher/learning-hub/practice/pending?' +
-              query({ courseId: course, pageNo: practicePage.value, pageSize: 20 });
+        : teacherQueuePath(section, {
+          courseId: course, pageSize: 20,
+          pageNo: section === 'questions' ? questionPage.value : section === 'grading' ? gradePage.value : practicePage.value,
+          pendingOnly: section === 'questions' ? pendingOnly.value : undefined,
+        });
   try {
     const data = await get<Row>(path);
     if (revision !== revisions[section]) return;
+    if (!isLearning) {
+      queueSummaries[section] = {
+        total: Number(section === 'questions' ? data.pendingTotal ?? (pendingOnly.value ? data.total : 0) : data.total),
+        oldest: data.oldestPendingAt ?? undefined,
+      };
+    }
     if (section === 'learning') learning.value = data;
     else if (section === 'exams') stats.value = data;
     else if (section === 'questions') {
@@ -206,6 +219,7 @@ async function answers(row: Row) {
   if (current.value?.id !== row.id) {
     replyPage.value = 1;
     reply.value = '';
+    nextQuestionMessage.value = '';
   }
   current.value = row;
   lastQuestionId.value = String(row.id);
@@ -227,6 +241,15 @@ async function answers(row: Row) {
     }
   });
 }
+async function nextQuestion() {
+  const result = await task.run(async () => ({ next: await nextTeacherTask('questions', workCourse.value) }));
+  if (!result) return;
+  if (!result.next) {
+    nextQuestionMessage.value = '当前范围没有其他待答问题';
+    return;
+  }
+  await answers(result.next);
+}
 function returnToQuestionQueue() {
   const control = document.getElementById('teacher-question-' + lastQuestionId.value);
   (control || document.getElementById('teacher-questions-heading'))?.focus();
@@ -242,6 +265,7 @@ async function respond() {
     return op.status === 'SUCCEEDED';
   });
   if (ok && current.value) {
+    processedQuestion.value = String(current.value.id);
     reply.value = '';
     await Promise.all([answers(current.value), loadSection('questions')]);
   }
@@ -257,6 +281,7 @@ async function accept(row: Row) {
     return op.status === 'SUCCEEDED';
   });
   if (ok && current.value) {
+    processedQuestion.value = String(current.value.id);
     current.value = { ...current.value, acceptedReplyId: row.id };
     await Promise.all([load(), loadSection('questions')]);
     task.message.value = '回答已采纳，积分按规则到账';
@@ -299,6 +324,17 @@ onMounted(async () => {
           <el-option v-for="[id, name] in workCourses" :key="id" :value="id" :label="name" />
         </el-select>
       </div>
+      <dl v-if="session.role === 3" aria-label="待办概览" class="teacher-summary queue-summary">
+        <div v-for="(label, queue) in queueNames" :key="queue">
+          <dt>{{ label }}</dt>
+          <dd v-if="reads[queue].busy">加载中</dd>
+          <dd v-else-if="reads[queue].error">暂时无法获取</dd>
+          <dd v-else>
+            <strong>{{ queueSummaries[queue].total }} 项</strong>
+            <small v-if="queueSummaries[queue].oldest">最早等待自 {{ displayTime(queueSummaries[queue].oldest) }}</small>
+          </dd>
+        </div>
+      </dl>
       <h3>待评分答卷</h3>
       <Status :busy="reads.grading.busy" :error="reads.grading.error" />
       <el-button v-if="reads.grading.error" @click="loadSection('grading')">重试待评分列表</el-button>
@@ -540,8 +576,12 @@ onMounted(async () => {
           @click="respond"
           :disabled="!reply.trim() || !repliesReady || task.busy.value"
           >发布解答</el-button
-        ></template
-      ><Status :busy="task.busy.value" :error="task.error.value"
+        >
+        <el-button v-if="processedQuestion === String(current.id)" @click="nextQuestion" :disabled="task.busy.value">
+          处理下一条待答问题
+        </el-button>
+        </template
+      ><Status :busy="task.busy.value" :error="task.error.value" :message="nextQuestionMessage"
     /></el-dialog>
   </section>
 </template>
@@ -551,4 +591,7 @@ onMounted(async () => {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.queue-summary { margin-block: 1rem; }
+.queue-summary dd { margin: .25rem 0 0; }
+.queue-summary small { display: block; }
 </style>

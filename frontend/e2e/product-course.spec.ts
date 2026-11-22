@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -60,6 +61,16 @@ async function verifyClip(page: Page, url: string) {
   expect((await response.body()).subarray(4, 8).toString()).toBe('ftyp');
 }
 
+function deleteMedia(page: Page, mediaId: string, token: string | null) {
+  return page.request.delete('/api/v2/admin/media/medias/' + mediaId, {
+    headers: { Authorization: 'Bearer ' + token, 'Idempotency-Key': crypto.randomUUID() },
+  });
+}
+
+function mediaRow(page: Page, mediaId: string) {
+  return page.getByRole('row').filter({ has: page.getByRole('cell', { name: mediaId, exact: true }) });
+}
+
 test('course publication gates trial generation and preserves draft, clip, and handout permissions', async ({
   page,
   browser,
@@ -76,8 +87,9 @@ test('course publication gates trial generation and preserves draft, clip, and h
     const replacement = await uploadVideo(admin, replacementVideo);
     expect(replacement.id).not.toBe(media.id);
     const categories = await api(admin, 'GET', '/services/course/categorys/list?status=1');
+    const courseName = 'Product course ' + fixture.marker + ' ' + Date.now().toString(36);
     const course = await post(admin, '/admin/course/courses/baseInfo/save', {
-      name: 'Product course ' + fixture.marker + ' ' + Date.now().toString(36),
+      name: courseName,
       thirdCateId: categories[0].children[0].children[0].id,
       coverUrl: '/course-preview-test.png',
       free: true,
@@ -162,8 +174,21 @@ test('course publication gates trial generation and preserves draft, clip, and h
     expect(blocked.ok()).toBeFalsy();
     expect(JSON.stringify(await blocked.json())).toContain('试看片段尚未就绪');
 
-    const prepareTrial = async () => {
-      await trial.getByRole('button', { name: '生成试看片段' }).click();
+    const draftDeletion = await deleteMedia(admin, media.id, adminToken);
+    expect(draftDeletion.status()).toBe(202);
+    const { data: pendingDeletion } = await draftDeletion.json();
+    const operationPath = '/operations/media/' + pendingDeletion.operationId;
+    await expect.poll(async () => (await api(admin, 'GET', operationPath)).status, { timeout: 20_000 })
+      .toBe('FAILED');
+    expect((await api(admin, 'GET', operationPath)).errorMessage).toContain('媒资仍被课程引用');
+
+    const prepareTrial = async (entireCourse: boolean) => {
+      if (entireCourse) {
+        await trial.getByRole('button', { name: '生成整门课程的试看', exact: true }).click();
+      } else {
+        await trial.getByRole('checkbox', { name: '选择试点视频', exact: true }).check();
+        await trial.getByRole('button', { name: '生成所选小节', exact: true }).click();
+      }
       const showClip = trial.getByRole('button', { name: '预览片段' });
       await expect(showClip).toBeEnabled({ timeout: 45_000 });
       await showClip.click();
@@ -175,7 +200,7 @@ test('course publication gates trial generation and preserves draft, clip, and h
       return url;
     };
 
-    const firstClip = await prepareTrial();
+    const firstClip = await prepareTrial(true);
     const wrongScope = new URL(firstClip, admin.url());
     wrongScope.searchParams.delete('previewCourse');
     expect((await admin.request.get(wrongScope.toString())).status()).toBe(403);
@@ -188,7 +213,7 @@ test('course publication gates trial generation and preserves draft, clip, and h
     await expect(trial).toContainText('待生成');
     await expect(trial.locator('video')).toHaveCount(0);
     await expect(preview.getByRole('button', { name: '确认上架' })).toBeDisabled();
-    const draftClip = await prepareTrial();
+    const draftClip = await prepareTrial(false);
     expect(draftClip.split('?')[0]).not.toBe(firstClip.split('?')[0]);
     await preview.getByRole('button', { name: '确认上架' }).click();
     await expect(admin).toHaveURL(/\/courses$/);
@@ -241,6 +266,101 @@ test('course publication gates trial generation and preserves draft, clip, and h
     await page.getByRole('tab', { name: '随堂讲义', exact: true }).click();
     await expect(page.getByText(privateHandout, { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+
+    await admin.goto('/media');
+    await mediaRow(admin, replacement.id).getByRole('button', { name: '删除', exact: true }).click();
+    const deletionDialog = admin.getByRole('dialog', { name: '删除媒资前检查引用' });
+    await expect(deletionDialog.getByRole('listitem').filter({ hasText: courseName })).toContainText('已上架');
+    await expect(deletionDialog.getByRole('button', { name: '确认删除视频' })).toBeDisabled();
+    expect((await deleteMedia(admin, replacement.id, adminToken)).ok()).toBeFalsy();
+    await post(admin, service + '/downShelf', { id: course.id });
+    await deletionDialog.getByRole('button', { name: '刷新引用' }).click();
+    await expect(deletionDialog.getByRole('listitem').filter({ hasText: courseName + ' · 试点视频 · 已下架' })).toBeVisible();
+    await expect(deletionDialog.getByRole('button', { name: '确认删除视频' })).toBeDisabled();
+    const retained = await api(page, 'POST', '/services/media/medias/signature/play?sectionId=' + video);
+    expect(retained.playUrl).toContain('/local-content/');
+    expect((await page.request.get(retained.playUrl, { headers: { Range: 'bytes=0-15' } })).status()).toBe(206);
+
+    await admin.goto('/media');
+    const unused = mediaRow(admin, media.id);
+    await unused.getByRole('button', { name: '删除', exact: true }).click();
+    await expect(deletionDialog).toContainText('目前没有课程引用');
+    await deletionDialog.getByRole('button', { name: '确认删除视频' }).click();
+    await expect(unused).toHaveCount(0, { timeout: 30_000 });
+    const stale = await admin.request.post('/api/v2' + service + '/media/save/' + course.id, {
+      headers: { Authorization: 'Bearer ' + adminToken, 'Idempotency-Key': crypto.randomUUID() },
+      data: [{ cataId: video, mediaId: media.id, videoName: 'removed.webm', mediaDuration: 2, trailer: true }],
+    });
+    expect(stale.status()).toBe(409);
+    expect(JSON.stringify(await stale.json())).toContain('关联的视频已进入删除流程');
+  } finally {
+    await adminContext.close();
+  }
+});
+
+test('historical published videos can be prepared by section or entire course without taking the course offline', async ({
+  page, browser,
+}, info) => {
+  test.skip(info.project.name !== 'student');
+  test.setTimeout(120_000);
+  const adminContext = await browser.newContext({
+    baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501',
+  });
+  const admin = await adminContext.newPage();
+  const path = '/admin/media/trial-batches';
+  const courseId = fixture.legacyTrialCourse;
+  try {
+    await login(admin, 'admin', '/media');
+    const first = await uploadVideo(admin, fixtureVideo);
+    const second = await uploadVideo(admin, replacementVideo);
+    for (const [source, slot] of [[first, 'first'], [second, 'second']] as const) {
+      execFileSync(process.env.ZXT_PYTHON || 'python', [
+        process.env.ZXT_MEDIA_FIXTURE_SCRIPT || '../deploy/acceptance/attach_browser_media.py',
+        source.id, '--trial-slot', slot,
+      ]);
+    }
+
+    await admin.goto('/courses');
+    await admin.getByRole('textbox', { name: '按课程名称搜索' }).fill(fixture.legacyTrialName);
+    await admin.getByRole('textbox', { name: '按课程名称搜索' }).press('Enter');
+    await admin.getByRole('row').filter({ hasText: fixture.legacyTrialName })
+      .getByRole('button', { name: '准备公开试看' }).click();
+    const dialog = admin.getByRole('dialog', { name: '准备公开试看' });
+    const firstRow = dialog.getByRole('listitem').filter({ hasText: 'Legacy first' });
+    const secondRow = dialog.getByRole('listitem').filter({ hasText: 'Legacy second' });
+    const unavailable = dialog.getByRole('listitem').filter({ hasText: 'Legacy missing source' });
+    await expect(firstRow).toContainText('待生成');
+    await expect(secondRow).toContainText('待生成');
+    await expect(unavailable).toContainText('源视频不可用');
+    await dialog.getByRole('checkbox', { name: '选择Legacy first', exact: true }).check();
+    await dialog.getByRole('button', { name: '生成所选小节', exact: true }).click();
+    await expect(firstRow).toContainText('已就绪', { timeout: 45_000 });
+    await expect(secondRow).toContainText('待生成');
+    const resultsPath = path + '?courseId=' + courseId + '&draft=false';
+    const prepared = await api(admin, 'GET', resultsPath);
+    expect(prepared[0].sectionId).toBe(fixture.legacyTrialFirst);
+    expect(prepared[1].sectionId).toBe(fixture.legacyTrialSecond);
+    await dialog.getByRole('button', { name: '生成整门课程的试看', exact: true }).click();
+    await expect(secondRow).toContainText('已就绪', { timeout: 45_000 });
+    const ready = await api(admin, 'GET', resultsPath);
+    expect(ready.map((item: any) => item.status.state)).toEqual(['READY', 'READY', 'UNAVAILABLE']);
+    expect(ready[0].status.taskId).toBe(prepared[0].status.taskId);
+    const published = await page.request.get('/api/v2/public/courses/' + courseId);
+    expect(published.status()).toBe(200);
+    const directory = await page.request.get('/api/v2/public/courses', {
+      params: { keyword: fixture.legacyTrialName, hasTrial: true },
+    });
+    expect(directory.status()).toBe(200);
+    const { data: publicCourses } = await directory.json();
+    expect(publicCourses.list).toEqual(expect.arrayContaining([expect.objectContaining({ id: courseId, hasTrial: true })]));
+    await login(page, 'student', '/courses/' + courseId);
+    const studentTicket = await api(page, 'POST', '/services/media/medias/signature/play?sectionId=' + fixture.legacyTrialSecond);
+    expect(studentTicket.state).toBe('READY');
+    expect(studentTicket.taskId).toBe(ready[1].status.taskId);
+    await verifyClip(page, studentTicket.playUrl);
+    const token = await page.evaluate(() => sessionStorage.getItem('school-token'));
+    const denied = await page.request.get('/api/v2' + resultsPath, { headers: { Authorization: 'Bearer ' + token } });
+    expect(denied.status()).toBe(403);
   } finally {
     await adminContext.close();
   }

@@ -1,5 +1,10 @@
 package com.zhixuetang.course.service;
 
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.zhixuetang.api.client.learning.LearningClient;
+import com.zhixuetang.api.dto.leanring.CourseStudyCounts;
+import com.zhixuetang.common.autoconfigure.reliability.OutboxStore;
+import com.zhixuetang.common.constants.MqConstants;
 import com.zhixuetang.common.domain.dto.PageDTO;
 import com.zhixuetang.common.domain.query.PageQuery;
 import com.zhixuetang.common.exceptions.BadRequestException;
@@ -8,6 +13,7 @@ import com.zhixuetang.course.constants.CourseStatus;
 import com.zhixuetang.course.domain.dto.CourseStudyInformationPatch;
 import com.zhixuetang.course.domain.vo.CourseStudyInformationVO;
 import com.zhixuetang.course.domain.vo.CourseStudyInformationVO.Field;
+import com.zhixuetang.course.domain.vo.CourseStudyInformationVO.Sort;
 import com.zhixuetang.course.mapper.CourseDraftMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -17,17 +23,27 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class CourseStudyInformationService {
+    public static final String PUBLISHED_VIDEO_SECTIONS = """
+            FROM course_catalogue video
+            JOIN course_catalogue chapter ON chapter.id = video.parent_catalogue_id
+              AND chapter.course_id = video.course_id
+              AND chapter.parent_catalogue_id = 0 AND chapter.type = 1 AND chapter.deleted = 0
+            WHERE video.type = 2 AND video.deleted = 0
+            """;
     private static final String INVENTORY = """
             WITH video_estimates AS (
                 SELECT video.course_id, CEIL(SUM(video.media_duration) / 60) AS minutes
-                FROM course_catalogue video
-                JOIN course_catalogue chapter ON chapter.id = video.parent_catalogue_id
-                  AND chapter.course_id = video.course_id
-                  AND chapter.parent_catalogue_id = 0 AND chapter.type = 1 AND chapter.deleted = 0
-                WHERE video.type = 2 AND video.deleted = 0
+            """ + PUBLISHED_VIDEO_SECTIONS + """
                 GROUP BY video.course_id
                 HAVING MIN(video.media_duration) > 0
             ), inventory AS (
@@ -45,6 +61,8 @@ public class CourseStudyInformationService {
                 WHERE c.deleted = 0 AND c.status IN (2, 4)
             )
             """;
+    private static final CourseStudyCounts NO_COUNTS = new CourseStudyCounts(0, 0);
+    private static final int COUNTS_BATCH_SIZE = 250;
     private static final RowMapper<CourseStudyInformationVO> ROW = (row, rowNumber) -> {
         var missing = new ArrayList<Field>();
         if (row.getBoolean("missing_outcomes")) missing.add(Field.OUTCOMES);
@@ -56,20 +74,27 @@ public class CourseStudyInformationService {
                 row.getLong("id"), row.getString("name"), row.getInt("status"),
                 row.getString("learning_outcomes"), row.getString("prerequisites"),
                 row.getString("difficulty"), row.getObject("estimated_study_minutes", Integer.class),
-                row.getObject("video_minutes", Long.class), row.getString("practice_overview"), missing);
+                row.getObject("video_minutes", Long.class), row.getString("practice_overview"), missing, null);
     };
 
     private final NamedParameterJdbcTemplate jdbc;
     private final CourseDraftMapper drafts;
+    private final LearningClient learning;
+    private final CourseStudyInformationAudit audit;
+    private final OutboxStore outbox;
 
-    public CourseStudyInformationService(JdbcTemplate jdbc, CourseDraftMapper drafts) {
+    public CourseStudyInformationService(JdbcTemplate jdbc, CourseDraftMapper drafts, LearningClient learning,
+                                         CourseStudyInformationAudit audit, OutboxStore outbox) {
         this.jdbc = new NamedParameterJdbcTemplate(jdbc);
         this.drafts = drafts;
+        this.learning = learning;
+        this.audit = audit;
+        this.outbox = outbox;
     }
 
     @Transactional(readOnly = true)
     public PageDTO<CourseStudyInformationVO> inventory(
-            int pageNo, int pageSize, String keyword, Field missing) {
+            int pageNo, int pageSize, String keyword, Field missing, Sort sort) {
         int offset = new PageQuery().setPageNo(pageNo).setPageSize(pageSize).from();
         var params = new MapSqlParameterSource()
                 .addValue("keyword", keyword)
@@ -85,10 +110,40 @@ public class CourseStudyInformationService {
             case PRACTICE -> "missing_practice";
         };
         String from = " FROM inventory WHERE LOCATE(:keyword, name) > 0 AND (" + missingCondition + ")";
+        if (sort != Sort.NEWEST) return rankedInventory(from, params, offset, pageSize, sort);
         long total = jdbc.queryForObject(INVENTORY + "SELECT COUNT(*)" + from, params, Long.class);
         var list = jdbc.query(
                 INVENTORY + "SELECT *" + from + " ORDER BY id DESC LIMIT :size OFFSET :offset", params, ROW);
-        return new PageDTO<>(total, (total + pageSize - 1) / pageSize, list);
+        var counts = counts(list.stream().map(CourseStudyInformationVO::id).toList());
+        return new PageDTO<>(total, (total + pageSize - 1) / pageSize,
+                list.stream().map(row -> row.withCounts(counts.getOrDefault(row.id(), NO_COUNTS))).toList());
+    }
+
+    private PageDTO<CourseStudyInformationVO> rankedInventory(String from, MapSqlParameterSource params,
+                                                              int offset, int size, Sort sort) {
+        var matching = jdbc.queryForList(INVENTORY + "SELECT id" + from, params, Long.class);
+        long total = matching.size();
+        long pages = (total + size - 1) / size;
+        if (offset >= total) return new PageDTO<>(total, pages, List.of());
+        var counts = counts(matching);
+        var pageIds = matching.stream().sorted(Comparator.<Long>comparingLong(id -> {
+            var course = counts.getOrDefault(id, NO_COUNTS);
+            return sort == Sort.ENROLLED ? course.enrolled() : course.started();
+        }).thenComparingLong(Long::longValue).reversed()).skip(offset).limit(size).toList();
+        var rows = jdbc.query(INVENTORY + "SELECT * FROM inventory WHERE id IN (:ids)",
+                        new MapSqlParameterSource("ids", pageIds), ROW).stream()
+                .collect(Collectors.toMap(CourseStudyInformationVO::id, Function.identity()));
+        return new PageDTO<>(total, pages, pageIds.stream()
+                .map(id -> rows.get(id).withCounts(counts.getOrDefault(id, NO_COUNTS))).toList());
+    }
+
+    private Map<Long, CourseStudyCounts> counts(List<Long> ids) {
+        var result = new HashMap<Long, CourseStudyCounts>();
+        for (int start = 0; start < ids.size(); start += COUNTS_BATCH_SIZE) {
+            int end = Math.min(ids.size(), start + COUNTS_BATCH_SIZE);
+            result.putAll(learning.courseStudyCounts(Set.copyOf(ids.subList(start, end))));
+        }
+        return result;
     }
 
     public CourseStudyInformationVO detail(long id) {
@@ -124,6 +179,7 @@ public class CourseStudyInformationService {
         if (!content.isEmpty() && content.getFirst()) {
             throw new ConflictException("公开课程内容已删除，请核对课程状态");
         }
+        var previous = audit.snapshot(id);
         params.addValue("userId", userId)
                 .addValue("outcomes", outcomes)
                 .addValue("prerequisites", prerequisites)
@@ -167,6 +223,10 @@ public class CourseStudyInformationService {
                     practice_overview = COALESCE(:practice, practice_overview),
                     updater = :userId
                 """, params);
+        if (audit.recordChanges(id, userId, previous)) {
+            outbox.enqueue("course:" + id + ":study-information:" + IdWorker.getId(),
+                    MqConstants.Exchange.COURSE_EXCHANGE, MqConstants.Key.COURSE_STUDY_INFORMATION_KEY, id);
+        }
         return detail(id);
     }
 

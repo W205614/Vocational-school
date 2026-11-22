@@ -26,6 +26,7 @@ import com.zhixuetang.course.mapper.CourseCataSubjectMapper;
 import com.zhixuetang.course.mapper.CourseCatalogueDraftMapper;
 import com.zhixuetang.course.mapper.CourseCatalogueMapper;
 import com.zhixuetang.course.mapper.CourseDraftMapper;
+import com.zhixuetang.course.service.CourseMediaDeletionGuard;
 import com.zhixuetang.course.service.ICourseCataSubjectDraftService;
 import com.zhixuetang.course.service.ICourseCatalogueDraftService;
 import com.zhixuetang.course.service.ICourseCatalogueService;
@@ -67,6 +68,7 @@ public class CourseCatalogueDraftServiceImpl
     @Autowired private CourseCatalogueDraftMapper courseCatalogueDraftMapper;
 
     @Autowired private CourseDraftMapper courseDraftMapper;
+    @Autowired private CourseMediaDeletionGuard mediaDeletionGuard;
 
     @Autowired private ExamClient examClient;
 
@@ -177,6 +179,7 @@ public class CourseCatalogueDraftServiceImpl
         }
 
         // 4.媒资设置到小节信息中
+        mediaDeletionGuard.requireCanReference(courseMediaDTOS.stream().map(CourseMediaDTO::getMediaId).toList());
         List<CourseCatalogueDraft> catalogueDrafts =
                 BeanUtils.copyList(
                         courseMediaDTOS,

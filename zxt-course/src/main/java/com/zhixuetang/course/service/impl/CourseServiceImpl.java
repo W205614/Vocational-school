@@ -138,6 +138,24 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         } else {
             courseDTO.setTeacher(0L);
         }
+        jdbc.query("""
+                SELECT info.difficulty,
+                    COALESCE(NULLIF(info.estimated_study_minutes, 0), stats.minutes) AS minutes,
+                    COALESCE(stats.has_trial, 0) AS has_trial
+                FROM (
+                    SELECT CASE WHEN MIN(video.media_duration) > 0 THEN CEIL(SUM(video.media_duration) / 60) END AS minutes,
+                           MAX(video.trailer = 1 AND video.media_id > 0) AS has_trial
+                """ + CourseStudyInformationService.PUBLISHED_VIDEO_SECTIONS + """
+                    AND video.course_id = ?
+                ) stats LEFT JOIN course_content info ON info.id = ? AND info.deleted = 0
+                """, (org.springframework.jdbc.core.RowCallbackHandler) row -> {
+            String difficulty = row.getString("difficulty");
+            if (difficulty != null && Set.of("BEGINNER", "INTERMEDIATE", "ADVANCED").contains(difficulty)) {
+                courseDTO.setDifficulty(difficulty);
+            }
+            courseDTO.setEstimatedStudyMinutes(row.getObject("minutes", Integer.class));
+            courseDTO.setHasTrial(row.getBoolean("has_trial"));
+        }, id, id);
 
         // 销量由搜索侧独立的绝对计数投影发布。元信息重建不依赖交易服务，
         // 以便升级时暂停财务处理，同时保留课程与教师信息的查询能力。

@@ -38,6 +38,10 @@ public class CourseDTO {
     @Schema(description = "视频播放时长")
     private Integer duration;
 
+    private String difficulty;
+    private Integer estimatedStudyMinutes;
+    private Boolean hasTrial;
+
     @Schema(description = "课程有效期天数")
     private Integer validDuration;
 

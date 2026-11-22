@@ -1107,6 +1107,19 @@ export interface components {
             /** Format: int32 */
             nextOffset?: number;
         };
+        PendingExamPage: {
+            list?: {
+                [key: string]: unknown;
+            }[];
+            total?: string;
+            /** Format: int32 */
+            pageNo?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            courseIds?: string[];
+            /** Format: date-time */
+            oldestPendingAt?: string;
+        };
         /**
          * @description 通用响应结果
          * @default null
@@ -2005,9 +2018,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: {
-                            [key: string]: unknown;
-                        };
+                        data: components["schemas"]["PendingExamPage"];
                     };
                 };
             };

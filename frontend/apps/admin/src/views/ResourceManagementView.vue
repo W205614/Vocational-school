@@ -10,6 +10,7 @@ import EntityPicker from '../components/EntityPicker.vue';
 import { useOperations } from '../../../../packages/shared/src/operations';
 import LocalUpload from './LocalUpload.vue';
 import CourseForm from '../components/CourseForm.vue';
+import PublishedTrialBatch from '../components/PublishedTrialBatch.vue';
 const ops = useOperations();
 const credential = ref<TemporaryCredential>();
 async function copyCredential() {
@@ -33,6 +34,13 @@ onBeforeUnmount(() => {
 const props = defineProps<{ resource: string }>();
 const schema = computed(() => resources[props.resource]!);
 const task = useTask();
+const mediaDeleteTask = useTask();
+type CourseMediaReference = {
+  courseId: string; courseName: string; courseStatus: number; sectionId: string; sectionName: string; draft: boolean;
+};
+const mediaToDelete = ref<Row>();
+const mediaReferences = ref<CourseMediaReference[]>();
+const publishedTrialCourse = ref<Row>();
 const rows = ref<Row[]>([]);
 const page = ref(1);
 const total = ref(0);
@@ -214,22 +222,31 @@ async function action(row: Row, item: Action) {
 }
 async function remove(row: Row) {
   const removed = await task.run(async () => {
-    if (props.resource === 'media') {
-      const result = await ops.begin(
-        'media',
-        '删除视频',
-        schema.value.remove!(row),
-        undefined,
-        'DELETE',
-      );
-      if (result.status !== 'SUCCEEDED') {
-        task.message.value = '正在处理，可在操作记录中查询';
-        return false;
-      }
-    } else await write(schema.value.remove!(row), 'DELETE', undefined, newKey());
+    await write(schema.value.remove!(row), 'DELETE', undefined, newKey());
     return true;
   });
   if (removed) await load();
+}
+async function checkMediaReferences(row: Row) {
+  mediaToDelete.value = row;
+  mediaReferences.value = undefined;
+  await mediaDeleteTask.run(async () => {
+    mediaReferences.value = await get<CourseMediaReference[]>('/admin/media/medias/' + row.id + '/references');
+  });
+}
+async function removeMedia() {
+  const row = mediaToDelete.value;
+  if (!row || mediaReferences.value?.length !== 0) return;
+  const result = await mediaDeleteTask.run(() =>
+    ops.begin('media', '删除视频', schema.value.remove!(row), undefined, 'DELETE'),
+  );
+  if (!result) {
+    mediaReferences.value = undefined;
+    return;
+  }
+  mediaToDelete.value = undefined;
+  if (result.status === 'SUCCEEDED') await load();
+  else task.message.value = '正在处理，可在操作记录中查询';
 }
 watch(
   [() => props.resource, directFilter],
@@ -358,7 +375,11 @@ onMounted(load);
             v-if="resource === 'courses' && [1, 3].includes(Number(row.status))"
             :to="'/course-editor?courseId=' + row.id"
             >配置章节</RouterLink
-          ><el-popconfirm v-if="schema.remove" title="确认删除这条记录？" @confirm="remove(row)"
+          ><el-button v-if="resource === 'courses' && [2, 4].includes(Number(row.status))" link @click="publishedTrialCourse = row">
+            准备公开试看
+          </el-button
+          ><el-button v-if="resource === 'media'" @click="checkMediaReferences(row)">删除</el-button
+          ><el-popconfirm v-else-if="schema.remove" title="确认删除这条记录？" @confirm="remove(row)"
             ><template #reference><el-button>删除</el-button></template></el-popconfirm
           ><el-popconfirm
             v-for="item in schema.actions"
@@ -388,6 +409,38 @@ onMounted(load);
       layout="prev,pager,next"
       @current-change="load"
     />
+    <el-dialog v-if="publishedTrialCourse" :model-value="true" title="准备公开试看" width="min(660px, calc(100vw - 2rem))"
+      @update:model-value="(value: boolean) => { if (!value) publishedTrialCourse = undefined; }">
+      <h3>{{ publishedTrialCourse.name }}</h3>
+      <PublishedTrialBatch :key="publishedTrialCourse.id" :course-id="String(publishedTrialCourse.id)" />
+    </el-dialog>
+    <el-dialog v-if="mediaToDelete" :model-value="true" title="删除媒资前检查引用" width="min(660px, calc(100vw - 2rem))"
+      :show-close="!mediaDeleteTask.busy.value" :close-on-click-modal="!mediaDeleteTask.busy.value"
+      :close-on-press-escape="!mediaDeleteTask.busy.value"
+      @update:model-value="(value: boolean) => { if (!value) mediaToDelete = undefined; }">
+      <p><strong>{{ mediaToDelete.filename }}</strong></p>
+      <Status :busy="mediaDeleteTask.busy.value" :error="mediaDeleteTask.error.value" />
+      <template v-if="mediaReferences?.length">
+        <p>该视频仍被以下课程使用。请先替换对应小节的媒资，再刷新引用。</p>
+        <p v-if="mediaReferences.some((reference) => !reference.draft)" class="muted">
+          下架课程里的正式引用也保留，已报名学生可能仍在学习。
+        </p>
+        <ul>
+          <li v-for="reference in mediaReferences" :key="`${reference.draft}-${reference.sectionId}`">
+            {{ reference.courseName }} · {{ reference.sectionName }} ·
+            {{ reference.draft ? '草稿' : courseStatusLabels[reference.courseStatus] }}
+            <RouterLink v-if="reference.draft" :to="'/course-editor?courseId=' + reference.courseId">配置章节</RouterLink>
+          </li>
+        </ul>
+      </template>
+      <p v-else-if="mediaReferences?.length === 0">目前没有课程引用这段视频。删除后，已有的试看片段也会移除。</p>
+      <template #footer>
+        <el-button :disabled="mediaDeleteTask.busy.value" @click="checkMediaReferences(mediaToDelete)">刷新引用</el-button>
+        <el-button type="danger" :disabled="mediaDeleteTask.busy.value || mediaReferences?.length !== 0" @click="removeMedia">
+          确认删除视频
+        </el-button>
+      </template>
+    </el-dialog>
     <el-dialog
       :model-value="!!form"
       @update:model-value="
