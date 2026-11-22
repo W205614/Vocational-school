@@ -62,7 +62,8 @@ public class TeacherLearningHubController {
         summary.put(
                 "unansweredQuestions",
                 jdbc.queryForObject(
-                        "SELECT COUNT(*) FROM interaction_question q WHERE q.course_id=? AND q.hidden=0 AND q.accepted_reply_id IS NULL AND NOT EXISTS(SELECT 1 FROM interaction_reply r WHERE r.question_id=q.id AND r.answer_id IS NULL AND r.hidden=0)",
+                        "SELECT COUNT(*) FROM interaction_question q WHERE q.course_id=? AND q.hidden=0 AND "
+                                + LearningHubController.UNANSWERED_QUESTION,
                         Long.class,
                         courseId));
         summary.put(

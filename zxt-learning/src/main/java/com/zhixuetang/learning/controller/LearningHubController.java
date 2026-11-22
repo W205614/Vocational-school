@@ -21,6 +21,13 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/v2/learning-hub")
 public class LearningHubController {
+    static final String UNANSWERED_QUESTION = """
+            q.accepted_reply_id IS NULL AND NOT EXISTS(
+                SELECT 1 FROM interaction_reply r WHERE r.question_id=q.id AND r.hidden=0
+                AND (r.answer_id IS NULL OR r.answer_id=0)
+            )
+            """;
+
     private final JdbcTemplate jdbc;
     private final Clock clock;
     private final LearningSeasonService seasons;
@@ -190,12 +197,10 @@ public class LearningHubController {
             from += " AND q.course_id IN (" + String.join(",", Collections.nCopies(assigned.size(), "?")) + ")";
             args.addAll(assigned);
         }
-        String unanswered =
-                "q.accepted_reply_id IS NULL AND NOT EXISTS(SELECT 1 FROM interaction_reply r WHERE r.question_id=q.id AND r.answer_id IS NULL AND r.hidden=0)";
-        var summary = jdbc.queryForObject("SELECT COUNT(*) AS total, MIN(q.create_time) AS oldest" + from + " AND " + unanswered,
+        var summary = jdbc.queryForObject("SELECT COUNT(*) AS total, MIN(q.create_time) AS oldest" + from + " AND " + UNANSWERED_QUESTION,
                 (rs, row) -> new PendingQuestionSummary(rs.getLong("total"), rs.getObject("oldest", LocalDateTime.class)),
                 args.toArray());
-        if (pendingOnly) from += " AND " + unanswered;
+        if (pendingOnly) from += " AND " + UNANSWERED_QUESTION;
         long total = pendingOnly ? summary.count() : jdbc.queryForObject("SELECT COUNT(*)" + from, Long.class, args.toArray());
         args.add(page.getPageSize());
         args.add(page.from());
