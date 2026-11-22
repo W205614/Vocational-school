@@ -109,6 +109,7 @@ test('a delayed old course never replaces the current course or its entitlement'
 
 test('an answer-sheet deep link supports keyboard navigation and focuses the first unanswered item', async ({ page }, info) => {
   test.skip(info.project.name !== 'student');
+  await page.setViewportSize({ width: 390, height: 844 });
   await setup(page);
   await page.route('**/api/v2/exam-papers?**', (route) => answer(route, []));
   await page.route('**/api/v2/services/course/course/11?**', (route) =>
@@ -134,6 +135,7 @@ test('an answer-sheet deep link supports keyboard navigation and focuses the fir
 
   await page.goto('/exams?attemptId=211');
   await expect(page.getByRole('heading', { name: '我的答卷' })).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
   const second = page.getByRole('button', { name: '第 2 题，未作答' });
   await second.focus();
   await page.keyboard.press('Enter');

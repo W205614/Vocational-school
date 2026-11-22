@@ -241,7 +241,7 @@ public class V2Routes {
         routes.route(
                 "v2-media-upload",
                 r ->
-                        r.path(
+                        r.order(-1).path(
                                         "/api/v2/admin/media-upload",
                                         "/api/v2/admin/course-cover-upload",
                                         "/api/v2/admin/media-upload-tasks",
