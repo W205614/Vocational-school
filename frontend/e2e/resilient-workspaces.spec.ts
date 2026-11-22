@@ -21,6 +21,8 @@ test('teacher keeps learning and questions available when exam statistics fail a
       return route.fulfill({
         json: envelope({ list: [{ id: '100', name: 'Isolated course' }], total: 1 }),
       });
+    if (url.pathname.endsWith('/teacher/learning-hub/practice/pending'))
+      return route.fulfill({ json: envelope({ list: [], total: 0 }) });
     if (url.pathname.endsWith('/teacher/learning-hub')) {
       learningReads++;
       return route.fulfill({
@@ -76,6 +78,8 @@ test('teacher course switches discard older responses and clear denied course da
           total: 2,
         }),
       });
+    if (url.pathname.endsWith('/teacher/learning-hub/practice/pending'))
+      return route.fulfill({ json: envelope({ list: [], total: 0 }) });
     if (url.pathname.endsWith('/teacher/learning-hub')) {
       if (url.searchParams.get('courseId') === '100') {
         started();
@@ -251,6 +255,8 @@ test('teacher pagination refreshes its own section and filters reset both page n
       return route.fulfill({
         json: envelope({ list: [{ id: '100', name: 'Pagination course' }], total: 1 }),
       });
+    if (p.endsWith('/teacher/learning-hub/practice/pending'))
+      return route.fulfill({ json: envelope({ list: [], total: 0 }) });
     if (p.endsWith('/teacher/learning-hub')) {
       reads.push({
         kind: 'learning',

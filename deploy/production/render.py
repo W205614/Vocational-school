@@ -540,6 +540,7 @@ def module_config(alias, s):
                                     "GET",
                                     "POST",
                                     "PUT",
+                                    "PATCH",
                                     "DELETE",
                                     "OPTIONS",
                                 ],

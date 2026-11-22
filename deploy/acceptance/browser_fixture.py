@@ -124,6 +124,18 @@ def main():
         + ' FROM course WHERE id=1',
         'tj_course',
     )
+    enrollment_course = course + 22
+    enrollment_substitutions = {
+        **free_substitutions,
+        'id': str(enrollment_course),
+        'name': "'Browser free enrollment " + marker + "'",
+    }
+    mysql(
+        'INSERT INTO course(' + ','.join('`' + c + '`' for c in columns) + ') SELECT '
+        + ','.join(enrollment_substitutions.get(c, '`' + c + '`') for c in columns)
+        + ' FROM course WHERE id=1',
+        'tj_course',
+    )
     expired_course = course + 30
     expired_substitutions = {
         **substitutions,
@@ -259,6 +271,7 @@ def main():
         expiredAttempt=str(expired_attempt),
         expiredQuestion=str(expired_question),
         freeCourse=str(free_course),
+        enrollmentCourse=str(enrollment_course),
         studyCourse=str(study_course),
         studyName=study_name,
         rankedStudyCourse=str(ranked_study_course),

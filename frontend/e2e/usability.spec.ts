@@ -233,14 +233,14 @@ test('free enrollment survives refresh and expired enrollment is explained upfro
   await expect(page.getByRole('link', { name: '参加考试 →', exact: true })).toHaveCount(0);
   await page.getByRole('link', { name: '查看考试记录 →', exact: true }).click();
   await expect(page.locator('.enrollment-hint')).toContainText('学习权益已失效');
-  await page.goto('/courses/' + fixture.freeCourse);
+  await page.goto('/courses/' + fixture.enrollmentCourse);
   await page.getByRole('button', { name: '免费报名', exact: true }).click();
   await expect(page.getByText(/报名成功/).first()).toBeVisible();
   await expect
     .poll(
       async () => {
         const r = await page.request.get(
-          '/api/v2/services/learning/learning-records/course/' + fixture.freeCourse,
+          '/api/v2/services/learning/learning-records/course/' + fixture.enrollmentCourse,
           {
             headers: {
               Authorization:

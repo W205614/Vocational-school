@@ -1,7 +1,18 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { accounts, api, fixture, login } from './helpers';
 
 const inventory = '/admin/course/study-information';
+
+async function saveSupplement(page: Page, editor: Locator, courseId: string) {
+  const response = page.waitForResponse((r) =>
+    r.request().method() === 'PATCH' &&
+    new URL(r.url()).pathname === '/api/v2' + inventory + '/' + courseId,
+  );
+  await editor.getByRole('button', { name: '保存补录' }).click();
+  const saved = await response;
+  expect(saved.status()).toBe(200);
+  await expect(editor.getByText('已更新学生可见的选课资料')).toBeVisible();
+}
 
 test('historical course metadata can be supplemented while enrollment and independent draft edits persist', async ({
   page,
@@ -69,8 +80,7 @@ test('historical course metadata can be supplemented while enrollment and indepe
     }).click();
     await admin.getByRole('option', { name: '进阶', exact: true }).click();
     await editor.getByRole('spinbutton', { name: '预计学习时长（分钟）' }).fill('90');
-    await editor.getByRole('button', { name: '保存补录' }).click();
-    await expect(editor.getByText('已更新学生可见的选课资料')).toBeVisible();
+    await saveSupplement(admin, editor, fixture.studyCourse);
     await expect(row).toHaveCount(0);
     const history = await api(admin, 'GET', historyPath);
     expect(history.list).toHaveLength(4);
@@ -163,8 +173,7 @@ test('concurrent course editors keep local changes and explicitly reconcile an o
     await firstEditor.getByRole('textbox', { name: '学习成果' }).fill(firstOutcome);
     await secondEditor.getByRole('textbox', { name: '学习成果' }).fill(secondOutcome);
     await secondEditor.getByRole('textbox', { name: '先修要求' }).fill(prerequisites);
-    await firstEditor.getByRole('button', { name: '保存补录' }).click();
-    await expect(firstEditor.getByText('已更新学生可见的选课资料')).toBeVisible();
+    await saveSupplement(first, firstEditor, fixture.rankedStudyCourse);
 
     const staleWrite = second.waitForResponse((response) =>
       new URL(response.url()).pathname === '/api/v2' + course && response.request().method() === 'PATCH');
@@ -197,8 +206,7 @@ test('concurrent course editors keep local changes and explicitly reconcile an o
     await api(first, 'PATCH', course, {
       status: 2, difficulty: 'BEGINNER', expectedValues: { DIFFICULTY: { value: null } },
     }, crypto.randomUUID());
-    await save.click();
-    await expect(secondEditor.getByText('已更新学生可见的选课资料')).toBeVisible();
+    await saveSupplement(second, secondEditor, fixture.rankedStudyCourse);
     expect(await api(first, 'GET', '/public/courses/' + fixture.rankedStudyCourse)).toMatchObject({
       learningOutcomes: secondOutcome, prerequisites, practiceOverview: practice, difficulty: 'BEGINNER',
     });

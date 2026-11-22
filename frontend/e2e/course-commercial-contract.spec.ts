@@ -71,6 +71,11 @@ async function contracts(
     else if (path === '/api/v2/services/learning/learning-records/course/' + courseId) {
       state.rightsReads++;
       data = state.rightsReads >= (options.readyAt ?? 1) ? lesson : null;
+    } else if (
+      path === '/api/v2/services/course/courses/' + courseId + '/handout' &&
+      method === 'GET' && state.rightsReads >= (options.readyAt ?? 1)
+    ) {
+      data = { text: null };
     } else if (path === '/api/v2/orders/free-courses/' + courseId && method === 'POST') {
       state.enrollments++;
       data = { operationId: 'fixture-enrollment', status: 'SUCCEEDED', result: { orderId: '704' } };
@@ -182,7 +187,7 @@ test('contract: trial processing and failures never install a full-video player'
     trialStates: ['PROCESSING', 'FAILED'],
   });
   await page.goto('/courses/' + courseId);
-  await page.getByRole('button', { name: /Contract video/ }).click();
+  await page.getByRole('button', { name: '试看 · Contract video', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: '试看片段正在后台生成' })).toBeVisible();
   await expect(page.locator('video.course-player')).toHaveCount(0);
   await page.getByRole('button', { name: '查询试看进度' }).click();

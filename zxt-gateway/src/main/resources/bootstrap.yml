@@ -91,6 +91,7 @@ spring:
               - 'POST'
               - 'DELETE'
               - 'PUT'
+              - 'PATCH'
               - 'OPTIONS'
             allowedHeaders: '*' # 允许在请求中携带的头信息
             allowCredentials: true # 是否允许携带cookie

@@ -84,6 +84,7 @@ function assertPublicCatalogue(nodes: any[]) {
       'mediaDuration',
       'name',
       'sections',
+      'trailer',
       'type',
     ]);
     expect(node).not.toHaveProperty('mediaId');
