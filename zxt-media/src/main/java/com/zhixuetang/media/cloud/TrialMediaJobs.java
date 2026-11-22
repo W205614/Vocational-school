@@ -85,7 +85,7 @@ public class TrialMediaJobs {
                 """
                 SELECT m.id,m.file_id,m.size,u.object_key,u.object_version,u.object_etag,u.output_sha256,u.output_size
                 FROM media m
-                LEFT JOIN cloud_media_upload u ON m.file_id LIKE 'cos:%'
+                LEFT JOIN cloud_media_upload u ON LEFT(m.file_id,4)='cos:'
                     AND u.id=SUBSTRING(m.file_id,5) AND u.state='READY'
                 WHERE m.deleted=0 AND m.id IN (%s)
                 """.formatted(String.join(",", Collections.nCopies(ids.size(), "?"))),
