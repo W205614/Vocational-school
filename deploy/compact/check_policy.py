@@ -19,10 +19,15 @@ for source in (ROOT / 'frontend/openapi').glob('*.json'):
                 missing.append(verb.upper() + ':' + path)
 if missing:
     raise RuntimeError('Undeclared API contracts: ' + ', '.join(missing))
+# The handout endpoint checks the current learner's enrollment. Staff edit it via course management.
+learner_handout = 'GET:/api/v2/services/course/courses/{id}/handout'
+if learner_handout.replace(':/api/v2/services/', ':/api/v2/admin/', 1) in policy:
+    raise RuntimeError('The learner handout must not have an administrator alias')
 missing_admin = [
     line.replace(':/api/v2/services/', ':/api/v2/admin/', 1)
     for line in policy
     if ':/api/v2/services/' in line
+    and line != learner_handout
     and line.replace(':/api/v2/services/', ':/api/v2/admin/', 1) not in policy
 ]
 if missing_admin:

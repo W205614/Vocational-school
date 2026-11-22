@@ -1,4 +1,4 @@
-# Source-Manifest-SHA256: 8400b8ba7bbdb5c806ea14bea8efc66bc3f94bdd3546e8ecb2a4df4e1bc1faa8
+# Source-Manifest-SHA256: 5eace0a5cdf3ab138d7060c458cef19b67d500bec189152865ee2b21e61f51e8
 # Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
 # Reviewed static module targets for the gateway API inventory, 2026-10-26.
 # Derived once from the reviewed v2 route mappings; no runtime Feign/policy auto-grant.
