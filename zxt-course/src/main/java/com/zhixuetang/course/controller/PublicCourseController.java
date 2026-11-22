@@ -42,6 +42,7 @@ public class PublicCourseController {
         result.put("prerequisites", course.getPrerequisites());
         result.put("difficulty", course.getDifficulty());
         result.put("practiceOverview", course.getPracticeOverview());
+        result.put("estimatedStudyMinutes", course.getEstimatedStudyMinutes());
         result.put("sectionNum", course.getSectionNum());
         result.put("purchaseEndTime", course.getPurchaseEndTime());
         result.put("validDuration", course.getValidDuration());

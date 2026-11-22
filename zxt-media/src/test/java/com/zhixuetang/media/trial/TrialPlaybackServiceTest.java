@@ -91,26 +91,26 @@ class TrialPlaybackServiceTest {
         assertTrue(result.getPlayUrl().startsWith("/api/v2/services/media/trial-content/"));
         assertFalse(result.getPlayUrl().contains(file));
         assertNull(result.getFileId());
-        assertNotNull(service.authorize(id, 33, 77, expires, signature));
+        assertNotNull(service.authorize(id, 33, 77, expires, signature, null));
         assertThrows(
-                ForbiddenException.class, () -> service.authorize(id, 34, 77, expires, signature));
+                ForbiddenException.class, () -> service.authorize(id, 34, 77, expires, signature, null));
         assertThrows(
-                ForbiddenException.class, () -> service.authorize(id, 33, 78, expires, signature));
+                ForbiddenException.class, () -> service.authorize(id, 33, 78, expires, signature, null));
         assertThrows(
                 ForbiddenException.class,
-                () -> service.authorize("b".repeat(64), 33, 77, expires, signature));
-        assertThrows(ForbiddenException.class, () -> service.authorize(id, 33, 77, 1, signature));
+                () -> service.authorize("b".repeat(64), 33, 77, expires, signature, null));
+        assertThrows(ForbiddenException.class, () -> service.authorize(id, 33, 77, 1, signature, null));
         section.setTrailer(false);
         assertThrows(
-                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature));
+                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature, null));
         section.setTrailer(true);
         course.setStatus(3);
         assertThrows(
-                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature));
+                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature, null));
         course.setStatus(2);
         section.setFreeDuration(2);
         assertThrows(
-                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature));
+                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature, null));
         section.setFreeDuration(1);
         when(jobs.source(22))
                 .thenReturn(
@@ -120,7 +120,29 @@ class TrialPlaybackServiceTest {
                                 "source_version",
                                 "b".repeat(64)));
         assertThrows(
-                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature));
+                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature, null));
+    }
+
+    @Test
+    void administrativePreviewUsesTheSameClipButADifferentTicketScope() {
+        assertThrows(ForbiddenException.class, () -> service.preview(11, 33));
+        verify(jobs, never()).request(anyLong(), anyInt());
+
+        UserContext.setRole(1L);
+        when(courses.draftTrialSection(11L, 33L)).thenReturn(section);
+        var preview = service.preview(11, 33);
+        assertEquals(id, preview.getTaskId());
+        assertNull(preview.getFileId());
+        var query = params(preview.getPlayUrl());
+        long expires = Long.parseLong(query.get("expires"));
+        String signature = query.get("signature");
+        assertEquals("11", query.get("previewCourse"));
+        assertNotNull(service.authorize(id, 33, 77, expires, signature, 11L));
+        assertThrows(
+                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature, null));
+        assertThrows(
+                ForbiddenException.class, () -> service.authorize(id, 33, 77, expires, signature, 12L));
+        assertEquals(id, service.request(33).getTaskId());
     }
 
     @Test

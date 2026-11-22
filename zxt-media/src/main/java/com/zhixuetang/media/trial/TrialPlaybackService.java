@@ -38,7 +38,16 @@ public class TrialPlaybackService {
 
     public VideoPlayVO request(long section) {
         long owner = UserContext.requireUser();
-        var allowed = section(section);
+        return request(section(section), section, owner, null);
+    }
+
+    public VideoPlayVO preview(long course, long section) {
+        UserContext.requireAdmin();
+        if (course <= 0 || section <= 0) throw new BadRequestException("课程或小节编号无效");
+        return request(courses.draftTrialSection(course, section), section, UserContext.requireUser(), course);
+    }
+
+    private VideoPlayVO request(SectionInfoDTO allowed, long section, long owner, Long previewCourse) {
         var task = jobs.request(allowed.getMediaId(), seconds(allowed));
         var result = new VideoPlayVO();
         String state = task.get("state").toString();
@@ -58,8 +67,9 @@ public class TrialPlaybackService {
                             + owner
                             + "&expires="
                             + expires
+                            + (previewCourse == null ? "" : "&previewCourse=" + previewCourse)
                             + "&signature="
-                            + sign(id, section, owner, expires);
+                            + sign(id, section, owner, expires, previewCourse);
             result.setProvider("TRIAL");
             result.setPlayUrl(url);
             result.setSignature(url);
@@ -69,20 +79,22 @@ public class TrialPlaybackService {
     }
 
     public Map<String, Object> authorize(
-            String id, long section, long owner, long expires, String signature) {
+            String id, long section, long owner, long expires, String signature, Long previewCourse) {
         long now = Instant.now().getEpochSecond();
         if (id == null
                 || !id.matches("[0-9a-f]{64}")
                 || section <= 0
                 || owner <= 0
+                || (previewCourse != null && previewCourse <= 0)
                 || expires <= now
                 || expires > now + 600
                 || signature == null
                 || !MessageDigest.isEqual(
-                        sign(id, section, owner, expires).getBytes(StandardCharsets.US_ASCII),
+                        sign(id, section, owner, expires, previewCourse).getBytes(StandardCharsets.US_ASCII),
                         signature.getBytes(StandardCharsets.US_ASCII)))
             throw new ForbiddenException("试看地址已过期或无效");
-        var allowed = section(section);
+        var allowed = previewCourse == null
+                ? section(section) : courses.draftTrialSection(previewCourse, section);
         var source = jobs.source(allowed.getMediaId());
         if (!id.equals(
                 TrialMediaJobs.identity(
@@ -118,14 +130,16 @@ public class TrialPlaybackService {
         return minutes * 60;
     }
 
-    private String sign(String id, long section, long owner, long expires) {
+    private String sign(String id, long section, long owner, long expires, Long previewCourse) {
         try {
             var mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(key, "HmacSHA256"));
+            String scope = previewCourse == null
+                    ? "trial-v1\n" : "trial-preview-v1\n" + previewCourse + "\n";
             return HexFormat.of()
                     .formatHex(
                             mac.doFinal(
-                                    ("trial-v1\n"
+                                    (scope
                                                     + id
                                                     + "\n"
                                                     + section

@@ -32,6 +32,10 @@ public interface CourseClient {
     @GetMapping("/internal/v1/course/section/{id}")
     SectionInfoDTO sectionInfo(@PathVariable("id") Long sectionId);
 
+    @GetMapping("/internal/v1/course/{courseId}/trial-sections/{sectionId}")
+    SectionInfoDTO draftTrialSection(
+            @PathVariable("courseId") long courseId, @PathVariable("sectionId") long sectionId);
+
     @GetMapping("/internal/v1/course/{courseId}/exam-sections/{sectionId}")
     ExamSectionPublicationDTO examSectionForPublication(
             @PathVariable("courseId") long courseId, @PathVariable("sectionId") long sectionId);

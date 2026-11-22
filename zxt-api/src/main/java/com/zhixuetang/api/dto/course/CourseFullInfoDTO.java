@@ -26,6 +26,7 @@ public class CourseFullInfoDTO {
     private String prerequisites;
     private String difficulty;
     private String practiceOverview;
+    private Integer estimatedStudyMinutes;
 
     @Schema(description = "课程id")
     private Long id;

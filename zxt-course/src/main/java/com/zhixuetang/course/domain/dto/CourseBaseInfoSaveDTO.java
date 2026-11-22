@@ -8,6 +8,7 @@ import com.zhixuetang.course.utils.CourseSaveBaseGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -88,6 +89,10 @@ public class CourseBaseInfoSaveDTO implements Checker {
 
     @Size(max = 500, groups = CourseSaveBaseGroup.class, message = "实操说明最多500字")
     private String practiceOverview;
+
+    @Min(value = 1, groups = CourseSaveBaseGroup.class, message = "预计学习时长至少1分钟")
+    @Max(value = 100000, groups = CourseSaveBaseGroup.class, message = "预计学习时长最多100000分钟")
+    private Integer estimatedStudyMinutes;
 
     @Size(max = 10000, groups = CourseSaveBaseGroup.class, message = "随堂讲义最多10000字")
     private String handout;

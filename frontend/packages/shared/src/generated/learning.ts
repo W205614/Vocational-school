@@ -98,6 +98,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/learning-hub/practice/{courseId}/corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["correct"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/learning/admin/replies/{id}/hidden/{hidden}": {
         parameters: {
             query?: never;
@@ -597,6 +613,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/teacher/learning-hub/practice/{courseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["teachingAssignment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/teacher/learning-hub/practice/{courseId}/submissions": {
         parameters: {
             query?: never;
@@ -621,6 +653,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["teachingHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/practice/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pending"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1164,6 +1212,8 @@ export interface components {
             userId?: string;
             /** Format: int32 */
             revision?: number;
+            /** Format: int32 */
+            assignmentVersion?: number;
             description?: string;
             workUrl?: string;
             /** @enum {string} */
@@ -1212,6 +1262,28 @@ export interface components {
             instructions?: string;
             /** Format: date-time */
             publishedAt?: string;
+            /** Format: int32 */
+            version?: number;
+        };
+        Correction: {
+            title?: string;
+            instructions?: string;
+            reason?: string;
+            /** Format: int32 */
+            expectedVersion?: number;
+        };
+        AssignmentVersion: {
+            /** Format: int32 */
+            version?: number;
+            title?: string;
+            instructions?: string;
+            changeReason?: string;
+            /** Format: date-time */
+            effectiveAt?: string;
+        };
+        AssignmentView: {
+            assignment?: components["schemas"]["Assignment"];
+            versions?: components["schemas"]["AssignmentVersion"][];
         };
         /**
          * @description 签到结果
@@ -1364,6 +1436,8 @@ export interface components {
             workUrl?: string;
             /** Format: uuid */
             submissionKey?: string;
+            /** Format: int32 */
+            assignmentVersion?: number;
         };
         /**
          * @description 签到结果
@@ -2033,12 +2107,27 @@ export interface components {
             list?: components["schemas"]["StudentWork"][];
             total?: string;
         };
+        PendingPage: {
+            list?: components["schemas"]["PendingWork"][];
+            total?: string;
+        };
+        PendingWork: {
+            submissionId?: string;
+            courseId?: string;
+            studentId?: string;
+            studentName?: string;
+            assignmentTitle?: string;
+            /** Format: date-time */
+            submittedAt?: string;
+        };
         StudentAssignment: {
             courseId?: string;
             title?: string;
         };
         StudentView: {
             assignment?: components["schemas"]["Assignment"];
+            versions?: components["schemas"]["AssignmentVersion"][];
+            historyOnly?: boolean;
             canSubmit?: boolean;
             submissions?: components["schemas"]["Submission"][];
         };
@@ -2051,9 +2140,6 @@ export interface components {
             pageNo?: number;
             /** Format: int32 */
             pageSize?: number;
-        };
-        ConfigurationView: {
-            assignment?: components["schemas"]["Assignment"];
         };
         /**
          * @description 用户端互动问题信息
@@ -2551,7 +2637,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["ConfigurationView"];
+                        data: components["schemas"]["AssignmentView"];
                     };
                 };
             };
@@ -2583,6 +2669,37 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: components["schemas"]["Assignment"];
+                    };
+                };
+            };
+        };
+    };
+    correct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Correction"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["AssignmentView"];
                     };
                 };
             };
@@ -3545,6 +3662,33 @@ export interface operations {
             };
         };
     };
+    teachingAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["AssignmentView"];
+                    };
+                };
+            };
+        };
+    };
     teachingWork: {
         parameters: {
             query: {
@@ -3597,6 +3741,34 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: components["schemas"]["Submission"][];
+                    };
+                };
+            };
+        };
+    };
+    pending: {
+        parameters: {
+            query: {
+                courseId?: string;
+                page: components["schemas"]["PageQuery"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["PendingPage"];
                     };
                 };
             };

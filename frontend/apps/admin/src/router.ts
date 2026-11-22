@@ -25,6 +25,7 @@ export const router = createRouter({
     { path: '/reliability', component: Reliability },
     { path: '/exams', component: ExamAdmin },
     { path: '/course-editor', component: CourseEditor },
+    { path: '/course-study-information', component: () => import('./views/CourseStudyInformation.vue') },
     { path: '/coupon-issue', component: CouponIssue },
     { path: '/operations', component: OperationsPanel },
   ],

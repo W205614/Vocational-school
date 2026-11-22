@@ -2,11 +2,13 @@
 import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import { get } from '../../../../packages/shared/src/client';
+import { useSession } from '../../../../packages/shared/src/session';
 import { useOperations } from '../../../../packages/shared/src/operations';
 import { useTask, query, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
 import { teacherCourses } from '../teacherCourses';
 const route = useRoute(),
+  session = useSession(),
   task = useTask(),
   ops = useOperations(),
   courseId = ref(''),
@@ -25,6 +27,9 @@ const route = useRoute(),
   gradeCourseIds = ref<string[]>([]),
   gradePage = ref(pageInQuery(route.query.gradePage)),
   gradeTotal = ref(0),
+  practices = ref<Row[]>([]),
+  practicePage = ref(pageInQuery(route.query.practicePage)),
+  practiceTotal = ref(0),
   current = ref<Row>(),
   lastQuestionId = ref(''),
   replies = ref<Row[]>([]),
@@ -32,7 +37,7 @@ const route = useRoute(),
   replyPage = ref(1),
   replyTotal = ref(0),
   repliesReady = ref(false);
-type Section = 'learning' | 'exams' | 'questions' | 'grading';
+type Section = 'learning' | 'exams' | 'questions' | 'grading' | 'practice';
 const workCourses = computed(() => {
   const options = new Map<string, string>(courses.value.map((course) => [String(course.id), course.name]));
   for (const id of gradeCourseIds.value)
@@ -50,6 +55,15 @@ const pendingQuery = computed(() => ({
   pendingCourseId: workCourse.value || undefined,
   pendingPage: gradePage.value,
   questionPage: questionPage.value,
+  practicePage: practicePage.value,
+  pendingOnly: String(pendingOnly.value),
+  from: 'teaching',
+}));
+const practiceQuery = computed(() => ({
+  workCourse: workCourse.value || undefined,
+  gradePage: gradePage.value,
+  questionPage: questionPage.value,
+  practicePage: practicePage.value,
   pendingOnly: String(pendingOnly.value),
   from: 'teaching',
 }));
@@ -59,18 +73,24 @@ const reads = reactive({
   exams: { busy: false, error: '' },
   questions: { busy: false, error: '' },
   grading: { busy: false, error: '' },
+  practice: { busy: false, error: '' },
 });
 const readsBusy = computed(() => reads.learning.busy || reads.exams.busy);
-const revisions: Record<Section, number> = { learning: 0, exams: 0, questions: 0, grading: 0 };
+const revisions: Record<Section, number> = {
+  learning: 0, exams: 0, questions: 0, grading: 0, practice: 0,
+};
 function clear(section: Section) {
   if (section === 'learning') learning.value = {};
   else if (section === 'exams') stats.value = {};
   else if (section === 'questions') {
     questions.value = [];
     questionTotal.value = 0;
-  } else {
+  } else if (section === 'grading') {
     grades.value = [];
     gradeTotal.value = 0;
+  } else {
+    practices.value = [];
+    practiceTotal.value = 0;
   }
 }
 function filter() {
@@ -85,6 +105,7 @@ function filter() {
 function filterWork() {
   questionPage.value = 1;
   gradePage.value = 1;
+  practicePage.value = 1;
   void loadWork();
 }
 function filterQuestions() {
@@ -93,14 +114,16 @@ function filterQuestions() {
 }
 async function loadSection(section: Section) {
   const revision = ++revisions[section],
-    course = section === 'questions' || section === 'grading' ? workCourse.value : courseId.value,
+    isLearning = section === 'learning' || section === 'exams',
+    course = isLearning ? courseId.value : workCourse.value,
     student = studentId.value;
   clear(section);
   reads[section].error = '';
   reads[section].busy = true;
   if (
-    (!course && (section === 'learning' || section === 'exams')) ||
-    (section === 'questions' && course && !courses.value.some((row) => String(row.id) === course))
+    (!course && isLearning) ||
+    ((section === 'questions' || section === 'practice') &&
+      course && !courses.value.some((row) => String(row.id) === course))
   ) {
     reads[section].busy = false;
     return;
@@ -115,8 +138,11 @@ async function loadSection(section: Section) {
         : section === 'questions'
           ? '/learning-hub/teaching/questions?' +
             query({ courseId: course, pendingOnly: pendingOnly.value, pageNo: questionPage.value, pageSize: 20 })
-          : '/teacher/exam-attempts/page?' +
-            query({ courseId: course, pageNo: gradePage.value, pageSize: 20 });
+          : section === 'grading'
+            ? '/teacher/exam-attempts/page?' +
+              query({ courseId: course, pageNo: gradePage.value, pageSize: 20 })
+            : '/teacher/learning-hub/practice/pending?' +
+              query({ courseId: course, pageNo: practicePage.value, pageSize: 20 });
   try {
     const data = await get<Row>(path);
     if (revision !== revisions[section]) return;
@@ -132,7 +158,7 @@ async function loadSection(section: Section) {
       }
       questions.value = data.list || [];
       questionTotal.value = total;
-    } else {
+    } else if (section === 'grading') {
       const total = Number(data.total || 0);
       const last = Math.max(1, Math.ceil(total / 20));
       if (gradePage.value > last) {
@@ -144,6 +170,16 @@ async function loadSection(section: Section) {
       gradeTotal.value = total;
       if (!course) gradeCourseIds.value = (data.courseIds || []).map(String);
       else if (!gradeCourseIds.value.includes(course)) gradeCourseIds.value.push(course);
+    } else {
+      const total = Number(data.total);
+      const last = Math.max(1, Math.ceil(total / 20));
+      if (practicePage.value > last) {
+        practicePage.value = last;
+        await loadSection('practice');
+        return;
+      }
+      practices.value = data.list;
+      practiceTotal.value = total;
     }
   } catch (error) {
     if (revision === revisions[section])
@@ -156,7 +192,11 @@ async function load() {
   await Promise.allSettled([loadSection('learning'), loadSection('exams')]);
 }
 async function loadWork() {
-  await Promise.allSettled([loadSection('questions'), loadSection('grading')]);
+  await Promise.allSettled([
+    loadSection('questions'),
+    loadSection('grading'),
+    ...(session.role === 3 ? [loadSection('practice')] : []),
+  ]);
 }
 onBeforeUnmount(() => {
   for (const name of Object.keys(revisions) as Section[]) revisions[name]++;
@@ -229,16 +269,18 @@ onMounted(async () => {
     courseId.value = String(all[0]?.id || '');
   });
   await Promise.allSettled([load(), loadWork()]);
-  if (route.hash === '#teacher-tasks-heading') {
+  if (['#teacher-tasks-heading', '#teacher-practice-heading'].includes(route.hash)) {
     await nextTick();
-    document.getElementById('teacher-tasks-heading')?.focus();
+    document.getElementById(route.hash.slice(1))?.focus();
   }
 });
 </script>
 <template>
   <section class="card teaching-page">
     <h1>教学学情与答疑</h1>
-    <p>处理待答问题和待评分答卷，查看所授课程的学习进度。</p>
+    <p>{{ session.role === 3
+      ? '处理答疑、阅卷和待反馈作品，查看所授课程的学习进度。'
+      : '处理待答问题和待评分答卷，查看课程学习进度。' }}</p>
     <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
     <section aria-labelledby="teacher-tasks-heading">
       <div class="section-heading">
@@ -281,6 +323,35 @@ onMounted(async () => {
         layout="prev,pager,next"
         @current-change="loadSection('grading')"
       />
+      <section v-if="session.role === 3" aria-labelledby="teacher-practice-heading">
+        <h3 id="teacher-practice-heading" tabindex="-1">待反馈实操作业</h3>
+        <Status :busy="reads.practice.busy" :error="reads.practice.error" />
+        <el-button v-if="reads.practice.error" @click="loadSection('practice')">
+          重试待反馈作品
+        </el-button>
+        <article v-for="row in practices" :key="row.submissionId" class="review-row">
+          <div>
+            <h4>{{ row.assignmentTitle }}</h4>
+            <p>{{ courseName(row.courseId) }} · {{ row.studentName }} · 提交于 {{ displayTime(row.submittedAt) }}</p>
+          </div>
+          <RouterLink :to="{ path: '/practice', query: { ...practiceQuery,
+            courseId: row.courseId, studentId: row.studentId, submissionId: row.submissionId } }">
+            查看待反馈作品 →
+          </RouterLink>
+        </article>
+        <el-empty
+          v-if="!practices.length && !reads.practice.busy && !reads.practice.error"
+          description="当前范围没有待反馈实操作业"
+        />
+        <el-pagination
+          v-if="practiceTotal > 20"
+          v-model:current-page="practicePage"
+          :total="practiceTotal"
+          :page-size="20"
+          layout="prev,pager,next"
+          @current-change="loadSection('practice')"
+        />
+      </section>
     <section aria-label="课程答疑">
       <Status :busy="reads.questions.busy" :error="reads.questions.error" /><el-button
         v-if="reads.questions.error"

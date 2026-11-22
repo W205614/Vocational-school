@@ -5,16 +5,34 @@ import type { Row } from './ui';
 const props = defineProps<{ course: Row }>();
 const durations = computed(() => {
   const videos: Row[] = (props.course.chapters || [])
+    .filter((chapter: Row) => Number(chapter.type) === 1)
     .flatMap((chapter: Row) => chapter.sections || [])
     .filter((item: Row) => Number(item.type) === 2);
   const seconds = videos.map((item) => Number(item.mediaDuration));
   const known = seconds.filter((value) => Number.isFinite(value) && value > 0);
-  if (!videos.length) return '无视频小节';
-  if (!known.length) return '时长待补充';
-  const minutes = Math.ceil(known.reduce((sum, value) => sum + value, 0) / 60);
-  const duration = minutes < 60 ? minutes + ' 分钟' : Math.floor(minutes / 60) + ' 小时' +
-    (minutes % 60 ? ' ' + (minutes % 60) + ' 分钟' : '');
-  return known.length < videos.length ? '已知约 ' + duration + '，部分小节时长待补充' : '约 ' + duration;
+  return {
+    total: videos.length,
+    known: known.length,
+    minutes: Math.ceil(known.reduce((sum, value) => sum + value, 0) / 60),
+  };
+});
+function formatMinutes(minutes: number) {
+  if (minutes < 60) return minutes + ' 分钟';
+  const remainder = minutes % 60;
+  return Math.floor(minutes / 60) + ' 小时' + (remainder ? ' ' + remainder + ' 分钟' : '');
+}
+const videoDuration = computed(() => {
+  const { total, known, minutes } = durations.value;
+  if (!total) return '无视频小节';
+  if (!known) return '时长待补充';
+  const duration = formatMinutes(minutes);
+  return known < total ? '已知约 ' + duration + '，部分小节时长待补充' : '约 ' + duration;
+});
+const estimatedDuration = computed(() => {
+  const manual = Number(props.course.estimatedStudyMinutes);
+  if (manual > 0) return '约 ' + formatMinutes(manual);
+  const { total, known, minutes } = durations.value;
+  return total > 0 && known === total ? '约 ' + formatMinutes(minutes) + '（按视频时长估算）' : '未填写';
 });
 const levels: Record<string, string> = { BEGINNER: '入门', INTERMEDIATE: '进阶', ADVANCED: '高阶' };
 </script>
@@ -24,7 +42,8 @@ const levels: Record<string, string> = { BEGINNER: '入门', INTERMEDIATE: '进�
     <div><dt>学习成果</dt><dd>{{ course.learningOutcomes?.trim() || '未填写' }}</dd></div>
     <div><dt>先修要求</dt><dd>{{ course.prerequisites?.trim() || '未填写' }}</dd></div>
     <div><dt>难度</dt><dd>{{ levels[course.difficulty] || '未填写' }}</dd></div>
-    <div><dt>视频总时长</dt><dd>{{ durations }}</dd></div>
+    <div><dt>预计学习时长</dt><dd>{{ estimatedDuration }}</dd></div>
+    <div><dt>视频总时长</dt><dd>{{ videoDuration }}</dd></div>
     <div><dt>实操内容</dt><dd>{{ course.practiceOverview?.trim() || '未填写' }}</dd></div>
   </dl>
 </template>

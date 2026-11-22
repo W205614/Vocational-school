@@ -1,5 +1,6 @@
 package com.zhixuetang.media.cloud;
 
+import com.zhixuetang.api.dto.media.TrialStatus;
 import com.zhixuetang.common.exceptions.*;
 import com.zhixuetang.media.storage.local.LocalObjectStore;
 import com.zhixuetang.media.storage.local.FfprobeMediaDurationProbe;
@@ -69,25 +70,64 @@ public class TrialMediaJobs {
     }
 
     public Map<String, Object> source(long media) {
-        var rows =
-                jdbc.queryForList(
-                        "SELECT id,file_id,size,deleted FROM media WHERE id=? AND deleted=0",
-                        media);
+        var rows = sourceRows(Set.of(media));
         if (rows.isEmpty()) throw new BadRequestException("媒资不存在");
-        var result = new HashMap<String, Object>(rows.getFirst());
-        String file = result.get("file_id").toString();
+        var result = rows.getFirst();
+        String revision = sourceRevision(result);
+        if (revision == null) throw new BadRequestException("当前媒资不支持受控试看或尚未就绪");
+        result.put("source_version", revision);
+        if (result.get("output_sha256") != null) result.put("size", result.get("output_size"));
+        return result;
+    }
+
+    private List<Map<String, Object>> sourceRows(Set<Long> ids) {
+        return jdbc.queryForList(
+                """
+                SELECT m.id,m.file_id,m.size,u.object_key,u.object_version,u.object_etag,u.output_sha256,u.output_size
+                FROM media m
+                LEFT JOIN cloud_media_upload u ON m.file_id LIKE 'cos:%'
+                    AND u.id=SUBSTRING(m.file_id,5) AND u.state='READY'
+                WHERE m.deleted=0 AND m.id IN (%s)
+                """.formatted(String.join(",", Collections.nCopies(ids.size(), "?"))),
+                ids.toArray());
+    }
+
+    private String sourceRevision(Map<String, Object> row) {
+        String file = (String) row.get("file_id");
+        if (file == null) return null;
         if (local != null && file.matches("[0-9a-f]{64}\\.(mp4|webm)")) {
-            result.put("source_version", file.substring(0, 64));
+            return file.substring(0, 64);
         } else if (cloud != null && file.matches("cos:[0-9a-f-]{36}")) {
-            var ready =
-                    jdbc.queryForList(
-                            "SELECT object_key,object_version,object_etag,output_sha256,output_size FROM cloud_media_upload WHERE id=? AND state='READY'",
-                            file.substring(4));
-            if (ready.isEmpty()) throw new BadRequestException("云媒资尚未就绪");
-            result.putAll(ready.getFirst());
-            result.put("source_version", result.get("output_sha256"));
-            result.put("size", result.get("output_size"));
-        } else throw new BadRequestException("当前媒资不支持受控试看");
+            return (String) row.get("output_sha256");
+        }
+        return null;
+    }
+
+    public Map<Long, TrialStatus> statuses(Set<Long> ids, int seconds) {
+        Map<Long, TrialStatus> result = new HashMap<>();
+        Map<String, Long> currentTasks = new HashMap<>();
+        for (var row : sourceRows(ids)) {
+            long media = ((Number) row.get("id")).longValue();
+            String revision = sourceRevision(row);
+            if (revision == null) continue;
+            String id = identity(media, (String) row.get("file_id"), revision, seconds);
+            currentTasks.put(id, media);
+            result.put(media, new TrialStatus(null, TrialStatus.State.MISSING, null, null));
+        }
+        if (!currentTasks.isEmpty()) {
+            var tasks = jdbc.queryForList(
+                    "SELECT id,state,error_code,version FROM media_trial WHERE id IN ("
+                            + String.join(",", Collections.nCopies(currentTasks.size(), "?")) + ")",
+                    currentTasks.keySet().toArray());
+            for (var task : tasks) {
+                String id = (String) task.get("id");
+                result.put(currentTasks.get(id), new TrialStatus(
+                        id,
+                        TrialStatus.State.valueOf((String) task.get("state")),
+                        (String) task.get("error_code"),
+                        ((Number) task.get("version")).longValue()));
+            }
+        }
         return result;
     }
 

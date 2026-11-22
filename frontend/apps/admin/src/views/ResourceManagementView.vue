@@ -313,12 +313,13 @@ onMounted(load);
       ><el-button v-if="schema.create" type="primary" :disabled="task.busy.value" @click="edit()"
         >新增</el-button
       ><RouterLink v-if="resource === 'courses'" to="/course-editor">章节与教师配置</RouterLink
+      ><RouterLink v-if="resource === 'courses'" to="/course-study-information">选课资料盘点</RouterLink
       ><RouterLink v-if="resource === 'coupons'" to="/coupon-issue">发放优惠券</RouterLink>
     </div>
     <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
     <el-alert
       v-if="resource === 'courses' && [2, 4].includes(Number(courseStatus))"
-      title="已上架课程的资料不可直接修改。需要更新时先下架，修改草稿并确认报名计划后再重新上架。"
+      title="可在选课资料盘点中补录公开选课信息。修改其他课程设置时，请先下架并确认重新上架的报名计划。"
       type="info"
       :closable="false"
     /><LocalUpload v-if="resource === 'media'" @saved="load" />

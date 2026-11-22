@@ -1,4 +1,20 @@
 export interface paths {
+    "/api/v2/admin/media/trial-previews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/media/medias": {
         parameters: {
             query?: never;
@@ -461,6 +477,43 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Preview: {
+            courseId?: string;
+            sectionId?: string;
+        };
+        /**
+         * @description 视频播放的签名信息
+         * @default null
+         */
+        VideoPlayVO: {
+            /**
+             * @description 试看任务状态：PROCESSING、FAILED、READY；完整版为空
+             * @default
+             */
+            state: string;
+            errorCode?: string;
+            trial?: boolean;
+            taskId?: string;
+            provider?: string;
+            playUrl?: string;
+            /**
+             * @description 受控播放地址到期时间，Unix epoch 毫秒
+             * @default
+             */
+            expiresAt: string;
+            /**
+             * @description 视频唯一标示
+             * @default
+             * @example 12412534535143242
+             */
+            fileId: string;
+            /**
+             * @description 视频封面
+             * @default
+             * @example xxx.xxx.xxx
+             */
+            signature: string;
+        };
         /**
          * @description 媒体上传的结果
          * @default null
@@ -504,40 +557,19 @@ export interface components {
              */
             size: string;
         };
-        /**
-         * @description 视频播放的签名信息
-         * @default null
-         */
-        VideoPlayVO: {
-            /**
-             * @description 试看任务状态：PROCESSING、FAILED、READY；完整版为空
-             * @default
-             */
-            state: string;
-            errorCode?: string;
-            trial?: boolean;
-            taskId?: string;
-            provider?: string;
-            playUrl?: string;
-            /**
-             * @description 受控播放地址到期时间，Unix epoch 毫秒
-             * @default
-             */
-            expiresAt: string;
-            /**
-             * @description 视频唯一标示
-             * @default
-             * @example 12412534535143242
-             */
-            fileId: string;
-            /**
-             * @description 视频封面
-             * @default
-             * @example xxx.xxx.xxx
-             */
-            signature: string;
-        };
         Retry: {
+            version?: string;
+        };
+        TrialStatusQuery: {
+            mediaIds?: string[];
+            /** Format: int32 */
+            seconds?: number;
+        };
+        TrialStatus: {
+            taskId?: string;
+            /** @enum {string} */
+            state?: "UNAVAILABLE" | "MISSING" | "PENDING" | "PROCESSING" | "READY" | "FAILED" | "REMOVED";
+            errorCode?: string;
             version?: string;
         };
         Cleanup: {
@@ -733,6 +765,35 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Preview"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["VideoPlayVO"];
+                    };
+                };
+            };
+        };
+    };
     queryMediaPage: {
         parameters: {
             query: {
@@ -1101,6 +1162,7 @@ export interface operations {
                 owner: string;
                 expires: string;
                 signature: string;
+                previewCourse?: string;
             };
             header?: {
                 Range?: string;

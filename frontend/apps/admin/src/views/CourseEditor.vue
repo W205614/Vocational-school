@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted } from 'vue';
+import { ref, computed, nextTick, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
 import { get, write, newKey } from '../../../../packages/shared/src/client';
@@ -10,13 +10,28 @@ import CourseForm from '../components/CourseForm.vue';
 import CourseFacts from '../../../../packages/shared/src/CourseFacts.vue';
 
 type Issue = { area: string; sectionId?: string; message: string; blocking: boolean };
-type Publication = { preview: Row; issues: Issue[] };
+const trialLabels = {
+  UNAVAILABLE: '源视频不可用',
+  MISSING: '待生成',
+  PENDING: '等待生成',
+  PROCESSING: '正在生成',
+  READY: '已就绪',
+  FAILED: '生成失败',
+  REMOVED: '片段已移除',
+};
+type Trial = {
+  sectionId: string;
+  sectionName: string;
+  status: { state: keyof typeof trialLabels; taskId?: string; errorCode?: string; version?: number };
+};
+type Publication = { preview: Row; issues: Issue[]; trials: Trial[] };
 const route = useRoute(),
   router = useRouter(),
   task = useTask(),
   publicationTask = useTask(),
   formsTask = useTask(),
   publication = ref<Publication>(),
+  trialPlayer = ref<{ sectionId: string; taskId: string; url: string }>(),
   previewOpen = ref(false),
   baseOpen = ref(false),
   pendingIssue = ref<Issue>(),
@@ -76,11 +91,49 @@ async function load(next = id.value) {
 }
 async function showPublication() {
   publication.value = undefined;
+  trialPlayer.value = undefined;
   previewOpen.value = true;
+  await refreshPublication();
+}
+async function readPublication() {
+  publication.value = await get<Publication>('/admin/course/courses/publication/' + id.value);
+  const playing = trialPlayer.value;
+  if (playing && !publication.value.trials.some(
+    (trial) => trial.sectionId === playing.sectionId && trial.status.state === 'READY'
+      && trial.status.taskId === playing.taskId,
+  )) trialPlayer.value = undefined;
+}
+async function refreshPublication() {
+  await publicationTask.run(readPublication);
+}
+async function updateTrial(trial: Trial) {
+  trialPlayer.value = undefined;
   await publicationTask.run(async () => {
-    publication.value = await get<Publication>('/admin/course/courses/publication/' + id.value);
+    if (trial.status.state === 'FAILED') {
+      await write('/admin/media/media-trials/' + trial.status.taskId + '/retry', 'POST', {
+        version: trial.status.version,
+      });
+    } else {
+      const ticket = await write<{ playUrl?: string; taskId: string }>(
+        '/admin/media/trial-previews', 'POST', { courseId: id.value, sectionId: trial.sectionId },
+      );
+      if (previewOpen.value && ticket.playUrl) {
+        trialPlayer.value = { sectionId: trial.sectionId, taskId: ticket.taskId, url: ticket.playUrl };
+      }
+    }
+    await readPublication();
   });
 }
+watch(
+  [previewOpen, publication, publicationTask.busy, publicationTask.error],
+  ([open, result, busy, error], _, onCleanup) => {
+    if (!open || busy || error || !result?.trials.some(
+      ({ status }) => status.state === 'PENDING' || status.state === 'PROCESSING',
+    )) return;
+    const poll = setTimeout(refreshPublication, 1500);
+    onCleanup(() => clearTimeout(poll));
+  },
+);
 async function publish() {
   if (!publication.value || publication.value.issues.some((issue) => issue.blocking)) return;
   const saved = await publicationTask.run(async () => {
@@ -101,6 +154,10 @@ async function saveBase(body: Row) {
   }
 }
 function goToIssue(issue: Issue) {
+  if (issue.area === 'TRIAL') {
+    document.getElementById('course-trial-' + issue.sectionId)?.focus();
+    return;
+  }
   pendingIssue.value = issue;
   previewOpen.value = false;
 }
@@ -388,7 +445,7 @@ onMounted(() => {
       title="学生视角预览与上架检查"
       width="min(96vw, 56rem)"
       destroy-on-close
-      @closed="focusIssue"
+      @closed="trialPlayer = undefined; focusIssue()"
     >
       <Status :busy="publicationTask.busy.value" :error="publicationTask.error.value" />
       <template v-if="publication">
@@ -401,6 +458,34 @@ onMounted(() => {
               <el-button link @click="goToIssue(issue)">前往处理</el-button>
             </li>
           </ul>
+        </section>
+        <section v-if="publication.trials.length" aria-label="小节试看片段">
+          <h3>小节试看片段</h3>
+          <ul class="publication-issues">
+            <li v-for="trial in publication.trials" :id="'course-trial-' + trial.sectionId" :key="trial.sectionId" tabindex="-1">
+              <strong>{{ trial.sectionName }}</strong> · {{ trialLabels[trial.status.state] }}
+              <el-button
+                v-if="trial.status.state === 'MISSING' || trial.status.state === 'READY' || trial.status.state === 'FAILED'"
+                link
+                :disabled="publicationTask.busy.value"
+                @click="updateTrial(trial)"
+              >{{ trial.status.state === 'READY' ? '预览片段' : trial.status.state === 'FAILED' ? '重试生成' : '生成试看片段' }}</el-button>
+              <p v-if="trial.status.state === 'FAILED'">
+                请检查源视频或处理工具后重试。失败标识 {{ trial.status.errorCode }}
+              </p>
+              <p v-else-if="trial.status.state === 'UNAVAILABLE' || trial.status.state === 'REMOVED'">
+                请在关联视频中选择已就绪的媒资，或关闭本小节试看后保存。
+              </p>
+              <video
+                v-if="trialPlayer?.sectionId === trial.sectionId"
+                :src="trialPlayer.url"
+                :aria-label="'试看片段预览 · ' + trial.sectionName"
+                controls
+                playsinline
+              />
+            </li>
+          </ul>
+          <el-button :disabled="publicationTask.busy.value" @click="refreshPublication">刷新试看状态</el-button>
         </section>
         <section class="card publication-preview" aria-label="学生视角预览">
           <h3>{{ publication.preview.name }}</h3>
@@ -429,11 +514,11 @@ onMounted(() => {
         <el-button
           v-if="publicationTask.error.value"
           :disabled="publicationTask.busy.value"
-          @click="showPublication"
+          @click="refreshPublication"
         >重新检查</el-button>
         <el-button
           type="primary"
-          :disabled="publicationTask.busy.value || !publication || publication.issues.some((issue) => issue.blocking)"
+          :disabled="publicationTask.busy.value || !!publicationTask.error.value || !publication || publication.issues.some((issue) => issue.blocking)"
           @click="publish"
         >确认上架</el-button>
       </template>
@@ -444,6 +529,7 @@ onMounted(() => {
 <style scoped>
 .publication-issues { padding-left: 1.25rem; }
 .publication-issues li { margin: .35rem 0; overflow-wrap: anywhere; }
+.publication-issues video { display: block; width: min(100%, 28rem); margin-top: .5rem; }
 .publication-preview { padding: 1.25rem; overflow-wrap: anywhere; }
 .publication-preview img { max-width: min(100%, 15rem); height: auto; }
 .publication-preview details p { white-space: pre-wrap; }

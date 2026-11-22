@@ -1,9 +1,14 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { accounts, api, fixture, login } from './helpers';
 
 const fixtureVideo = fileURLToPath(
   new URL('../../zxt-media/src/test/resources/media-probe/recorder.webm', import.meta.url),
+);
+const replacementVideo = fileURLToPath(
+  new URL('../../zxt-media/src/test/resources/media-probe/tiny.mp4', import.meta.url),
 );
 const outcome = '完成一份可演示的课程成果';
 const privateHandout = '随堂讲义示例：提交之前请核对作品中的输入、输出和边界情况。';
@@ -12,7 +17,50 @@ function post(page: Page, path: string, body: unknown) {
   return api(page, 'POST', path, body, crypto.randomUUID());
 }
 
-test('draft preview and published course handout follow their respective permissions', async ({
+async function uploadVideo(admin: Page, path: string) {
+  await admin.goto('/media');
+  const webm = path.endsWith('.webm');
+  const unique = Buffer.from(crypto.randomUUID().replaceAll('-', ''), 'hex');
+  // Keep each run's content-addressed upload distinct using legal container padding.
+  const padding = webm ? Buffer.from([0xec, 0x90]) : Buffer.from([0, 0, 0, 24, 0x66, 0x72, 0x65, 0x65]);
+  await admin.getByLabel('选择本地视频').setInputFiles({
+    name: basename(path),
+    mimeType: webm ? 'video/webm' : 'video/mp4',
+    buffer: Buffer.concat([readFileSync(path), padding, unique]),
+  });
+  await admin.getByRole('button', { name: '上传并登记', exact: true }).click();
+  await expect(admin.getByText('视频已持久化', { exact: true })).toBeVisible();
+  return admin.evaluate(() =>
+    JSON.parse(sessionStorage.getItem('school-operations') || '[]').find(
+      (item: any) => item.label === '登记本地视频',
+    ).operation.result,
+  );
+}
+
+async function watchClip(player: Locator) {
+  await expect.poll(
+    () => player.evaluate((element) => (element as HTMLVideoElement).readyState),
+    { timeout: 15_000 },
+  ).toBeGreaterThanOrEqual(2);
+  await player.evaluate((element) => {
+    const video = element as HTMLVideoElement;
+    video.muted = true;
+    return video.play();
+  });
+  await expect.poll(() => player.evaluate((element) => (element as HTMLVideoElement).currentTime))
+    .toBeGreaterThan(0);
+}
+
+async function verifyClip(page: Page, url: string) {
+  expect(url).toMatch(/^\/api\/v2\/services\/media\/trial-content\/[0-9a-f]{64}\?/);
+  const response = await page.request.get(url, { headers: { Range: 'bytes=0-15' } });
+  expect(response.status()).toBe(206);
+  expect(response.headers()['content-type']).toContain('video/mp4');
+  expect(response.headers()['cache-control']).toContain('no-store');
+  expect((await response.body()).subarray(4, 8).toString()).toBe('ftyp');
+}
+
+test('course publication gates trial generation and preserves draft, clip, and handout permissions', async ({
   page,
   browser,
 }, info) => {
@@ -24,14 +72,9 @@ test('draft preview and published course handout follow their respective permiss
   const admin = await adminContext.newPage();
   try {
     await login(admin, 'admin', '/media');
-    await admin.getByLabel('选择本地视频').setInputFiles(fixtureVideo);
-    await admin.getByRole('button', { name: '上传并登记', exact: true }).click();
-    await expect(admin.getByText('视频已持久化', { exact: true })).toBeVisible();
-    const media = await admin.evaluate(() =>
-      JSON.parse(sessionStorage.getItem('school-operations') || '[]').find(
-        (item: any) => item.label === '登记本地视频',
-      ).operation.result,
-    );
+    const media = await uploadVideo(admin, fixtureVideo);
+    const replacement = await uploadVideo(admin, replacementVideo);
+    expect(replacement.id).not.toBe(media.id);
     const categories = await api(admin, 'GET', '/services/course/categorys/list?status=1');
     const course = await post(admin, '/admin/course/courses/baseInfo/save', {
       name: 'Product course ' + fixture.marker + ' ' + Date.now().toString(36),
@@ -109,9 +152,47 @@ test('draft preview and published course handout follow their respective permiss
 
     await admin.goto(editor);
     await admin.getByRole('button', { name: '预览与上架检查' }).click();
-    await expect(preview.getByText(/首次请求试看时生成/)).toBeVisible();
+    const trial = preview.getByRole('region', { name: '小节试看片段' });
+    await expect(trial).toContainText('待生成');
+    await expect(preview.getByRole('button', { name: '确认上架' })).toBeDisabled();
+    const blocked = await admin.request.post('/api/v2' + service + '/upShelf', {
+      data: { id: course.id },
+      headers: { Authorization: 'Bearer ' + adminToken, 'Idempotency-Key': crypto.randomUUID() },
+    });
+    expect(blocked.ok()).toBeFalsy();
+    expect(JSON.stringify(await blocked.json())).toContain('试看片段尚未就绪');
+
+    const prepareTrial = async () => {
+      await trial.getByRole('button', { name: '生成试看片段' }).click();
+      const showClip = trial.getByRole('button', { name: '预览片段' });
+      await expect(showClip).toBeEnabled({ timeout: 45_000 });
+      await showClip.click();
+      const player = trial.locator('video');
+      await expect(player).toBeVisible();
+      const url = (await player.getAttribute('src'))!;
+      await verifyClip(admin, url);
+      await watchClip(player);
+      return url;
+    };
+
+    const firstClip = await prepareTrial();
+    const wrongScope = new URL(firstClip, admin.url());
+    wrongScope.searchParams.delete('previewCourse');
+    expect((await admin.request.get(wrongScope.toString())).status()).toBe(403);
+    await post(admin, service + '/media/save/' + course.id, [{
+      cataId: video, mediaId: replacement.id, videoName: 'tiny.mp4',
+      mediaDuration: Math.ceil(Number(replacement.duration)), trailer: true,
+    }]);
+    expect((await admin.request.get(firstClip, { headers: { Range: 'bytes=0-15' } })).status()).toBe(403);
+    await preview.getByRole('button', { name: '刷新试看状态' }).click();
+    await expect(trial).toContainText('待生成');
+    await expect(trial.locator('video')).toHaveCount(0);
+    await expect(preview.getByRole('button', { name: '确认上架' })).toBeDisabled();
+    const draftClip = await prepareTrial();
+    expect(draftClip.split('?')[0]).not.toBe(firstClip.split('?')[0]);
     await preview.getByRole('button', { name: '确认上架' }).click();
     await expect(admin).toHaveURL(/\/courses$/);
+    expect((await admin.request.get(draftClip, { headers: { Range: 'bytes=0-15' } })).status()).toBe(403);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/courses/' + course.id);
@@ -126,6 +207,29 @@ test('draft preview and published course handout follow their respective permiss
       headers: studentHeaders,
     });
     expect(deniedPreview.status()).toBe(403);
+    const deniedTrialPreview = await page.request.post('/api/v2/admin/media/trial-previews', {
+      headers: studentHeaders, data: { courseId: course.id, sectionId: video },
+    });
+    expect(deniedTrialPreview.status()).toBe(403);
+    const [playResponse] = await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().includes('/medias/signature/play?sectionId=' + video) && response.ok(),
+      ),
+      page.getByRole('button', { name: '试看 · 试点视频' }).click(),
+    ]);
+    const { data: trialTicket } = await playResponse.json();
+    expect(trialTicket).toMatchObject({ trial: true, state: 'READY', provider: 'TRIAL' });
+    expect(trialTicket.fileId).toBeFalsy();
+    expect(trialTicket.playUrl.split('?')[0]).toBe(draftClip.split('?')[0]);
+    expect(trialTicket.playUrl).not.toContain('previewCourse');
+    await verifyClip(page, trialTicket.playUrl);
+    await expect(page.getByText('当前播放独立试看片段，报名后可学习完整版。')).toBeVisible();
+    await watchClip(page.locator('video.course-player'));
+    const deniedFullPreview = await page.request.get(
+      '/api/v2/services/media/medias/signature/preview?mediaId=' + replacement.id,
+      { headers: studentHeaders },
+    );
+    expect(deniedFullPreview.status()).toBe(403);
     const deniedHandout = await page.request.get('/api/v2/services/course/courses/' + course.id + '/handout', {
       headers: studentHeaders,
     });

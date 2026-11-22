@@ -87,6 +87,7 @@ function save() {
   emit('save', {
     ...model.value,
     difficulty: model.value.difficulty ?? '',
+    estimatedStudyMinutes: model.value.estimatedStudyMinutes || undefined,
     price: model.value.free ? 0 : Math.round(price.value * 100),
   });
 }
@@ -197,6 +198,15 @@ function save() {
           <el-option label="进阶" value="INTERMEDIATE" />
           <el-option label="高阶" value="ADVANCED" />
         </el-select>
+      </el-form-item>
+      <el-form-item label="预计学习时长（分钟）">
+        <el-input-number
+          :model-value="model.estimatedStudyMinutes || undefined"
+          :min="1" :max="100000" :precision="0" :controls="false"
+          aria-label="预计学习时长（分钟）"
+          @update:model-value="model.estimatedStudyMinutes = $event"
+        />
+        <div class="muted">可计入练习时间。留空时按完整的视频时长估算。</div>
       </el-form-item>
       <el-form-item label="实操内容">
         <el-input v-model="model.practiceOverview" aria-label="实操内容" type="textarea" :rows="2" maxlength="500" placeholder="例：完成一份演示作品；无实操可填写「无」" />

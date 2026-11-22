@@ -464,3 +464,10 @@ gateway|POST|/_modules/learning/api/v2/learning-hub/practice/{courseId}/submissi
 gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/practice/{courseId}/submissions
 gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/practice/{courseId}/submissions/{studentId}
 gateway|PUT|/_modules/learning/api/v2/teacher/learning-hub/practice/{courseId}/submissions/{id}/feedback
+gateway|GET|/_modules/course/study-information
+gateway|GET|/_modules/course/study-information/{id}
+gateway|PATCH|/_modules/course/study-information/{id}
+gateway|POST|/_modules/media/trial-previews
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/practice/{courseId}
+gateway|PUT|/_modules/learning/api/v2/admin/learning-hub/practice/{courseId}/corrections
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/practice/pending

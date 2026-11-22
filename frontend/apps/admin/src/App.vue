@@ -62,6 +62,7 @@ const pageTitle = computed(
       '/': '数据看板',
       '/teaching': '教学学情',
       '/practice': '实操作业',
+      '/course-study-information': '选课资料盘点',
       '/seasons': '赛季与奖励',
       '/exams': '试卷与评分',
       '/reliability': '失败与补偿任务',
@@ -151,6 +152,9 @@ const pageTitle = computed(
                 >{{ resources[key]!.title }}</RouterLink
               >
             </section>
+            <RouterLink to="/course-study-information" exact-active-class="selected">
+              选课资料盘点
+            </RouterLink>
             <RouterLink to="/role-permissions" exact-active-class="selected"
               >角色权限绑定</RouterLink
             ><RouterLink to="/privacy-requests" exact-active-class="selected"

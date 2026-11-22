@@ -33,7 +33,7 @@ onMounted(load);
 <template>
   <section aria-label="试看片段任务">
     <h3>试看片段任务</h3>
-    <p>未报名用户首次请求试看时创建独立片段。失败任务排查源视频或处理工具后可重试。</p>
+    <p>可在课程上架检查中生成并预览片段。已有课程也可在学生请求试看时生成片段。</p>
     <Status :busy="task.busy.value" :error="task.error.value" />
     <el-button :disabled="task.busy.value" @click="load">刷新试看任务</el-button>
     <el-table :data="rows">

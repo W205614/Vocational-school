@@ -3,12 +3,19 @@ import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { get, newKey, write } from '../../../../packages/shared/src/client';
 import { useTask } from '../../../../packages/shared/src/ui';
-import type { PracticeAssignment, PracticeSubmission } from '../../../../packages/shared/src/practice';
+import type {
+  PracticeAssignment,
+  PracticeSubmission,
+  PracticeVersion,
+} from '../../../../packages/shared/src/practice';
 import PracticeHistory from '../../../../packages/shared/src/PracticeHistory.vue';
+import PracticeVersions from '../../../../packages/shared/src/PracticeVersions.vue';
 import Status from '../../../../packages/shared/src/Status.vue';
 
 interface StudentView {
   assignment: PracticeAssignment;
+  versions: PracticeVersion[];
+  historyOnly: boolean;
   canSubmit: boolean;
   submissions: PracticeSubmission[];
 }
@@ -20,7 +27,9 @@ const selected = ref<StudentView>();
 const submissions = computed(() => selected.value?.submissions ?? []);
 const description = ref('');
 const workUrl = ref('');
-let submittedDraft: { description: string; workUrl: string; submissionKey: string } | undefined;
+let submittedDraft:
+  | { description: string; workUrl: string; submissionKey: string; assignmentVersion: number }
+  | undefined;
 let selection = 0;
 let reloadPending = false;
 
@@ -62,12 +71,18 @@ watch(
 );
 
 async function submit() {
-  if (!selected.value?.canSubmit) return;
-  const course = selected.value.assignment.courseId;
+  const current = selected.value;
+  if (!current?.canSubmit || current.assignment.version === null) return;
+  const { courseId: course, version: assignmentVersion } = current.assignment;
   const text = description.value.trim();
   const url = workUrl.value.trim();
-  if (!submittedDraft || submittedDraft.description !== text || submittedDraft.workUrl !== url)
-    submittedDraft = { description: text, workUrl: url, submissionKey: newKey() };
+  if (
+    !submittedDraft ||
+    submittedDraft.description !== text ||
+    submittedDraft.workUrl !== url ||
+    submittedDraft.assignmentVersion !== assignmentVersion
+  )
+    submittedDraft = { description: text, workUrl: url, submissionKey: newKey(), assignmentVersion };
   let saved = false;
   await task.run(async () => {
     const item = await write<PracticeSubmission>(
@@ -102,7 +117,13 @@ async function submit() {
     <template v-if="selected">
       <article class="card">
         <h2>{{ selected.assignment.title }}</h2>
+        <p v-if="selected.historyOnly">学习权益已失效，以下为你提交时的任务说明。</p>
+        <p>
+          {{ selected.historyOnly ? '最近提交使用的版本' : '当前任务' }} · 第
+          {{ selected.assignment.version }} 版
+        </p>
         <p class="practice-text">{{ selected.assignment.instructions }}</p>
+        <PracticeVersions :versions="selected.versions" />
         <RouterLink :to="'/courses/' + selected.assignment.courseId">查看课程</RouterLink>
       </article>
       <el-form
@@ -127,7 +148,7 @@ async function submit() {
         </el-button>
       </el-form>
       <h2 v-if="submissions.length">提交与反馈</h2>
-      <PracticeHistory :submissions="submissions" />
+      <PracticeHistory :submissions="submissions" :versions="selected?.versions ?? []" />
     </template>
     <template v-else-if="!route.query.courseId">
       <el-empty v-if="!task.busy.value && !task.error.value && !assignments.length" description="暂无实操作业" />

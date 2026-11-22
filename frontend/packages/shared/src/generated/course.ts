@@ -217,6 +217,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/course/study-information/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["supplement"];
+        trace?: never;
+    };
+    "/api/v2/admin/course/study-information": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["inventory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/services/course/course/{id}/searchInfo": {
         parameters: {
             query?: never;
@@ -1069,6 +1101,8 @@ export interface components {
             prerequisites?: string;
             difficulty?: string;
             practiceOverview?: string;
+            /** Format: int32 */
+            estimatedStudyMinutes?: number;
             handout?: string;
             /**
              * Format: int32
@@ -1109,6 +1143,51 @@ export interface components {
              * @default
              */
             index: number;
+        };
+        CourseStudyInformationPatch: {
+            /** Format: int32 */
+            status: number;
+            learningOutcomes?: string;
+            prerequisites?: string;
+            difficulty?: string;
+            /** Format: int32 */
+            estimatedStudyMinutes?: number;
+            practiceOverview?: string;
+        };
+        CourseStudyInformationVO: {
+            id?: string;
+            name?: string;
+            /** Format: int32 */
+            status?: number;
+            learningOutcomes?: string;
+            prerequisites?: string;
+            difficulty?: string;
+            /** Format: int32 */
+            estimatedStudyMinutes?: number;
+            videoEstimateMinutes?: string;
+            practiceOverview?: string;
+            missingFields?: ("ALL" | "ANY" | "OUTCOMES" | "PREREQUISITES" | "DIFFICULTY" | "ESTIMATED_TIME" | "PRACTICE")[];
+        };
+        /**
+         * @description 分页结果
+         * @default null
+         */
+        PageDTOCourseStudyInformationVO: {
+            /**
+             * @description 总条数
+             * @default
+             */
+            total: string;
+            /**
+             * @description 总页码数
+             * @default
+             */
+            pages: string;
+            /**
+             * @description 当前页数据
+             * @default
+             */
+            list: components["schemas"]["CourseStudyInformationVO"][];
         };
         /**
          * @description 课程信息
@@ -1327,6 +1406,8 @@ export interface components {
             prerequisites?: string;
             difficulty?: string;
             practiceOverview?: string;
+            /** Format: int32 */
+            estimatedStudyMinutes?: number;
             /**
              * @description 课程id
              * @default
@@ -1392,13 +1473,6 @@ export interface components {
              */
             teacherIds: string[];
         };
-        ExamSectionPublicationDTO: {
-            /** Format: int32 */
-            totalSections?: number;
-            /** Format: int32 */
-            mediaDuration?: number;
-            draftQuestionIds?: string[];
-        };
         /**
          * @description 小节信息，包含课程id和媒资id
          * @default null
@@ -1433,6 +1507,13 @@ export interface components {
             mediaDuration: number;
             /** Format: int32 */
             type?: number;
+        };
+        ExamSectionPublicationDTO: {
+            /** Format: int32 */
+            totalSections?: number;
+            /** Format: int32 */
+            mediaDuration?: number;
+            draftQuestionIds?: string[];
         };
         /**
          * @description 媒资被引用情况
@@ -1863,6 +1944,7 @@ export interface components {
         CoursePublicationVO: {
             preview?: components["schemas"]["Preview"];
             issues?: components["schemas"]["Issue"][];
+            trials?: components["schemas"]["Trial"][];
         };
         Issue: {
             area?: string;
@@ -1886,8 +1968,22 @@ export interface components {
             prerequisites?: string;
             difficulty?: string;
             practiceOverview?: string;
+            /** Format: int32 */
+            estimatedStudyMinutes?: number;
             handout?: string;
             chapters?: components["schemas"]["CataVO"][];
+        };
+        Trial: {
+            sectionId?: string;
+            sectionName?: string;
+            status?: components["schemas"]["TrialStatus"];
+        };
+        TrialStatus: {
+            taskId?: string;
+            /** @enum {string} */
+            state?: "UNAVAILABLE" | "MISSING" | "PENDING" | "PROCESSING" | "READY" | "FAILED" | "REMOVED";
+            errorCode?: string;
+            version?: string;
         };
         /**
          * @description 课程搜索条件
@@ -2252,6 +2348,8 @@ export interface components {
             prerequisites?: string;
             difficulty?: string;
             practiceOverview?: string;
+            /** Format: int32 */
+            estimatedStudyMinutes?: number;
             handout?: string;
             /**
              * @description 详情
@@ -2847,6 +2945,94 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: null;
+                    };
+                };
+            };
+        };
+    };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseStudyInformationVO"];
+                    };
+                };
+            };
+        };
+    };
+    supplement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourseStudyInformationPatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["CourseStudyInformationVO"];
+                    };
+                };
+            };
+        };
+    };
+    inventory: {
+        parameters: {
+            query?: {
+                pageNo?: number;
+                pageSize?: number;
+                keyword?: string;
+                missing?: "ALL" | "ANY" | "OUTCOMES" | "PREREQUISITES" | "DIFFICULTY" | "ESTIMATED_TIME" | "PRACTICE";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["PageDTOCourseStudyInformationVO"];
                     };
                 };
             };

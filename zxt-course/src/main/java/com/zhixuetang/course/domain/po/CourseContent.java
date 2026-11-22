@@ -48,6 +48,7 @@ public class CourseContent implements Serializable {
     private String prerequisites;
     private String difficulty;
     private String practiceOverview;
+    private Integer estimatedStudyMinutes;
     private String handout;
 
     /**

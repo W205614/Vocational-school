@@ -1,5 +1,6 @@
 package com.zhixuetang.media.cloud;
 
+import com.zhixuetang.api.dto.media.TrialStatus.State;
 import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.media.storage.local.LocalObjectStore;
 import org.junit.jupiter.api.*;
@@ -107,9 +108,12 @@ class TrialMediaDatabaseTest {
 
     @Test
     void durableClipIsIdempotentAndExpiredLeaseCanBeRecovered() throws Exception {
+        assertEquals(State.MISSING, jobs.statuses(Set.of(22L), 2).get(22L).state());
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM media_trial", Integer.class));
         var first = jobs.request(22, 2);
         String id = first.get("id").toString();
         assertEquals("PENDING", first.get("state"));
+        assertEquals(State.PENDING, jobs.statuses(Set.of(22L), 2).get(22L).state());
         assertEquals(id, jobs.request(22, 2).get("id"));
         assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM media_trial", Integer.class));
         jdbc.update(
@@ -118,6 +122,10 @@ class TrialMediaDatabaseTest {
         jobs.process(id);
         var ready = jobs.task(id);
         assertEquals("READY", ready.get("state"));
+        var status = jobs.statuses(Set.of(22L), 2).get(22L);
+        assertEquals(State.READY, status.state());
+        assertEquals(id, status.taskId());
+        assertEquals(State.MISSING, jobs.statuses(Set.of(22L), 3).get(22L).state());
         assertEquals(2, ready.get("attempts"));
         assertTrue(((Number) ready.get("output_duration")).floatValue() <= 2.1f);
         assertTrue(Files.isRegularFile(local.trialPath(id)));
@@ -129,12 +137,14 @@ class TrialMediaDatabaseTest {
         jobs.removeDerived(file);
         assertFalse(Files.exists(local.trialPath(id)));
         assertEquals("REMOVED", jobs.task(id).get("state"));
+        assertEquals(State.REMOVED, jobs.statuses(Set.of(22L), 2).get(22L).state());
     }
 
     @Test
     void changedSourceCannotBePublishedUnderTheOldTrialIdentity() {
         String id = jobs.request(22, 2).get("id").toString();
         jdbc.update("UPDATE media SET file_id=? WHERE id=22", "b".repeat(64) + ".mp4");
+        assertEquals(State.MISSING, jobs.statuses(Set.of(22L), 2).get(22L).state());
         jobs.process(id);
         var failed = jobs.task(id);
         assertEquals("FAILED", failed.get("state"));

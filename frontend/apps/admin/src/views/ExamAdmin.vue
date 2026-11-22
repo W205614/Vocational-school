@@ -42,6 +42,7 @@ const returnToWork = computed(() => ({
     workCourse: validId(route.query.pendingCourseId) || undefined,
     questionPage: validPage(route.query.questionPage),
     gradePage: validPage(route.query.pendingPage),
+    practicePage: validPage(route.query.practicePage),
     pendingOnly: route.query.pendingOnly === 'false' ? 'false' : 'true',
   },
 }));

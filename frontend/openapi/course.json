@@ -743,6 +743,209 @@
         }
       }
     },
+    "/api/v2/admin/course/study-information/{id}": {
+      "get": {
+        "tags": [
+          "course-study-information-controller"
+        ],
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "exclusiveMinimum": 0,
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseStudyInformationVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "course-study-information-controller"
+        ],
+        "operationId": "supplement",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "exclusiveMinimum": 0,
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseStudyInformationPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseStudyInformationVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/course/study-information": {
+      "get": {
+        "tags": [
+          "course-study-information-controller"
+        ],
+        "operationId": "inventory",
+        "parameters": [
+          {
+            "name": "pageNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "maxLength": 80,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "missing",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "ANY",
+              "enum": [
+                "ALL",
+                "ANY",
+                "OUTCOMES",
+                "PREREQUISITES",
+                "DIFFICULTY",
+                "ESTIMATED_TIME",
+                "PRACTICE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PageDTOCourseStudyInformationVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/services/course/course/{id}/searchInfo": {
       "get": {
         "tags": [
@@ -3244,6 +3447,12 @@
             "maxLength": 500,
             "minLength": 0
           },
+          "estimatedStudyMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100000,
+            "minimum": 1
+          },
           "handout": {
             "type": "string",
             "maxLength": 10000,
@@ -3312,6 +3521,121 @@
           "index",
           "name"
         ]
+      },
+      "CourseStudyInformationPatch": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "learningOutcomes": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "prerequisites": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "difficulty": {
+            "type": "string",
+            "pattern": "BEGINNER|INTERMEDIATE|ADVANCED"
+          },
+          "estimatedStudyMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 100000,
+            "minimum": 1
+          },
+          "practiceOverview": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CourseStudyInformationVO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "learningOutcomes": {
+            "type": "string"
+          },
+          "prerequisites": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string"
+          },
+          "estimatedStudyMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "videoEstimateMinutes": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "practiceOverview": {
+            "type": "string"
+          },
+          "missingFields": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "ANY",
+                "OUTCOMES",
+                "PREREQUISITES",
+                "DIFFICULTY",
+                "ESTIMATED_TIME",
+                "PRACTICE"
+              ]
+            }
+          }
+        }
+      },
+      "PageDTOCourseStudyInformationVO": {
+        "type": "object",
+        "default": null,
+        "description": "分页结果",
+        "properties": {
+          "total": {
+            "type": "string",
+            "default": "",
+            "description": "总条数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "pages": {
+            "type": "string",
+            "default": "",
+            "description": "总页码数",
+            "pattern": "^-?[0-9]+$"
+          },
+          "list": {
+            "type": "array",
+            "default": "",
+            "description": "当前页数据",
+            "items": {
+              "$ref": "#/components/schemas/CourseStudyInformationVO"
+            }
+          }
+        }
       },
       "CourseDTO": {
         "type": "object",
@@ -3561,6 +3885,10 @@
           "practiceOverview": {
             "type": "string"
           },
+          "estimatedStudyMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
           "id": {
             "type": "string",
             "default": "",
@@ -3638,26 +3966,6 @@
           }
         }
       },
-      "ExamSectionPublicationDTO": {
-        "type": "object",
-        "properties": {
-          "totalSections": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "mediaDuration": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "draftQuestionIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^-?[0-9]+$"
-            }
-          }
-        }
-      },
       "SectionInfoDTO": {
         "type": "object",
         "default": null,
@@ -3695,6 +4003,26 @@
           "type": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "ExamSectionPublicationDTO": {
+        "type": "object",
+        "properties": {
+          "totalSections": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mediaDuration": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "draftQuestionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
           }
         }
       },
@@ -4242,6 +4570,12 @@
             "items": {
               "$ref": "#/components/schemas/Issue"
             }
+          },
+          "trials": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Trial"
+            }
           }
         }
       },
@@ -4305,6 +4639,10 @@
           "practiceOverview": {
             "type": "string"
           },
+          "estimatedStudyMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
           "handout": {
             "type": "string"
           },
@@ -4313,6 +4651,48 @@
             "items": {
               "$ref": "#/components/schemas/CataVO"
             }
+          }
+        }
+      },
+      "Trial": {
+        "type": "object",
+        "properties": {
+          "sectionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "sectionName": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TrialStatus"
+          }
+        }
+      },
+      "TrialStatus": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "UNAVAILABLE",
+              "MISSING",
+              "PENDING",
+              "PROCESSING",
+              "READY",
+              "FAILED",
+              "REMOVED"
+            ]
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
           }
         }
       },
@@ -4738,6 +5118,10 @@
           },
           "practiceOverview": {
             "type": "string"
+          },
+          "estimatedStudyMinutes": {
+            "type": "integer",
+            "format": "int32"
           },
           "handout": {
             "type": "string"

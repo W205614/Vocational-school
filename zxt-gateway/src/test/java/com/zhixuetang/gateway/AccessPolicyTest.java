@@ -43,6 +43,19 @@ class AccessPolicyTest {
     }
 
     @Test
+    void followUpRoutesUseOnlyTheirDeclaredAudienceAndMethod() {
+        var policy = new AccessPolicy();
+        assertTrue(policy.declares("PATCH", "/api/v2/admin/course/study-information/123"));
+        assertFalse(policy.declares("PATCH", "/api/v2/services/course/study-information/123"));
+        assertTrue(policy.declares("POST", "/api/v2/admin/media/trial-previews"));
+        assertFalse(policy.declares("POST", "/api/v2/services/media/trial-previews"));
+        assertTrue(policy.declares("PUT", "/api/v2/admin/learning-hub/practice/123/corrections"));
+        assertFalse(policy.declares("PUT", "/api/v2/teacher/learning-hub/practice/123/corrections"));
+        assertTrue(policy.declares("GET", "/api/v2/teacher/learning-hub/practice/pending"));
+        assertFalse(policy.declares("GET", "/api/v2/learning-hub/practice/pending"));
+    }
+
+    @Test
     void providerReconciliationDeclaresOnlyTheFourAdministrativeMethods() {
         var policy = new AccessPolicy();
         assertTrue(policy.declares("GET", "/api/v2/admin/provider-payments/anomalies"));

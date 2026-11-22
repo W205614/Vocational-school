@@ -13,6 +13,8 @@ import com.zhixuetang.api.client.user.UserClient;
 import com.zhixuetang.api.dto.course.CourseDTO;
 import com.zhixuetang.api.dto.course.CoursePurchaseInfoDTO;
 import com.zhixuetang.api.dto.exam.QuestionBizDTO;
+import com.zhixuetang.api.dto.media.TrialStatus;
+import com.zhixuetang.api.dto.media.TrialStatusQuery;
 import com.zhixuetang.api.dto.user.UserDTO;
 import com.zhixuetang.common.autoconfigure.mq.RabbitMqHelper;
 import com.zhixuetang.common.constants.ErrorInfo;
@@ -33,9 +35,11 @@ import com.zhixuetang.course.domain.vo.CourseBaseInfoVO;
 import com.zhixuetang.course.domain.vo.CoursePageVO;
 import com.zhixuetang.course.domain.vo.CoursePublicationVO;
 import com.zhixuetang.course.domain.vo.CoursePublicationVO.Issue;
+import com.zhixuetang.course.domain.vo.CoursePublicationVO.Trial;
 import com.zhixuetang.course.domain.vo.CourseSaveVO;
 import com.zhixuetang.course.domain.vo.NameExistVO;
 import com.zhixuetang.course.mapper.*;
+import com.zhixuetang.course.properties.CourseProperties;
 import com.zhixuetang.course.service.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,8 +94,6 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
     @Autowired private ICategoryService categoryService;
 
     @Autowired private com.zhixuetang.common.autoconfigure.reliability.OutboxStore outbox;
-    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
-
     @Autowired private TradeClient tradeClient;
 
     @Autowired private ExamClient examClient;
@@ -99,6 +101,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
     @Autowired private LearningClient learningClient;
 
     @Autowired private MediaClient mediaClient;
+    @Autowired private CourseProperties courseProperties;
 
     @Override
     @Transactional(
@@ -139,6 +142,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
         courseContentDraft.setPrerequisites(courseBaseInfoSaveDTO.getPrerequisites());
         courseContentDraft.setDifficulty(courseBaseInfoSaveDTO.getDifficulty());
         courseContentDraft.setPracticeOverview(courseBaseInfoSaveDTO.getPracticeOverview());
+        courseContentDraft.setEstimatedStudyMinutes(courseBaseInfoSaveDTO.getEstimatedStudyMinutes());
         courseContentDraft.setHandout(courseBaseInfoSaveDTO.getHandout());
         // 2.2.课程封面和课程下架时间
         courseDraft.setCoverUrl(courseBaseInfoSaveDTO.getCoverUrl());
@@ -231,6 +235,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                     courseBaseInfoVO.setPrerequisites(courseContent.getPrerequisites());
                     courseBaseInfoVO.setDifficulty(courseContent.getDifficulty());
                     courseBaseInfoVO.setPracticeOverview(courseContent.getPracticeOverview());
+                    courseBaseInfoVO.setEstimatedStudyMinutes(courseContent.getEstimatedStudyMinutes());
                     if (Long.valueOf(1).equals(UserContext.getRole())) {
                         courseBaseInfoVO.setHandout(courseContent.getHandout());
                     }
@@ -263,6 +268,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                     courseBaseInfoVO.setPrerequisites(courseContentDraft.getPrerequisites());
                     courseBaseInfoVO.setDifficulty(courseContentDraft.getDifficulty());
                     courseBaseInfoVO.setPracticeOverview(courseContentDraft.getPracticeOverview());
+                    courseBaseInfoVO.setEstimatedStudyMinutes(courseContentDraft.getEstimatedStudyMinutes());
                     if (Long.valueOf(1).equals(UserContext.getRole())) {
                         courseBaseInfoVO.setHandout(courseContentDraft.getHandout());
                     }
@@ -353,9 +359,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
             propagation = Propagation.REQUIRED,
             rollbackFor = {DbException.class, Exception.class})
     public void upShelf(Long id) {
-        jdbc.update(
-                "INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",
-                id);
+        baseMapper.lockCourseState(id);
         // 1.信息获取
         // 1.1获取上架的课程草稿信息
         CourseDraft courseDraft = baseMapper.selectById(id);
@@ -446,8 +450,8 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
             throw new BizIllegalException(course == null
                     ? CourseErrorInfo.Msg.COURSE_UP_SHELF_NOT_FOUND_COURSE
                     : CourseErrorInfo.Msg.COURSE_UP_SHELF_AREADY);
-        var blocker = publicationIssues(draft, course, courseContentDraftMapper.selectById(id))
-                .stream().filter(Issue::blocking).findFirst();
+        var blocker = publicationChecks(draft, course, courseContentDraftMapper.selectById(id))
+                .issues().stream().filter(Issue::blocking).findFirst();
         if (blocker.isPresent()) throw new BizIllegalException(blocker.get().message());
     }
 
@@ -468,12 +472,16 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                 content == null ? null : content.getPrerequisites(),
                 content == null ? null : content.getDifficulty(),
                 content == null ? null : content.getPracticeOverview(),
+                content == null ? null : content.getEstimatedStudyMinutes(),
                 content == null ? null : content.getHandout(),
                 chapters);
-        return new CoursePublicationVO(preview, publicationIssues(draft, courseMapper.selectById(id), content));
+        var checks = publicationChecks(draft, courseMapper.selectById(id), content);
+        return new CoursePublicationVO(preview, checks.issues(), checks.trials());
     }
 
-    private List<Issue> publicationIssues(CourseDraft draft, Course course, CourseContentDraft content) {
+    private record PublicationChecks(List<Issue> issues, List<Trial> trials) {}
+
+    private PublicationChecks publicationChecks(CourseDraft draft, Course course, CourseContentDraft content) {
         long courseId = draft.getId();
         List<Issue> issues = new ArrayList<>();
         if (course != null && !CourseStatus.DOWN_SHELF.equals(course.getStatus())) {
@@ -513,19 +521,31 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
             ready.addAll(mediaClient.readyDurations(
                     Set.copyOf(ids.subList(offset, Math.min(offset + 500, ids.size())))).keySet());
         }
-        boolean hasTrial = false;
         for (var video : videos) {
             Long mediaId = video.getMediaId();
             if (mediaId == null || mediaId <= 0 || StringUtils.isBlank(video.getVideoName())) {
                 issues.add(new Issue("MEDIA", video.getId(), "小节「" + video.getName() + "」缺少视频关联", true));
             } else if (!ready.contains(mediaId)) {
                 issues.add(new Issue("MEDIA", video.getId(), "小节「" + video.getName() + "」的视频仍在处理或不可用", true));
-            } else if (Integer.valueOf(1).equals(video.getTrailer())) {
-                hasTrial = true;
             }
         }
-        if (hasTrial) {
-            issues.add(new Issue("MEDIA", null, "试看已启用，学生首次请求试看时生成独立片段，处理完成后可播放", false));
+
+        var trialVideos = videos.stream().filter(video -> Integer.valueOf(1).equals(video.getTrailer())).toList();
+        var trialMedia = trialVideos.stream().map(CourseCatalogueDraft::getMediaId)
+                .filter(ready::contains).distinct().toList();
+        Map<Long, TrialStatus> statuses = new HashMap<>();
+        int seconds = courseProperties.getMedia().getTrailerDuration() * 60;
+        for (int offset = 0; offset < trialMedia.size(); offset += 500) {
+            var batch = Set.copyOf(trialMedia.subList(offset, Math.min(offset + 500, trialMedia.size())));
+            statuses.putAll(mediaClient.trialStatuses(new TrialStatusQuery(batch, seconds)));
+        }
+        List<Trial> trials = new ArrayList<>();
+        for (var video : trialVideos) {
+            var status = statuses.getOrDefault(video.getMediaId(), TrialStatus.unavailable());
+            trials.add(new Trial(video.getId(), video.getName(), status));
+            if (status.state() != TrialStatus.State.READY) {
+                issues.add(new Issue("TRIAL", video.getId(), "小节「" + video.getName() + "」的试看片段尚未就绪", true));
+            }
         }
 
         if (!exams.isEmpty()) {
@@ -546,7 +566,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
                         .eq(CourseTeacherDraft::getCourseId, courseId)) == 0) {
             issues.add(new Issue("TEACHERS", null, "请保存至少一名授课教师", true));
         }
-        return issues;
+        return new PublicationChecks(issues, trials);
     }
 
     @Override
@@ -554,9 +574,7 @@ public class CourseDraftServiceImpl extends ServiceImpl<CourseDraftMapper, Cours
             propagation = Propagation.REQUIRED,
             rollbackFor = {DbException.class, Exception.class})
     public void downShelf(Long id) {
-        jdbc.update(
-                "INSERT INTO course_state_guard(course_id) VALUES(?) ON DUPLICATE KEY UPDATE course_id=VALUES(course_id)",
-                id);
+        baseMapper.lockCourseState(id);
         // 1.查询课程基本信息
         Course course = courseService.getById(id);
         // 1.1课程状态判断

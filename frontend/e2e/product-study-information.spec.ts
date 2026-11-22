@@ -1,0 +1,88 @@
+import { test, expect } from '@playwright/test';
+import { api, fixture, login } from './helpers';
+
+const inventory = '/admin/course/study-information';
+
+test('historical course metadata can be supplemented while enrollment and independent draft edits persist', async ({
+  page,
+  browser,
+}, info) => {
+  test.skip(info.project.name !== 'student');
+  const adminContext = await browser.newContext({
+    baseURL: process.env.ZXT_ADMIN_URL || 'http://127.0.0.1:23501',
+  });
+  const admin = await adminContext.newPage();
+  const publicUrl = '/public/courses/' + fixture.studyCourse;
+  const coursePath = '/courses/' + fixture.studyCourse;
+
+  try {
+    await login(page, 'student', coursePath);
+    const enroll = page.getByRole('button', { name: '免费报名', exact: true });
+    const continueLearning = page.getByRole('button', { name: '继续学习', exact: true });
+    await expect(enroll.or(continueLearning)).toBeVisible();
+    if (await enroll.isVisible()) await enroll.click();
+    await expect(continueLearning).toBeVisible({ timeout: 20000 });
+    const before = await api(page, 'GET', publicUrl);
+    const token = await page.evaluate(() => sessionStorage.getItem('school-token'));
+    const headers = { Authorization: 'Bearer ' + token, 'Idempotency-Key': crypto.randomUUID() };
+    const denied = await page.request.patch('/api/v2' + inventory + '/' + fixture.studyCourse, {
+      headers, data: { status: 2, estimatedStudyMinutes: 90 },
+    });
+    expect(denied.status()).toBe(403);
+
+    await login(admin, 'admin', '/courses');
+    await admin.locator('main').getByRole('link', { name: '选课资料盘点' }).click();
+    await expect(admin.getByRole('heading', { name: '选课资料盘点' })).toBeVisible();
+    const byTime = '?pageNo=1&pageSize=1&missing=ESTIMATED_TIME&keyword=';
+    const derived = await api(admin, 'GET', inventory + '?keyword=' + encodeURIComponent(fixture.name));
+    expect(Number(derived.list[0].videoEstimateMinutes)).toBeGreaterThan(0);
+    expect(derived.list[0].missingFields).not.toContain('ESTIMATED_TIME');
+    const results = await api(admin, 'GET', inventory + byTime + encodeURIComponent(fixture.studyName));
+    expect(Number(results.total)).toBe(1);
+    expect(results.list[0].missingFields).toEqual(['OUTCOMES', 'PREREQUISITES', 'DIFFICULTY', 'ESTIMATED_TIME']);
+    await admin.getByRole('textbox', { name: '课程名称', exact: true }).fill(fixture.studyName);
+    await admin.locator('.el-select').filter({
+      has: admin.getByRole('combobox', { name: '缺失字段', exact: true }),
+    }).click();
+    await admin.getByRole('option', { name: '缺预计学习时长', exact: true }).click();
+    const row = admin.getByRole('row', { name: new RegExp(fixture.studyName) });
+    await expect(row.getByText('待补录')).toBeVisible();
+    await row.getByRole('button', { name: '补录资料', exact: true }).click();
+    const editor = admin.getByRole('dialog', { name: '补录选课资料' });
+    await expect(editor.getByRole('textbox', { name: '实操内容' })).toHaveValue('Existing practice summary');
+    await editor.getByRole('textbox', { name: '学习成果' }).fill('掌握独立完成完整示例的方法');
+    await editor.getByRole('textbox', { name: '先修要求' }).fill('无');
+    await editor.locator('.el-select').filter({
+      has: admin.getByRole('combobox', { name: '课程难度', exact: true }),
+    }).click();
+    await admin.getByRole('option', { name: '进阶', exact: true }).click();
+    await editor.getByRole('spinbutton', { name: '预计学习时长（分钟）' }).fill('90');
+    await editor.getByRole('button', { name: '保存补录' }).click();
+    await expect(editor.getByText('已更新学生可见的选课资料')).toBeVisible();
+    await expect(row).toHaveCount(0);
+    await editor.getByRole('button', { name: '查看学生页资料' }).click();
+    const preview = editor.getByRole('region', { name: '学生课程详情' });
+    await expect(preview.getByText('掌握独立完成完整示例的方法')).toBeVisible();
+    await expect(preview.getByText('约 1 小时 30 分钟')).toBeVisible();
+
+    const draft = await api(admin, 'GET', '/admin/course/courses/baseInfo/' + fixture.studyCourse + '?see=false');
+    expect(draft.learningOutcomes).toBe('Independent draft outcome');
+    expect(draft.detail).toBe('Historic draft details');
+    expect(draft.prerequisites).toBe('无');
+    expect(draft.estimatedStudyMinutes).toBe(90);
+
+    await page.reload();
+    const facts = page.locator('.course-facts');
+    await expect(facts.getByText('掌握独立完成完整示例的方法')).toBeVisible();
+    await expect(facts.getByText('Existing practice summary')).toBeVisible();
+    await expect(facts.getByText('约 1 小时 30 分钟')).toBeVisible();
+    await expect(continueLearning).toBeVisible();
+    const after = await api(page, 'GET', publicUrl);
+    expect(after).toMatchObject({
+      status: before.status, price: before.price, purchaseEndTime: before.purchaseEndTime,
+      introduce: before.introduce, detail: before.detail, difficulty: 'INTERMEDIATE',
+    });
+  } finally {
+    await adminContext.close();
+  }
+});

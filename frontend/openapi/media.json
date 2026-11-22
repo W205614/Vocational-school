@@ -10,6 +10,56 @@
     "version": "v1.0"
   },
   "paths": {
+    "/api/v2/admin/media/trial-previews": {
+      "post": {
+        "tags": [
+          "trial-playback-controller"
+        ],
+        "operationId": "preview",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Preview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/VideoPlayVO"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/services/media/medias": {
       "get": {
         "tags": [
@@ -748,6 +798,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "previewCourse",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
             }
           },
           {
@@ -1817,49 +1876,15 @@
   },
   "components": {
     "schemas": {
-      "MediaUploadResultDTO": {
+      "Preview": {
         "type": "object",
-        "default": null,
-        "description": "媒体上传的结果",
         "properties": {
-          "fileId": {
+          "courseId": {
             "type": "string",
-            "default": "",
-            "description": "文件在云端的唯一标示",
-            "example": "387702302659783576"
-          }
-        }
-      },
-      "MediaDTO": {
-        "type": "object",
-        "default": null,
-        "description": "视频文件信息",
-        "properties": {
-          "id": {
-            "type": "string",
-            "default": "",
-            "description": "数据库mediaId",
-            "example": 1,
             "pattern": "^-?[0-9]+$"
           },
-          "filename": {
+          "sectionId": {
             "type": "string",
-            "default": "",
-            "description": "文件名称",
-            "example": "Redis实战课.mp4"
-          },
-          "duration": {
-            "type": "number",
-            "format": "float",
-            "default": "",
-            "description": "视频时长，单位秒",
-            "example": 57.23
-          },
-          "size": {
-            "type": "string",
-            "default": "",
-            "description": "视频大小，单位字节",
-            "example": 1024,
             "pattern": "^-?[0-9]+$"
           }
         }
@@ -1909,9 +1934,100 @@
           }
         }
       },
+      "MediaUploadResultDTO": {
+        "type": "object",
+        "default": null,
+        "description": "媒体上传的结果",
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "default": "",
+            "description": "文件在云端的唯一标示",
+            "example": "387702302659783576"
+          }
+        }
+      },
+      "MediaDTO": {
+        "type": "object",
+        "default": null,
+        "description": "视频文件信息",
+        "properties": {
+          "id": {
+            "type": "string",
+            "default": "",
+            "description": "数据库mediaId",
+            "example": 1,
+            "pattern": "^-?[0-9]+$"
+          },
+          "filename": {
+            "type": "string",
+            "default": "",
+            "description": "文件名称",
+            "example": "Redis实战课.mp4"
+          },
+          "duration": {
+            "type": "number",
+            "format": "float",
+            "default": "",
+            "description": "视频时长，单位秒",
+            "example": 57.23
+          },
+          "size": {
+            "type": "string",
+            "default": "",
+            "description": "视频大小，单位字节",
+            "example": 1024,
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
       "Retry": {
         "type": "object",
         "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "TrialStatusQuery": {
+        "type": "object",
+        "properties": {
+          "mediaIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            },
+            "uniqueItems": true
+          },
+          "seconds": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "TrialStatus": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "UNAVAILABLE",
+              "MISSING",
+              "PENDING",
+              "PROCESSING",
+              "READY",
+              "FAILED",
+              "REMOVED"
+            ]
+          },
+          "errorCode": {
+            "type": "string"
+          },
           "version": {
             "type": "string",
             "pattern": "^-?[0-9]+$"

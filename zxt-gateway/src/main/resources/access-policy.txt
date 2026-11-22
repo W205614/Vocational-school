@@ -662,3 +662,10 @@ POST:/api/v2/learning-hub/practice/{courseId}/submissions
 GET:/api/v2/teacher/learning-hub/practice/{courseId}/submissions
 GET:/api/v2/teacher/learning-hub/practice/{courseId}/submissions/{studentId}
 PUT:/api/v2/teacher/learning-hub/practice/{courseId}/submissions/{id}/feedback
+GET:/api/v2/admin/course/study-information
+GET:/api/v2/admin/course/study-information/{id}
+PATCH:/api/v2/admin/course/study-information/{id}
+POST:/api/v2/admin/media/trial-previews
+GET:/api/v2/teacher/learning-hub/practice/{courseId}
+PUT:/api/v2/admin/learning-hub/practice/{courseId}/corrections
+GET:/api/v2/teacher/learning-hub/practice/pending

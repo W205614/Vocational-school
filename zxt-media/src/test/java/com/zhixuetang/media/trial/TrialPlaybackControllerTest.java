@@ -28,7 +28,7 @@ class TrialPlaybackControllerTest {
                         beans.getBeanProvider(CloudObjectStore.class),
                         streams);
         String id = "a".repeat(64);
-        when(playback.authorize(id, 3, 7, 123, "signature"))
+        when(playback.authorize(id, 3, 7, 123, "signature", null))
                 .thenReturn(
                         Map.of(
                                 "output_size",
@@ -42,13 +42,13 @@ class TrialPlaybackControllerTest {
         when(cloud.read("ready/trials/clip.mp4", "v1", "etag", 1, 3))
                 .thenReturn(new ByteArrayInputStream(new byte[] {2, 3, 4}));
         var response = new MockHttpServletResponse();
-        controller.content(id, 3, 7, 123, "signature", "bytes=1-3", response);
+        controller.content(id, 3, 7, 123, "signature", null, "bytes=1-3", response);
         assertEquals(206, response.getStatus());
         assertArrayEquals(new byte[] {2, 3, 4}, response.getContentAsByteArray());
         assertEquals("bytes 1-3/5", response.getHeader("Content-Range"));
         verify(cloud).read("ready/trials/clip.mp4", "v1", "etag", 1, 3);
         var invalid = new MockHttpServletResponse();
-        controller.content(id, 3, 7, 123, "signature", "bytes=5-999999", invalid);
+        controller.content(id, 3, 7, 123, "signature", null, "bytes=5-999999", invalid);
         assertEquals(416, invalid.getStatus());
         assertEquals("bytes */5", invalid.getHeader("Content-Range"));
         verifyNoMoreInteractions(cloud);

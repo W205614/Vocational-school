@@ -16,18 +16,22 @@ import java.util.List;
 public class PracticeAssignmentController {
     private final PracticeAssignmentService practice;
 
-    public record ConfigurationView(Assignment assignment) {}
-
     @GetMapping("/admin/learning-hub/practice/{courseId}")
-    public ConfigurationView configuration(@PathVariable long courseId) {
+    public AssignmentView configuration(@PathVariable long courseId) {
         UserContext.requireAdmin();
-        return new ConfigurationView(practice.configuration(courseId));
+        return practice.configuration(courseId);
     }
 
     @PutMapping("/admin/learning-hub/practice/{courseId}")
     public Assignment configure(@PathVariable long courseId, @RequestBody Configuration form) {
         UserContext.requireAdmin();
-        return practice.configure(courseId, form);
+        return practice.configure(courseId, UserContext.requireUser(), form);
+    }
+
+    @PutMapping("/admin/learning-hub/practice/{courseId}/corrections")
+    public AssignmentView correct(@PathVariable long courseId, @RequestBody Correction form) {
+        UserContext.requireAdmin();
+        return practice.correct(courseId, UserContext.requireUser(), form);
     }
 
     @GetMapping("/learning-hub/practice")
@@ -43,6 +47,11 @@ public class PracticeAssignmentController {
     @PostMapping("/learning-hub/practice/{courseId}/submissions")
     public Submission submit(@PathVariable long courseId, @RequestBody Submit form) {
         return practice.submit(courseId, student(), form);
+    }
+
+    @GetMapping("/teacher/learning-hub/practice/{courseId}")
+    public AssignmentView teachingAssignment(@PathVariable long courseId) {
+        return practice.teachingAssignment(courseId, UserContext.requireUser(), UserContext.getRole());
     }
 
     @GetMapping("/teacher/learning-hub/practice/{courseId}/submissions")

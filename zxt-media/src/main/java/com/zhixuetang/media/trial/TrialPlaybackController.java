@@ -4,6 +4,7 @@ import com.zhixuetang.common.exceptions.*;
 import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.media.cloud.CloudObjectStore;
 import com.zhixuetang.media.cloud.TrialMediaJobs;
+import com.zhixuetang.media.domain.vo.VideoPlayVO;
 import com.zhixuetang.media.storage.local.LocalObjectStore;
 import com.zhixuetang.media.storage.local.OwnerStreamLimiter;
 import jakarta.servlet.http.HttpServletResponse;
@@ -50,10 +51,11 @@ public class TrialPlaybackController {
             @RequestParam long owner,
             @RequestParam long expires,
             @RequestParam String signature,
+            @RequestParam(required = false) Long previewCourse,
             @RequestHeader(value = "Range", required = false) String range,
             HttpServletResponse response)
             throws IOException {
-        var task = playback.authorize(id, section, owner, expires, signature);
+        var task = playback.authorize(id, section, owner, expires, signature, previewCourse);
         long size = ((Number) task.get("output_size")).longValue();
         long[] selection;
         try {
@@ -111,6 +113,13 @@ public class TrialPlaybackController {
                 remaining -= count;
             }
         }
+    }
+
+    public record Preview(long courseId, long sectionId) {}
+
+    @PostMapping("/trial-previews")
+    public VideoPlayVO preview(@RequestBody Preview form) {
+        return playback.preview(form.courseId(), form.sectionId());
     }
 
     static long[] range(String header, long size) {

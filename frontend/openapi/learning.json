@@ -689,7 +689,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/ConfigurationView"
+                      "$ref": "#/components/schemas/AssignmentView"
                     }
                   }
                 }
@@ -749,6 +749,67 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/Assignment"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/admin/learning-hub/practice/{courseId}/corrections": {
+      "put": {
+        "tags": [
+          "practice-assignment-controller"
+        ],
+        "operationId": "correct",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Correction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AssignmentView"
                     }
                   }
                 }
@@ -2569,6 +2630,57 @@
         }
       }
     },
+    "/api/v2/teacher/learning-hub/practice/{courseId}": {
+      "get": {
+        "tags": [
+          "practice-assignment-controller"
+        ],
+        "operationId": "teachingAssignment",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AssignmentView"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/teacher/learning-hub/practice/{courseId}/submissions": {
       "get": {
         "tags": [
@@ -2682,6 +2794,65 @@
                       "items": {
                         "$ref": "#/components/schemas/Submission"
                       }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/teacher/learning-hub/practice/pending": {
+      "get": {
+        "tags": [
+          "teacher-practice-queue-controller"
+        ],
+        "operationId": "pending",
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PageQuery"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PendingPage"
                     }
                   }
                 }
@@ -4379,6 +4550,10 @@
             "type": "integer",
             "format": "int32"
           },
+          "assignmentVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
           "description": {
             "type": "string"
           },
@@ -4512,6 +4687,64 @@
           "publishedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "Correction": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AssignmentVersion": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "changeReason": {
+            "type": "string"
+          },
+          "effectiveAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AssignmentView": {
+        "type": "object",
+        "properties": {
+          "assignment": {
+            "$ref": "#/components/schemas/Assignment"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignmentVersion"
+            }
           }
         }
       },
@@ -4744,6 +4977,10 @@
           "submissionKey": {
             "type": "string",
             "format": "uuid"
+          },
+          "assignmentVersion": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -5646,6 +5883,48 @@
           }
         }
       },
+      "PendingPage": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingWork"
+            }
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          }
+        }
+      },
+      "PendingWork": {
+        "type": "object",
+        "properties": {
+          "submissionId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "courseId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "studentId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "assignmentTitle": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "StudentAssignment": {
         "type": "object",
         "properties": {
@@ -5663,6 +5942,15 @@
         "properties": {
           "assignment": {
             "$ref": "#/components/schemas/Assignment"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssignmentVersion"
+            }
+          },
+          "historyOnly": {
+            "type": "boolean"
           },
           "canSubmit": {
             "type": "boolean"
@@ -5696,14 +5984,6 @@
           "pageSize": {
             "type": "integer",
             "format": "int32"
-          }
-        }
-      },
-      "ConfigurationView": {
-        "type": "object",
-        "properties": {
-          "assignment": {
-            "$ref": "#/components/schemas/Assignment"
           }
         }
       },

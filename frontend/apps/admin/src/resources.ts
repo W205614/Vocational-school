@@ -110,6 +110,7 @@ export const resources: Record<string, Resource> = {
       f('learningOutcomes', '学习成果', 'long'),
       f('prerequisites', '先修要求', 'long'),
       f('difficulty', '难度'),
+      f('estimatedStudyMinutes', '预计学习时长（分钟）', 'number'),
       f('practiceOverview', '实操内容', 'long'),
       f('handout', '随堂讲义', 'long'),
     ],

@@ -25,6 +25,7 @@ import com.zhixuetang.course.mapper.CourseCataSubjectDraftMapper;
 import com.zhixuetang.course.mapper.CourseCataSubjectMapper;
 import com.zhixuetang.course.mapper.CourseCatalogueDraftMapper;
 import com.zhixuetang.course.mapper.CourseCatalogueMapper;
+import com.zhixuetang.course.mapper.CourseDraftMapper;
 import com.zhixuetang.course.service.ICourseCataSubjectDraftService;
 import com.zhixuetang.course.service.ICourseCatalogueDraftService;
 import com.zhixuetang.course.service.ICourseCatalogueService;
@@ -65,6 +66,8 @@ public class CourseCatalogueDraftServiceImpl
 
     @Autowired private CourseCatalogueDraftMapper courseCatalogueDraftMapper;
 
+    @Autowired private CourseDraftMapper courseDraftMapper;
+
     @Autowired private ExamClient examClient;
 
     @Autowired private ICourseCataSubjectDraftService courseCataSubjectDraftService;
@@ -74,6 +77,10 @@ public class CourseCatalogueDraftServiceImpl
             propagation = Propagation.REQUIRED,
             rollbackFor = {DbException.class, Exception.class})
     public void save(Long courseId, List<CataSaveDTO> cataSaveDTOS, Integer step) {
+        courseDraftMapper.lockCourseState(courseId);
+        if (courseDraftMapper.selectById(courseId) == null) {
+            throw new BizIllegalException("未找到课程草稿");
+        }
         // 1.根据章的序号按照升序重新排序
         cataSaveDTOS =
                 cataSaveDTOS.stream()
@@ -153,6 +160,7 @@ public class CourseCatalogueDraftServiceImpl
             propagation = Propagation.REQUIRED,
             rollbackFor = {DbException.class, Exception.class})
     public void saveMediaInfo(Long courseId, List<CourseMediaDTO> courseMediaDTOS) {
+        courseDraftMapper.lockCourseState(courseId);
         // 1.校验保存视频的小节id是否属于当前课程中的小节，
         List<Long> cataIds =
                 courseMediaDTOS.stream()

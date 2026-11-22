@@ -1,5 +1,7 @@
 package com.zhixuetang.api.client.media;
 
+import com.zhixuetang.api.dto.media.TrialStatus;
+import com.zhixuetang.api.dto.media.TrialStatusQuery;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,4 +18,7 @@ public interface MediaClient {
 
     @PostMapping("/internal/v2/media/durations")
     Map<Long, Long> readyDurations(@RequestBody Set<Long> mediaIds);
+
+    @PostMapping("/internal/v2/media/trials/status")
+    Map<Long, TrialStatus> trialStatuses(@RequestBody TrialStatusQuery query);
 }

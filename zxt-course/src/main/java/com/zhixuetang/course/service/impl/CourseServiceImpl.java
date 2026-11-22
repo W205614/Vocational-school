@@ -438,6 +438,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             courseFullInfoDTO.setPrerequisites(content.getPrerequisites());
             courseFullInfoDTO.setDifficulty(content.getDifficulty());
             courseFullInfoDTO.setPracticeOverview(content.getPracticeOverview());
+            courseFullInfoDTO.setEstimatedStudyMinutes(content.getEstimatedStudyMinutes());
         }
 
         // 3.查询目录信息

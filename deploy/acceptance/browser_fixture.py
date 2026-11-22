@@ -174,12 +174,45 @@ def main():
             f"INSERT INTO course_teacher(id,course_id,teacher_id,is_show,c_index,dep_id,create_time,update_time,creater,updater,deleted) VALUES({assigned_course},{assigned_course},{teacher},1,1,0,NOW(),NOW(),{admin},{admin},0)",
             'tj_course',
         )
+    # A legacy public row with a separate unpublished edit, isolated from the other browser flows.
+    study_course = course + 40
+    study_name = 'Browser study information ' + marker
+    study_substitutions = {
+        **free_substitutions,
+        'id': str(study_course),
+        'name': "'" + study_name + "'",
+    }
+    study_values = ','.join(study_substitutions.get(c, '`' + c + '`') for c in columns)
+    mysql(
+        f"""
+        INSERT INTO course({','.join('`' + c + '`' for c in columns)})
+        SELECT {study_values} FROM course WHERE id=1;
+        INSERT INTO course_draft (
+            id,name,cover_url,first_cate_id,second_cate_id,third_cate_id,free,price,
+            status,purchase_start_time,purchase_end_time,step,section_num,creater,updater
+        ) SELECT id,name,cover_url,first_cate_id,second_cate_id,third_cate_id,free,price,
+            1,purchase_start_time,purchase_end_time,1,section_num,creater,updater
+          FROM course WHERE id={study_course};
+        INSERT INTO course_content (
+            id,course_introduce,use_people,course_detail,prerequisites,practice_overview,creater,updater
+        ) VALUES ({study_course},'Existing introduction','Existing audience','Existing course detail',
+            CHAR(9),'Existing practice summary',{admin},{admin});
+        INSERT INTO course_content_draft (
+            id,course_introduce,use_people,course_detail,learning_outcomes,prerequisites,
+            practice_overview,creater,updater
+        ) VALUES ({study_course},'Existing introduction','Existing audience','Historic draft details',
+            'Independent draft outcome',CHAR(9),'Existing practice summary',{admin},{admin});
+        """,
+        'tj_course',
+    )
     fixture = dict(
         marker=marker,
         expiredCourse=str(expired_course),
         expiredAttempt=str(expired_attempt),
         expiredQuestion=str(expired_question),
         freeCourse=str(free_course),
+        studyCourse=str(study_course),
+        studyName=study_name,
         notesCourse=str(notes_course),
         notesLesson=str(notes_lesson),
         course=str(course),
