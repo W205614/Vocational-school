@@ -211,6 +211,7 @@ test('course publication gates trial generation and preserves draft, clip, and h
       headers: studentHeaders, data: { courseId: course.id, sectionId: video },
     });
     expect(deniedTrialPreview.status()).toBe(403);
+    await page.getByRole('tab', { name: '课程介绍', exact: true }).click();
     const [playResponse] = await Promise.all([
       page.waitForResponse((response) =>
         response.url().includes('/medias/signature/play?sectionId=' + video) && response.ok(),
@@ -223,6 +224,7 @@ test('course publication gates trial generation and preserves draft, clip, and h
     expect(trialTicket.playUrl.split('?')[0]).toBe(draftClip.split('?')[0]);
     expect(trialTicket.playUrl).not.toContain('previewCourse');
     await verifyClip(page, trialTicket.playUrl);
+    await expect(page.getByRole('tab', { name: '课程目录', exact: true })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByText('当前播放独立试看片段，报名后可学习完整版。')).toBeVisible();
     await watchClip(page.locator('video.course-player'));
     const deniedFullPreview = await page.request.get(

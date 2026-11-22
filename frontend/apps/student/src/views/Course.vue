@@ -963,7 +963,11 @@ onBeforeUnmount(() => {
               @click="continueLearning"
               :disabled="busy"
               >继续学习</el-button
-            ><el-button v-if="!owned && trialSection" :disabled="busy" @click="select(trialSection)">
+            ><el-button
+              v-if="!owned && trialSection"
+              :disabled="busy"
+              @click="tab = 'catalogue'; select(trialSection)"
+            >
               试看 · {{ trialSection.name }}
             </el-button><el-button :disabled="busy" @click="toggleFavorite">{{
               favorite ? '取消收藏' : '收藏课程'
