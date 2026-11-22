@@ -185,6 +185,7 @@ public class MediaServiceImpl extends ServiceImpl<MediaMapper, Media> implements
         }
         // 2.分页搜索
         lambdaQuery()
+                .eq(Media::getDeleted, 0)
                 .eq(
                         !Long.valueOf(1).equals(UserContext.getRole()),
                         Media::getCreater,
