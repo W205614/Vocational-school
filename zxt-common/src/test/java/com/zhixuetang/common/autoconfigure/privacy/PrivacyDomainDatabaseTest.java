@@ -37,6 +37,7 @@ class PrivacyDomainDatabaseTest {
                         new DriverManagerDataSource(
                                 url, "root", System.getenv("ACCEPTANCE_DB_PASSWORD")));
         String schema = Files.readString(root.resolve("deploy/compact/schema.sql"));
+        Path migrations = root.resolve("deploy/acceptance/migrations");
         var json = JsonMapper.builder().build();
         String run = UUID.randomUUID().toString().substring(0, 8);
         List<Path> inventories = new ArrayList<>();
@@ -118,8 +119,13 @@ class PrivacyDomainDatabaseTest {
                         root.resolve(
                                 "deploy/acceptance/migrations/tj_auth/V005__administrator_mfa.sql"));
             }
-            if (alias.equals("learning"))
+            if (alias.equals("learning")) {
                 createMigrationTables(jdbc, "tj_learning/V008__learning_motivation.sql");
+                script(jdbc, migrations.resolve("tj_learning/V012__practice_assignments.sql"));
+                script(jdbc, migrations.resolve("tj_learning/V013__practice_assignment_versions.sql"));
+            }
+            if (alias.equals("message"))
+                script(jdbc, migrations.resolve("tj_message/V006__inbox_targets.sql"));
             if (alias.equals("promotion"))
                 createMigrationTables(jdbc, "tj_promotion/V004__season_reward_delivery.sql");
             if (alias.equals("media"))

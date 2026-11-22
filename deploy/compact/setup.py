@@ -838,7 +838,11 @@ def build(package=True, group=None):
             'health-compile',
         )
         heap = '384m' if group == 'gateway' else '768m'
-        packages = "tzdata 'zlib>=1.4-r0'" + (' ffmpeg' if group == 'support' else '')
+        packages = (
+            "tzdata 'zlib>=1.4-r0' 'libcrypto3>=3.5.9-r1' 'libssl3>=3.5.9-r1' "
+            "'openssl>=3.5.9-r1' 'gnutls>=3.8.14-r0' 'libfontenc>=1.1.10-r0'"
+            + (' ffmpeg' if group == 'support' else '')
+        )
         media_probe = 'RUN apk add --no-cache --upgrade ' + packages + '\n'
         (folder / 'Dockerfile').write_text(
             'FROM eclipse-temurin:21-jre-alpine@sha256:b6ea71e690a72ba240b3d1b5c477410014862f9ea2cc73ab40e41ff21b03ba1c\nENV TZ=Asia/Shanghai\nWORKDIR /app\n'

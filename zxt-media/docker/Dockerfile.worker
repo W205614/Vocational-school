@@ -2,6 +2,8 @@ FROM eclipse-temurin:21-jre-alpine@sha256:b6ea71e690a72ba240b3d1b5c477410014862f
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
 RUN apk add --no-cache --upgrade tzdata 'zlib>=1.4-r0' ffmpeg clamav curl \
+      'libcrypto3>=3.5.9-r1' 'libssl3>=3.5.9-r1' 'openssl>=3.5.9-r1' \
+      'gnutls>=3.8.14-r0' 'libfontenc>=1.1.10-r0' \
     && addgroup -g 10001 app && adduser -D -H -u 10001 -G app app \
     && mkdir -p /app /work/media && chown app:app /app /work/media
 WORKDIR /app
