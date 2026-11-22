@@ -63,30 +63,34 @@ test('student notes persist after refresh and reject stale edits', async ({ page
 test('student favorites and access errors remain correct after refresh', async ({ page }, info) => {
   test.skip(info.project.name !== 'student');
   await login(page, 'student', '/favorites');
-  await api(page, 'PUT', '/favorites/1');
-  await api(page, 'PUT', '/favorites/1');
+  const token = await page.evaluate(() => sessionStorage.getItem('school-token'));
+  async function setFavorite(method: 'PUT' | 'DELETE') {
+    const request = () => page.request.fetch('/api/v2/favorites/1', {
+      method,
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    let response = await request();
+    if (response.status() === 429) {
+      // Other scenarios share this synthetic account and the same gateway quota.
+      const retryAfter = Number(response.headers()['retry-after']);
+      expect(retryAfter).toBeGreaterThan(0);
+      expect(retryAfter).toBeLessThanOrEqual(30);
+      await page.waitForTimeout(retryAfter * 1000);
+      response = await request();
+    }
+    expect(response.status()).toBe(200);
+    expect((await response.json()).code).toBe(200);
+  }
+  await setFavorite('PUT');
+  await setFavorite('PUT');
   await page.reload();
   await expect(page.getByRole('link', { name: '查看课程', exact: true })).toBeVisible();
-  const token = await page.evaluate(() => sessionStorage.getItem('school-token'));
   const forbidden = await page.request.get('/api/v2/admin/payment-conflicts', {
     headers: { Authorization: 'Bearer ' + token, 'user-info': accounts.admin.id, 'user-role': '1' },
   });
   expect(forbidden.status()).toBe(403);
-  await api(page, 'DELETE', '/favorites/1');
-  const repeatDelete = () => page.request.delete('/api/v2/favorites/1', {
-    headers: { Authorization: 'Bearer ' + token },
-  });
-  let repeated = await repeatDelete();
-  if (repeated.status() === 429) {
-    // Other scenarios share this synthetic account and the same gateway quota.
-    const retryAfter = Number(repeated.headers()['retry-after']);
-    expect(retryAfter).toBeGreaterThan(0);
-    expect(retryAfter).toBeLessThanOrEqual(30);
-    await page.waitForTimeout(retryAfter * 1000);
-    repeated = await repeatDelete();
-  }
-  expect(repeated.status()).toBe(200);
-  expect((await repeated.json()).code).toBe(200);
+  await setFavorite('DELETE');
+  await setFavorite('DELETE');
   await page.reload();
   await expect(page.getByText('暂无记录', { exact: true })).toBeVisible();
 });
