@@ -22,20 +22,22 @@ async function uploadVideo(admin: Page, path: string) {
   await admin.goto('/media');
   const webm = path.endsWith('.webm');
   const unique = Buffer.from(crypto.randomUUID().replaceAll('-', ''), 'hex');
+  const filename = unique.toString('hex') + '-' + basename(path);
   // Keep each run's content-addressed upload distinct using legal container padding.
   const padding = webm ? Buffer.from([0xec, 0x90]) : Buffer.from([0, 0, 0, 24, 0x66, 0x72, 0x65, 0x65]);
   await admin.getByLabel('选择本地视频').setInputFiles({
-    name: basename(path),
+    name: filename,
     mimeType: webm ? 'video/webm' : 'video/mp4',
     buffer: Buffer.concat([readFileSync(path), padding, unique]),
   });
   await admin.getByRole('button', { name: '上传并登记', exact: true }).click();
   await expect(admin.getByText('视频已持久化', { exact: true })).toBeVisible();
-  return admin.evaluate(() =>
+  const media = await admin.evaluate(() =>
     JSON.parse(sessionStorage.getItem('school-operations') || '[]').find(
       (item: any) => item.label === '登记本地视频',
     ).operation.result,
   );
+  return { ...media, filename };
 }
 
 async function watchClip(player: Locator) {
@@ -68,7 +70,15 @@ function deleteMedia(page: Page, mediaId: string, token: string | null) {
 }
 
 function mediaRow(page: Page, mediaId: string) {
-  return page.getByRole('row').filter({ has: page.getByRole('cell', { name: mediaId, exact: true }) });
+  return page.getByRole('row')
+    .filter({ has: page.getByRole('cell', { name: mediaId, exact: true }) })
+    .filter({ has: page.getByRole('button', { name: '删除', exact: true }) });
+}
+
+async function findMedia(page: Page, filename: string) {
+  await page.goto('/media');
+  await page.getByRole('textbox', { name: '按文件名搜索' }).fill(filename);
+  await page.getByRole('button', { name: '查询', exact: true }).click();
 }
 
 test('course publication gates trial generation and preserves draft, clip, and handout permissions', async ({
@@ -186,7 +196,9 @@ test('course publication gates trial generation and preserves draft, clip, and h
       if (entireCourse) {
         await trial.getByRole('button', { name: '生成整门课程的试看', exact: true }).click();
       } else {
-        await trial.getByRole('checkbox', { name: '选择试点视频', exact: true }).check();
+        const checkbox = admin.getByRole('checkbox', { name: '选择试点视频', exact: true });
+        await trial.locator('label').filter({ has: checkbox }).click();
+        await expect(checkbox).toBeChecked();
         await trial.getByRole('button', { name: '生成所选小节', exact: true }).click();
       }
       const showClip = trial.getByRole('button', { name: '预览片段' });
@@ -267,7 +279,7 @@ test('course publication gates trial generation and preserves draft, clip, and h
     await expect(page.getByText(privateHandout, { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 
-    await admin.goto('/media');
+    await findMedia(admin, replacement.filename);
     await mediaRow(admin, replacement.id).getByRole('button', { name: '删除', exact: true }).click();
     const deletionDialog = admin.getByRole('dialog', { name: '删除媒资前检查引用' });
     await expect(deletionDialog.getByRole('listitem').filter({ hasText: courseName })).toContainText('已上架');
@@ -281,12 +293,30 @@ test('course publication gates trial generation and preserves draft, clip, and h
     expect(retained.playUrl).toContain('/local-content/');
     expect((await page.request.get(retained.playUrl, { headers: { Range: 'bytes=0-15' } })).status()).toBe(206);
 
-    await admin.goto('/media');
+    await findMedia(admin, media.filename);
     const unused = mediaRow(admin, media.id);
     await unused.getByRole('button', { name: '删除', exact: true }).click();
     await expect(deletionDialog).toContainText('目前没有课程引用');
+    const deletionSent = admin.waitForResponse((response) =>
+      response.request().method() === 'DELETE' &&
+      new URL(response.url()).pathname === '/api/v2/admin/media/medias/' + media.id,
+    );
     await deletionDialog.getByRole('button', { name: '确认删除视频' }).click();
-    await expect(unused).toHaveCount(0, { timeout: 30_000 });
+    const deletionResponse = await deletionSent;
+    expect(deletionResponse.status()).toBe(202);
+    const { data: deletion } = await deletionResponse.json();
+    await expect.poll(async () => (await api(admin, 'GET', '/operations/media/' + deletion.operationId)).status,
+      { timeout: 20_000 }).toBe('SUCCEEDED');
+    await expect(deletionDialog).toBeHidden();
+    const inventoryRefreshed = admin.waitForResponse((response) => {
+      const requestUrl = new URL(response.url());
+      return response.ok() && requestUrl.pathname === '/api/v2/admin/media/medias'
+        && requestUrl.searchParams.get('name') === media.filename;
+    });
+    await admin.getByRole('button', { name: '查询', exact: true }).click();
+    const { data: mediaInventory } = await (await inventoryRefreshed).json();
+    expect(mediaInventory.list ?? []).toEqual([]);
+    await expect(unused).toHaveCount(0);
     const stale = await admin.request.post('/api/v2' + service + '/media/save/' + course.id, {
       headers: { Authorization: 'Bearer ' + adminToken, 'Idempotency-Key': crypto.randomUUID() },
       data: [{ cataId: video, mediaId: media.id, videoName: 'removed.webm', mediaDuration: 2, trailer: true }],
@@ -319,10 +349,19 @@ test('historical published videos can be prepared by section or entire course wi
         source.id, '--trial-slot', slot,
       ]);
     }
+    await api(admin, 'POST', '/admin/search/courses/up?courseIds=' + courseId);
+    await expect.poll(async () => {
+      const directory = await page.request.get('/api/v2/public/courses', {
+        params: { keyword: fixture.legacyTrialName, hasTrial: true },
+      });
+      expect(directory.status()).toBe(200);
+      const { data } = await directory.json();
+      return data.list;
+    }, { timeout: 30_000 }).toEqual(expect.arrayContaining([expect.objectContaining({ id: courseId, hasTrial: true })]));
 
     await admin.goto('/courses');
     await admin.getByRole('textbox', { name: '按课程名称搜索' }).fill(fixture.legacyTrialName);
-    await admin.getByRole('textbox', { name: '按课程名称搜索' }).press('Enter');
+    await admin.getByRole('button', { name: '查询', exact: true }).click();
     await admin.getByRole('row').filter({ hasText: fixture.legacyTrialName })
       .getByRole('button', { name: '准备公开试看' }).click();
     const dialog = admin.getByRole('dialog', { name: '准备公开试看' });
@@ -332,7 +371,9 @@ test('historical published videos can be prepared by section or entire course wi
     await expect(firstRow).toContainText('待生成');
     await expect(secondRow).toContainText('待生成');
     await expect(unavailable).toContainText('源视频不可用');
-    await dialog.getByRole('checkbox', { name: '选择Legacy first', exact: true }).check();
+    const checkbox = admin.getByRole('checkbox', { name: '选择Legacy first', exact: true });
+    await firstRow.locator('label').filter({ has: checkbox }).click();
+    await expect(checkbox).toBeChecked();
     await dialog.getByRole('button', { name: '生成所选小节', exact: true }).click();
     await expect(firstRow).toContainText('已就绪', { timeout: 45_000 });
     await expect(secondRow).toContainText('待生成');
@@ -347,12 +388,6 @@ test('historical published videos can be prepared by section or entire course wi
     expect(ready[0].status.taskId).toBe(prepared[0].status.taskId);
     const published = await page.request.get('/api/v2/public/courses/' + courseId);
     expect(published.status()).toBe(200);
-    const directory = await page.request.get('/api/v2/public/courses', {
-      params: { keyword: fixture.legacyTrialName, hasTrial: true },
-    });
-    expect(directory.status()).toBe(200);
-    const { data: publicCourses } = await directory.json();
-    expect(publicCourses.list).toEqual(expect.arrayContaining([expect.objectContaining({ id: courseId, hasTrial: true })]));
     await login(page, 'student', '/courses/' + courseId);
     const studentTicket = await api(page, 'POST', '/services/media/medias/signature/play?sectionId=' + fixture.legacyTrialSecond);
     expect(studentTicket.state).toBe('READY');
