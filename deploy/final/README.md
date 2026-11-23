@@ -42,6 +42,6 @@ docker compose -p zhixuetang-final -f deploy/final/compose.yaml --env-file deplo
 
 容器重建后的服务发现使用 Docker DNS。生成器为所有 JVM 挂载追加的 `dns.security`（成功解析缓存 10 秒、失败 2 秒）；网关 Reactor Netty 和两端 Nginx 同样限制解析缓存。修改此配置后应执行生成器和完整 Compose 启动命令，使所有应用获得新挂载。没有关闭证书校验或替换系统其他安全配置。`python deploy/final/verify_dns_recovery.py` 会停止/重建考试服务、网关和媒资服务，验证两端代理恢复、服务不可用时的 503 和持久封面字节；仅在本地验收期间执行。`python deploy/final/verify_history.py` 可只读核对已完成考试、小节及私人笔记，须在当前夹具完成完整业务测试后执行。
 
-当前恢复入口使用 compact 最新有效完整备份和当前镜像包；旧版数据卷和旧备份不作为本次保留承诺。恢复必须使用独立新目录和项目，不能把旧备份直接覆盖到有新增业务的新版数据库上。
+本机日常环境的恢复流程见[合并部署手册](../compact/README.md#备份与独立恢复)。独立恢复前，核对完整数据备份与对应的镜像归档。恢复必须使用独立新目录和项目，不能把旧备份直接覆盖到有新增业务的新版数据库上。
 
 `python deploy/final/final_backup.py` 保存 SQL、私有配置（包含 DNS 安全属性）和媒资校验清单。校验清单不是文件字节备份；恢复新上传视频及封面仍需保留 `.local/objects` 或另行复制这些文件。配置和备份均留在本机忽略目录，不随 GitHub 源代码提交。

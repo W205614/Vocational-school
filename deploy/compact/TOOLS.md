@@ -11,7 +11,7 @@
 | `prepare_search.py`、`rebuild_search.py`                           | 搜索索引准备与数据重建                                                             |
 | `upgrade_existing.py`                                              | 已有部署的受控增量升级                                                             |
 | `backup.py`、`restore.py`                                          | 完整备份与隔离恢复；只保留最新受管有效包                                           |
-| `backup_images.py`、`backup_retention.py`                          | 当前镜像离线包复用／更新、旧受管备份回收站轮换                                     |
+| `backup_images.py`、`backup_retention.py`                          | 完整备份对应镜像归档的复用与更新、旧受管备份回收站轮换                                     |
 | `maintenance.py`                                                   | 自动维护与备份状态管理；详见[稳定性与运维说明](../../docs/stability-operations.md) |
 | `register_backup_task.ps1`、`scheduled_backup.ps1`                 | Windows 定时任务注册与调用                                                         |
 | `recovery_smoke.py`、`recovery_upgrade.py`、`rehearse_recovery.py` | 恢复校验、恢复后升级及演练                                                         |
