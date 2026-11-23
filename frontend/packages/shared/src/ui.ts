@@ -22,7 +22,11 @@ export function useTask() {
   return { busy, error, message, run };
 }
 export function plainTextDescription(value: unknown) {
-  return String(value ?? '').replace(/<[^<>]*>|[<>]/g, '').replace(/&nbsp;/g, ' ');
+  return String(value ?? '')
+    .split(/<[^<>]*>/)
+    .join('')
+    .replace(/[<>]/g, '')
+    .replace(/&nbsp;/g, ' ');
 }
 
 export function money(value: unknown) {
