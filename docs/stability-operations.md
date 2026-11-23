@@ -19,9 +19,9 @@
 
 不要重新执行 `setup.py prepare` 或首次初始化，不要覆盖既有 `.env`、密钥及数据卷。
 
-本机备份按既定策略停用，当前没有有效本地恢复集；`upgrade_existing.py deploy` 要求有效完整备份。2026-10-31 的单次授权更新记录保存在 `.local/daily-deploy-20261031/`，对应源码、数据保留及登录／播放／续播检查见[部署记录](../deploy/compact/README.md#历史部署记录)。
+`upgrade_existing.py deploy` 的 `--backup` 参数必须指向目标部署下经过校验的完整停写备份。维护窗口可按既定策略执行一次性手动备份，自动计划任务可保持停用。执行升级前，核对备份时间、部署归属及对应镜像；已有业务写入时，应为本次切换重新创建恢复点。
 
-以下通用升级流程以明确重新启用备份并取得有效完整备份为前提。
+本机日常更新及恢复点状态见[备份状态、空间与计划任务](#备份状态空间与计划任务)，以往部署结果见[交付索引](../deploy/compact/reports/README.md)。
 
 公共 `deploy/compact/compose.yaml` 不再保存本机镜像 SHA、搜索卷和 RabbitMQ 主机名。旧版本更新源码前，先按[部署手册](../deploy/compact/README.md#干净启动)的独立复制命令保存原生效文件；旧版本尚无 `migrate-runtime` 命令，不能先拉取新模板再拿它替代原配置。若存在未完成的 `ops-status/resume.json`，先用原版本恢复备份状态，再升级。已经迁移的部署直接使用私有 `.local/compose.runtime.yaml`；所有 Compose 命令必须指定部署目录作为 `--project-directory`，不要直接运行公共模板替换已有容器。
 
@@ -36,7 +36,7 @@ python deploy/compact/brand_migration.py --home deploy/compact --apply
 
 计划或应用失败时保留原配置、备份与诊断材料，修复后重新生成计划；不要用首次初始化覆盖已有配置，也不要为改名重建数据卷。这份配置原件备份不等同完整数据备份，后续发布仍遵循下面的受控升级流程。
 
-1. 仅在已明确重新启用备份后，保存当前未提交改动，运行 `python deploy/compact/backup.py` 完成本项目完整备份与校验。完成后读取 `deploy/compact/.local/ops-status/backup.json` 的 `lastBundle` 字段，作为后续 `--backup` 参数；当前停用状态不执行此步。
+1. 保存当前未提交改动。需要新恢复点时，在维护窗口运行 `python deploy/compact/backup.py`，等待完整备份和镜像归档校验成功。核对命令输出或 `.local/ops-status/backup.json` 中的 `lastBundle`，将本次完整备份目录用于 `--backup`。
 2. 提交本次生产源码，运行 `python deploy/compact/setup.py build` 重建全部七个应用／网页镜像。
 3. 运行 `python deploy/compact/upgrade_existing.py stage`，取得已验证候选目录。候选包含源码与七镜像绑定，不修改现有运行部署。
 4. 在独立副本验证新迁移及受影响链路，保留原数据与媒体；随后用以下入口停写、增量迁移、更新配置和镜像：
@@ -47,13 +47,15 @@ python deploy/compact/upgrade_existing.py deploy --candidate <本项目.local/ca
 
 发布与备份竞争同一进程锁。增量配置工具保留原镜像引用、存储路径、数据库密码及自定义代理配置，原配置存于本机 `.local/operations-upgrade/`。旧部署会补入 user 的持久私有导出目录及 media 的签名试看路径，已有自定义配置保留；新部署使用相同目录权限设置。仅新增数据库迁移，不改写已执行的校验和迁移。
 
-若此次更新包含监控规则，复用中的 Prometheus 不会自动重载挂载文件。日常项目执行 `docker kill --signal HUP zhixuetang-compact-prometheus-1` 后，检查 `http://127.0.0.1:24590/api/v1/rules` 是否出现 `BusinessOperationBacklog`、`ReliabilityMetricsStale`，并核对 `/api/v1/targets` 全部在线；其他项目必须改用实际容器名和端口。此信号只要求重载配置，不删除容器或数据。以运行中的规则与采集目标状态核对生效结果。
+若此次更新包含监控规则，复用中的 Prometheus 不会自动重载挂载文件。按实际项目名找到运行中的 Prometheus 容器，执行 `docker kill --signal HUP <Prometheus 容器名>`。默认端口为 24590，在 `http://127.0.0.1:24590/api/v1/rules` 核对 `BusinessOperationBacklog`、`ReliabilityMetricsStale`，并核对 `/api/v1/targets` 全部在线。此信号只要求重载配置，不删除容器或数据。以运行中的规则与采集目标状态核对生效结果。
 
 失败时保留数据、事件和诊断材料，不自动用旧 SQL 覆盖新增订单／评分／支付事实。需要回退时先停写并确认旧代码与当前表结构兼容；不兼容则在副本核对增量后制定数据回迁，不能删除新表或丢弃新事实。
 
 ## 备份状态、空间与计划任务
 
-本机计划任务当前禁用，状态为 `DISABLED_BY_USER`，没有保留有效本地恢复集。以下命令及保留策略适用于明确重新启用备份之后。
+截至 2026-11-23，本机 `tianji-compact` 的自动备份计划任务仍为 `Disabled`。升级到 [preview.4](releases/v0.1.0-preview.4.md) 前生成的一次性停写备份与当时的镜像归档已完成校验并保留。补丁的业务验收使用独立合成环境，这份恢复材料尚未做完整恢复演练。
+
+计划任务启停以任务计划程序为准。在部署目录中，最近一次备份可从 `.local/ops-status/backup.json` 查询，镜像归档对应的数据包与镜像标识见 `.local/current-runtime-backup/recovery.json`。
 
 手动完整备份：`python deploy/compact/backup.py`。`--online` 仅是部分在线导出，不计入完整备份成功记录。默认完整备份短暂停止原本运行的业务和网页，捕获 MySQL、Redis、RabbitMQ、配置、签名密钥及真实媒体字节，校验后恢复原状态。
 
@@ -66,7 +68,7 @@ Windows 注册：`powershell -NoProfile -File deploy/compact/register_backup_tas
 - 实际备份失败：保留不完整材料并暂停自动大备份，避免每次检查重复产生全量失败包；排查后执行 `python deploy/compact/maintenance.py retry` 显式重试。
 - 状态存于 `.local/ops-status/`，覆盖更新。`scheduler.json` 记录最近检查时间与退出码，`backup.json` 的 `lastSuccess` 才是完整备份成功时间；计划任务的“下次运行时间”包含补执行检查。错误日志 `.local/maintenance.log` 最多 3 份、每份 1 MB。
 - 手动与自动完整备份统一只保留本项目 `.local/backup/` 中最新一份受管有效包。新包及当前镜像离线包都校验成功后，旧受管包（含升级前发布回退点）移入 Windows 回收站；无归属标记、归属不匹配、损坏或失败材料保留供人工检查。Windows 需安装 `deploy/compact/requirements.txt` 中的回收站依赖；其他系统不回退为永久删除，而是停止轮换并要求人工处理。
-- 当前镜像离线包仅保存在 `.local/current-runtime-backup/runtime-images.tar`。每天镜像未改变时只校验并复用；版本改变时，先验证新镜像包，再回收旧包。`retire_images.py` 不再导出旧镜像回滚 tar，只保留退役清单。恢复镜像执行 `python deploy/compact/backup_images.py restore`；单独刷新当前包执行 `python deploy/compact/backup_images.py refresh`，要求最近完整数据备份与当前容器镜像一致。
+- 最近完整备份对应的镜像离线包位于 `.local/current-runtime-backup/runtime-images.tar`。核对同目录的 `recovery.json`，确认归档对应的数据包与镜像标识。镜像未变时校验并复用，镜像变更后在下次完整备份时先验证新归档，再回收旧归档。`retire_images.py` 不再导出旧镜像回滚 tar，只保留退役清单。恢复镜像执行 `python deploy/compact/backup_images.py restore`；单独刷新当前包执行 `python deploy/compact/backup_images.py refresh`，要求最近完整数据备份与当前容器镜像一致。
 - 旧文件进入回收站后仍占宿主机空间，回收站也可能按容量淘汰旧项；不自动清空回收站。新包失败不处置上一份完整恢复材料。
 - 备份包含私有账号和密钥，不提交 GitHub。本机磁盘故障需要异机恢复材料。媒资、备份和日志分别占用空间，按实际保留策略评估。
 
@@ -80,7 +82,7 @@ Windows 注册：`powershell -NoProfile -File deploy/compact/register_backup_tas
 | Alertmanager | http://127.0.0.1:24591/ | 本机告警状态，48 小时保留                                                          |
 | Grafana      | http://127.0.0.1:24592/ | 预置 Zhixuetang Reliability 面板，用户 `zhixuetang`                                        |
 
-Grafana 密码读取本机 `.env` 的 `ACCEPTANCE_GRAFANA_PASSWORD`；采集令牌仅保存在忽略目录，业务指标接口继续要求内部凭证。告警覆盖模块不可用、事件积压、失败持久任务、渠道核对异常和过去赛季阻塞。备份启用时另监测实际备份失败和超过 26 小时未成功完整备份；当前本机备份与对应告警已停用，面板显示停用状态。
+Grafana 密码读取本机 `.env` 的 `ACCEPTANCE_GRAFANA_PASSWORD`；采集令牌仅保存在忽略目录，业务指标接口继续要求内部凭证。告警覆盖模块不可用、事件积压、失败持久任务、渠道核对异常和过去赛季阻塞。备份启用时另监测实际备份失败和超过 26 小时未成功完整备份；当前本机自动备份计划与对应监控告警已停用，面板显示停用状态。
 
 告警只在本机展示，没有邮件、Webhook 或其他外部通知。Docker 全部关闭时监控也关闭；重新运行后会反映启用中的监测项和未处理故障。健康检查并不会自动重启卡死的应用，需要查看告警和业务事实再处理。
 

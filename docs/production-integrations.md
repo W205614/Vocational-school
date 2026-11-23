@@ -102,7 +102,7 @@ python deploy/production/acceptance.py --package E:/secure/rendered --evidence E
 
 隐私任务使用独立持久队列，因此另采集 `zxt_privacy_tasks_pending`、`zxt_privacy_tasks_failed`、`zxt_privacy_tasks_approval_required`、`zxt_privacy_tasks_oldest_seconds` 和 `zxt_privacy_metrics_last_success_timestamp_seconds`。`ZhixuetangPrivacyTaskFailed` 提醒管理员处理失败任务；`ZhixuetangPrivacyMetricsStale` 提示采集时间停滞。等待审批是明确的业务状态，仅展示数量，不当作技术故障；修复后在管理台核对影响再继续任务。
 
-`backup-policy.yml` 由平台侧配置实施；`backup_proof.py` 接收备份校验记录并发布监控指标。实际备份和恢复由平台执行，本机备份保持停用。
+`backup-policy.yml` 由平台侧配置实施；`backup_proof.py` 接收备份校验记录并发布监控指标。生产备份和恢复由平台执行。本机计划任务和一次性恢复点的状态见[运维说明](stability-operations.md#备份状态空间与计划任务)。
 
 受保护证明 JSON 字段为：`schema:"zhixuetang-managed-backup-proof-v1"`、`status:"VERIFIED"`、准确 `commit`、`manifest_sha256`、`namespace`、带时区 `completed_at`、实际 `provider`／`resource_id`／`backup_id`、`verified_components:["database","objects","recovery_keys"]`，以及相对证明目录的 `artifacts:[{"path":"...","sha256":"..."}]`。附件包含实际供应商导出和校验记录，由操作员复核来源，工具校验字段、哈希及候选绑定。
 

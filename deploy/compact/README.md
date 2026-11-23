@@ -1,6 +1,6 @@
 # 本机合并部署与验收
 
-本手册说明本机部署、回归、备份恢复与性能工具的操作。默认运行组为 `zhixuetang-compact`，共 11 个业务／基础设施容器和 3 个本机监控容器，使用合成演示数据与模拟支付，所有入口绑定 `127.0.0.1`。既有数据、配置及媒资保留。当前构建来源见本机 `.local/package-source.json`、`.local/images.json`，部署与各轮验证按日期和提交查阅[交付索引](reports/README.md)。外部旧生产正式导入及割接尚未验收，其他项目不在操作范围。
+本手册说明本机部署、回归、备份恢复与性能工具的操作。默认运行组为 `zhixuetang-compact`，共 11 个业务／基础设施容器和 3 个本机监控容器，使用合成演示数据与模拟支付，所有入口绑定 `127.0.0.1`。既有数据、配置及媒资保留。已有部署的镜像来源以本机 `.local/compose.runtime.yaml` 和 `.local/build-source.json` 为准，部署与各轮验证按日期和提交查阅[交付索引](reports/README.md)。外部旧生产正式导入及割接尚未验收，其他项目不在操作范围。
 
 功能与架构概览见 [项目 README](../../README.md)；当前部署、真实课程专项和商业化代码的证据范围集中在 [交付索引](reports/README.md)。
 
@@ -12,7 +12,7 @@
 
 媒资复制与探测默认分别最多 2 路（`zxt.local-storage.upload-concurrency`、`probe-concurrency`，范围 1～4），单次探测默认 30 秒（`probe-timeout-seconds`，范围 1～60）；饱和返回 429，异常释放许可。签名默认 600 秒（`signature-ttl-seconds`，范围 1～600），缩短仅用于隔离过期验证。学生页面续签保留播放状态并重新检查权益，新的计时会话直接使用媒资毫秒时长，目录的整数秒仅用于展示。这些限制用于本机资源保护，容量按实际负载测量。
 
-本机自动备份已停用，不保留有效本地恢复集或镜像离线包；业务数据卷、媒资与配置继续保留。既有部署升级、备份工具和本机告警见[稳定性与运维说明](../../docs/stability-operations.md)。不要对已有业务库重复执行首次初始化。
+本机自动备份计划和一次性恢复点状态见[稳定性与运维说明](../../docs/stability-operations.md#备份状态空间与计划任务)。已有环境应保留业务数据卷、媒资与配置，按受控升级流程更新。
 
 ## 结构
 
@@ -80,7 +80,7 @@ python deploy/compact/brand_migration.py --home deploy/compact --apply
 
 确认计划目标是实际部署目录；工具保留原 Compose 项目、卷、数据库、密钥及媒资路径，不把已有资源重命名。原配置保存在该部署受保护的 `.local/brand-migration/<UTC批次>/`，故障时保留现场重新核对；完整顺序及持久协议兼容边界见[已有部署升级](../../docs/stability-operations.md#升级已有部署)。
 
-通用受控升级要求先完成停写备份、提交源码及迁移，再于启动新版应用前运行下列配置补全。当前备份保持停用，`upgrade_existing.py deploy` 要求有效完整备份；单次维护记录按日期查阅[本机升级说明](../../docs/stability-operations.md#升级已有部署)。
+通用受控升级需要提交源码和迁移文件、构建候选镜像，并在切换前校验本项目的完整停写备份。`upgrade_existing.py deploy` 可使用经校验的一次性备份，自动计划任务可保持停用。旧配置缺少 Feign context 时，在启动新版应用前执行下列补全命令。完整顺序见[本机升级说明](../../docs/stability-operations.md#升级已有部署)。
 
 ```powershell
 python deploy/compact/client_contexts.py
@@ -155,11 +155,11 @@ python deploy/compact/audit_smoke.py
 
 CI 的 `backend`、`frontend`、`compact-browser` 分别验证后端与部署工具、双端类型／单元／构建、合并启动及实际浏览器流程。Chromium 执行完整浏览器回归；Firefox、WebKit 各运行学生和管理端的核心流程，使用真实隔离后端验证会话续期、模拟支付与权益、笔记持久化和角色访问，并检查390像素布局。WebKit 桌面仿真不等同于真实 iOS／iPadOS 或系统 Safari 验收。三引擎报告分别写入 `.local/browser-result.json`、`browser-result-firefox.json`、`browser-result-webkit.json`，不相互覆盖。高级回归在临时环境创建合成历史展示及待发请求，真实应用完成考试、学习事件、扣库存发券并核对发放回执。自然月结算另由可控时钟及真实数据库边界测试验证，不修改主机时间。
 
-当前镜像源码读取本机 `.local/package-source.json`、`.local/images.json`，各批验证范围见[交付索引](reports/README.md)。CI 按提交 SHA 查看 [Reliability and frontend gates](https://github.com/W205614/Vocational-school/actions/workflows/reliability.yml) 与 [Production security](https://github.com/W205614/Vocational-school/actions/workflows/production-security.yml) 的实际运行结果。
+运行镜像、源码版本及打包产物分别查看本机 `.local/compose.runtime.yaml`、`.local/build-source.json` 和 `.local/package-source.json`，各批验证范围见[交付索引](reports/README.md)。CI 按提交 SHA 查看 [Reliability and frontend gates](https://github.com/W205614/Vocational-school/actions/workflows/reliability.yml) 与 [Production security](https://github.com/W205614/Vocational-school/actions/workflows/production-security.yml) 的实际运行结果。
 
 ## 备份与独立恢复
 
-当前备份、恢复指针及相应计划任务保持停用，没有有效本地恢复集或镜像离线包。下列命令仅说明未来明确重新启用备份并取得有效恢复材料后的工具行为，本轮更新不执行这些命令。
+在维护窗口可手动创建完整备份。准备独立恢复时，先确认数据包和镜像归档相互对应，再校验备份内容。自动计划任务状态及本机保留的恢复点见[运维说明](../../docs/stability-operations.md#备份状态空间与计划任务)。
 
 ```powershell
 python deploy/compact/backup.py
@@ -235,7 +235,7 @@ python deploy/compact/load_test.py --users 50 --seconds 60
 
 图片保留 2026-10-16 对应源码的原始捕图像素与哈希。门户功能片段明确标为“界面示例”；积分图截取日历与本人赛季摘要，管理图截取赛季聚合数据及真实奖励空态，排除账号栏。截图中的合成数据用于演示界面。
 
-以下是具备有效完整备份时的隔离升级演练：先完成停写备份及校验，提交生产源码并构建七个应用／网页镜像，再将备份恢复到独立副本，核对原始内容后运行增量迁移和新版本验收。当前备份停用，本轮不创建恢复副本：
+隔离升级演练需要已校验的完整停写备份，以及从目标源码构建的七个应用／网页镜像。先在独立副本恢复和核对原始内容，再验证增量迁移与新版业务流程。
 
 ```powershell
 python deploy/compact/restore.py <完整备份目录> --home .local/upgrade-rehearsal-<唯一标识> --project zhixuetang-recovery-upgrade-<唯一标识> --offset 1000 --upgrade-from deploy/compact
@@ -253,7 +253,7 @@ python deploy/compact/restore.py <完整备份目录> --home .local/upgrade-rehe
 
 本轮学生登录HTTP 200；1080p视频实际播放9.016248秒、解码274帧，206 Range抽样字节与源文件一致；学习进度在MySQL保存为9秒，累计观看与折算时长均为9,072毫秒，刷新后从9秒续播。该结果只覆盖登录、实际播放和进度持久化／续播，没有重新执行全面业务或容量验收。七个应用／网页镜像来源及14个容器健康曾完成核对，验证后14个容器全部恢复停止。
 
-部署证据在仓库根目录 `.local/daily-deploy-20261031/` 的 `publication.json`、`healthy.json`、`narrow-result.json`、`preservation.json`、`stopped.json`。源码维护及隔离验证另存于 `.local/runtime-maintenance-20261031/`；后续文档提交与这批镜像的源码来源分别记录。备份计划任务仍为Disabled／false，旧完整数据包、镜像离线包和恢复指针已经退役，当前没有有效本地恢复集；保留的业务数据卷、课程视频和必要配置是运行资产。
+部署证据在仓库根目录 `.local/daily-deploy-20261031/` 的 `publication.json`、`healthy.json`、`narrow-result.json`、`preservation.json`、`stopped.json`。源码维护及隔离验证另存于 `.local/runtime-maintenance-20261031/`；后续文档提交与这批镜像的源码来源分别记录。该历史批次结束时，自动备份计划任务为 Disabled，旧数据包、镜像归档及恢复指针已经退役。当时保留的业务数据卷、课程视频和必要配置用于日常运行。
 
 验证结束后，清理本项目已替换的七个旧版镜像、构建重试留下的三个无引用中间镜像，以及上一轮两个停止的临时测试容器和其一个网络，没有删除数据卷；当前七个卷和日常网络保留。约1.31 GiB的可再生构建文件移入Windows回收站，未清空回收站，不将其记作已释放的宿主磁盘空间。逐项记录见同一私有目录中的 `docker-cleanup.json` 和 `recycled-builds-*.json`；其他项目、共享基础镜像及归属不明资源未操作。
 
