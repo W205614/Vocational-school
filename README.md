@@ -10,7 +10,7 @@
 
 项目按需维护，日常改动合入 `dev`。参与开发见[贡献指南](CONTRIBUTING.md)，安全问题报告见[安全政策](SECURITY.md)。
 
-最新源码预览为 [v0.1.0-preview.3](https://github.com/W205614/Vocational-school/tree/v0.1.0-preview.3)，通过 Git Tag 获取。该版本完善了选课资料、课程试看、作业版本与订正、教学待办和媒资管理。`dev` 用于跟进开发，`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
+最新源码预览为 [v0.1.0-preview.3](https://github.com/W205614/Vocational-school/tree/v0.1.0-preview.3)，通过 Git Tag 获取。该版本完善了选课资料、课程试看、作业版本与订正、教学待办和媒资管理。改动和验收范围见 [preview.3 版本说明](docs/releases/v0.1.0-preview.3.md)。`dev` 用于跟进开发，`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
 
 [获取方式](#获取方式与发布状态) · [首次部署](#全新环境准备) · [已有环境启动](#已有环境启动) · [源码导航](#源码导航)
 
