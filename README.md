@@ -10,7 +10,7 @@
 
 项目按需维护，日常改动合入 `dev`。参与开发见[贡献指南](CONTRIBUTING.md)，安全问题报告见[安全政策](SECURITY.md)。
 
-最新源码预览为 [v0.1.0-preview.3](https://github.com/W205614/Vocational-school/tree/v0.1.0-preview.3)，通过 Git Tag 获取。该版本完善了选课资料、课程试看、作业版本与订正、教学待办和媒资管理。改动和验收范围见 [preview.3 版本说明](docs/releases/v0.1.0-preview.3.md)。`dev` 用于跟进开发，`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
+最新源码预览为 [v0.1.0-preview.4](https://github.com/W205614/Vocational-school/tree/v0.1.0-preview.4)，通过 Git Tag 获取。本版修复课程答疑的读取权限和课程简介的纯文本预览。改动和验收范围见 [preview.4 版本说明](docs/releases/v0.1.0-preview.4.md)。`dev` 用于跟进开发，`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
 
 [获取方式](#获取方式与发布状态) · [首次部署](#全新环境准备) · [已有环境启动](#已有环境启动) · [源码导航](#源码导航)
 
@@ -18,9 +18,9 @@
 
 | 方式 | 当前状态与用途 |
 | --- | --- |
-| 从源码构建并运行 | 按下文克隆 `v0.1.0-preview.3`，生成本地配置，用 Docker Compose 运行自建镜像 |
+| 从源码构建并运行 | 按下文克隆 `v0.1.0-preview.4`，生成本地配置，用 Docker Compose 运行自建镜像 |
 | 跟进开发 | 克隆 `dev`，按[贡献指南](CONTRIBUTING.md)使用独立开发和验收环境 |
-| 查阅历史版本 | [GitHub Tags](https://github.com/W205614/Vocational-school/tags)保留各版源码，[preview.2 版本说明](docs/releases/v0.1.0-preview.2.md)记录当时的改动和验证 |
+| 查阅历史版本 | [GitHub Tags](https://github.com/W205614/Vocational-school/tags)保留各版源码，[历版说明](docs/README.md#当前交付记录)记录改动和验证范围 |
 
 本次公开交付范围为源码 Tag，运行所需应用镜像由下文的脚本在本地构建。
 
@@ -51,7 +51,7 @@ python deploy/compact/setup.py up
 以下命令以 **Windows PowerShell** 为例，后续均在仓库根目录执行：
 
 ```powershell
-git clone --branch v0.1.0-preview.3 https://github.com/W205614/Vocational-school.git
+git clone --branch v0.1.0-preview.4 https://github.com/W205614/Vocational-school.git
 cd Vocational-school
 python -m pip install -r deploy/compact/requirements.txt
 npm --prefix frontend ci
