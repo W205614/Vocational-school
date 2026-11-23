@@ -3,7 +3,7 @@ import { ref, computed, nextTick, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
 import { get, write, newKey } from '../../../../packages/shared/src/client';
-import { useTask, money, type Row } from '../../../../packages/shared/src/ui';
+import { useTask, money, plainTextDescription, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
 import EntityPicker from '../components/EntityPicker.vue';
 import CourseForm from '../components/CourseForm.vue';
@@ -498,7 +498,7 @@ onMounted(() => {
         <section class="card publication-preview" aria-label="学生视角预览">
           <h3>{{ publication.preview.name }}</h3>
           <img v-if="publication.preview.coverUrl" :src="publication.preview.coverUrl" alt="课程封面预览" />
-          <p>{{ publication.preview.introduce?.replace(/<[^>]*>/g, '') }}</p>
+          <p>{{ plainTextDescription(publication.preview.introduce) }}</p>
           <p>{{ Number(publication.preview.price) ? money(publication.preview.price) : '免费课程' }}</p>
           <CourseFacts :course="publication.preview" />
           <p v-if="publication.preview.usePeople">适用人群 · {{ publication.preview.usePeople }}</p>

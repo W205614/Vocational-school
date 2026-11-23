@@ -106,7 +106,7 @@ test('course publication gates trial generation and preserves draft, clip, and h
       price: 0,
       validDuration: 0,
       purchaseEndTime: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 19),
-      introduce: '课程草稿预览与正式发布的隔离夹具',
+      introduce: '<p><strong>课程草稿预览</strong>&nbsp;与正式发布</p>',
       usePeople: '开始学习的学生',
       detail: '视频和考试共同覆盖教学目标',
       learningOutcomes: outcome,
@@ -128,6 +128,9 @@ test('course publication gates trial generation and preserves draft, clip, and h
     await admin.goto(editor);
     await admin.getByRole('button', { name: '预览与上架检查' }).click();
     const preview = admin.getByRole('dialog', { name: '学生视角预览与上架检查' });
+    const introduction = preview.getByRole('region', { name: '学生视角预览', exact: true });
+    await expect(introduction.getByText('课程草稿预览 与正式发布', { exact: true })).toBeVisible();
+    await expect(introduction.locator('p strong')).toHaveCount(0);
     await expect(preview.getByText(outcome, { exact: true })).toBeVisible();
     await expect(preview.getByText(/缺少视频关联/)).toBeVisible();
     await expect(preview.getByText(/尚未发布试卷/)).toBeVisible();

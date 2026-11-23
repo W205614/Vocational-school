@@ -60,6 +60,7 @@ public class InteractionQuestionServiceImpl
     private final CategoryCache categoryCache;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final LearningEntitlementService entitlements;
+    private final DiscussionReadAccess discussionReadAccess;
 
     @Override
     @Transactional
@@ -77,12 +78,19 @@ public class InteractionQuestionServiceImpl
 
     @Override
     public PageDTO<QuestionVO> queryQuestionPage(QuestionPageQuery query) {
-        // 1. 参数校验, 课程id和小节id不能都为空
+        long viewer = UserContext.requireUser();
         Long courseId = query.getCourseId();
         Long sectionId = query.getSectionId();
-        if (courseId == null && sectionId == null && !Boolean.TRUE.equals(query.getOnlyMine())) {
+        boolean onlyMine = Boolean.TRUE.equals(query.getOnlyMine());
+        if (courseId == null && sectionId == null && !onlyMine) {
             throw new BadRequestException("课程id和小节id不能都为空");
         }
+        if (courseId == null && sectionId != null) {
+            var section = courseClient.sectionInfo(sectionId);
+            if (section == null) return PageDTO.empty(0L, 0L);
+            courseId = section.getCourseId();
+        }
+        if (courseId != null) discussionReadAccess.require(viewer, courseId);
 
         // 2. 分页查询
         Page<InteractionQuestion> page =
@@ -90,10 +98,7 @@ public class InteractionQuestionServiceImpl
                         .select(
                                 InteractionQuestion.class,
                                 info -> !info.getProperty().equals("description"))
-                        .eq(
-                                Boolean.TRUE.equals(query.getOnlyMine()),
-                                InteractionQuestion::getUserId,
-                                UserContext.getUser())
+                        .eq(onlyMine, InteractionQuestion::getUserId, viewer)
                         .eq(courseId != null, InteractionQuestion::getCourseId, courseId)
                         .eq(sectionId != null, InteractionQuestion::getSectionId, sectionId)
                         .eq(InteractionQuestion::getHidden, false)
@@ -170,6 +175,7 @@ public class InteractionQuestionServiceImpl
             // 没有数据或者被隐藏了
             return null;
         }
+        discussionReadAccess.require(UserContext.requireUser(), question.getCourseId());
         // 3. 查询提问者信息
         UserDTO user = null;
         if (!question.getAnonymity()) {

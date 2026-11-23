@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
 import { get, write, request } from '../../../../packages/shared/src/client';
 import { useOperations } from '../../../../packages/shared/src/operations';
-import { useTask, money, type Row } from '../../../../packages/shared/src/ui';
+import { plainTextDescription, useTask, money, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
 import CourseFacts from '../../../../packages/shared/src/CourseFacts.vue';
 import { learningProgress } from '../../../../packages/shared/src/learningProgress';
@@ -445,10 +445,6 @@ const progress = computed(() =>
       )
     : 0,
 );
-const plain = (value: unknown) =>
-  String(value || '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/g, ' ');
 async function load() {
   const revision = ++loadRevision,
     courseId = id(),
@@ -803,40 +799,39 @@ async function like(item: Row) {
     task.message.value = liked ? '已点赞' : '已取消点赞';
   });
 }
-async function applyCourseLocation() {
-  if (!course.value) return;
+async function openLinkedDiscussion(questionId: string, sectionId: string) {
+  tab.value = 'discussion';
+  if (requireLogin()) return;
+  if (!owned.value) {
+    discussionError.value = '当前课程没有有效学习权限';
+    return;
+  }
+  if (!/^[1-9][0-9]{0,18}$/.test(questionId)) {
+    discussionError.value = '该讨论已不可查看';
+    return;
+  }
   const scope = loadRevision, courseId = id();
-  const sectionId = String(route.query.sectionId || '');
-  const questionId = String(route.query.questionId || '');
-  if (questionId) {
-    tab.value = 'discussion';
-    if (!session.token) {
-      requireLogin();
-      return;
-    }
-    if (!owned.value) {
-      discussionError.value = '当前课程没有有效学习权限';
-      return;
-    }
-    if (!/^[1-9][0-9]{0,18}$/.test(questionId)) {
+  const current = () => scope === loadRevision && questionId === String(route.query.questionId || '');
+  try {
+    const item = await get<Row | null>('/services/learning/questions/' + questionId);
+    if (!current()) return;
+    if (!item || String(item.courseId) !== courseId ||
+        (sectionId && String(item.sectionId) !== sectionId)) {
       discussionError.value = '该讨论已不可查看';
       return;
     }
-    try {
-      const item = await get<Row | null>('/services/learning/questions/' + questionId);
-      if (scope !== loadRevision || questionId !== String(route.query.questionId || '')) return;
-      if (!item || String(item.courseId) !== courseId ||
-          (sectionId && String(item.sectionId) !== sectionId)) {
-        discussionError.value = '该讨论已不可查看';
-        return;
-      }
-      await answers(item);
-    } catch (error) {
-      if (scope === loadRevision && questionId === String(route.query.questionId || ''))
-        discussionError.value = error instanceof Error ? error.message : '讨论加载失败';
-    }
-    return;
+    await answers(item);
+  } catch (error) {
+    if (current())
+      discussionError.value = error instanceof Error ? error.message : '讨论加载失败';
   }
+}
+
+async function applyCourseLocation() {
+  if (!course.value) return;
+  const sectionId = String(route.query.sectionId || '');
+  const questionId = String(route.query.questionId || '');
+  if (questionId) return openLinkedDiscussion(questionId, sectionId);
   if (!sectionId) return;
   const target = sections.value.find((item) => String(item.id) === sectionId);
   if (!target) return;
@@ -934,7 +929,7 @@ onBeforeUnmount(() => {
                 .join('、') || '职学堂课程团队'
             }}
           </p>
-          <p v-if="course.introduce" class="content">{{ plain(course.introduce) }}</p>
+          <p v-if="course.introduce" class="content">{{ plainTextDescription(course.introduce) }}</p>
           <p class="price">{{ Number(course.price) === 0 ? '免费课程' : money(course.price) }}</p>
           <CourseFacts :course="course" />
           <div class="toolbar">
@@ -1008,7 +1003,7 @@ onBeforeUnmount(() => {
         <h2>关于这门课程</h2>
         <p class="content">
           {{
-            plain(course.detail || course.introduce) ||
+            plainTextDescription(course.detail || course.introduce) ||
             '课程介绍暂未完善，可以先查看课程目录了解学习内容。'
           }}
         </p>

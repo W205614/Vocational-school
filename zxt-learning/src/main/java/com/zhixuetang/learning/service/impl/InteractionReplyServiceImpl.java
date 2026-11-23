@@ -51,6 +51,7 @@ public class InteractionReplyServiceImpl
     private final RemarkClient remarkClient;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final LearningEntitlementService entitlements;
+    private final DiscussionReadAccess discussionReadAccess;
     private final com.zhixuetang.api.client.course.CourseClient courses;
     private final com.zhixuetang.common.autoconfigure.reliability.OutboxStore outbox;
 
@@ -132,25 +133,28 @@ public class InteractionReplyServiceImpl
 
     @Override
     public PageDTO<ReplyVO> queryReplyVOPage(ReplyPageQuery query, Boolean isAdmin) {
-        // 1.校验questionId和answerId是否都为空
-        if (query.getQuestionId() == null && query.getAnswerId() == null) {
+        Long questionId = query.getQuestionId();
+        Long answerId = query.getAnswerId();
+        if (questionId == null && (answerId == null || (!isAdmin && answerId == 0L))) {
             throw new BadRequestException("问题id和回答id不能都为空");
         }
+        if (!isAdmin) {
+            if (answerId != null && answerId != 0L) {
+                InteractionReply answer = getById(answerId);
+                if (answer == null || answer.getHidden()
+                        || (questionId != null && !Objects.equals(questionId, answer.getQuestionId())))
+                    return PageDTO.empty(0L, 0L);
+                questionId = answer.getQuestionId();
+            }
+            InteractionQuestion question = questionMapper.selectById(questionId);
+            if (question == null || question.getHidden()) return PageDTO.empty(0L, 0L);
+            discussionReadAccess.require(UserContext.requireUser(), question.getCourseId());
+        }
 
-        // 2.分页查询interaction_reply表
         Page<InteractionReply> page =
                 this.lambdaQuery()
-                        // 如果传问题id则拼接问题id条件
-                        .eq(
-                                query.getQuestionId() != null,
-                                InteractionReply::getQuestionId,
-                                query.getQuestionId())
-                        // .eq(query.getAnswerId() != null, InteractionReply::getAnswerId,
-                        // query.getAnswerId())
-                        // 如果回答id没传，则查询answer_id为0的数据，也就是回答
-                        .eq(
-                                InteractionReply::getAnswerId,
-                                query.getAnswerId() == null ? 0L : query.getAnswerId())
+                        .eq(questionId != null, InteractionReply::getQuestionId, questionId)
+                        .eq(InteractionReply::getAnswerId, answerId == null ? 0L : answerId)
                         // 如果不是管理端, 则查询非隐藏的数据
                         .eq(!isAdmin, InteractionReply::getHidden, false)
                         .page(

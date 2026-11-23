@@ -331,6 +331,29 @@ test('browser purchase, real local video, discussions, exam grading and targeted
       'aria-pressed',
       'false',
     );
+    const questionPath = '/services/learning/questions';
+    const discussionPage = questionPath + '/page?courseId=' + fixture.course;
+    const savedQuestion = (await api(page, discussionPage)).list.find(
+      (entry: { title: string }) => entry.title === 'Question ' + fixture.marker,
+    );
+    expect(savedQuestion).toBeTruthy();
+    const discussionDetail = questionPath + '/' + savedQuestion.id;
+    const discussionReplies = '/services/learning/replies/page?questionId=' + savedQuestion.id;
+    const sectionDiscussions = questionPath + '/page?sectionId=' + fixture.video;
+    expect((await api(page, discussionDetail)).description).toBe('A persisted browser discussion');
+    expect((await api(page, sectionDiscussions)).list).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: savedQuestion.id })]),
+    );
+    const savedReply = (await api(page, discussionReplies)).list.find(
+      (entry: { content: string }) => entry.content === 'A persisted answer',
+    );
+    expect(savedReply).toBeTruthy();
+    const discussionComments = '/services/learning/replies/page?answerId=' + savedReply.id;
+    await page.goto('/courses/' + fixture.course + '?questionId=' + savedQuestion.id);
+    await expect(page.getByText('A persisted answer', { exact: true })).toBeVisible();
+    await page.getByRole('tab', { name: '课程目录', exact: true }).click();
+    await page.getByRole('button', { name: /Browser video/ }).click();
+
     const firstPending = '待答一 ' + fixture.marker;
     const secondPending = '待答二 ' + fixture.marker;
     for (const title of [firstPending, secondPending]) {
@@ -627,6 +650,13 @@ test('browser purchase, real local video, discussions, exam grading and targeted
       headers: { Range: 'bytes=0-31' },
     });
     expect(refundedBytes.status()).toBe(403);
+    const discussionToken = await page.evaluate(() => sessionStorage.getItem('school-token'));
+    for (const path of [discussionDetail, discussionPage, sectionDiscussions, discussionReplies, discussionComments]) {
+      const response = await page.request.get('/api/v2' + path, {
+        headers: { Authorization: 'Bearer ' + discussionToken },
+      });
+      expect(response.status()).toBe(403);
+    }
     await assertPersistedAudit(admin);
     await page.goto('/courses/' + fixture.course);
     await expect(page.getByText('学习权益已失效', { exact: true })).toBeVisible();
