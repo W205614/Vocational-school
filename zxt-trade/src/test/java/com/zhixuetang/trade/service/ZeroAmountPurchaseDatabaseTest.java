@@ -9,6 +9,7 @@ import com.zhixuetang.api.dto.course.CourseSimpleInfoDTO;
 import com.zhixuetang.api.dto.promotion.CouponDiscountDTO;
 import com.zhixuetang.common.autoconfigure.mybatis.MybatisConfig;
 import com.zhixuetang.common.autoconfigure.reliability.OutboxStore;
+import com.zhixuetang.common.exceptions.BizIllegalException;
 import com.zhixuetang.common.utils.UserContext;
 import com.zhixuetang.pay.sdk.client.PayClient;
 import com.zhixuetang.trade.config.TradeProperties;
@@ -25,7 +26,11 @@ import org.springframework.jdbc.datasource.*;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.json.JsonMapper;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -39,6 +44,7 @@ class ZeroAmountPurchaseDatabaseTest {
     PayClient provider;
     long order, course;
     PlaceOrderDTO request;
+    CourseSimpleInfoDTO info;
 
     @BeforeEach
     void setup() throws Exception {
@@ -76,7 +82,7 @@ class ZeroAmountPurchaseDatabaseTest {
         var promotions = mock(PromotionClient.class);
         order = com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();
         course = order + 1;
-        var info = new CourseSimpleInfoDTO();
+        info = new CourseSimpleInfoDTO();
         info.setId(course);
         info.setPrice(1000);
         info.setStatus(CourseStatus.SHELF.getValue());
@@ -116,6 +122,7 @@ class ZeroAmountPurchaseDatabaseTest {
                                 new TradeProperties())
                         .entrySet())
             ReflectionTestUtils.setField(orders, entry.getKey(), entry.getValue());
+        ReflectionTestUtils.setField(orders, "outbox", outbox);
         refunds = mock(RefundApplyServiceImpl.class, CALLS_REAL_METHODS);
         provider = mock(PayClient.class);
         ReflectionTestUtils.setField(
@@ -136,9 +143,81 @@ class ZeroAmountPurchaseDatabaseTest {
         UserContext.setUser(7L);
     }
 
+    @Test
+    void expiredFreeEnrollmentRenewsOnceOnlyWhileTheCourseStillAcceptsStudents() throws Exception {
+        info.setFree(true);
+        info.setPrice(0);
+        info.setValidDuration(1);
+
+        long original = orders.enrolledFreeCourse(course).getOrderId();
+        var initialExpiry = expiry(original);
+        assertEquals(original, orders.enrolledFreeCourse(course).getOrderId());
+        assertEquals(initialExpiry, expiry(original));
+
+        LocalDateTime expired = LocalDateTime.now().minusDays(1).withNano(0);
+        jdbc.update("UPDATE order_detail SET course_expire_time=? WHERE order_id=?", expired, original);
+        info.setPurchaseEndTime(expired);
+        assertThrows(BizIllegalException.class, () -> orders.enrolledFreeCourse(course));
+        assertEquals(1, enrollmentCount());
+        assertEquals(expired, expiry(original));
+
+        info.setPurchaseEndTime(LocalDateTime.now().plusDays(1));
+        var start = new CountDownLatch(1);
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var first = workers.submit(() -> enrollAfter(start));
+            var second = workers.submit(() -> enrollAfter(start));
+            start.countDown();
+            long renewed = first.get(10, TimeUnit.SECONDS);
+            assertEquals(renewed, second.get(10, TimeUnit.SECONDS));
+            assertNotEquals(original, renewed);
+            assertTrue(expiry(renewed).isAfter(LocalDateTime.now()));
+            assertEquals(expired, expiry(original));
+            assertEquals(2, enrollmentCount());
+            assertEquals(
+                    2,
+                    jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM reliability_outbox WHERE business_key IN (?,?)",
+                            Integer.class,
+                            "order:" + original + ":enrolled",
+                            "order:" + renewed + ":enrolled"));
+        }
+    }
+
+    private long enrollAfter(CountDownLatch start) throws InterruptedException {
+        UserContext.setUser(7L);
+        try {
+            start.await();
+            return orders.enrolledFreeCourse(course).getOrderId();
+        } finally {
+            UserContext.removeUser();
+        }
+    }
+
+    private LocalDateTime expiry(long orderId) {
+        return jdbc.queryForObject(
+                "SELECT course_expire_time FROM order_detail WHERE order_id=?",
+                LocalDateTime.class,
+                orderId);
+    }
+
+    private int enrollmentCount() {
+        return jdbc.queryForObject(
+                "SELECT COUNT(*) FROM order_detail WHERE course_id=? AND status=5",
+                Integer.class,
+                course);
+    }
+
     @AfterEach
     void cleanup() {
         UserContext.removeUser();
+        jdbc.update(
+                "DELETE FROM reliability_outbox WHERE business_key IN(SELECT CONCAT('order:',order_id,':enrolled') FROM order_detail WHERE course_id=? AND status=5)",
+                course);
+        jdbc.update("DELETE FROM free_enrollment WHERE course_id=?", course);
+        jdbc.update(
+                "DELETE FROM `order` WHERE id IN(SELECT order_id FROM order_detail WHERE course_id=? AND status=5)",
+                course);
+        jdbc.update("DELETE FROM order_detail WHERE course_id=? AND status=5", course);
         jdbc.update(
                 "DELETE FROM reliability_outbox WHERE business_key IN(?,?)",
                 "order:" + order + ":paid",

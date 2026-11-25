@@ -189,58 +189,68 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         // 1.查询课程
         List<CourseSimpleInfoDTO> courseInfos = courseClient.getSimpleInfoList(courseIds);
         LocalDateTime now = LocalDateTime.now();
-        // 2.判断状态
         for (CourseSimpleInfoDTO courseInfo : courseInfos) {
-            // 2.1.检查课程是否上架
-            if (!CourseStatus.SHELF.equalsValue(courseInfo.getStatus())) {
-                throw new BizIllegalException(TradeErrorInfo.COURSE_NOT_FOR_SALE);
-            }
-            // 2.2.检查课程是否过期
-            if (courseInfo.getPurchaseEndTime() != null
-                    && courseInfo.getPurchaseEndTime().isBefore(now)) {
-                throw new BizIllegalException(TradeErrorInfo.COURSE_EXPIRED);
-            }
+            requireOpenEnrollment(courseInfo, now);
         }
         return courseInfos;
+    }
+
+    private void requireOpenEnrollment(CourseSimpleInfoDTO courseInfo, LocalDateTime now) {
+        if (!CourseStatus.SHELF.equalsValue(courseInfo.getStatus())) {
+            throw new BizIllegalException(TradeErrorInfo.COURSE_NOT_FOR_SALE);
+        }
+        if (courseInfo.getPurchaseEndTime() != null
+                && courseInfo.getPurchaseEndTime().isBefore(now)) {
+            throw new BizIllegalException(TradeErrorInfo.COURSE_EXPIRED);
+        }
+    }
+
+    private Long currentFreeEnrollment(Long userId, Long courseId, LocalDateTime now) {
+        return jdbc.query(
+                """
+                SELECT f.order_id
+                FROM free_enrollment f
+                JOIN order_detail d ON d.order_id=f.order_id AND d.course_id=f.course_id
+                WHERE f.user_id=? AND f.course_id=? AND d.status=?
+                  AND (d.course_expire_time IS NULL OR d.course_expire_time>?)
+                """,
+                rs -> rs.next() ? rs.getLong(1) : null,
+                userId, courseId, OrderStatus.ENROLLED.getValue(), now);
     }
 
     @Override
     public PlaceOrderResultVO enrolledFreeCourse(Long courseId) {
         Long userId = UserContext.requireUser();
-        jdbc.update(
-                "INSERT INTO free_enrollment(user_id,course_id,order_id) VALUES(?,?,?) ON DUPLICATE KEY UPDATE order_id=order_id",
-                userId,
-                courseId,
-                IdWorker.getId());
-        long orderId =
-                jdbc.queryForObject(
-                        "SELECT order_id FROM free_enrollment WHERE user_id=? AND course_id=?",
-                        Long.class,
-                        userId,
-                        courseId);
-        if (getById(orderId) != null) return queryOrderStatus(orderId);
-        // 1.查询课程信息
-        List<Long> cIds = CollUtils.singletonList(courseId);
-        List<CourseSimpleInfoDTO> courseInfos = getOnShelfCourse(cIds);
+        Long current = currentFreeEnrollment(userId, courseId, LocalDateTime.now());
+        if (current != null) return queryOrderStatus(current);
+
+        List<Long> cIds = List.of(courseId);
+        List<CourseSimpleInfoDTO> courseInfos = courseClient.getSimpleInfoList(cIds);
         if (CollUtils.isEmpty(courseInfos)) {
-            // 课程不存在
             throw new BizIllegalException(TradeErrorInfo.COURSE_NOT_EXISTS);
         }
         CourseSimpleInfoDTO courseInfo = courseInfos.get(0);
-        if (!courseInfo.getFree()) {
-            // 非免费课程，直接报错
-            throw new BizIllegalException(TradeErrorInfo.COURSE_NOT_FREE);
-        }
-        // Metadata calls finish before the local transaction. The durable row
-        // gives all retries and concurrent requests the same order identity.
+        long orderId = IdWorker.getId();
+        // The insert or duplicate-key update locks the student-course row until commit.
         return new org.springframework.transaction.support.TransactionTemplate(transactionManager)
                 .execute(
                         tx -> {
-                            jdbc.queryForMap(
-                                    "SELECT order_id FROM free_enrollment WHERE user_id=? AND course_id=? FOR UPDATE",
+                            jdbc.update(
+                                    "INSERT INTO free_enrollment(user_id,course_id,order_id) VALUES(?,?,?) ON DUPLICATE KEY UPDATE order_id=order_id",
                                     userId,
-                                    courseId);
-                            if (getById(orderId) != null) return queryOrderStatus(orderId);
+                                    courseId,
+                                    orderId);
+                            LocalDateTime now = LocalDateTime.now();
+                            Long activeOrderId = currentFreeEnrollment(userId, courseId, now);
+                            if (activeOrderId != null) return queryOrderStatus(activeOrderId);
+
+                            requireOpenEnrollment(courseInfo, now);
+                            if (!courseInfo.getFree()) {
+                                throw new BizIllegalException(TradeErrorInfo.COURSE_NOT_FREE);
+                            }
+                            jdbc.update(
+                                    "UPDATE free_enrollment SET order_id=? WHERE user_id=? AND course_id=?",
+                                    orderId, userId, courseId);
                             // 2.创建订单
                             Order order = new Order();
                             // 2.1.基本信息
@@ -249,7 +259,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                             order.setDiscountAmount(0);
                             order.setRealAmount(0);
                             order.setStatus(OrderStatus.ENROLLED.getValue());
-                            order.setFinishTime(LocalDateTime.now());
+                            order.setFinishTime(now);
                             order.setMessage(OrderStatus.ENROLLED.getProgressName());
                             // 2.2.订单id
                             order.setId(orderId);

@@ -112,12 +112,13 @@ class CoursePurchaseStatisticsDatabaseTest {
             jdbc.update("DELETE FROM order_detail WHERE course_id IN (?,?)", course, otherCourse);
     }
 
-    private void item(long courseId, int amount, int state) {
+    private void item(long courseId, long userId, int amount, int state) {
         long id = IdWorker.getId();
         jdbc.update(
-                "INSERT INTO order_detail(id,order_id,user_id,course_id,price,name,cover_url,real_pay_amount,status,creater,updater) VALUES(?,?,7,?,?,'Synthetic statistics course','/brand-logo.png',?,?,7,7)",
+                "INSERT INTO order_detail(id,order_id,user_id,course_id,price,name,cover_url,real_pay_amount,status,creater,updater) VALUES(?,?,?,?,?,'Synthetic statistics course','/brand-logo.png',?,?,7,7)",
                 id,
                 id,
+                userId,
                 courseId,
                 amount,
                 amount,
@@ -139,7 +140,7 @@ class CoursePurchaseStatisticsDatabaseTest {
     @Test
     void newlyPublishedCourseWithNoOrdersReturnsZeroStatisticsInsteadOfPrimitiveNullFailure()
             throws Exception {
-        item(otherCourse, 999999, 2);
+        item(otherCourse, 7, 999999, 2);
         var result = statistics(course);
         assertEquals(0, ((Number) result.get("realPayAmount")).intValue());
         assertEquals(0, ((Number) result.get("enrollNum")).intValue());
@@ -149,10 +150,11 @@ class CoursePurchaseStatisticsDatabaseTest {
     @Test
     void nonemptyCourseKeepsIntegerCentSumAndZeroCostEnrollmentWithoutIncludingOtherCourse()
             throws Exception {
-        item(course, 12500, 2);
-        item(course, 7200, 4);
-        item(course, 0, 5);
-        item(otherCourse, 999999, 2);
+        item(course, 7, 12500, 2);
+        item(course, 8, 7200, 4);
+        item(course, 9, 0, 5);
+        item(course, 9, 0, 5);
+        item(otherCourse, 7, 999999, 2);
         var result = statistics(course);
         assertEquals(19700, ((Number) result.get("realPayAmount")).intValue());
         assertEquals(3, ((Number) result.get("enrollNum")).intValue());

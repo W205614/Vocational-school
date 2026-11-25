@@ -176,6 +176,7 @@ def main():
     for table in (
         'order_detail',
         'order_creation',
+        'free_enrollment',
         'refund_apply',
         'refund_delivery_task',
     ):

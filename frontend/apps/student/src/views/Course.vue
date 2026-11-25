@@ -525,7 +525,7 @@ async function select(item: Row, resumeAt?: number) {
   }
   if (!owned.value && Number(item.type) === 2 && !item.trailer) {
     task.message.value = lesson.value?.id
-      ? '学习权益已失效，请重新报名后学习'
+      ? '学习权益已失效，请查看课程报名状态'
       : '报名后可学习当前小节';
     return;
   }
@@ -981,7 +981,11 @@ onBeforeUnmount(() => {
         v-if="!busy && lesson?.id && !owned"
         class="enrollment-hint"
         title="学习权益已失效"
-        description="学习进度、私人笔记和已有答卷仍保留。重新报名后可继续学习。"
+        :description="
+          enrollmentEnded
+            ? '报名已结束。学习进度、私人笔记和已有答卷仍保留。'
+            : '学习进度、私人笔记和已有答卷仍保留。重新报名后可继续学习。'
+        "
         type="warning"
         :closable="false"
         show-icon

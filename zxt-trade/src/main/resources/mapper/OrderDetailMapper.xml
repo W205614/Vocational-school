@@ -3,13 +3,13 @@
 <mapper namespace="com.zhixuetang.trade.mapper.OrderDetailMapper">
 
     <select id="countEnrollNumOfCourse" resultType="com.zhixuetang.api.dto.IdAndNumDTO">
-        SELECT course_id AS id, COUNT(course_id) AS num
+        SELECT course_id AS id, COUNT(DISTINCT user_id) AS num
         FROM order_detail
         ${ew.customSqlSegment}
         GROUP BY course_id
     </select>
     <select id="countEnrollCourseOfStudent" resultType="com.zhixuetang.api.dto.IdAndNumDTO" >
-        SELECT user_id AS id, COUNT(course_id) AS num
+        SELECT user_id AS id, COUNT(DISTINCT course_id) AS num
         FROM order_detail
                  ${ew.customSqlSegment}
         GROUP BY user_id

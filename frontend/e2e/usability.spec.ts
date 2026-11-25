@@ -227,7 +227,7 @@ test('free enrollment survives refresh and expired enrollment is explained upfro
   await expect(page.getByRole('button', { name: '报名已结束', exact: true })).toBeDisabled();
   await expect(page.getByText('学习权益已失效', { exact: true })).toBeVisible();
   await expect(
-    page.getByText('学习进度、私人笔记和已有答卷仍保留。重新报名后可继续学习。', { exact: true }),
+    page.getByText('报名已结束。学习进度、私人笔记和已有答卷仍保留。', { exact: true }),
   ).toBeVisible();
   await expect(page.locator('.lesson-item').filter({ hasText: 'Browser video' })).toBeDisabled();
   await expect(page.getByRole('link', { name: '参加考试 →', exact: true })).toHaveCount(0);
