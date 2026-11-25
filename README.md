@@ -22,7 +22,7 @@
 | 跟进开发 | 克隆 `dev`，按[贡献指南](CONTRIBUTING.md)使用独立开发和验收环境 |
 | 查阅历史版本 | [GitHub Tags](https://github.com/W205614/Vocational-school/tags)保留各版源码，[历版说明](docs/README.md#当前交付记录)记录改动和验证范围 |
 
-本次公开交付范围为源码 Tag，运行所需应用镜像由下文的脚本在本地构建。
+本版源码通过 [GitHub 发布页](https://github.com/W205614/Vocational-school/releases/tag/v0.1.0-preview.5)和 Git Tag 获取。应用镜像按下文从源码在本机构建。
 
 源码 ZIP 不含 Git 元数据，而构建工具需要核对提交和源码绑定，请使用下文的 Git 克隆方式。新源码不会自动替换已有日常容器；已有环境先按[升级说明](docs/stability-operations.md#升级已有部署)核对完整构建绑定和恢复前提，不用初始化空库代替升级。
 
@@ -109,7 +109,7 @@ Get-Content deploy/compact/.local/accounts.json
 分别使用 `student`、`teacher`、`admin` 下的 `username` 和 `password` 登录对应端。密码随机生成，账号文件仅保存在本地，不要提交或公开。
 
 1. **游客**可在目录按难度、预计学习时长和试看状态筛选，打开课程详情核对学习目标与先修要求。
-2. **学生**可使用模拟支付报名，在「我的学习」继续播放与记笔记，提交课程作业、查看教师反馈，收到更正提醒后对照原版与新版要求。考试讲评、错题本和积分记录也从学生端进入。
+2. **学生**可报名免费课或使用模拟支付选课，在「我的学习」继续播放与记笔记，提交课程作业、查看教师反馈，收到更正提醒后对照原版与新版要求。限期免费课到期且仍开放报名时，可以重新报名并继续学习。考试讲评、错题本和积分记录也从学生端进入。
 3. **教师**可从「教学待办」查看授权课程的阅卷、答疑和待反馈作业，按课程筛选，处理后打开下一项。
 4. **管理员**可盘点历史课程资料和变更记录，批量准备草稿或已上架课程的试看片段，更正已发布作业，并在删除媒资前查看引用它的课程与小节。
 
@@ -132,6 +132,8 @@ Get-Content deploy/compact/.local/accounts.json
 默认调用关系为双端网页 → API 网关 → 四组组合应用；MySQL 存储业务状态，Redis 提供缓存和任务协调，RabbitMQ 承载可靠消息，Elasticsearch 提供课程搜索。模块装配、Outbox／Inbox 与事务边界见[架构图和源码阅读路径](docs/project-structure.md#默认部署的调用关系)。
 
 ## 验证与已知边界
+
+preview.5 的交易回归覆盖限期免费课到期续报、并发请求幂等、历史订单保留和人数去重。独立 Compose 环境的 3 条 Chromium 用例覆盖免费报名、播放与答疑、模拟购买退款以及发布试看。本机升级校验了恢复点、现有数据卷和媒资，并通过两端首页及网关就绪检查。版本结果见 [preview.5 版本说明](docs/releases/v0.1.0-preview.5.md)和[发布提交检查](https://github.com/W205614/Vocational-school/commit/c9fb719f8334ecd8d43e91a55cebdb62de3f0ee8/checks)。
 
 2026-11-22 的隔离验收使用合成账号、模拟支付和本地视频，覆盖购买与权益、学习与答疑、考试阅卷、退款，以及课程资料补录、批量试看、作业更正和并发编辑。各轮测试条件、结果和候选提交见[多角色体验](docs/product-experience-acceptance.md)、[四项后续需求](docs/product-experience-followup-acceptance.md)和[七项产品改进](docs/product-improvements-acceptance.md)。
 
