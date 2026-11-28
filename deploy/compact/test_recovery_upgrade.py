@@ -186,6 +186,22 @@ class RecoveryUpgradeTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 activate_generated_configs(home, saved)
 
+    def test_generated_recovery_uses_retained_broker_username(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            configs = home / '.local/configs'
+            configs.mkdir(parents=True)
+            generated = 'spring:\n  rabbitmq:\n    host: rabbitmq\n    username: zhixuetang\n'
+            for module in ('auth', 'learning'):
+                (configs / (module + '.yml')).write_text(generated, encoding='utf8')
+            saved = preserve_generated_configs(home)
+            recorded = generated.replace('username: zhixuetang', 'username: tianji')
+            (configs / 'auth.yml').write_text(recorded, encoding='utf8')
+            activate_generated_configs(home, saved)
+            for module in ('auth', 'learning'):
+                self.assertEqual(recorded, (configs / (module + '.yml')).read_text(encoding='utf8'))
+            self.assertEqual(generated, (saved / 'auth.yml').read_text(encoding='utf8'))
+
     def archive(self, path, content=b'broker state', name='./mnesia/data'):
         with tarfile.open(path, 'w:gz') as archive:
             info = tarfile.TarInfo(name)

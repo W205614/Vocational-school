@@ -8,6 +8,9 @@ import re
 import shutil
 import subprocess
 import tarfile
+import yaml
+
+from runtime_compose import rabbit_username
 
 ALIASES = {
     'identity',
@@ -210,14 +213,26 @@ def activate_generated_configs(home, saved):
         local
     ) or not preserved.resolve().is_relative_to(local):
         raise RuntimeError('Recovery configuration paths escaped the isolated home')
+    username = rabbit_username(home)
     current.rename(preserved)
     shutil.copytree(source, current)
+    restore_broker_username(current, username)
     return fingerprint(
         {
             path.name: hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sorted(current.iterdir())
         }
     )
+
+
+def restore_broker_username(configs, username):
+    """Match the credentials in the recovered broker volume when replacing app configs."""
+    for path in configs.glob('*.yml'):
+        config = yaml.safe_load(path.read_text(encoding='utf8'))
+        rabbit = config.get('spring', {}).get('rabbitmq')
+        if rabbit is not None and rabbit.get('username') != username:
+            rabbit['username'] = username
+            path.write_text(yaml.safe_dump(config, sort_keys=False), encoding='utf8')
 
 
 def copy_verified_manifests(source_home, recovery_home, proof):
