@@ -353,19 +353,30 @@ public class Classrooms {
                 .orElseThrow(() -> new BadRequestException("班级成员不存在"));
     }
 
-    Membership studentMember(long id, long user, boolean includeCompleted) {
+    Membership studentMemberForRead(long id, long user) {
+        Membership member = studentMember(id, user, true);
+        if (member.state() == MemberState.ACTIVE && entitlements.findAvailableReadOnly(user, member.courseId()) == null)
+            throw new ForbiddenException("无有效课程权益");
+        return member;
+    }
+
+    Membership studentMemberForWrite(long id, long user) {
+        Membership member = activeStudentMember(id, user);
+        entitlements.require(user, member.courseId());
+        return member;
+    }
+
+    Membership activeStudentMember(long id, long user) {
+        return studentMember(id, user, false);
+    }
+
+    private Membership studentMember(long id, long user, boolean includeCompleted) {
         var rows = jdbc.query("""
                 SELECT * FROM teaching_class_member WHERE class_id=? AND user_id=?
                 AND (state='ACTIVE' OR (? AND state='COMPLETED')) ORDER BY id DESC LIMIT 1
                 """, Classrooms::membership, id, user, includeCompleted);
         if (rows.isEmpty()) throw new ForbiddenException("你没有该班级的有效班籍");
-        var member = rows.getFirst();
-        if (member.state() == MemberState.ACTIVE) {
-            if (!includeCompleted) entitlements.require(user, member.courseId());
-            else if (entitlements.findAvailableReadOnly(user, member.courseId()) == null)
-                throw new ForbiddenException("无有效课程权益");
-        }
-        return member;
+        return rows.getFirst();
     }
 
     Membership currentMember(long course, long user) {

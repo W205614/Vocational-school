@@ -75,7 +75,7 @@ public class ClassroomActivities {
     @Transactional(readOnly = true)
     public StudyView study(long id) {
         long user = student();
-        var member = rooms.studentMember(id, user, true);
+        var member = rooms.studentMemberForRead(id, user);
         return new StudyView(rooms.get(id), member, jdbc.query(ACTIVITIES + """
                 WHERE a.class_id=? AND (a.kind<>'ANNOUNCEMENT' OR a.scheduled_at<=NOW(3))
                 ORDER BY a.scheduled_at,a.id
@@ -202,7 +202,7 @@ public class ClassroomActivities {
     @Transactional(readOnly = true)
     public List<Version> versions(long id, long activityId, boolean teaching) {
         if (teaching) rooms.staffAccess(id, false);
-        else rooms.studentMember(id, student(), true);
+        else rooms.studentMemberForRead(id, student());
         Activity activity = get(id, activityId);
         if (!teaching && activity.kind() == Kind.ANNOUNCEMENT && activity.scheduledAt().isAfter(LocalDateTime.now()))
             throw new ForbiddenException("公告尚未发布");
@@ -243,7 +243,7 @@ public class ClassroomActivities {
         Classroom room = rooms.locked(id);
         editable(room);
         long user = student();
-        var member = rooms.studentMember(id, user, false);
+        var member = rooms.studentMemberForWrite(id, user);
         Activity activity = assignment(id, activityId);
         if (form.requestKey() == null) throw new BadRequestException("缺少提交标识");
         String text = required(form.description(), 5000, "作品说明");
@@ -320,7 +320,7 @@ public class ClassroomActivities {
     @Transactional(readOnly = true)
     public List<Discussion> discussion(long id, boolean teaching, Long before) {
         if (teaching) rooms.staffAccess(id, false);
-        else rooms.studentMember(id, student(), true);
+        else rooms.studentMemberForRead(id, student());
         return jdbc.query("""
                 SELECT * FROM teaching_class_discussion WHERE class_id=? AND cleaned_at IS NULL
                 AND (? IS NULL OR id<?) ORDER BY id DESC LIMIT 100
@@ -333,7 +333,7 @@ public class ClassroomActivities {
         editable(room);
         long user = teaching ? UserContext.requireUser() : student();
         if (teaching) rooms.staffAccess(id, false);
-        else rooms.studentMember(id, user, false);
+        else rooms.studentMemberForWrite(id, user);
         if (room.state() == State.DRAFT) throw new ConflictException("班级尚未发布");
         String text = required(form.body(), 8000, "内容");
         String title = null;
@@ -427,12 +427,11 @@ public class ClassroomActivities {
             if (!Long.valueOf(2).equals(request.roleId())) throw new ForbiddenException("需要学生账号");
             if ("OPEN".equals(request.action())) {
                 editable(room);
-                var member = rooms.studentMember(room.id(), request.userId(), false);
+                var member = rooms.activeStudentMember(room.id(), request.userId());
                 if (memberId != null && !member.id().equals(memberId))
                     throw new ForbiddenException("该答卷属于往期班籍");
                 memberId = member.id();
-                lessonId = entitlements.findAvailableReadOnly(request.userId(), room.courseId());
-                if (lessonId == null) throw new ForbiddenException("无有效课程权益");
+                lessonId = entitlements.require(request.userId(), room.courseId());
                 closes = deadline(activity, memberId);
                 requireWindow(activity, closes);
             } else if (memberId == null || rooms.member(room.id(), memberId).userId() != request.userId()) {
