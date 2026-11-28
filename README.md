@@ -10,7 +10,7 @@
 
 项目按需维护，日常改动合入 `dev`。参与开发见[贡献指南](CONTRIBUTING.md)，安全问题报告见[安全政策](SECURITY.md)。
 
-最新源码预览为 [v0.1.0-preview.6](https://github.com/W205614/Vocational-school/tree/v0.1.0-preview.6)，通过 Git Tag 获取。本版加入同一课程的多班级教务，覆盖选班、作业考试和成绩归档。改动和验收范围见 [preview.6 版本说明](docs/releases/v0.1.0-preview.6.md)。`dev` 用于跟进开发，`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
+最新源码预览为 [v0.1.0-preview.6](https://github.com/W205614/Vocational-school/releases/tag/v0.1.0-preview.6)，通过 Git Tag 获取。本版加入同一课程的多班级教务，覆盖选班、作业考试和成绩归档。改动和验收范围见 [preview.6 版本说明](docs/releases/v0.1.0-preview.6.md)。`dev` 用于跟进开发，`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
 
 多班级的开课配置、教师与助教职责、学员转班和结班规则见[班级教务](docs/classroom-teaching.md)。
 
@@ -20,11 +20,11 @@
 
 | 方式 | 当前状态与用途 |
 | --- | --- |
-| 从源码构建并运行 | 按下文克隆 `v0.1.0-preview.5`，生成本地配置，用 Docker Compose 运行自建镜像 |
+| 从源码构建并运行 | 按[首次部署步骤](#全新环境准备)克隆发布源码，生成本地配置，用 Docker Compose 运行自建镜像 |
 | 跟进开发 | 克隆 `dev`，按[贡献指南](CONTRIBUTING.md)使用独立开发和验收环境 |
 | 查阅历史版本 | [GitHub Tags](https://github.com/W205614/Vocational-school/tags)保留各版源码，[历版说明](docs/README.md#当前交付记录)记录改动和验证范围 |
 
-本版源码通过 [GitHub 发布页](https://github.com/W205614/Vocational-school/releases/tag/v0.1.0-preview.5)和 Git Tag 获取。应用镜像按下文从源码在本机构建。
+应用镜像按下文从发布源码在本机构建。
 
 源码 ZIP 不含 Git 元数据，而构建工具需要核对提交和源码绑定，请使用下文的 Git 克隆方式。新源码不会自动替换已有日常容器；已有环境先按[升级说明](docs/stability-operations.md#升级已有部署)核对完整构建绑定和恢复前提，不用初始化空库代替升级。
 
@@ -53,7 +53,7 @@ python deploy/compact/setup.py up
 以下命令以 **Windows PowerShell** 为例，后续均在仓库根目录执行：
 
 ```powershell
-git clone --branch v0.1.0-preview.5 https://github.com/W205614/Vocational-school.git
+git clone --branch v0.1.0-preview.6 https://github.com/W205614/Vocational-school.git
 cd Vocational-school
 python -m pip install -r deploy/compact/requirements.txt
 npm --prefix frontend ci
@@ -135,7 +135,7 @@ Get-Content deploy/compact/.local/accounts.json
 
 ## 验证与已知边界
 
-preview.5 的交易回归覆盖限期免费课到期续报、并发请求幂等、历史订单保留和人数去重。独立 Compose 环境的 3 条 Chromium 用例覆盖免费报名、播放与答疑、模拟购买退款以及发布试看。本机升级校验了恢复点、现有数据卷和媒资，并通过两端首页及网关就绪检查。版本结果见 [preview.5 版本说明](docs/releases/v0.1.0-preview.5.md)和[发布提交检查](https://github.com/W205614/Vocational-school/commit/c9fb719f8334ecd8d43e91a55cebdb62de3f0ee8/checks)。
+preview.6 的隔离回归覆盖同一课程的两期班、教职员授权、报名与模拟退款、作业和班级考试。恢复演练核对了 226 张表和 385 个媒资文件，本机升级应用三项迁移并通过清理后的冷启动检查。版本结果见 [preview.6 版本说明](docs/releases/v0.1.0-preview.6.md)和[发布提交检查](https://github.com/W205614/Vocational-school/commit/2d362e841f84c3975c71448daf4bc2957c32c20c/checks)。
 
 2026-11-22 的隔离验收使用合成账号、模拟支付和本地视频，覆盖购买与权益、学习与答疑、考试阅卷、退款，以及课程资料补录、批量试看、作业更正和并发编辑。各轮测试条件、结果和候选提交见[多角色体验](docs/product-experience-acceptance.md)、[四项后续需求](docs/product-experience-followup-acceptance.md)和[七项产品改进](docs/product-improvements-acceptance.md)。
 

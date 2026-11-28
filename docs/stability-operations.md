@@ -53,7 +53,7 @@ python deploy/compact/upgrade_existing.py deploy --candidate <本项目.local/ca
 
 ## 备份状态、空间与计划任务
 
-截至 2026-11-23，本机 `tianji-compact` 的自动备份计划任务仍为 `Disabled`。升级到 [preview.4](releases/v0.1.0-preview.4.md) 前曾创建并校验一次性停写备份及镜像归档。升级验收后，这批恢复材料已移入 Windows 回收站，从受管恢复集中退役。补丁的业务验收使用独立合成环境。
+2026-11-28，本机 `tianji-compact` 升级到 [preview.6](releases/v0.1.0-preview.6.md)。升级前的一次性停写备份和镜像归档通过了独立恢复演练，升级验收后已移入 Windows 回收站。本次收尾时自动备份任务为 `Disabled`，项目目录内无受管恢复集。
 
 计划任务启停以任务计划程序为准。在部署目录中，最近一次备份记录可从 `.local/ops-status/backup.json` 查询，使用前核对 `.local/backup/` 下的完整数据包，以及 `.local/current-runtime-backup/` 下对应的镜像归档和 `recovery.json`。状态记录可能早于材料退役，恢复前须校验实际文件。
 
