@@ -840,7 +840,8 @@ def build(package=True, group=None):
         heap = '384m' if group == 'gateway' else '768m'
         packages = (
             "tzdata 'zlib>=1.4-r0' 'libcrypto3>=3.5.9-r1' 'libssl3>=3.5.9-r1' "
-            "'openssl>=3.5.9-r1' 'gnutls>=3.8.14-r0' 'libfontenc>=1.1.10-r0'"
+            "'openssl>=3.5.9-r1' 'gnutls>=3.8.14-r0' 'libfontenc>=1.1.10-r0' "
+            "'libexpat>=2.11.0-r0'"
             + (' ffmpeg' if group == 'support' else '')
         )
         media_probe = 'RUN apk add --no-cache --upgrade ' + packages + '\n'
