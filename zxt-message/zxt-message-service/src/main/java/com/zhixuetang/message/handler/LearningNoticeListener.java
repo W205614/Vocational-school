@@ -11,7 +11,7 @@ import java.time.*;
 @Component
 @RequiredArgsConstructor
 public class LearningNoticeListener {
-    public enum Target { QUESTION, EXAM, ORDER, PRACTICE, PRACTICE_CORRECTION }
+    public enum Target { QUESTION, EXAM, ORDER, PRACTICE, PRACTICE_CORRECTION, CLASSROOM }
 
     public record Notice(
             String noticeId, Long userId, String title, String content, Long bizId,

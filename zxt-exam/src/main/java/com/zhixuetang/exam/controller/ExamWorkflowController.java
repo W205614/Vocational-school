@@ -38,7 +38,8 @@ public class ExamWorkflowController {
             List<Long> questionIds,
             Integer passPercent,
             List<Long> graders,
-            Map<Long, Explanation> explanations) {}
+            Map<Long, Explanation> explanations,
+            boolean classroomOnly) {}
 
     @PostMapping("/admin/exam-papers")
     public ResponseEntity<OperationStore.View> publish(
@@ -100,7 +101,8 @@ public class ExamWorkflowController {
                                         form.graders(),
                                         section.totalSections(),
                                         draft,
-                                        form.explanations())));
+                                        form.explanations(),
+                                        form.classroomOnly())));
     }
 
     @GetMapping("/exam-papers")
@@ -108,7 +110,7 @@ public class ExamWorkflowController {
         UserContext.requireUser();
         if (learning.isLessonValid(courseId) == null) throw new BadRequestException("无课程学习权限");
         return jdbc.queryForList(
-                "SELECT id,course_id,section_id,version,total_score,pass_percent FROM exam_paper WHERE course_id=? ORDER BY section_id,version DESC",
+                "SELECT id,course_id,section_id,version,total_score,pass_percent FROM exam_paper WHERE course_id=? AND classroom_only=FALSE ORDER BY section_id,version DESC",
                 courseId);
     }
 
@@ -116,7 +118,7 @@ public class ExamWorkflowController {
     public ResponseEntity<OperationStore.View> start(
             @PathVariable long id, @RequestHeader("Idempotency-Key") String key) {
         UserContext.requireUser();
-        var paper = service.paper(id);
+        var paper = service.coursePaper(id);
         Long lesson = learning.isLessonValid(((Number) paper.get("course_id")).longValue());
         if (lesson == null) throw new BadRequestException("无课程学习权限");
         return command(
@@ -158,7 +160,7 @@ public class ExamWorkflowController {
                 || courseId != null && courseId <= 0) throw new BadRequestException("分页或课程参数无效");
         // Retained attempts belong to the student even after a refund or expiry.
         // Listing history never grants permission to start or submit an exam.
-        String from = " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE a.user_id=?";
+        String from = " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE a.user_id=? AND a.class_activity_id IS NULL";
         List<Object> parameters = new ArrayList<>();
         parameters.add(user);
         if (courseId != null) {
@@ -206,9 +208,9 @@ public class ExamWorkflowController {
             throw new ForbiddenException("需要评分教师权限");
         return role == 1L
                 ? jdbc.queryForList(
-                        "SELECT a.*,p.course_id,p.section_id FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE status='WAIT_GRADING' ORDER BY submitted_at LIMIT 100")
+                        "SELECT a.*,p.course_id,p.section_id FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE a.class_activity_id IS NULL AND status='WAIT_GRADING' ORDER BY submitted_at LIMIT 100")
                 : jdbc.queryForList(
-                        "SELECT a.*,p.course_id,p.section_id FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id JOIN exam_grader g ON g.paper_id=a.paper_id WHERE g.user_id=? AND a.status='WAIT_GRADING' ORDER BY submitted_at LIMIT 100",
+                        "SELECT a.*,p.course_id,p.section_id FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id JOIN exam_grader g ON g.paper_id=a.paper_id WHERE g.user_id=? AND a.class_activity_id IS NULL AND a.status='WAIT_GRADING' ORDER BY submitted_at LIMIT 100",
                         user);
     }
 
@@ -236,7 +238,7 @@ public class ExamWorkflowController {
                 || studentId != null && studentId <= 0)
             throw new BadRequestException("分页范围无效");
         String from =
-                " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE a.status='WAIT_GRADING'";
+                " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id WHERE a.class_activity_id IS NULL AND a.status='WAIT_GRADING'";
         List<Object> parameters = new ArrayList<>();
         if (role != 1L) {
             from +=
@@ -273,6 +275,8 @@ public class ExamWorkflowController {
     public Map<String, Object> grading(@PathVariable long id) {
         long user = UserContext.requireUser();
         Long role = UserContext.getRole();
+        if (jdbc.queryForObject("SELECT COUNT(*) FROM exam_attempt WHERE id=? AND class_activity_id IS NULL",
+                Integer.class, id) == 0) throw new BadRequestException("考试记录不存在");
         if (!Long.valueOf(1).equals(role)
                 && (!Long.valueOf(3).equals(role)
                         || jdbc.queryForList(
@@ -300,7 +304,7 @@ public class ExamWorkflowController {
                 || pageSize > 100
                 || courseId != null && courseId <= 0
                 || studentId != null && studentId <= 0) throw new BadRequestException("统计筛选参数无效");
-        String attempts = " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id";
+        String attempts = " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id AND a.class_activity_id IS NULL";
         String filters = "";
         List<Object> args = new ArrayList<>();
         if (role != 1L) {

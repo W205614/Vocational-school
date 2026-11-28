@@ -64,6 +64,9 @@ public class OrderController {
     public org.springframework.http.ResponseEntity<?> placeOrder(
             @RequestBody @Validated PlaceOrderDTO placeOrderDTO,
             @RequestHeader("Idempotency-Key") String key) {
+        if (placeOrderDTO.getClassId() != null && !Long.valueOf(2).equals(
+                com.zhixuetang.common.utils.UserContext.getRole()))
+            throw new com.zhixuetang.common.exceptions.ForbiddenException("需要学生账号");
         return org.springframework.http.ResponseEntity.accepted()
                 .body(
                         operations.submit(

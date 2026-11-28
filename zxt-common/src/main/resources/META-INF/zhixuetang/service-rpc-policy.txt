@@ -1,4 +1,4 @@
-# Source-Manifest-SHA256: e1822b2f455fd4d301a263cf0b6b68e5d3e3aa8257af1c0d0f9838ec39069c46
+# Source-Manifest-SHA256: 3d2551ae9b21bedee38591fa21bdcccc69cc502556d34e27dc0dd42bd0f011bd
 # Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
 # Explicit RPC contract snapshot, reviewed 2026-10-31. caller groups | HTTP method | module servlet path.
 # Authentication bootstrap and session checks are the gateway's only private RPC exceptions.
@@ -122,3 +122,7 @@ support|GET|/_modules/course/internal/v1/course/media/{mediaId}/references
 support|POST|/_modules/course/internal/v1/course/media/deletion-guard
 support|GET|/_modules/course/internal/v1/course/{courseId}/trial-sections
 education|POST|/_modules/learning/internal/v1/learning/course-study-counts
+commerce|POST|/_modules/learning/internal/v1/learning/classrooms/seats
+education|POST|/_modules/learning/internal/v1/learning/classrooms/exam-access
+education|GET|/_modules/exam/internal/v1/exam/classroom-papers
+education|GET|/_modules/exam/internal/v1/exam/classroom-activities/{id}/results

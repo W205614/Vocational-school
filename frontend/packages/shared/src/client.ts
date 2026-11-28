@@ -141,6 +141,23 @@ export async function downloadFile(
     throw new ApiError('导出响应格式错误', 502);
   return response.blob();
 }
+export async function downloadCsv(path: string, retried = false): Promise<Blob> {
+  const token = tokenProvider();
+  const response = await fetch(apiTarget(path), {
+    credentials: 'include',
+    redirect: 'error',
+    headers: { Accept: 'text/csv', Authorization: 'Bearer ' + token },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (response.status === 401 && token && !retried) {
+    await refreshIdentity();
+    return downloadCsv(path, true);
+  }
+  if (!response.ok) throw new ApiError('成绩导出失败', response.status);
+  if (!response.headers.get('Content-Type')?.startsWith('text/csv'))
+    throw new ApiError('成绩导出响应格式错误', 502);
+  return response.blob();
+}
 export async function waitOperation<T>(
   service: string,
   operation: Operation<T>,

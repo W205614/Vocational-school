@@ -4,6 +4,7 @@ import com.zhixuetang.api.dto.course.CourseSimpleInfoDTO;
 import com.zhixuetang.api.dto.trade.OrderBasicDTO;
 import com.zhixuetang.common.autoconfigure.reliability.InboxStore;
 import com.zhixuetang.learning.service.impl.LearningEntitlementService;
+import com.zhixuetang.learning.classroom.Classrooms;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.ExchangeTypes;
@@ -18,6 +19,7 @@ public class LessonChangeListener {
     private final LearningEntitlementService entitlements;
     private final InboxStore inbox;
     private final com.zhixuetang.api.client.trade.TradeClient trade;
+    private final Classrooms classrooms;
 
     @RabbitListener(
             bindings =
@@ -67,8 +69,10 @@ public class LessonChangeListener {
                 "lesson.grant",
                 raw.getMessageProperties().getMessageId(),
                 () -> {
+                    classrooms.settleOrder(order.getOrderId(), order.getUserId(), order.getCourseIds(), false);
                     entitlements.grant(order, metadata);
-                    if (!revoked.isEmpty())
+                    if (!revoked.isEmpty()) {
+                        classrooms.settleOrder(order.getOrderId(), order.getUserId(), revoked, true);
                         entitlements.revoke(
                                 OrderBasicDTO.builder()
                                         .orderId(order.getOrderId())
@@ -76,6 +80,7 @@ public class LessonChangeListener {
                                         .courseIds(revoked)
                                         .detailIds(order.getDetailIds())
                                         .build());
+                    }
                 });
     }
 
@@ -91,6 +96,18 @@ public class LessonChangeListener {
         inbox.once(
                 "lesson.refund",
                 raw.getMessageProperties().getMessageId(),
-                () -> entitlements.revoke(order));
+                () -> {
+                    classrooms.settleOrder(order.getOrderId(), order.getUserId(), order.getCourseIds(), true);
+                    entitlements.revoke(order);
+                });
+    }
+
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "learning.class-seat.release", durable = "true"),
+            exchange = @Exchange(name = ORDER_EXCHANGE, type = ExchangeTypes.TOPIC),
+            key = "order.class-seat.release"))
+    public void releaseClassSeat(Long order, Message raw) {
+        inbox.once("class.seat.release", raw.getMessageProperties().getMessageId(),
+                () -> classrooms.releaseOrder(order));
     }
 }

@@ -9,7 +9,10 @@ if path.exists():
 else:
     accounts = {}
     for index, (label, kind, role) in enumerate(
-        [('student', 2, 2), ('admin', 1, 1), ('teacher', 3, 3)]
+        [
+            ('student', 2, 2), ('admin', 1, 1), ('teacher', 3, 3),
+            ('classroom_student', 2, 2), ('classroom_teacher', 3, 3),
+        ]
     ):
         uid = 800000000000000001 + index
         username = 'acceptance_' + label

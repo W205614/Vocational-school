@@ -3009,6 +3009,12 @@
             "default": "",
             "description": "订单id",
             "pattern": "^-?[0-9]+$"
+          },
+          "classId": {
+            "type": "string",
+            "default": "",
+            "description": "班级编号，选择班级时只包含该班的一门课程",
+            "pattern": "^-?[0-9]+$"
           }
         },
         "required": [

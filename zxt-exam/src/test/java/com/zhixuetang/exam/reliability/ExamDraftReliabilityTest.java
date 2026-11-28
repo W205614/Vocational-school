@@ -41,7 +41,8 @@ class ExamDraftReliabilityTest {
         attempt = paper + 3;
         learning = org.mockito.Mockito.mock(com.zhixuetang.api.client.learning.LearningClient.class);
         org.mockito.Mockito.when(learning.isLessonValid(paper)).thenReturn(paper);
-        workflow = new ExamWorkflowService(jdbc, json, new OutboxStore(jdbc, json), learning);
+        workflow = new ExamWorkflowService(jdbc, json, new OutboxStore(jdbc, json), learning,
+                org.mockito.Mockito.mock(com.zhixuetang.api.client.learning.ClassroomClient.class));
         drafts = new ExamDraftService(jdbc, json, workflow);
         jdbc.update(
                 "INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count) VALUES(?,?,?,1,10,60,1)",

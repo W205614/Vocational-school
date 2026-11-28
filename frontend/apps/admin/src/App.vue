@@ -62,6 +62,7 @@ const pageTitle = computed(
       '/': '数据看板',
       '/teaching': '教学学情',
       '/practice': '实操作业',
+      '/classrooms': '班级教务',
       '/course-study-information': '选课资料盘点',
       '/seasons': '赛季与奖励',
       '/exams': '试卷与评分',
@@ -164,6 +165,7 @@ const pageTitle = computed(
           <section class="nav-group">
             <small>{{ session.role === 3 ? '教学工作台' : '教学与系统运维' }}</small
             ><RouterLink to="/teaching" exact-active-class="selected">教学学情与答疑</RouterLink
+            ><RouterLink to="/classrooms" exact-active-class="selected">班级教务</RouterLink
             ><RouterLink v-if="session.role !== 3" to="/seasons" exact-active-class="selected"
               >赛季与奖励</RouterLink
             ><RouterLink to="/exams" exact-active-class="selected">试卷与评分</RouterLink

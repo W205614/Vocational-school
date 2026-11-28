@@ -10,7 +10,9 @@
 
 项目按需维护，日常改动合入 `dev`。参与开发见[贡献指南](CONTRIBUTING.md)，安全问题报告见[安全政策](SECURITY.md)。
 
-最新源码预览为 [v0.1.0-preview.5](https://github.com/W205614/Vocational-school/tree/v0.1.0-preview.5)，通过 Git Tag 获取。本版修复限期免费课程的到期续报及报名人数统计。改动和验收范围见 [preview.5 版本说明](docs/releases/v0.1.0-preview.5.md)。`dev` 用于跟进开发，`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
+最新源码预览为 [v0.1.0-preview.6](https://github.com/W205614/Vocational-school/tree/v0.1.0-preview.6)，通过 Git Tag 获取。本版加入同一课程的多班级教务，覆盖选班、作业考试和成绩归档。改动和验收范围见 [preview.6 版本说明](docs/releases/v0.1.0-preview.6.md)。`dev` 用于跟进开发，`pom.xml` 的 `1.0.0` 是独立的 Maven 构建版本。
+
+多班级的开课配置、教师与助教职责、学员转班和结班规则见[班级教务](docs/classroom-teaching.md)。
 
 [获取方式](#获取方式与发布状态) · [首次部署](#全新环境准备) · [已有环境启动](#已有环境启动) · [源码导航](#源码导航)
 

@@ -45,6 +45,8 @@ public class OrderDetail implements Serializable {
      */
     private Long courseId;
 
+    private Long classId;
+
     /**
      * 课程价格
      */

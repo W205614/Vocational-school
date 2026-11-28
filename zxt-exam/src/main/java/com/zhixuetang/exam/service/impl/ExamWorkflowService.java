@@ -1,6 +1,8 @@
 package com.zhixuetang.exam.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.zhixuetang.api.client.learning.ClassroomClient;
+import com.zhixuetang.api.client.learning.ClassroomClient.ExamAccessRequest;
 import com.zhixuetang.common.autoconfigure.reliability.*;
 import com.zhixuetang.common.exceptions.*;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ public class ExamWorkflowService implements OperationHandler {
     private final JsonMapper json;
     private final OutboxStore outbox;
     private final com.zhixuetang.api.client.learning.LearningClient learning;
+    private final ClassroomClient classrooms;
 
     public record Explanation(long sectionId, Integer moment) {}
 
@@ -28,7 +31,8 @@ public class ExamWorkflowService implements OperationHandler {
             List<Long> graders,
             Integer sectionCount,
             boolean draft,
-            Map<Long, Explanation> explanations) {}
+            Map<Long, Explanation> explanations,
+            boolean classroomOnly) {}
 
     public record Command(
             String action,
@@ -40,7 +44,13 @@ public class ExamWorkflowService implements OperationHandler {
             Integer score,
             Long version,
             String feedback,
-            Long actorRole) {}
+            Long actorRole,
+            Long classActivityId) {
+        public Command(String action, Long paperId, Long attemptId, Long lessonId, Map<Long, String> answers,
+                       Long questionId, Integer score, Long version, String feedback, Long actorRole) {
+            this(action, paperId, attemptId, lessonId, answers, questionId, score, version, feedback, actorRole, null);
+        }
+    }
 
     @Override
     public String kind() {
@@ -90,21 +100,21 @@ public class ExamWorkflowService implements OperationHandler {
             if (type < 5
                     && (q.get("answer") == null || answerSet(q.get("answer").toString()).isEmpty()))
                 throw new BadRequestException("客观题答案缺失");
-            if (type == 5 && (form.graders() == null || form.graders().isEmpty()))
+            if (type == 5 && !form.classroomOnly() && (form.graders() == null || form.graders().isEmpty()))
                 throw new BadRequestException("主观题需指定评分教师");
             total = Math.addExact(total, score);
             questions.add(q);
         }
         long id = IdWorker.getId();
         jdbc.update(
-                "INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count) VALUES(?,?,?,?,?,?,?)",
+                "INSERT INTO exam_paper(id,course_id,section_id,version,total_score,pass_percent,section_count,classroom_only) VALUES(?,?,?,?,?,?,?,?)",
                 id,
                 form.courseId(),
                 form.sectionId(),
                 version,
                 total,
                 form.passPercent() == null ? 60 : form.passPercent(),
-                form.sectionCount());
+                form.sectionCount(), form.classroomOnly());
         int position = 0;
         for (var q : questions) {
             long questionId = ((Number) q.get("id")).longValue();
@@ -139,7 +149,7 @@ public class ExamWorkflowService implements OperationHandler {
     public Object execute(String operation, long user, String payload) {
         Command cmd = json.readValue(payload, Command.class);
         return switch (cmd.action()) {
-            case "START" -> start(user, cmd);
+            case "START" -> cmd.classActivityId() == null ? start(user, cmd) : startClass(user, cmd.classActivityId());
             case "SUBMIT" -> submit(user, cmd);
             case "GRADE" -> grade(user, cmd);
             default -> throw new BadRequestException("考试操作无效");
@@ -166,16 +176,16 @@ public class ExamWorkflowService implements OperationHandler {
         // deadlock. Concurrent START cannot change this student's attempts while the
         // guard is held. SUBMIT/GRADE may finish an active attempt; view() locks that
         // attempt by primary key and returns its latest state rather than creating one.
-        requireEntitlement(user, paper(cmd.paperId()), cmd.lessonId());
+        requireEntitlement(user, coursePaper(cmd.paperId()), cmd.lessonId());
         var active =
                 jdbc.queryForList(
-                        "SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND status IN('IN_PROGRESS','WAIT_GRADING')",
+                        "SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND class_activity_id IS NULL AND status IN('IN_PROGRESS','WAIT_GRADING')",
                         user,
                         cmd.paperId());
         if (!active.isEmpty())
             return view(((Number) active.getFirst().get("id")).longValue(), user, false);
         if (!jdbc.queryForList(
-                        "SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND passed=1 LIMIT 1",
+                        "SELECT id FROM exam_attempt WHERE user_id=? AND paper_id=? AND class_activity_id IS NULL AND passed=1 LIMIT 1",
                         user,
                         cmd.paperId())
                 .isEmpty()) throw new BadRequestException("已通过该试卷");
@@ -189,18 +199,37 @@ public class ExamWorkflowService implements OperationHandler {
         return view(id, user, false);
     }
 
+    private Map<String, Object> startClass(long user, long activity) {
+        var access = classrooms.examAccess(new ExamAccessRequest(activity, user, 2L, "OPEN", null));
+        jdbc.update("""
+                INSERT INTO exam_class_start_guard(activity_id,member_id) VALUES(?,?)
+                ON DUPLICATE KEY UPDATE member_id=member_id
+                """, activity, access.memberId());
+        var attempts = jdbc.queryForList("""
+                SELECT id,status FROM exam_attempt WHERE class_activity_id=? AND class_member_id=?
+                ORDER BY created_at DESC,id DESC FOR UPDATE
+                """, activity, access.memberId());
+        if (!attempts.isEmpty() && !"FINISHED".equals(attempts.getFirst().get("status")))
+            return view(((Number) attempts.getFirst().get("id")).longValue(), user, false);
+        if (attempts.size() >= access.maxAttempts()) throw new ConflictException("已达到该班考试作答次数");
+        long id = IdWorker.getId();
+        jdbc.update("""
+                INSERT INTO exam_attempt(id,paper_id,user_id,lesson_id,class_activity_id,class_member_id)
+                VALUES(?,?,?,?,?,?)
+                """, id, access.paperId(), user, access.lessonId(), activity, access.memberId());
+        return view(id, user, false);
+    }
+
     private Map<String, Object> submit(long user, Command cmd) {
         var candidates =
                 jdbc.queryForList(
-                        "SELECT paper_id,lesson_id FROM exam_attempt WHERE id=? AND user_id=?",
+                        "SELECT * FROM exam_attempt WHERE id=? AND user_id=?",
                         cmd.attemptId(),
                         user);
         if (candidates.isEmpty()) throw new BadRequestException("考试记录不存在");
         var candidate = candidates.getFirst();
-        requireEntitlement(
-                user,
-                paper(((Number) candidate.get("paper_id")).longValue()),
-                ((Number) candidate.get("lesson_id")).longValue());
+        if (candidate.get("class_activity_id") == null || "IN_PROGRESS".equals(candidate.get("status")))
+            requireAttemptWrite(user, candidate);
         var attempt = lockAttempt(cmd.attemptId());
         if (((Number) attempt.get("user_id")).longValue() != user)
             throw new BadRequestException("考试记录不存在");
@@ -254,7 +283,9 @@ public class ExamWorkflowService implements OperationHandler {
         var attempt = lockAttempt(cmd.attemptId());
         long paper = ((Number) attempt.get("paper_id")).longValue();
         boolean admin = Long.valueOf(1).equals(cmd.actorRole());
-        if (!admin
+        if (attempt.get("class_activity_id") != null)
+            classroomAccess(attempt, user, cmd.actorRole(), "GRADE");
+        else if (!admin
                 && (!Long.valueOf(3).equals(cmd.actorRole())
                         || jdbc.queryForList(
                                         "SELECT user_id FROM exam_grader WHERE paper_id=? AND user_id=?",
@@ -308,6 +339,7 @@ public class ExamWorkflowService implements OperationHandler {
                 score,
                 passed,
                 id);
+        if (attempt.get("class_activity_id") != null) return;
         String notice = "exam:" + id + ":graded-notice";
         outbox.enqueue(
                 notice,
@@ -381,13 +413,21 @@ public class ExamWorkflowService implements OperationHandler {
     public void requireDraftWrite(long id, long user) {
         var rows =
                 jdbc.queryForList(
-                        "SELECT paper_id,lesson_id,status FROM exam_attempt WHERE id=? AND user_id=?",
+                        "SELECT * FROM exam_attempt WHERE id=? AND user_id=?",
                         id,
                         user);
         if (rows.isEmpty()) throw new BadRequestException("考试记录不存在");
         var attempt = rows.getFirst();
         if (!"IN_PROGRESS".equals(attempt.get("status")))
             throw new ConflictException("答卷已提交，不能修改草稿");
+        requireAttemptWrite(user, attempt);
+    }
+
+    private void requireAttemptWrite(long user, Map<String, Object> attempt) {
+        if (attempt.get("class_activity_id") != null) {
+            classroomAccess(attempt, user, 2L, "OPEN");
+            return;
+        }
         requireEntitlement(
                 user,
                 paper(((Number) attempt.get("paper_id")).longValue()),
@@ -400,6 +440,27 @@ public class ExamWorkflowService implements OperationHandler {
         return rows.getFirst();
     }
 
+    public Map<String, Object> coursePaper(long id) {
+        var paper = paper(id);
+        if (Boolean.TRUE.equals(paper.get("classroom_only")))
+            throw new ForbiddenException("班级试卷须从班级考试进入");
+        return paper;
+    }
+
+    public Map<String, Object> viewClassGrade(long id, long user, Long role) {
+        var work = lockAttempt(id);
+        if (work.get("class_activity_id") == null) throw new BadRequestException("班级考试记录不存在");
+        classroomAccess(work, user, role, "TEACHING");
+        return view(id, user, true);
+    }
+
+    private ClassroomClient.ExamAccess classroomAccess(Map<String, Object> attempt, long user, Long role,
+                                                      String action) {
+        return classrooms.examAccess(new ExamAccessRequest(
+                ((Number) attempt.get("class_activity_id")).longValue(), user, role, action,
+                ((Number) attempt.get("class_member_id")).longValue()));
+    }
+
     public Map<String, Object> view(long id, long user, boolean grader) {
         var rows = jdbc.queryForList("SELECT * FROM exam_attempt WHERE id=? FOR UPDATE", id);
         if (rows.isEmpty()) throw new BadRequestException("考试记录不存在");
@@ -408,8 +469,14 @@ public class ExamWorkflowService implements OperationHandler {
             throw new BadRequestException("考试记录不存在");
         // Reference material is the published snapshot, never the mutable question bank.
         // A mixed paper remains sealed until every subjective answer is graded.
-        String reference =
-                (!grader && "FINISHED".equals(attempt.get("status"))) ? ",answer,analysis" : "";
+        boolean sealed = !grader && attempt.get("class_activity_id") != null
+                && (!"FINISHED".equals(attempt.get("status"))
+                    || !classroomAccess(attempt, user, 2L, "VIEW").solutionsAvailable());
+        String reference = !grader && !sealed && "FINISHED".equals(attempt.get("status")) ? ",answer,analysis" : "";
+        if (sealed) {
+            attempt.remove("score");
+            attempt.remove("passed");
+        }
         List<Map<String, Object>> questions =
                 jdbc.queryForList(
                         "SELECT question_id,position,name,type,score,options"
@@ -430,7 +497,8 @@ public class ExamWorkflowService implements OperationHandler {
             attempt.put(
                     "answers",
                     jdbc.queryForList(
-                            "SELECT question_id,response,score,feedback,version FROM exam_answer WHERE attempt_id=? ORDER BY question_id FOR UPDATE",
+                            "SELECT question_id,response,version" + (sealed ? "" : ",score,feedback")
+                                    + " FROM exam_answer WHERE attempt_id=? ORDER BY question_id FOR UPDATE",
                             id));
         return attempt;
     }

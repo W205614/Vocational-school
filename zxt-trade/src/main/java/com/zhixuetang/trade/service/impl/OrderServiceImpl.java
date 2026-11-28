@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.zhixuetang.api.client.course.CourseClient;
+import com.zhixuetang.api.client.learning.ClassroomClient;
 import com.zhixuetang.api.client.promotion.PromotionClient;
 import com.zhixuetang.api.constants.CourseStatus;
 import com.zhixuetang.api.dto.course.CourseSimpleInfoDTO;
@@ -78,6 +79,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final ZeroAmountSettlementService zeroAmountSettlement;
     private final OrderEntitlementProgress entitlementProgress;
     private final RefundApplyMapper refundApplies;
+    private final ClassroomClient classrooms;
 
     @Override
     public PlaceOrderResultVO placeOrder(PlaceOrderDTO request) {
@@ -89,6 +91,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 || request.getCourseIds().stream().anyMatch(Objects::isNull)
                 || new java.util.HashSet<>(request.getCourseIds()).size()
                         != request.getCourseIds().size()) throw new BadRequestException("订单课程无效");
+        Long classId = request.getClassId();
+        if (classId != null && (classId <= 0 || request.getCourseIds().size() != 1))
+            throw new BadRequestException("班级订单必须对应一门课程");
         String payload = json.writeValueAsString(request),
                 hash = cn.hutool.crypto.digest.DigestUtil.sha256Hex(user + ":" + payload);
         LocalDateTime deadline =
@@ -174,6 +179,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                                             .isAfter(LocalDateTime.now()))
                                 throw new BadRequestException("订单创建已超时");
                             if (getById(order.getId()) != null) return;
+                            if (classId != null) {
+                                OrderDetail line = details.getFirst();
+                                classrooms.reserve(new ClassroomClient.Seat(classId, line.getCourseId(), user, order.getId()));
+                                line.setClassId(classId);
+                            }
                             saveOrderAndDetails(order, details);
                             if (order.getRealAmount() == 0)
                                 zeroAmountSettlement.settle(order.getId());
@@ -430,6 +440,11 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         }
         // 5.更新订单条目的状态
         detailService.updateStatusByOrderId(orderId, OrderStatus.CLOSED.getValue());
+        if (Boolean.TRUE.equals(jdbc.queryForObject(
+                "SELECT EXISTS(SELECT 1 FROM order_detail WHERE order_id=? AND class_id IS NOT NULL)",
+                Boolean.class, orderId)))
+            outbox.enqueue("order:" + orderId + ":class-seat-release", MqConstants.Exchange.ORDER_EXCHANGE,
+                    "order.class-seat.release", orderId);
         // 6. 退还优惠券
         outbox.enqueue(
                 "order:" + orderId + ":coupon-release",

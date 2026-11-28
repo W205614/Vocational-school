@@ -7,12 +7,13 @@ const ExamAdmin = () => import('./views/ExamAdmin.vue');
 const CourseEditor = () => import('./views/CourseEditor.vue');
 const CouponIssue = () => import('./views/CouponIssue.vue');
 const OperationsPanel = () => import('../../../packages/shared/src/OperationsPanel.vue');
-export const teacherPages = ['/teaching', '/exams', '/operations', '/practice'];
+export const teacherPages = ['/teaching', '/exams', '/operations', '/practice', '/classrooms'];
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: Dashboard },
     { path: '/teaching', component: () => import('./views/Teaching.vue') },
+    { path: '/classrooms', component: () => import('./views/Classrooms.vue') },
     { path: '/practice', component: () => import('./views/Practice.vue') },
     { path: '/seasons', component: () => import('./views/Seasons.vue') },
     ...Object.keys(resources).map((resource) => ({

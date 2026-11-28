@@ -26,7 +26,7 @@ public class ExamReviewService implements OperationHandler {
             Long version) {}
 
     private static final String FROM =
-            " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id JOIN exam_answer r ON r.attempt_id=a.id JOIN exam_paper_question q ON q.paper_id=a.paper_id AND q.question_id=r.question_id LEFT JOIN exam_review_state s ON s.attempt_id=a.id AND s.question_id=q.question_id WHERE a.user_id=? AND a.status='FINISHED' AND r.score IS NOT NULL AND r.score<q.score";
+            " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id JOIN exam_answer r ON r.attempt_id=a.id JOIN exam_paper_question q ON q.paper_id=a.paper_id AND q.question_id=r.question_id LEFT JOIN exam_review_state s ON s.attempt_id=a.id AND s.question_id=q.question_id WHERE a.user_id=? AND a.class_activity_id IS NULL AND a.status='FINISHED' AND r.score IS NOT NULL AND r.score<q.score";
     private static final String FIELDS =
             "a.id AS attempt_id,p.course_id,p.section_id,q.question_id,q.name,q.type,q.options,q.answer,q.analysis,q.score AS max_score,r.response,r.score,r.feedback,a.graded_at,COALESCE(s.mastered,0) AS mastered,COALESCE(s.version,0) AS version,s.last_reviewed_at,q.lecture_section_id,q.lecture_moment";
 

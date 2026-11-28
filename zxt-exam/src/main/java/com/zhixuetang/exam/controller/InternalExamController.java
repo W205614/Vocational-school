@@ -47,7 +47,7 @@ public class InternalExamController {
         String sql =
                 "SELECT COALESCE(SUM(NOT passed AND NOT waiting),0) AS pending,COALESCE(SUM(NOT passed AND waiting),0) AS waiting FROM (SELECT EXISTS(SELECT 1 FROM exam_attempt a WHERE a.paper_id=p.id AND a.user_id=? AND a.status='FINISHED' AND a.passed=1) AS passed,EXISTS(SELECT 1 FROM exam_attempt a WHERE a.paper_id=p.id AND a.user_id=? AND a.status='WAIT_GRADING') AS waiting FROM exam_paper p WHERE p.course_id IN ("
                         + placeholders
-                        + ") AND NOT EXISTS(SELECT 1 FROM exam_paper newer WHERE newer.course_id=p.course_id AND newer.section_id=p.section_id AND newer.version>p.version)) papers";
+                        + ") AND p.classroom_only=FALSE AND NOT EXISTS(SELECT 1 FROM exam_paper newer WHERE newer.course_id=p.course_id AND newer.section_id=p.section_id AND newer.classroom_only=FALSE AND newer.version>p.version)) papers";
         var counts = jdbc.queryForMap(sql, args.toArray());
         List<Object> owned = new ArrayList<>();
         owned.add(user);
@@ -56,7 +56,7 @@ public class InternalExamController {
                 jdbc.query(
                         "SELECT a.id,p.course_id,p.section_id,COALESCE(d.updated_at,a.created_at) AS updated_at"
                                 + " FROM exam_attempt a JOIN exam_paper p ON p.id=a.paper_id LEFT JOIN exam_draft d ON d.attempt_id=a.id"
-                                + " WHERE a.user_id=? AND a.status='IN_PROGRESS' AND p.course_id IN ("
+                                + " WHERE a.user_id=? AND a.class_activity_id IS NULL AND a.status='IN_PROGRESS' AND p.course_id IN ("
                                 + placeholders
                                 + ") ORDER BY updated_at DESC,a.id DESC LIMIT 1",
                         (rs, index) ->
@@ -90,7 +90,7 @@ public class InternalExamController {
         InternalAuth.requireService();
         if (courseId <= 0) throw new BadRequestException("课程参数无效");
         return jdbc.queryForList(
-                "SELECT DISTINCT section_id FROM exam_paper WHERE course_id=? ORDER BY section_id",
+                "SELECT DISTINCT section_id FROM exam_paper WHERE course_id=? AND classroom_only=FALSE ORDER BY section_id",
                 Long.class,
                 courseId);
     }

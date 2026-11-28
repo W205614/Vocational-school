@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
 import { get, write, request } from '../../../../packages/shared/src/client';
+import { classTime, type Classroom, type Membership } from '../../../../packages/shared/src/classroom';
 import { useOperations } from '../../../../packages/shared/src/operations';
 import { plainTextDescription, useTask, money, type Row } from '../../../../packages/shared/src/ui';
 import Status from '../../../../packages/shared/src/Status.vue';
@@ -445,6 +446,9 @@ const progress = computed(() =>
       )
     : 0,
 );
+const availableClasses = ref<Classroom[]>([]);
+const classTask = useTask();
+
 async function load() {
   const revision = ++loadRevision,
     courseId = id(),
@@ -461,6 +465,9 @@ async function load() {
     );
     if (!current()) return;
     course.value = detail;
+    const classList = await classTask.run(() => get<Classroom[]>('/public/courses/' + courseId + '/classrooms'));
+    if (!current()) return;
+    availableClasses.value = classList ?? [];
     if (token) {
       const [saved, rights] = await Promise.all([
         get<{ favorited: boolean }>('/favorites/' + courseId),
@@ -481,6 +488,26 @@ function requireLogin(redirect = route.fullPath) {
   if (session.token) return false;
   void router.push({ path: '/login', query: { redirect } });
   return true;
+}
+async function enrollClass(room: Classroom) {
+  if (requireLogin()) return;
+  await classTask.run(async () => {
+    if (owned.value) {
+      const member = await write<Membership>('/learning-hub/classrooms/' + room.id + '/enrollment', 'POST');
+      await router.push({ path: '/classrooms', query: { classId: room.id, memberId: member.id } });
+      return;
+    }
+    const order = await get<Row>('/orders/confirmation?courseIds=' + room.courseId);
+    const orderId = String(order.orderId);
+    const result = await ops.begin('trade', '创建班级订单', '/orders', { orderId, courseIds: [room.courseId], classId: room.id });
+    if (result.status !== 'SUCCEEDED') {
+      classTask.message.value = '报名处理中，可在操作记录中查看';
+      return;
+    }
+    const outcome = result.result as Row;
+    if (Number(outcome.status) === 1) await router.push({ path: '/orders', query: { pay: orderId } });
+    else await router.push('/classrooms');
+  });
 }
 async function enroll() {
   if (requireLogin() || preparation.state.value === 'pending') return;
@@ -975,6 +1002,17 @@ onBeforeUnmount(() => {
           <div v-if="owned" class="learning-progress">
             <span>课程学习进度</span><el-progress :percentage="progress" />
           </div>
+        </div>
+      </section>
+      <section v-if="availableClasses.length || classTask.error.value" class="card section">
+        <h3>可报名班级</h3>
+        <Status :busy="classTask.busy.value" :error="classTask.error.value" :message="classTask.message.value" />
+        <div v-for="room in availableClasses" :key="room.id" class="toolbar">
+          <strong>{{ room.name }}</strong>
+          <span>{{ classTime(room.startsAt) }} 至 {{ classTime(room.endsAt) }}</span>
+          <span>剩余 {{ room.remaining }} 个名额</span>
+          <el-button :disabled="room.remaining === 0 || classTask.busy.value || (!owned && enrollmentEnded)"
+            @click="enrollClass(room)">{{ owned || Number(course?.price) === 0 ? '报名入班' : '购买并报名' }}</el-button>
         </div>
       </section>
       <el-alert

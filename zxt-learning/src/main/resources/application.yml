@@ -45,6 +45,8 @@ zxt:
   auth:
     resource:
       enable: true
+      excludeLoginPaths:
+        - /api/v2/public/courses/*/classrooms
 management:
   endpoints:
     web:

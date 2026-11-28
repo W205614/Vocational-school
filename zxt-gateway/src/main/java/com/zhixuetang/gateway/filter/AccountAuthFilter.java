@@ -147,7 +147,7 @@ public class AccountAuthFilter implements GlobalFilter, Ordered {
         }
         if (ant.equals("GET:/api/v2/public/courses")
                 || ant.equals("GET:/api/v2/public/categories")
-                || ant.matches("GET:/api/v2/public/courses/[0-9]{1,20}")) {
+                || ant.matches("GET:/api/v2/public/courses/[0-9]{1,20}(/classrooms)?")) {
             limits.publicQuery(client.address());
             return chain.filter(sanitized);
         }

@@ -1,4 +1,4 @@
-# Source-Manifest-SHA256: 5eace0a5cdf3ab138d7060c458cef19b67d500bec189152865ee2b21e61f51e8
+# Source-Manifest-SHA256: b87d286d9ef4229f793379b2d8ddcb6ed32edc4e2a2ab3413d42a25690ecd30b
 # Manifest: sorted sha256(LF-normalized source bytes) + two spaces + repository path, LF terminated.
 # Reviewed static module targets for the gateway API inventory, 2026-10-26.
 # Derived once from the reviewed v2 route mappings; no runtime Feign/policy auto-grant.
@@ -475,3 +475,45 @@ gateway|GET|/_modules/course/study-information/{id}/changes
 gateway|GET|/_modules/media/medias/{mediaId}/references
 gateway|GET|/_modules/media/trial-batches
 gateway|POST|/_modules/media/trial-batches
+gateway|GET|/_modules/learning/api/v2/admin/learning-hub/classrooms
+gateway|GET|/_modules/exam/api/v2/classroom-exams/{activity}/attempts
+gateway|GET|/_modules/learning/api/v2/learning-hub/classrooms
+gateway|GET|/_modules/learning/api/v2/learning-hub/classrooms/{id}
+gateway|GET|/_modules/learning/api/v2/learning-hub/classrooms/{id}/activities/{activity}/submissions/{member}
+gateway|GET|/_modules/learning/api/v2/learning-hub/classrooms/{id}/activities/{activity}/versions
+gateway|GET|/_modules/learning/api/v2/learning-hub/classrooms/{id}/discussion
+gateway|GET|/_modules/learning/api/v2/learning-hub/classrooms/{id}/members/{member}/grades
+gateway|GET|/_modules/learning/api/v2/public/courses/{course}/classrooms
+gateway|GET|/_modules/exam/api/v2/teacher/classroom-exam-attempts/{id}
+gateway|GET|/_modules/exam/api/v2/teacher/classroom-exams/{activity}/attempts
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/activities
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/submissions
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/versions
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/discussion
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/grades
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/grades/export
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/members
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/papers
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/sections
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/pending
+gateway|GET|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/staff
+gateway|POST|/_modules/learning/api/v2/admin/learning-hub/classrooms
+gateway|POST|/_modules/learning/api/v2/admin/learning-hub/classrooms/{id}/copy-schedule
+gateway|POST|/_modules/learning/api/v2/admin/learning-hub/classrooms/{id}/members
+gateway|POST|/_modules/exam/api/v2/classroom-exams/{activity}/attempts
+gateway|POST|/_modules/learning/api/v2/learning-hub/classrooms/{id}/activities/{activity}/submissions
+gateway|POST|/_modules/learning/api/v2/learning-hub/classrooms/{id}/discussion
+gateway|POST|/_modules/learning/api/v2/learning-hub/classrooms/{id}/enrollment
+gateway|POST|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/activities
+gateway|POST|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/grades
+gateway|POST|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/archive
+gateway|POST|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/discussion
+gateway|PUT|/_modules/learning/api/v2/admin/learning-hub/classrooms/{id}
+gateway|PUT|/_modules/learning/api/v2/admin/learning-hub/classrooms/{id}/members/{member}
+gateway|PUT|/_modules/learning/api/v2/admin/learning-hub/classrooms/{id}/staff/{user}
+gateway|PUT|/_modules/learning/api/v2/admin/learning-hub/classrooms/{id}/state
+gateway|PUT|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/correction
+gateway|PUT|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/extension
+gateway|PUT|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/grades
+gateway|PUT|/_modules/learning/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/submissions/{submission}

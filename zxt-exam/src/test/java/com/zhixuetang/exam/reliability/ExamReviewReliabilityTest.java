@@ -44,7 +44,8 @@ class ExamReviewReliabilityTest {
                         json,
                         new OutboxStore(jdbc, json),
                         org.mockito.Mockito.mock(
-                                com.zhixuetang.api.client.learning.LearningClient.class));
+                                com.zhixuetang.api.client.learning.LearningClient.class),
+                        org.mockito.Mockito.mock(com.zhixuetang.api.client.learning.ClassroomClient.class));
         paper = com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();
         user = paper + 1;
         question = paper + 2;

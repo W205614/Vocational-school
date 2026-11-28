@@ -743,6 +743,117 @@
         }
       }
     },
+    "/api/v2/classroom-exams/{activity}/attempts": {
+      "get": {
+        "tags": [
+          "classroom-exam-controller"
+        ],
+        "operationId": "mine",
+        "parameters": [
+          {
+            "name": "activity",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Attempt"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "classroom-exam-controller"
+        ],
+        "operationId": "start_1",
+        "parameters": [
+          {
+            "name": "activity",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/View"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/admin/operation-failures/exam/{id}/replay": {
       "post": {
         "tags": [
@@ -1727,6 +1838,113 @@
         }
       }
     },
+    "/api/v2/teacher/classroom-exams/{activity}/attempts": {
+      "get": {
+        "tags": [
+          "classroom-exam-controller"
+        ],
+        "operationId": "pending_1",
+        "parameters": [
+          {
+            "name": "activity",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/teacher/classroom-exam-attempts/{id}": {
+      "get": {
+        "tags": [
+          "classroom-exam-controller"
+        ],
+        "operationId": "attempt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "msg",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v2/operations/exam/{id}": {
       "get": {
         "tags": [
@@ -2031,7 +2249,7 @@
         "tags": [
           "exam-workflow-controller"
         ],
-        "operationId": "attempt",
+        "operationId": "attempt_1",
         "parameters": [
           {
             "name": "id",
@@ -2905,6 +3123,10 @@
           "actorRole": {
             "type": "string",
             "pattern": "^-?[0-9]+$"
+          },
+          "classActivityId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
           }
         }
       },
@@ -2967,6 +3189,9 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/Explanation"
             }
+          },
+          "classroomOnly": {
+            "type": "boolean"
           }
         }
       },
@@ -3435,6 +3660,26 @@
             "default": "",
             "description": "请求id",
             "example": "1af123c11412e"
+          }
+        }
+      },
+      "Attempt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "memberId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

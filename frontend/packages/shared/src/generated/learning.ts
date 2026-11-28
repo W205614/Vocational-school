@@ -34,6 +34,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/submissions/{submission}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["review"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/grades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["changeGrade"];
+        post: operations["publishGrade"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/extension": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["extend"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/correction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["correct"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/notes/{id}": {
         parameters: {
             query?: never;
@@ -106,7 +170,71 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["correct"];
+        put: operations["correct_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/learning-hub/classrooms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/learning-hub/classrooms/{id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["state"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/learning-hub/classrooms/{id}/staff/{user}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["assign"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/learning-hub/classrooms/{id}/members/{member}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["move"];
         post?: never;
         delete?: never;
         options?: never;
@@ -283,6 +411,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/discussion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["teachingDiscussion"];
+        put?: never;
+        post: operations["teachingReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["activities"];
+        put?: never;
+        post: operations["publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/sign-ins": {
         parameters: {
             query?: never;
@@ -347,6 +523,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/learning-hub/classrooms/{id}/enrollment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["enroll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/learning-hub/classrooms/{id}/discussion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["discussion"];
+        put?: never;
+        post: operations["discuss"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/learning-hub/classrooms/{id}/activities/{activity}/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submit_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/learning-hub/admin/rewards/{requestId}/retry": {
         parameters: {
             query?: never;
@@ -389,6 +613,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["replay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/learning-hub/classrooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["administered"];
+        put?: never;
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/learning-hub/classrooms/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/learning-hub/classrooms/{id}/copy-schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["copy"];
         delete?: never;
         options?: never;
         head?: never;
@@ -677,6 +949,182 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/teacher/learning-hub/classrooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["assigned"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["staff"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pending_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/papers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["papers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["roster"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/grades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["teachingGrades"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/grades/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["export_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["teachingVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/learning-hub/classrooms/{id}/activities/{activity}/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["submissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/public/courses/{course}/classrooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["available"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/operations/learning/{id}": {
         parameters: {
             query?: never;
@@ -813,6 +1261,86 @@ export interface paths {
             cookie?: never;
         };
         get: operations["overview_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/learning-hub/classrooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/learning-hub/classrooms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["study"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/learning-hub/classrooms/{id}/members/{member}/grades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ownGrades"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/learning-hub/classrooms/{id}/activities/{activity}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["versions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/learning-hub/classrooms/{id}/activities/{activity}/submissions/{member}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ownSubmissions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1224,6 +1752,55 @@ export interface components {
             /** Format: date-time */
             reviewedAt?: string;
         };
+        Review: {
+            /** @enum {string} */
+            state?: "SUBMITTED" | "NEEDS_REVISION" | "REVIEWED";
+            /** Format: int32 */
+            score?: number;
+            feedback?: string;
+        };
+        Change: {
+            memberId?: string;
+            /** Format: int32 */
+            expectedScore?: number;
+            /** Format: int32 */
+            score?: number;
+            feedback?: string;
+            reason?: string;
+        };
+        Extension: {
+            memberId?: string;
+            /** Format: date-time */
+            closesAt?: string;
+            reason?: string;
+        };
+        Correction: {
+            /** Format: int32 */
+            expectedVersion?: number;
+            title?: string;
+            instructions?: string;
+            reason?: string;
+        };
+        Activity: {
+            id?: string;
+            classId?: string;
+            /** @enum {string} */
+            kind?: "LESSON" | "ASSIGNMENT" | "EXAM" | "ANNOUNCEMENT";
+            sectionId?: string;
+            paperId?: string;
+            title?: string;
+            /** Format: date-time */
+            scheduledAt?: string;
+            /** Format: date-time */
+            closesAt?: string;
+            /** Format: int32 */
+            weight?: number;
+            /** Format: int32 */
+            maxAttempts?: number;
+            /** Format: int32 */
+            currentVersion?: number;
+            instructions?: string;
+        };
         Mutation: {
             action?: string;
             id?: string;
@@ -1265,13 +1842,6 @@ export interface components {
             /** Format: int32 */
             version?: number;
         };
-        Correction: {
-            title?: string;
-            instructions?: string;
-            reason?: string;
-            /** Format: int32 */
-            expectedVersion?: number;
-        };
         AssignmentVersion: {
             /** Format: int32 */
             version?: number;
@@ -1284,6 +1854,56 @@ export interface components {
         AssignmentView: {
             assignment?: components["schemas"]["Assignment"];
             versions?: components["schemas"]["AssignmentVersion"][];
+        };
+        Setup: {
+            courseId?: string;
+            name?: string;
+            /** Format: date-time */
+            registrationOpens?: string;
+            /** Format: date-time */
+            registrationCloses?: string;
+            /** Format: date-time */
+            startsAt?: string;
+            /** Format: date-time */
+            endsAt?: string;
+            /** Format: int32 */
+            capacity?: number;
+            /** Format: int32 */
+            passPercent?: number;
+        };
+        Classroom: {
+            id?: string;
+            courseId?: string;
+            name?: string;
+            /** @enum {string} */
+            state?: "DRAFT" | "OPEN" | "CLOSED" | "ARCHIVED" | "CANCELED";
+            /** Format: date-time */
+            registrationOpens?: string;
+            /** Format: date-time */
+            registrationCloses?: string;
+            /** Format: date-time */
+            startsAt?: string;
+            /** Format: date-time */
+            endsAt?: string;
+            /** Format: int32 */
+            capacity?: number;
+            /** Format: int32 */
+            passPercent?: number;
+            /** Format: int32 */
+            remaining?: number;
+        };
+        StateChange: {
+            /** @enum {string} */
+            state?: "DRAFT" | "OPEN" | "CLOSED" | "ARCHIVED" | "CANCELED";
+            reason?: string;
+        };
+        StaffChange: {
+            /** @enum {string} */
+            duty?: "ADMIN" | "TEACHER" | "ASSISTANT";
+        };
+        MoveMember: {
+            targetClassId?: string;
+            reason?: string;
         };
         /**
          * @description 签到结果
@@ -1428,6 +2048,42 @@ export interface components {
                 [key: string]: string;
             };
         };
+        DiscussionForm: {
+            parentId?: string;
+            sectionId?: string;
+            title?: string;
+            body?: string;
+        };
+        Discussion: {
+            id?: string;
+            parentId?: string;
+            sectionId?: string;
+            title?: string;
+            body?: string;
+            staffReply?: boolean;
+            /** Format: date-time */
+            postedAt?: string;
+        };
+        Form: {
+            /** @enum {string} */
+            kind?: "LESSON" | "ASSIGNMENT" | "EXAM" | "ANNOUNCEMENT";
+            sectionId?: string;
+            paperId?: string;
+            title?: string;
+            instructions?: string;
+            /** Format: date-time */
+            scheduledAt?: string;
+            /** Format: date-time */
+            closesAt?: string;
+            /** Format: int32 */
+            weight?: number;
+            /** Format: int32 */
+            maxAttempts?: number;
+        };
+        Publication: {
+            memberId?: string;
+            feedback?: string;
+        };
         Acceptance: {
             replyId?: string;
         };
@@ -1438,6 +2094,24 @@ export interface components {
             submissionKey?: string;
             /** Format: int32 */
             assignmentVersion?: number;
+        };
+        Membership: {
+            id?: string;
+            classId?: string;
+            courseId?: string;
+            userId?: string;
+            orderId?: string;
+            /** @enum {string} */
+            state?: "HELD" | "ACTIVE" | "WITHDRAWN" | "TRANSFERRED" | "REFUNDED" | "RELEASED" | "COMPLETED";
+            /** Format: date-time */
+            joinedAt?: string;
+        };
+        AddMember: {
+            userId?: string;
+            reason?: string;
+        };
+        CopySchedule: {
+            sourceClassId?: string;
         };
         /**
          * @description 签到结果
@@ -2122,6 +2796,83 @@ export interface components {
             /** Format: date-time */
             submittedAt?: string;
         };
+        Staff: {
+            userId?: string;
+            name?: string;
+            /** @enum {string} */
+            duty?: "ADMIN" | "TEACHER" | "ASSISTANT";
+        };
+        Section: {
+            id?: string;
+            name?: string;
+        };
+        Pending: {
+            /** Format: int32 */
+            assignments?: number;
+            /** Format: int32 */
+            exams?: number;
+            /** Format: int32 */
+            questions?: number;
+            /** Format: int32 */
+            grades?: number;
+        };
+        Paper: {
+            id?: string;
+            courseId?: string;
+            sectionId?: string;
+            /** Format: int32 */
+            version?: number;
+            /** Format: int32 */
+            totalScore?: number;
+        };
+        RosterRow: {
+            memberId?: string;
+            userId?: string;
+            name?: string;
+            /** @enum {string} */
+            state?: "HELD" | "ACTIVE" | "WITHDRAWN" | "TRANSFERRED" | "REFUNDED" | "RELEASED" | "COMPLETED";
+            /** Format: int32 */
+            learnedSections?: number;
+            /** Format: int32 */
+            courseSections?: number;
+        };
+        Item: {
+            activityId?: string;
+            title?: string;
+            /** @enum {string} */
+            kind?: "LESSON" | "ASSIGNMENT" | "EXAM" | "ANNOUNCEMENT";
+            /** Format: int32 */
+            weight?: number;
+            /** @enum {string} */
+            state?: "NOT_SUBMITTED" | "NEEDS_REVISION" | "IN_PROGRESS" | "PENDING_REVIEW" | "READY" | "PUBLISHED";
+            /** Format: int32 */
+            score?: number;
+            feedback?: string;
+        };
+        Report: {
+            memberId?: string;
+            userId?: string;
+            name?: string;
+            /** @enum {string} */
+            membershipState?: "HELD" | "ACTIVE" | "WITHDRAWN" | "TRANSFERRED" | "REFUNDED" | "RELEASED" | "COMPLETED";
+            items?: components["schemas"]["Item"][];
+            result?: components["schemas"]["Result"];
+        };
+        Result: {
+            totalPercent?: number;
+            passed?: boolean;
+            /** Format: date-time */
+            finalizedAt?: string;
+        };
+        Version: {
+            /** Format: int32 */
+            version?: number;
+            title?: string;
+            instructions?: string;
+            reason?: string;
+            /** Format: date-time */
+            changedAt?: string;
+        };
         TeachingQuestionPage: {
             list?: {
                 [key: string]: unknown;
@@ -2141,6 +2892,15 @@ export interface components {
             historyOnly?: boolean;
             canSubmit?: boolean;
             submissions?: components["schemas"]["Submission"][];
+        };
+        ClassMembership: {
+            classroom?: components["schemas"]["Classroom"];
+            member?: components["schemas"]["Membership"];
+        };
+        StudyView: {
+            classroom?: components["schemas"]["Classroom"];
+            member?: components["schemas"]["Membership"];
+            activities?: components["schemas"]["Activity"][];
         };
         FailurePage: {
             list?: {
@@ -2418,6 +3178,167 @@ export interface operations {
             };
         };
     };
+    review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+                submission: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Review"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Submission"];
+                    };
+                };
+            };
+        };
+    };
+    changeGrade: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Change"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    publishGrade: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Publication"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    extend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Extension"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    correct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Correction"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Activity"];
+                    };
+                };
+            };
+        };
+    };
     note: {
         parameters: {
             query?: never;
@@ -2685,7 +3606,7 @@ export interface operations {
             };
         };
     };
-    correct: {
+    correct_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2711,6 +3632,132 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: components["schemas"]["AssignmentView"];
+                    };
+                };
+            };
+        };
+    };
+    update_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Setup"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Classroom"];
+                    };
+                };
+            };
+        };
+    };
+    state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StateChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Classroom"];
+                    };
+                };
+            };
+        };
+    };
+    assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                user: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    move: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                member: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveMember"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
                     };
                 };
             };
@@ -3056,6 +4103,151 @@ export interface operations {
             };
         };
     };
+    teachingDiscussion: {
+        parameters: {
+            query?: {
+                before?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Discussion"][];
+                    };
+                };
+            };
+        };
+    };
+    teachingReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscussionForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Discussion"];
+                    };
+                };
+            };
+        };
+    };
+    archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: null;
+                    };
+                };
+            };
+        };
+    };
+    activities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Activity"][];
+                    };
+                };
+            };
+        };
+    };
+    publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Form"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Activity"];
+                    };
+                };
+            };
+        };
+    };
     list: {
         parameters: {
             query?: never;
@@ -3234,6 +4426,125 @@ export interface operations {
             };
         };
     };
+    enroll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Membership"];
+                    };
+                };
+            };
+        };
+    };
+    discussion: {
+        parameters: {
+            query?: {
+                before?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Discussion"][];
+                    };
+                };
+            };
+        };
+    };
+    discuss: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscussionForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Discussion"];
+                    };
+                };
+            };
+        };
+    };
+    submit_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Submit"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Submission"];
+                    };
+                };
+            };
+        };
+    };
     retry: {
         parameters: {
             query?: never;
@@ -3314,6 +4625,122 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: null;
+                    };
+                };
+            };
+        };
+    };
+    administered: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Classroom"][];
+                    };
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Setup"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Classroom"];
+                    };
+                };
+            };
+        };
+    };
+    add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMember"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Membership"];
+                    };
+                };
+            };
+        };
+    };
+    copy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopySchedule"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Activity"][];
                     };
                 };
             };
@@ -3785,6 +5212,298 @@ export interface operations {
             };
         };
     };
+    assigned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Classroom"][];
+                    };
+                };
+            };
+        };
+    };
+    staff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Staff"][];
+                    };
+                };
+            };
+        };
+    };
+    sections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Section"][];
+                    };
+                };
+            };
+        };
+    };
+    pending_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Pending"];
+                    };
+                };
+            };
+        };
+    };
+    papers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Paper"][];
+                    };
+                };
+            };
+        };
+    };
+    roster: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["RosterRow"][];
+                    };
+                };
+            };
+        };
+    };
+    teachingGrades: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Report"][];
+                    };
+                };
+            };
+        };
+    };
+    export_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    teachingVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Version"][];
+                    };
+                };
+            };
+        };
+    };
+    submissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Submission"][];
+                    };
+                };
+            };
+        };
+    };
+    available: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Classroom"][];
+                    };
+                };
+            };
+        };
+    };
     get: {
         parameters: {
             query?: never;
@@ -4019,6 +5738,143 @@ export interface operations {
                         msg: string;
                         requestId: string;
                         data: Record<string, never>;
+                    };
+                };
+            };
+        };
+    };
+    mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["ClassMembership"][];
+                    };
+                };
+            };
+        };
+    };
+    study: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["StudyView"];
+                    };
+                };
+            };
+        };
+    };
+    ownGrades: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                member: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Report"];
+                    };
+                };
+            };
+        };
+    };
+    versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Version"][];
+                    };
+                };
+            };
+        };
+    };
+    ownSubmissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                activity: string;
+                member: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Submission"][];
                     };
                 };
             };

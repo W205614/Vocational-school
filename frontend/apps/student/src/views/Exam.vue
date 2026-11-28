@@ -198,7 +198,8 @@ async function loadRoute(useRemembered = false) {
     });
     if (result) {
       courseId.value = String(result.course_id || courseId.value);
-      if (courseId.value) await load();
+      if (!result.class_activity_id && courseId.value) await load();
+      else if (result.class_activity_id) enrollmentHint.value = '';
       await task.run(async () => {
         await showAttempt(result);
         await nextTick();
@@ -423,7 +424,12 @@ function selectMultiple(question: Row, values: unknown) {
         已提交 · {{ historyTime(attempt.submitted_at) }}
         <span v-if="attempt.graded_at"> · 评分完成于 {{ historyTime(attempt.graded_at) }}</span>
       </p>
-      <div v-if="attempt.status === 'FINISHED'" class="exam-result">
+      <RouterLink v-if="attempt.class_activity_id && route.query.classroom"
+        :to="{ path: '/classrooms', query: { classId: route.query.classroom, memberId: route.query.memberId } }">返回班级</RouterLink>
+      <p v-if="attempt.status === 'FINISHED' && attempt.score == null" class="muted">
+        评分已完成，成绩与解析将按班级安排公布。
+      </p>
+      <div v-if="attempt.status === 'FINISHED' && attempt.score != null" class="exam-result">
         <strong>{{ attempt.score }} <small>分</small></strong
         ><span>{{
           Number(attempt.passed) === 1 ? '已通过，继续下一段学习吧' : '未通过，可以再次参加考试'

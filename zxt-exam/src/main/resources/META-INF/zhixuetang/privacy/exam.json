@@ -4,7 +4,7 @@
   "datasets": [
     {
       "name": "attempts",
-      "select": "SELECT id,paper_id,lesson_id,status,score,passed,created_at,submitted_at,graded_at FROM exam_attempt WHERE user_id=? ORDER BY id",
+      "select": "SELECT id,paper_id,lesson_id,class_activity_id,class_member_id,status,score,passed,created_at,submitted_at,graded_at FROM exam_attempt WHERE user_id=? ORDER BY id",
       "count": "SELECT COUNT(*) FROM exam_attempt WHERE user_id=?",
       "eligible": null,
       "cleanup": null

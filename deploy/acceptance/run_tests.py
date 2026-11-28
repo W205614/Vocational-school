@@ -191,6 +191,7 @@ def main():
         )
     apply_migrations(
         'acceptance_trade', list((BASE / 'migrations/common').glob('V*.sql'))
+        + list((BASE / 'migrations/tj_trade').glob('V009*.sql'))
     )
     mysql(
         "CREATE TABLE IF NOT EXISTS test_counter(id INT PRIMARY KEY,value INT NOT NULL);INSERT IGNORE INTO test_counter VALUES(1,0)",

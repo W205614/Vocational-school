@@ -23,6 +23,8 @@ public class OrderV2Controller {
     public ResponseEntity<OperationStore.View> create(
             @Valid @RequestBody PlaceOrderDTO request,
             @RequestHeader("Idempotency-Key") String key) {
+        if (request.getClassId() != null && !Long.valueOf(2).equals(UserContext.getRole()))
+            throw new com.zhixuetang.common.exceptions.ForbiddenException("需要学生账号");
         return ResponseEntity.accepted()
                 .body(operations.submit(UserContext.requireUser(), "ORDER_CREATE", key, request));
     }

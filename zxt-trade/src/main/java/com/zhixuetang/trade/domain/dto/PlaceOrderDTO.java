@@ -22,4 +22,8 @@ public class PlaceOrderDTO {
     @Schema(description = "订单id")
     @NotNull(message = "订单id不能为空")
     private Long orderId;
+
+    @Schema(description = "班级编号，选择班级时只包含该班的一门课程")
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private Long classId;
 }

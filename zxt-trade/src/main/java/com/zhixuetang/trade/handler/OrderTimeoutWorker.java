@@ -24,7 +24,7 @@ public class OrderTimeoutWorker {
                         tx -> {
                             for (var row :
                                     jdbc.queryForList(
-                                            "SELECT * FROM order_creation WHERE status IN('ACTIVE','CREATED') AND expires_at<=NOW() ORDER BY expires_at LIMIT 50 FOR UPDATE SKIP LOCKED")) {
+                                            "SELECT *,JSON_EXTRACT(payload,'$.classId') IS NOT NULL AS class_order FROM order_creation WHERE status IN('ACTIVE','CREATED') AND expires_at<=NOW() ORDER BY expires_at LIMIT 50 FOR UPDATE SKIP LOCKED")) {
                                 Object order = row.get("order_id");
                                 Object user = row.get("user_id");
                                 var states =
@@ -53,6 +53,10 @@ public class OrderTimeoutWorker {
                                         MqConstants.Exchange.PROMOTION_EXCHANGE,
                                         "coupon.reservation.release",
                                         Map.of("orderId", order, "userId", user));
+                                if (Boolean.TRUE.equals(row.get("class_order"))
+                                        || row.get("class_order") instanceof Number n && n.intValue() != 0)
+                                    outbox.enqueue("order:" + order + ":class-seat-release",
+                                            MqConstants.Exchange.ORDER_EXCHANGE, "order.class-seat.release", order);
                             }
                         });
     }

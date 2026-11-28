@@ -20,6 +20,7 @@ const links = [
   ['/favorites', '我的收藏'],
   ['/notes', '私人笔记'],
   ['/exams', '课程考试'],
+  ['/classrooms', '我的班级'],
   ['/review', '错题复习'],
   ['/coupons', '优惠券'],
   ['/orders', '我的订单'],

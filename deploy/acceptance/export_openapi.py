@@ -105,7 +105,12 @@ for name in args.services:
                                 ['application/zip']
                                 if path.startswith('/account-privacy/tasks/')
                                 and path.endswith('/download')
-                                else []
+                                else (
+                                    ['text/csv']
+                                    if path.startswith('/api/v2/teacher/learning-hub/classrooms/')
+                                    and path.endswith('/grades/export')
+                                    else []
+                                )
                             )
                         )
                     )

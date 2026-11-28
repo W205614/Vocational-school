@@ -135,6 +135,7 @@ public class V2Routes {
                                         "/api/v2/learning-hub/**",
                                         "/api/v2/admin/learning-hub/**",
                                         "/api/v2/teacher/learning-hub/**",
+                                        "/api/v2/public/courses/{course}/classrooms",
                                         "/api/v2/favorites/**",
                                         "/api/v2/notes/**",
                                         "/api/v2/sign-ins/**",
@@ -330,6 +331,9 @@ public class V2Routes {
                                         "/api/v2/exam-review/**",
                                         "/api/v2/teacher/exam-statistics",
                                         "/api/v2/exam-papers/**",
+                                        "/api/v2/classroom-exams/**",
+                                        "/api/v2/teacher/classroom-exams/**",
+                                        "/api/v2/teacher/classroom-exam-attempts/**",
                                         "/api/v2/exam-attempts/**",
                                         "/api/v2/admin/exam-papers/**",
                                         "/api/v2/teacher/exam-attempts/**")

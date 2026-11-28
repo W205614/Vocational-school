@@ -148,6 +148,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/classroom-exams/{activity}/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mine"];
+        put?: never;
+        post: operations["start_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/admin/operation-failures/exam/{id}/replay": {
         parameters: {
             query?: never;
@@ -429,6 +445,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/teacher/classroom-exams/{activity}/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pending_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/teacher/classroom-exam-attempts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["attempt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/operations/exam/{id}": {
         parameters: {
             query?: never;
@@ -516,7 +564,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["attempt"];
+        get: operations["attempt_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -790,6 +838,7 @@ export interface components {
             version?: string;
             feedback?: string;
             actorRole?: string;
+            classActivityId?: string;
         };
         Response: {
             response?: string;
@@ -810,6 +859,7 @@ export interface components {
             explanations?: {
                 [key: string]: components["schemas"]["Explanation"];
             };
+            classroomOnly?: boolean;
         };
         /**
          * @description 考试详情数据
@@ -1148,6 +1198,13 @@ export interface components {
              * @example 1af123c11412e
              */
             requestId: string;
+        };
+        Attempt: {
+            id?: string;
+            memberId?: string;
+            status?: string;
+            /** Format: date-time */
+            createdAt?: string;
         };
         FailurePage: {
             list?: {
@@ -1518,6 +1575,62 @@ export interface operations {
                 "application/json": components["schemas"]["Command"];
             };
         };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["View"];
+                    };
+                };
+            };
+        };
+    };
+    mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: components["schemas"]["Attempt"][];
+                    };
+                };
+            };
+        };
+    };
+    start_1: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -2024,6 +2137,64 @@ export interface operations {
             };
         };
     };
+    pending_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    attempt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: number;
+                        msg: string;
+                        requestId: string;
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+    };
     get: {
         parameters: {
             query?: never;
@@ -2170,7 +2341,7 @@ export interface operations {
             };
         };
     };
-    attempt: {
+    attempt_1: {
         parameters: {
             query?: never;
             header?: never;

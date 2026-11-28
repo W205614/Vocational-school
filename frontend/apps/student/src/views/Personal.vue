@@ -74,6 +74,8 @@ function messageDestination(row: Row) {
     return { to: { path: '/orders', query: { orderId: targetId } }, label: '查看订单进度' };
   if (row.targetType === 'PRACTICE')
     return { to: { path: '/practice', query: { courseId: targetId } }, label: '查看作业反馈' };
+  if (row.targetType === 'CLASSROOM')
+    return { to: { path: '/classrooms', query: { classId: targetId } }, label: '查看班级通知' };
   if (row.targetType === 'PRACTICE_CORRECTION' && /^\d{1,20}$/.test(String(row.courseId ?? '')))
     return {
       to: { path: '/practice', query: { courseId: String(row.courseId), version: targetId } },

@@ -208,7 +208,8 @@ class LearningEntitlementRegressionTest {
                                         purchased,
                                         revoked)));
         var inbox = new com.zhixuetang.common.autoconfigure.reliability.InboxStore(jdbc, transactions);
-        var listener = new com.zhixuetang.learning.mq.LessonChangeListener(service, inbox, trade);
+        var listener = new com.zhixuetang.learning.mq.LessonChangeListener(service, inbox, trade,
+                org.mockito.Mockito.mock(com.zhixuetang.learning.classroom.Classrooms.class));
         var properties = new org.springframework.amqp.core.MessageProperties();
         properties.setMessageId(UUID.randomUUID().toString());
         listener.listenLessonPay(

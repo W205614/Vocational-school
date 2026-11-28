@@ -20,6 +20,7 @@ const route = useRoute(),
   section = ref(''),
   ids = ref<string[]>([]),
   graders = ref<string[]>([]),
+  classroomOnly = ref(false),
   questionRows = ref<Row[]>([]),
   percent = ref(60),
   pending = ref<Row[]>([]),
@@ -94,6 +95,7 @@ async function publish() {
       passPercent: percent.value,
       graders: graders.value,
       explanations,
+      classroomOnly: classroomOnly.value,
     });
     task.message.value = result.status === 'SUCCEEDED' ? '试卷版本已发布' : '试卷发布处理中';
   });
@@ -119,7 +121,8 @@ async function load() {
   });
 }
 async function openAttempt(id: string) {
-  attempt.value = await get<Row>('/teacher/exam-attempts/' + id);
+  const path = route.query.classroom ? '/teacher/classroom-exam-attempts/' : '/teacher/exam-attempts/';
+  attempt.value = await get<Row>(path + id);
   scores.value = {};
   feedback.value = {};
   await nextTick();
@@ -164,7 +167,8 @@ async function grade(answer: Row) {
       },
     );
     if (result.status === 'SUCCEEDED') {
-      attempt.value = await get<Row>('/teacher/exam-attempts/' + attempt.value.id);
+      const path = route.query.classroom ? '/teacher/classroom-exam-attempts/' : '/teacher/exam-attempts/';
+      attempt.value = await get<Row>(path + attempt.value.id);
       await loadPending();
     }
   });
@@ -188,6 +192,7 @@ watch(() => route.query, () => void openRoute());
 <template>
   <section class="card">
     <h2>试卷版本与教师评分</h2>
+    <RouterLink v-if="route.query.classroom" :to="{ path: '/classrooms', query: { classId: route.query.classroom, tab: 'activities' } }">返回班级教务</RouterLink>
     <Status :busy="task.busy.value" :error="task.error.value" :message="task.message.value" />
     <el-form v-if="session.role === 1" label-position="top" class="exam-publish-form">
       <p class="muted">
@@ -227,7 +232,10 @@ watch(() => route.query, () => void openRoute());
             :disabled="task.busy.value"
             @change="questionRows = $event"
         /></el-form-item>
-        <el-form-item label="评分教师"
+        <el-form-item label="试卷范围">
+          <el-checkbox v-model="classroomOnly">班级专用试卷，由该班教学人员阅卷</el-checkbox>
+        </el-form-item>
+        <el-form-item v-if="!classroomOnly" label="评分教师"
           ><EntityPicker
             v-model="graders"
             kind="teachers"
@@ -282,7 +290,7 @@ watch(() => route.query, () => void openRoute());
         type="primary"
         @click="publish"
         :disabled="
-          !course || !section || !ids.length || (subjective && !graders.length) || task.busy.value
+          !course || !section || !ids.length || (!classroomOnly && subjective && !graders.length) || task.busy.value
         "
         >发布不可变试卷版本</el-button
       ></el-form
@@ -328,7 +336,7 @@ watch(() => route.query, () => void openRoute());
       <div class="section-heading">
         <h3 id="grading-attempt-heading" tabindex="-1">考试 {{ attempt.id }} · {{ examStatus(attempt.status) }}</h3>
         <div>
-          <el-button v-if="attempt.status === 'FINISHED'" @click="nextAttempt" :disabled="task.busy.value">
+          <el-button v-if="attempt.status === 'FINISHED' && !route.query.classroom" @click="nextAttempt" :disabled="task.busy.value">
             处理下一份答卷
           </el-button>
           <el-button @click="returnToGradingQueue">回到待评分列表</el-button>

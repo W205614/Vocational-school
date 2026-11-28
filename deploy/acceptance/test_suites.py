@@ -77,6 +77,7 @@ REGRESSION_TESTS = [
     'ExamReliabilityTest',
     'ExamDraftReliabilityTest',
     'ExamReviewReliabilityTest',
+    'ClassroomTeachingDatabaseTest',
     'ObjectiveScoringTest',
     'DiscountServiceTest',
     'SeasonRewardDeliveryReliabilityTest',

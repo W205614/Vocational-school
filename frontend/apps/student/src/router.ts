@@ -14,6 +14,7 @@ export const router = createRouter({
     { path: '/', component: Catalog },
     { path: '/login', component: () => import('./views/Login.vue') },
     { path: '/learning', component: () => import('./views/Learning.vue') },
+    { path: '/classrooms', component: () => import('./views/Classrooms.vue') },
     { path: '/points', component: () => import('./views/Points.vue') },
     { path: '/review', component: () => import('./views/Review.vue') },
     { path: '/practice', component: () => import('./views/Practice.vue') },

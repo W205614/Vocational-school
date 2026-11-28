@@ -37,7 +37,8 @@ class ExamReliabilityTest {
         tx = new TransactionTemplate(new DataSourceTransactionManager(source));
         json = JsonMapper.builder().build();
         learning = org.mockito.Mockito.mock(com.zhixuetang.api.client.learning.LearningClient.class);
-        service = new ExamWorkflowService(jdbc, json, new OutboxStore(jdbc, json), learning);
+        service = new ExamWorkflowService(jdbc, json, new OutboxStore(jdbc, json), learning,
+                org.mockito.Mockito.mock(com.zhixuetang.api.client.learning.ClassroomClient.class));
         paper = com.baomidou.mybatisplus.core.toolkit.IdWorker.getId();
         user = paper + 1;
         question = paper + 2;

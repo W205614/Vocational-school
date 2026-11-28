@@ -892,6 +892,11 @@ export interface components {
              * @default
              */
             orderId: string;
+            /**
+             * @description 班级编号，选择班级时只包含该班的一门课程
+             * @default
+             */
+            classId: string;
         };
         Cleanup: {
             requestId?: string;
