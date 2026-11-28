@@ -68,6 +68,8 @@ async function contracts(
         ],
       };
     else if (path === '/api/v2/favorites/' + courseId) data = { favorited: false };
+    else if (path === '/api/v2/public/courses/' + courseId + '/classrooms' && method === 'GET')
+      data = [];
     else if (path === '/api/v2/services/learning/learning-records/course/' + courseId) {
       state.rightsReads++;
       data = state.rightsReads >= (options.readyAt ?? 1) ? lesson : null;

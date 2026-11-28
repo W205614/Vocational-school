@@ -8,10 +8,13 @@ if path.exists():
     print('Acceptance account fixture already exists')
 else:
     accounts = {}
-    for index, (label, kind, role) in enumerate(
+    for index, (label, name, kind, role) in enumerate(
         [
-            ('student', 2, 2), ('admin', 1, 1), ('teacher', 3, 3),
-            ('classroom_student', 2, 2), ('classroom_teacher', 3, 3),
+            ('student', 'student acceptance', 2, 2),
+            ('admin', 'admin acceptance', 1, 1),
+            ('teacher', 'teacher acceptance', 3, 3),
+            ('classroom_student', 'Cohort learner', 2, 2),
+            ('classroom_teacher', 'Cohort instructor', 3, 3),
         ]
     ):
         uid = 800000000000000001 + index
@@ -23,7 +26,7 @@ else:
             raise RuntimeError('Fixture identity is already occupied')
         digest = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         mysql(
-            f"INSERT INTO user(id,username,cell_phone,password,type,status) VALUES({uid},'{username}','1990000000{index}','{digest}',{kind},1);INSERT INTO user_detail(id,type,name,role_id) VALUES({uid},{kind},'{label} acceptance',{role})",
+            f"INSERT INTO user(id,username,cell_phone,password,type,status) VALUES({uid},'{username}','1990000000{index}','{digest}',{kind},1);INSERT INTO user_detail(id,type,name,role_id) VALUES({uid},{kind},'{name}',{role})",
             'tj_user',
         )
         accounts[label] = {

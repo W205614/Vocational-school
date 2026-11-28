@@ -4,9 +4,10 @@ from prepare import mysql, LOCAL
 import json, time, uuid
 
 
-def classroom_fixture(course, marker, admin):
+def classroom_fixture(course, admin):
     """Use a separate paid course so purchases cannot change legacy browser fixtures."""
     room_course, chapter, exam, objective, subjective = (course + step for step in range(70, 75))
+    marker = uuid.uuid4().hex[:12]
     columns = [line.split('\t')[0] for line in mysql('SHOW COLUMNS FROM course', 'tj_course').splitlines()]
     quote = chr(96)
     layout = ','.join(quote + column + quote for column in columns)
@@ -315,7 +316,7 @@ def main():
         subjective=str(subjective),
         name='Browser course ' + marker,
     )
-    fixture.update(classroom_fixture(course, marker, admin))
+    fixture.update(classroom_fixture(course, admin))
     (LOCAL / 'browser-fixture.json').write_text(json.dumps(fixture, indent=2))
     print('Fresh isolated browser fixtures created')
 
