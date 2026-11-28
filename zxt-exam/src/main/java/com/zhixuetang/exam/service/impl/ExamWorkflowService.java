@@ -207,7 +207,7 @@ public class ExamWorkflowService implements OperationHandler {
                 """, activity, access.memberId());
         var attempts = jdbc.queryForList("""
                 SELECT id,status FROM exam_attempt WHERE class_activity_id=? AND class_member_id=?
-                ORDER BY created_at DESC,id DESC FOR UPDATE
+                ORDER BY created_at DESC,id DESC
                 """, activity, access.memberId());
         if (!attempts.isEmpty() && !"FINISHED".equals(attempts.getFirst().get("status")))
             return view(((Number) attempts.getFirst().get("id")).longValue(), user, false);

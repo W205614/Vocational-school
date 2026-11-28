@@ -360,7 +360,11 @@ public class Classrooms {
                 """, Classrooms::membership, id, user, includeCompleted);
         if (rows.isEmpty()) throw new ForbiddenException("你没有该班级的有效班籍");
         var member = rows.getFirst();
-        if (member.state() == MemberState.ACTIVE) entitlements.require(user, member.courseId());
+        if (member.state() == MemberState.ACTIVE) {
+            if (!includeCompleted) entitlements.require(user, member.courseId());
+            else if (entitlements.findAvailableReadOnly(user, member.courseId()) == null)
+                throw new ForbiddenException("无有效课程权益");
+        }
         return member;
     }
 

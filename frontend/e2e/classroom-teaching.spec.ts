@@ -42,6 +42,7 @@ test('classroom teaching isolates concurrent cohorts, orders and exam access', a
   const teacher = await teacherContext.newPage();
   const assistant = await assistantContext.newPage();
   const other = await otherStudentContext.newPage();
+  const created: string[] = [];
   try {
     const label = '班级教务 ' + crypto.randomUUID().slice(0, 7);
     await login(principal, 'admin', '/classrooms');
@@ -52,6 +53,7 @@ test('classroom teaching isolates concurrent cohorts, orders and exam access', a
     };
     const a = await api(principal, 'POST', admin, { ...settings, name: label + ' A 班' });
     const b = await api(principal, 'POST', admin, { ...settings, name: label + ' B 班' });
+    created.push(a.id, b.id);
     await api(principal, 'PUT', admin + '/' + a.id + '/staff/' + accounts.teacher.id, { duty: 'TEACHER' });
     await api(principal, 'PUT', admin + '/' + b.id + '/staff/' + accounts.classroom_teacher.id, { duty: 'TEACHER' });
     await api(principal, 'PUT', admin + '/' + a.id + '/staff/' + accounts.classroom_teacher.id, { duty: 'ASSISTANT' });
@@ -141,6 +143,14 @@ test('classroom teaching isolates concurrent cohorts, orders and exam access', a
     expect(await requestStatus(page, 'GET', '/exam-attempts/' + attempt.id)).toBe(400);
     expect((await api(page, 'GET', '/classroom-exams/' + examA.id + '/attempts'))).toEqual([]);
   } finally {
-    await Promise.all([adminContext.close(), teacherContext.close(), assistantContext.close(), otherStudentContext.close()]);
+    try {
+      for (const id of created) {
+        const members = await api(principal, 'GET', staff + '/' + id + '/members');
+        for (const member of members.filter((item: any) => item.state === 'ACTIVE'))
+          await api(principal, 'PUT', admin + '/' + id + '/members/' + member.memberId, { reason: '隔离验收结束' });
+      }
+    } finally {
+      await Promise.all([adminContext.close(), teacherContext.close(), assistantContext.close(), otherStudentContext.close()]);
+    }
   }
 });

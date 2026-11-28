@@ -130,6 +130,15 @@ class ClassroomTeachingDatabaseTest {
         var member = as(student, 2, () -> rooms.enroll(first.id(), student, false, null));
         var homework = form(first.id(), now.minusMinutes(10));
         var other = form(next.id(), now.plusMinutes(30));
+        var readOnly = new TransactionTemplate(tx.getTransactionManager());
+        readOnly.setReadOnly(true);
+        UserContext.setUser(student);
+        UserContext.setRole(2L);
+        try {
+            assertEquals(member.id(), readOnly.execute(status -> activities.study(first.id())).member().id());
+        } finally {
+            UserContext.removeUser();
+        }
         var request = new Submit(UUID.randomUUID(), 1, "作品", null);
         assertThrows(ConflictException.class, () -> as(student, 2, () -> activities.submit(first.id(), homework.id(), request)));
         assertThrows(ForbiddenException.class, () -> as(student, 2, () -> activities.submit(next.id(), other.id(), request)));
