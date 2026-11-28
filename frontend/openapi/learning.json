@@ -281,7 +281,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Review"
+                "$ref": "#/components/schemas/ClassroomAssignmentReview"
               }
             }
           },
@@ -311,7 +311,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/Submission"
+                      "$ref": "#/components/schemas/ClassroomAssignmentSubmission"
                     }
                   }
                 }
@@ -559,7 +559,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Correction"
+                "$ref": "#/components/schemas/ClassroomActivityCorrection"
               }
             }
           },
@@ -2307,7 +2307,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Form"
+                "$ref": "#/components/schemas/ClassroomActivityForm"
               }
             }
           },
@@ -2894,7 +2894,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Submit"
+                "$ref": "#/components/schemas/ClassroomAssignmentSubmit"
               }
             }
           },
@@ -2924,7 +2924,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/Submission"
+                      "$ref": "#/components/schemas/ClassroomAssignmentSubmission"
                     }
                   }
                 }
@@ -4418,7 +4418,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/Pending"
+                      "$ref": "#/components/schemas/ClassroomTeachingOverview"
                     }
                   }
                 }
@@ -4579,7 +4579,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Report"
+                        "$ref": "#/components/schemas/ClassroomGradeReport"
                       }
                     }
                   }
@@ -4674,7 +4674,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Version"
+                        "$ref": "#/components/schemas/ClassroomActivityVersion"
                       }
                     }
                   }
@@ -4737,7 +4737,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Submission"
+                        "$ref": "#/components/schemas/ClassroomAssignmentSubmission"
                       }
                     }
                   }
@@ -5388,7 +5388,7 @@
                       "type": "string"
                     },
                     "data": {
-                      "$ref": "#/components/schemas/Report"
+                      "$ref": "#/components/schemas/ClassroomGradeReport"
                     }
                   }
                 }
@@ -5450,7 +5450,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Version"
+                        "$ref": "#/components/schemas/ClassroomActivityVersion"
                       }
                     }
                   }
@@ -5522,7 +5522,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Submission"
+                        "$ref": "#/components/schemas/ClassroomAssignmentSubmission"
                       }
                     }
                   }
@@ -6810,8 +6810,9 @@
           }
         }
       },
-      "Review": {
+      "ClassroomAssignmentReview": {
         "type": "object",
+        "default": null,
         "properties": {
           "state": {
             "type": "string",
@@ -6827,6 +6828,57 @@
           },
           "feedback": {
             "type": "string"
+          }
+        }
+      },
+      "ClassroomAssignmentSubmission": {
+        "type": "object",
+        "default": null,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "memberId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string"
+          },
+          "workUrl": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "SUBMITTED",
+              "NEEDS_REVISION",
+              "REVIEWED"
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "feedback": {
+            "type": "string"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -6869,8 +6921,9 @@
           }
         }
       },
-      "Correction": {
+      "ClassroomActivityCorrection": {
         "type": "object",
+        "default": null,
         "properties": {
           "expectedVersion": {
             "type": "integer",
@@ -7051,6 +7104,24 @@
             "format": "date-time"
           },
           "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "Correction": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "expectedVersion": {
             "type": "integer",
             "format": "int32"
           }
@@ -7482,8 +7553,9 @@
           }
         }
       },
-      "Form": {
+      "ClassroomActivityForm": {
         "type": "object",
+        "default": null,
         "properties": {
           "kind": {
             "type": "string",
@@ -7607,6 +7679,26 @@
           }
         }
       },
+      "ClassroomAssignmentSubmit": {
+        "type": "object",
+        "default": null,
+        "properties": {
+          "requestKey": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assignmentVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "description": {
+            "type": "string"
+          },
+          "workUrl": {
+            "type": "string"
+          }
+        }
+      },
       "AddMember": {
         "type": "object",
         "properties": {
@@ -7625,6 +7717,13 @@
           "sourceClassId": {
             "type": "string",
             "pattern": "^-?[0-9]+$"
+          },
+          "replacementPapers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
           }
         }
       },
@@ -8605,8 +8704,9 @@
           }
         }
       },
-      "Pending": {
+      "ClassroomTeachingOverview": {
         "type": "object",
+        "default": null,
         "properties": {
           "assignments": {
             "type": "integer",
@@ -8621,6 +8721,22 @@
             "format": "int32"
           },
           "grades": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assignmentSubmitted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "assignmentExpected": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "examSubmitted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "examExpected": {
             "type": "integer",
             "format": "int32"
           }
@@ -8687,8 +8803,9 @@
           }
         }
       },
-      "Item": {
+      "ClassroomGradeItem": {
         "type": "object",
+        "default": null,
         "properties": {
           "activityId": {
             "type": "string",
@@ -8730,8 +8847,9 @@
           }
         }
       },
-      "Report": {
+      "ClassroomGradeReport": {
         "type": "object",
+        "default": null,
         "properties": {
           "memberId": {
             "type": "string",
@@ -8759,16 +8877,17 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Item"
+              "$ref": "#/components/schemas/ClassroomGradeItem"
             }
           },
           "result": {
-            "$ref": "#/components/schemas/Result"
+            "$ref": "#/components/schemas/ClassroomGradeResult"
           }
         }
       },
-      "Result": {
+      "ClassroomGradeResult": {
         "type": "object",
+        "default": null,
         "properties": {
           "totalPercent": {
             "type": "number"
@@ -8782,8 +8901,9 @@
           }
         }
       },
-      "Version": {
+      "ClassroomActivityVersion": {
         "type": "object",
+        "default": null,
         "properties": {
           "version": {
             "type": "integer",

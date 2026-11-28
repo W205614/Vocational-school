@@ -1752,12 +1752,32 @@ export interface components {
             /** Format: date-time */
             reviewedAt?: string;
         };
-        Review: {
+        /** @default null */
+        ClassroomAssignmentReview: {
             /** @enum {string} */
             state?: "SUBMITTED" | "NEEDS_REVISION" | "REVIEWED";
             /** Format: int32 */
             score?: number;
             feedback?: string;
+        };
+        /** @default null */
+        ClassroomAssignmentSubmission: {
+            id?: string;
+            memberId?: string;
+            userId?: string;
+            /** Format: int32 */
+            version?: number;
+            /** Format: int32 */
+            revision?: number;
+            description?: string;
+            workUrl?: string;
+            /** @enum {string} */
+            state?: "SUBMITTED" | "NEEDS_REVISION" | "REVIEWED";
+            /** Format: int32 */
+            score?: number;
+            feedback?: string;
+            /** Format: date-time */
+            submittedAt?: string;
         };
         Change: {
             memberId?: string;
@@ -1774,7 +1794,8 @@ export interface components {
             closesAt?: string;
             reason?: string;
         };
-        Correction: {
+        /** @default null */
+        ClassroomActivityCorrection: {
             /** Format: int32 */
             expectedVersion?: number;
             title?: string;
@@ -1841,6 +1862,13 @@ export interface components {
             publishedAt?: string;
             /** Format: int32 */
             version?: number;
+        };
+        Correction: {
+            title?: string;
+            instructions?: string;
+            reason?: string;
+            /** Format: int32 */
+            expectedVersion?: number;
         };
         AssignmentVersion: {
             /** Format: int32 */
@@ -2064,7 +2092,8 @@ export interface components {
             /** Format: date-time */
             postedAt?: string;
         };
-        Form: {
+        /** @default null */
+        ClassroomActivityForm: {
             /** @enum {string} */
             kind?: "LESSON" | "ASSIGNMENT" | "EXAM" | "ANNOUNCEMENT";
             sectionId?: string;
@@ -2106,12 +2135,24 @@ export interface components {
             /** Format: date-time */
             joinedAt?: string;
         };
+        /** @default null */
+        ClassroomAssignmentSubmit: {
+            /** Format: uuid */
+            requestKey?: string;
+            /** Format: int32 */
+            assignmentVersion?: number;
+            description?: string;
+            workUrl?: string;
+        };
         AddMember: {
             userId?: string;
             reason?: string;
         };
         CopySchedule: {
             sourceClassId?: string;
+            replacementPapers?: {
+                [key: string]: string;
+            };
         };
         /**
          * @description 签到结果
@@ -2806,7 +2847,8 @@ export interface components {
             id?: string;
             name?: string;
         };
-        Pending: {
+        /** @default null */
+        ClassroomTeachingOverview: {
             /** Format: int32 */
             assignments?: number;
             /** Format: int32 */
@@ -2815,6 +2857,14 @@ export interface components {
             questions?: number;
             /** Format: int32 */
             grades?: number;
+            /** Format: int32 */
+            assignmentSubmitted?: number;
+            /** Format: int32 */
+            assignmentExpected?: number;
+            /** Format: int32 */
+            examSubmitted?: number;
+            /** Format: int32 */
+            examExpected?: number;
         };
         Paper: {
             id?: string;
@@ -2836,7 +2886,8 @@ export interface components {
             /** Format: int32 */
             courseSections?: number;
         };
-        Item: {
+        /** @default null */
+        ClassroomGradeItem: {
             activityId?: string;
             title?: string;
             /** @enum {string} */
@@ -2849,22 +2900,25 @@ export interface components {
             score?: number;
             feedback?: string;
         };
-        Report: {
+        /** @default null */
+        ClassroomGradeReport: {
             memberId?: string;
             userId?: string;
             name?: string;
             /** @enum {string} */
             membershipState?: "HELD" | "ACTIVE" | "WITHDRAWN" | "TRANSFERRED" | "REFUNDED" | "RELEASED" | "COMPLETED";
-            items?: components["schemas"]["Item"][];
-            result?: components["schemas"]["Result"];
+            items?: components["schemas"]["ClassroomGradeItem"][];
+            result?: components["schemas"]["ClassroomGradeResult"];
         };
-        Result: {
+        /** @default null */
+        ClassroomGradeResult: {
             totalPercent?: number;
             passed?: boolean;
             /** Format: date-time */
             finalizedAt?: string;
         };
-        Version: {
+        /** @default null */
+        ClassroomActivityVersion: {
             /** Format: int32 */
             version?: number;
             title?: string;
@@ -3191,7 +3245,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Review"];
+                "application/json": components["schemas"]["ClassroomAssignmentReview"];
             };
         };
         responses: {
@@ -3205,7 +3259,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["Submission"];
+                        data: components["schemas"]["ClassroomAssignmentSubmission"];
                     };
                 };
             };
@@ -3319,7 +3373,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Correction"];
+                "application/json": components["schemas"]["ClassroomActivityCorrection"];
             };
         };
         responses: {
@@ -4228,7 +4282,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Form"];
+                "application/json": components["schemas"]["ClassroomActivityForm"];
             };
         };
         responses: {
@@ -4525,7 +4579,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Submit"];
+                "application/json": components["schemas"]["ClassroomAssignmentSubmit"];
             };
         };
         responses: {
@@ -4539,7 +4593,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["Submission"];
+                        data: components["schemas"]["ClassroomAssignmentSubmission"];
                     };
                 };
             };
@@ -5312,7 +5366,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["Pending"];
+                        data: components["schemas"]["ClassroomTeachingOverview"];
                     };
                 };
             };
@@ -5393,7 +5447,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["Report"][];
+                        data: components["schemas"]["ClassroomGradeReport"][];
                     };
                 };
             };
@@ -5443,7 +5497,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["Version"][];
+                        data: components["schemas"]["ClassroomActivityVersion"][];
                     };
                 };
             };
@@ -5471,7 +5525,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["Submission"][];
+                        data: components["schemas"]["ClassroomAssignmentSubmission"][];
                     };
                 };
             };
@@ -5817,7 +5871,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["Report"];
+                        data: components["schemas"]["ClassroomGradeReport"];
                     };
                 };
             };
@@ -5845,7 +5899,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["Version"][];
+                        data: components["schemas"]["ClassroomActivityVersion"][];
                     };
                 };
             };
@@ -5874,7 +5928,7 @@ export interface operations {
                         code: number;
                         msg: string;
                         requestId: string;
-                        data: components["schemas"]["Submission"][];
+                        data: components["schemas"]["ClassroomAssignmentSubmission"][];
                     };
                 };
             };

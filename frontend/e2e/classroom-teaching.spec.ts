@@ -47,7 +47,7 @@ test('classroom teaching isolates concurrent cohorts, orders and exam access', a
     const label = '班级教务 ' + crypto.randomUUID().slice(0, 7);
     await login(principal, 'admin', '/classrooms');
     const settings = {
-      courseId: fixture.course, startsAt: chinaTime(-90), endsAt: chinaTime(90),
+      courseId: fixture.classroomCourse, startsAt: chinaTime(-90), endsAt: chinaTime(90),
       registrationOpens: chinaTime(-100), registrationCloses: chinaTime(85),
       capacity: 1, passPercent: 60,
     };
@@ -68,7 +68,8 @@ test('classroom teaching isolates concurrent cohorts, orders and exam access', a
     }
     const [homeworkA, homeworkB] = assignments;
     const paper = await operation(principal, 'exam', '/admin/exam-papers', {
-      courseId: fixture.course, sectionId: fixture.exam, questionIds: [fixture.objective, fixture.subjective],
+      courseId: fixture.classroomCourse, sectionId: fixture.classroomExam,
+      questionIds: [fixture.classroomObjective, fixture.classroomSubjective],
       classroomOnly: true, passPercent: 60,
     });
     const [examA, examB] = await Promise.all([a, b].map((item) =>
@@ -78,8 +79,8 @@ test('classroom teaching isolates concurrent cohorts, orders and exam access', a
       })));
     await principal.goto('/classrooms?classId=' + a.id);
     await expect(principal.getByRole('heading', { name: a.name })).toBeVisible();
-    await login(page, 'student', '/courses/' + fixture.course);
-    await login(other, 'classroom_student', '/courses/' + fixture.course);
+    await login(page, 'student', '/courses/' + fixture.classroomCourse);
+    await login(other, 'classroom_student', '/courses/' + fixture.classroomCourse);
     await login(teacher, 'teacher', '/classrooms?classId=' + a.id);
     await login(assistant, 'classroom_teacher', '/classrooms?classId=' + a.id);
 
@@ -123,15 +124,15 @@ test('classroom teaching isolates concurrent cohorts, orders and exam access', a
     expect(attempt.class_activity_id).toBe(examB.id);
     expect(await requestStatus(page, 'POST', '/classroom-exams/' + examB.id + '/attempts')).toBe(403);
     const marked = await operation(other, 'exam', '/exam-attempts/' + attempt.id + '/submit', {
-      answers: { [fixture.objective]: '1', [fixture.subjective]: '班级考试主观答案' },
+      answers: { [fixture.classroomObjective]: '1', [fixture.classroomSubjective]: '班级考试主观答案' },
     });
     expect(marked.status).toBe('WAIT_GRADING');
     expect(await requestStatus(teacher, 'GET', '/teacher/classroom-exam-attempts/' + attempt.id)).toBe(403);
     const grader = await api(assistant, 'GET', '/teacher/classroom-exam-attempts/' + attempt.id);
     expect(grader.class_member_id).toBe(memberB.id);
-    const answer = grader.answers.find((item: any) => item.question_id === fixture.subjective);
+    const answer = grader.answers.find((item: any) => item.question_id === fixture.classroomSubjective);
     await operation(assistant, 'exam', '/teacher/exam-attempts/' + attempt.id + '/grades', {
-      questionId: fixture.subjective, score: 8, version: answer.version, feedback: '主观题已复核',
+      questionId: fixture.classroomSubjective, score: 8, version: answer.version, feedback: '主观题已复核',
     });
     const sealed = await api(other, 'GET', '/exam-attempts/' + attempt.id);
     expect(sealed.status).toBe('FINISHED');

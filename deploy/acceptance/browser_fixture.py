@@ -4,6 +4,36 @@ from prepare import mysql, LOCAL
 import json, time, uuid
 
 
+def classroom_fixture(course, marker, admin):
+    """Use a separate paid course so purchases cannot change legacy browser fixtures."""
+    room_course, chapter, exam, objective, subjective = (course + step for step in range(70, 75))
+    columns = [line.split('\t')[0] for line in mysql('SHOW COLUMNS FROM course', 'tj_course').splitlines()]
+    quote = chr(96)
+    layout = ','.join(quote + column + quote for column in columns)
+    changes = {
+        'id': str(room_course), 'name': "'Classroom acceptance " + marker + "'",
+        'section_num': '1', 'media_duration': '0',
+    }
+    selected = ','.join(changes.get(column, quote + column + quote) for column in columns)
+    mysql(f'INSERT INTO course({layout}) SELECT {selected} FROM course WHERE id={course}', 'tj_course')
+    mysql(
+        "INSERT INTO course_catalogue(id,name,course_id,type,parent_catalogue_id,c_index,dep_id,creater,updater) VALUES"
+        f"({chapter},'Classroom chapter',{room_course},1,0,1,0,{admin},{admin}),"
+        f"({exam},'Classroom exam',{room_course},3,{chapter},1,0,{admin},{admin})",
+        'tj_course',
+    )
+    for ident, kind, answer in ((objective, 2, '1,2'), (subjective, 5, 'reference')):
+        mysql(
+            "INSERT INTO question(id,name,type,cate_id1,cate_id2,cate_id3,difficulty,score,creater,updater) "
+            f"VALUES({ident},'Classroom question {kind}',{kind},1,2,3,1,10,{admin},{admin});"
+            f"""INSERT INTO question_detail(id,options,answer,analysis) VALUES({ident},'["A","B","C"]','{answer}','Classroom acceptance');"""
+            f'INSERT INTO question_biz(biz_id,question_id) VALUES({exam},{ident})',
+            'tj_exam',
+        )
+    return dict(classroomCourse=str(room_course), classroomExam=str(exam),
+                classroomObjective=str(objective), classroomSubjective=str(subjective))
+
+
 def main():
     marker = uuid.uuid4().hex[:12]
     course = 810000000000000000 + int(time.time()) * 10
@@ -285,6 +315,7 @@ def main():
         subjective=str(subjective),
         name='Browser course ' + marker,
     )
+    fixture.update(classroom_fixture(course, marker, admin))
     (LOCAL / 'browser-fixture.json').write_text(json.dumps(fixture, indent=2))
     print('Fresh isolated browser fixtures created')
 
