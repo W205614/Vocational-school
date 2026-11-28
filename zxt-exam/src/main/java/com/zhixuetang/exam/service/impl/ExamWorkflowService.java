@@ -32,7 +32,11 @@ public class ExamWorkflowService implements OperationHandler {
             Integer sectionCount,
             boolean draft,
             Map<Long, Explanation> explanations,
-            boolean classroomOnly) {}
+            Boolean classroomOnly) {
+        public Publish {
+            classroomOnly = Boolean.TRUE.equals(classroomOnly);
+        }
+    }
 
     public record Command(
             String action,

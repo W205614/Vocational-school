@@ -1,5 +1,6 @@
 package com.zhixuetang.exam.controller;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.zhixuetang.api.client.course.CourseClient;
 import com.zhixuetang.api.client.learning.LearningClient;
 import com.zhixuetang.api.dto.course.ExamSectionPublicationDTO;
@@ -39,7 +40,7 @@ public class ExamWorkflowController {
             Integer passPercent,
             List<Long> graders,
             Map<Long, Explanation> explanations,
-            boolean classroomOnly) {}
+            @JsonInclude(JsonInclude.Include.NON_NULL) Boolean classroomOnly) {}
 
     @PostMapping("/admin/exam-papers")
     public ResponseEntity<OperationStore.View> publish(

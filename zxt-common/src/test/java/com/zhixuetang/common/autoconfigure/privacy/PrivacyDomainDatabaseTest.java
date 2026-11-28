@@ -123,7 +123,10 @@ class PrivacyDomainDatabaseTest {
                 createMigrationTables(jdbc, "tj_learning/V008__learning_motivation.sql");
                 script(jdbc, migrations.resolve("tj_learning/V012__practice_assignments.sql"));
                 script(jdbc, migrations.resolve("tj_learning/V013__practice_assignment_versions.sql"));
+                script(jdbc, migrations.resolve("tj_learning/V015__classroom_teaching.sql"));
             }
+            if (alias.equals("exam"))
+                script(jdbc, migrations.resolve("tj_exam/V008__classroom_exam_scope.sql"));
             if (alias.equals("message"))
                 script(jdbc, migrations.resolve("tj_message/V006__inbox_targets.sql"));
             if (alias.equals("promotion"))

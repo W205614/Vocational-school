@@ -1,10 +1,10 @@
 # Supply an audited immutable nginx runtime, e.g. nginx@sha256:<approved digest>.
-ARG NGINX_IMAGE=nginx:1.30.7-alpine@sha256:caf4e1e032a20f9c3c5e28fc7f25ffd768ad8677b4975c54193075997b3a97e3
+ARG NGINX_IMAGE=nginx:1.30.8-alpine@sha256:8eb04fe3b385090e9aa02961f77398ad09b6bf33ab07f6669a5bb7acce22c0d3
 FROM ${NGINX_IMAGE}
 ARG VCS_REF
 LABEL org.opencontainers.image.revision=$VCS_REF
 USER root
-RUN apk add --no-cache --upgrade 'brotli-libs>=1.2.1-r0' 'curl>=8.23.0-r0' 'libcurl>=8.23.0-r0' 'libexpat>=2.10.0-r0' \
+RUN apk add --no-cache --upgrade 'brotli-libs>=1.2.1-r0' 'curl>=8.23.0-r0' 'libcurl>=8.23.0-r0' 'libexpat>=2.11.0-r0' \
     'libcrypto3>=3.5.9-r1' 'libssl3>=3.5.9-r1'
 RUN addgroup -g 10001 app && adduser -D -u 10001 -G app app \
     && mkdir -p /var/cache/nginx /var/run /etc/nginx/conf.d \
