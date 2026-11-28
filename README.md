@@ -45,7 +45,7 @@ python deploy/compact/setup.py up
 默认方式为**本机源码构建 + Docker Compose 部署**。准备以下工具并加入 `PATH`：
 
 - Git、JDK 21（含 `javac` 和 `keytool`）、Maven。
-- Node.js 22 / npm、Python 3.12+。
+- Node.js 22.x（最低 22.12.0）和 npm、Python 3.12+。
 - Docker Engine 与 Compose v2；Windows 可使用 Docker Desktop 的 Linux 容器模式。
 - HTTPS 入口另需 OpenSSL、覆盖 `localhost` 的证书和客户端信任配置，见[运行凭据与 HTTPS](docs/runtime-credential-security.md)。Linux 新环境还需从外部凭据管理系统注入稳定的 `ZXT_SECRET_KEY`。
 - 能下载 Maven/npm 依赖及 Docker 镜像的网络。Docker 内存预算建议预留 12 GB（按当前容器内存上限估算，并非实测最低配置）。

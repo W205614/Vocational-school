@@ -4,7 +4,7 @@
 
 ## 开发准备
 
-准备 JDK 21、Maven、Node.js 22、Python 3.12+ 和 Docker Compose，按[项目 README](README.md)安装依赖。先阅读[目录职责](docs/project-structure.md)和[工具索引](deploy/compact/TOOLS.md)，在业务模块中修改功能，在 `zxt-compact` 中维护应用装配。
+准备 JDK 21、Maven、Node.js 22.x（最低 22.12.0）、Python 3.12+ 和 Docker Compose，按[项目 README](README.md)安装依赖。先阅读[目录职责](docs/project-structure.md)和[工具索引](deploy/compact/TOOLS.md)，在业务模块中修改功能，在 `zxt-compact` 中维护应用装配。
 
 从最新 `dev` 创建工作分支。已有本机部署按[升级说明](docs/stability-operations.md#升级已有部署)处理，保留私有配置、数据卷和媒资；测试使用独立资源及合成账号。
 

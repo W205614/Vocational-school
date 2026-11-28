@@ -52,7 +52,7 @@ if (-not (Test-Path deploy/compact/.local/compose.runtime.yaml)) {
 
 确认私有副本存在后再更新源码，保留 `.env`、`.local` 和卷。新版本直接采用该私有文件；不要把更新后的公共模板复制覆盖它。`setup.py migrate-runtime` 用于公共文件仍是旧生效配置时的解析等价核对，不适用于已将公共文件恢复为模板后的再次迁移。升级、搜索切换和备份只更新私有运行文件；旧备份包中的配置仍命名 `compose.yaml`，恢复时写入新的私有运行位置。过时批次的专用探针已移出工作目录；恢复验收使用下文当前工具。
 
-需要 Java 21、Maven、Node.js 22/npm、Python 3.12+、Docker Compose 和可用镜像源。Windows PowerShell 中请确认这些命令已加入 PATH。
+需要 Java 21、Maven、Node.js 22.x（最低 22.12.0）和 npm、Python 3.12+、Docker Compose 和可用镜像源。Windows PowerShell 中请确认这些命令已加入 PATH。
 
 ```powershell
 python -m pip install -r deploy/compact/requirements.txt
